@@ -85,7 +85,8 @@ namespace 图画记事版
 
         private void HighLighter_Checked(object sender, RoutedEventArgs e)
         {
-            inkc.DefaultDrawingAttributes.IsHighlighter = (bool)HighLighter.IsChecked;
+            inkc.DefaultDrawingAttributes.IsHighlighter = (bool) HighLighter.IsChecked;
+            HighLighter.IsEnabled = false;
         }
     }
 }
