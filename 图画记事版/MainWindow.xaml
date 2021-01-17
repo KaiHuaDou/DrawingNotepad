@@ -1,53 +1,43 @@
 ﻿<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:local="clr-namespace:图画记事版"
-        xmlns:Custom="http://schemas.microsoft.com/winfx/2006/xaml/presentation/ribbon" x:Class="图画记事版.MainWindow"
-        mc:Ignorable="d" Title="图画记事版" WindowStartupLocation="CenterScreen" WindowState="Maximized">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="图画记事版.MainWindow" Title="图画记事版"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized" Height="499">
     <Grid>
         <InkCanvas x:Name="inkc" Margin="0,0,120,0">
             <Image x:Name="image" Margin="0,0,0,0" />
         </InkCanvas>
-        <ComboBox x:Name="EditingComboBox" Height="30" VerticalAlignment="Top" ToolTip="选择图画形式"
-                HorizontalAlignment="Right" SelectionChanged="comboBox_SelectionChanged" Margin="0,34,0,0" Width="115">
-            <ComboBoxItem Content="墨迹" HorizontalAlignment="Left" Width="137" />
-            <ComboBoxItem Content="按点擦除" HorizontalAlignment="Left" Width="137" />
-            <ComboBoxItem Content="按线擦除" HorizontalAlignment="Left" Width="137" />
-            <ComboBoxItem Content="选择" HorizontalAlignment="Left" Width="137" />
-            <ComboBoxItem Content="无" HorizontalAlignment="Left" Width="137" />
-        </ComboBox>
-        <Label x:Name="EditingModeLabel" Content="绘制方式" HorizontalAlignment="Right" Margin="0,0,29,0"
-                VerticalAlignment="Top" Width="91" />
-        <Button x:Name="OpenPicture" Height="30" VerticalAlignment="Top" Click="button_Click" Margin="0,197,5,0"
-                Content="打开图片" HorizontalAlignment="Right" Width="110" />
-        <Button x:Name="Exit" Content="退出" Height="30" VerticalAlignment="Top" Click="button1_Click" Margin="0,232,5,0"
-                HorizontalAlignment="Right" Width="110" />
-        <ComboBox x:Name="ColorComboBox" Height="30" VerticalAlignment="Top" HorizontalAlignment="Right"
-                SelectionChanged="comboBox1_SelectionChanged" Margin="0,98,0,0" Width="115">
-            <ComboBoxItem Content="红" HorizontalAlignment="Left" Width="137" />
-            <ComboBoxItem Content="黄" HorizontalAlignment="Left" Width="137" />
-            <ComboBoxItem Content="蓝" HorizontalAlignment="Left" Width="137" />
-            <ComboBoxItem Content="绿" HorizontalAlignment="Left" Width="137" />
-            <ComboBoxItem Content="黑" HorizontalAlignment="Left" Width="137" />
-            <ComboBoxItem Content="白" HorizontalAlignment="Left" Width="137" />
-        </ComboBox>
-        <Label x:Name="InkColorLabel" Content="墨迹颜色" HorizontalAlignment="Right" Margin="0,64,34,0"
-                VerticalAlignment="Top" />
-        <ComboBox x:Name="InkShapeComboBox" Height="30" VerticalAlignment="Top" HorizontalAlignment="Right"
-                SelectionChanged="comboBox2_SelectionChanged" Margin="0,162,0,0" Width="115">
-            <ComboBoxItem Content="椭圆" HorizontalAlignment="Right" Width="137" />
-            <ComboBoxItem Content="长方形" HorizontalAlignment="Right" Width="137" />
-        </ComboBox>
-        <Label x:Name="InkShapeLabel" Content="墨迹形状" HorizontalAlignment="Right" Margin="0,128,34,0"
-                VerticalAlignment="Top" />
-        <Label x:Name="InkWidth" Content="墨迹宽度" HorizontalAlignment="Right" Margin="0,267,29,0" VerticalAlignment="Top" />
-        <TextBox x:Name="InkWidthTextBox" HorizontalAlignment="Right" Height="29" Margin="0,301,0,0" TextWrapping="Wrap"
-                VerticalAlignment="Top" Width="115" Text="{Binding ElementName=inkc,Path=DefaultDrawingAttributes.Width,Mode=TwoWay}"/>
-        <Label x:Name="InkHeight" Content="墨迹高度" HorizontalAlignment="Right" Margin="0,330,29,0" VerticalAlignment="Top" />
-        <TextBox x:Name="InkHeightTextBox" HorizontalAlignment="Right" Height="31" Margin="0,364,0,0"
-                TextWrapping="Wrap" VerticalAlignment="Top" Width="115"
-                Text="{Binding ElementName=inkc,Path=DefaultDrawingAttributes.Height,Mode=TwoWay}"/>
-        <CheckBox x:Name="HighLighter" Content="荧光笔" HorizontalAlignment="Right" Margin="645,400,0,0"
-                VerticalAlignment="Top" Checked="HighLighter_Checked" Width="115" />
+        <StackPanel Width="120" HorizontalAlignment="Right" Margin="0,0,0,0">
+            <Label x:Name="EditingModeLabel" Content="绘制方式" HorizontalAlignment="Right" Margin="0,0,29,0"
+                    VerticalAlignment="Top" Width="91" />
+            <ComboBox x:Name="EditingComboBox" Height="30" VerticalAlignment="Top" ToolTip="选择图画形式"
+                    HorizontalAlignment="Right" SelectionChanged="comboBox_SelectionChanged" Width="115">
+                <ComboBoxItem Content="墨迹" HorizontalAlignment="Left" Width="137" />
+                <ComboBoxItem Content="按点擦除" HorizontalAlignment="Left" Width="137" />
+                <ComboBoxItem Content="按线擦除" HorizontalAlignment="Left" Width="137" />
+                <ComboBoxItem Content="选择" HorizontalAlignment="Left" Width="137" />
+                <ComboBoxItem Content="无" HorizontalAlignment="Left" Width="137" />
+            </ComboBox>
+            <Label x:Name="InkColorLabel" Content="墨迹颜色"/>
+            <ComboBox x:Name="ColorComboBox" Height="30" SelectionChanged="comboBox1_SelectionChanged">
+                <ComboBoxItem Content="红" HorizontalAlignment="Left" Width="137" />
+                <ComboBoxItem Content="黄" HorizontalAlignment="Left" Width="137" />
+                <ComboBoxItem Content="蓝" HorizontalAlignment="Left" Width="137" />
+                <ComboBoxItem Content="绿" HorizontalAlignment="Left" Width="137" />
+                <ComboBoxItem Content="黑" HorizontalAlignment="Left" Width="137" />
+                <ComboBoxItem Content="白" HorizontalAlignment="Left" Width="137" />
+            </ComboBox>
+            <Label x:Name="InkShapeLabel" Content="墨迹形状" />
+            <ComboBox x:Name="InkShapeComboBox" Height="30" SelectionChanged="comboBox2_SelectionChanged">
+                <ComboBoxItem Content="椭圆" HorizontalAlignment="Right" Width="137" />
+                <ComboBoxItem Content="长方形" HorizontalAlignment="Right" Width="137" />
+            </ComboBox>
+            <Button x:Name="OpenPicture" Height="30" VerticalAlignment="Top" Click="button_Click" Margin="0,0,5,0"
+                    Content="打开图片" HorizontalAlignment="Right" Width="110" />
+            <Button x:Name="Exit" Content="退出" Click="button1_Click"/>
+            <Label x:Name="InkWidth" Content="墨迹宽度"/>
+            <TextBox x:Name="InkWidthTextBox" TextWrapping="Wrap" Text="{Binding DefaultDrawingAttributes.Width, ElementName=inkc, Mode=TwoWay}" />
+            <Label x:Name="InkHeight" Content="墨迹高度"/>
+            <TextBox x:Name="InkHeightTextBox" TextWrapping="Wrap" Text="{Binding DefaultDrawingAttributes.Height, ElementName=inkc, Mode=TwoWay}" />
+            <CheckBox x:Name="HighLighter" Content="荧光笔"  Checked="HighLighter_Checked" Width="115" />
+        </StackPanel>
     </Grid>
 </Window>
