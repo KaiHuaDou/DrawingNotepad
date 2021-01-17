@@ -42,9 +42,12 @@
                 VerticalAlignment="Top" />
         <Label x:Name="InkWidth" Content="墨迹宽度" HorizontalAlignment="Right" Margin="0,267,29,0" VerticalAlignment="Top" />
         <TextBox x:Name="InkWidthTextBox" HorizontalAlignment="Right" Height="29" Margin="0,301,0,0" TextWrapping="Wrap"
-                VerticalAlignment="Top" Width="115" TextChanged="textBox_TextChanged" />
+                VerticalAlignment="Top" Width="115" Text="{Binding ElementName=inkc,Path=DefaultDrawingAttributes.Width,Mode=TwoWay}"/>
         <Label x:Name="InkHeight" Content="墨迹高度" HorizontalAlignment="Right" Margin="0,330,29,0" VerticalAlignment="Top" />
         <TextBox x:Name="InkHeightTextBox" HorizontalAlignment="Right" Height="31" Margin="0,364,0,0"
-                TextWrapping="Wrap" VerticalAlignment="Top" Width="115" TextChanged="textBox1_TextChanged" />
+                TextWrapping="Wrap" VerticalAlignment="Top" Width="115"
+                Text="{Binding ElementName=inkc,Path=DefaultDrawingAttributes.Height,Mode=TwoWay}"/>
+        <CheckBox x:Name="HighLighter" Content="荧光笔" HorizontalAlignment="Right" Margin="645,400,0,0"
+                VerticalAlignment="Top" Checked="HighLighter_Checked" Width="115" />
     </Grid>
 </Window>

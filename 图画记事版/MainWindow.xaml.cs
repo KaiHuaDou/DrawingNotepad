@@ -65,30 +65,27 @@ namespace 图画记事版
         {
             switch (EditingComboBox.SelectedIndex)
             {
-                case 0: inkc.EditingMode = InkCanvasEditingMode.Ink; break;
-                case 1: inkc.EditingMode = InkCanvasEditingMode.EraseByPoint; break;
-                case 2: inkc.EditingMode = InkCanvasEditingMode.EraseByStroke; break;
-                case 3: inkc.EditingMode = InkCanvasEditingMode.Select; break;
-                case 4: inkc.EditingMode = InkCanvasEditingMode.None; break;
+                case 0:
+                inkc.EditingMode = InkCanvasEditingMode.Ink;
+                break;
+                case 1:
+                inkc.EditingMode = InkCanvasEditingMode.EraseByPoint;
+                break;
+                case 2:
+                inkc.EditingMode = InkCanvasEditingMode.EraseByStroke;
+                break;
+                case 3:
+                inkc.EditingMode = InkCanvasEditingMode.Select;
+                break;
+                case 4:
+                inkc.EditingMode = InkCanvasEditingMode.None;
+                break;
             }
         }
 
-        private void textBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void HighLighter_Checked(object sender, RoutedEventArgs e)
         {
-            int width;
-            int.TryParse(InkWidthTextBox.Text, out width);
-            if (width == 0)
-                return;
-            inkc.DefaultDrawingAttributes.Width = width;
-        }
-
-        private void textBox1_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            int height;
-            int.TryParse(InkWidthTextBox.Text, out height);
-            if (height == 0)
-                return;
-            inkc.DefaultDrawingAttributes.Height = height;
+            inkc.DefaultDrawingAttributes.IsHighlighter = (bool)HighLighter.IsChecked;
         }
     }
 }
