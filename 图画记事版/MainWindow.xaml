@@ -5,7 +5,7 @@
         <InkCanvas x:Name="inkc" Margin="0,0,155,0">
             <Image x:Name="image" Margin="0,0,0,0" />
         </InkCanvas>
-        <ScrollViewer Margin="605,0,0,0">
+        <ScrollViewer  HorizontalAlignment="Right">
             <StackPanel>
                 <GroupBox Header="绘制" HorizontalAlignment="Right" Width="135" BorderThickness="2" BorderBrush="Black">
                     <StackPanel>
