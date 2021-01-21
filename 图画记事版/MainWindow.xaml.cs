@@ -20,17 +20,19 @@ namespace 图画记事版
         }
         private void button_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.Forms.OpenFileDialog sfd = new System.Windows.Forms.OpenFileDialog( );
-            sfd.ShowDialog( );
-            if (sfd.FileName != "")
+            OpenFileDialog ofd = new OpenFileDialog( );
+            ofd.ShowDialog( );
+            Image image = new Image( );
+            if (ofd.FileName != "")
             {
                 try
                 {
-                    image.Source = new BitmapImage(new Uri(sfd.FileName));
+                    image.Source = new BitmapImage(new Uri(ofd.FileName));
                     if (image.Width > 1000)
                         image.Width = 1000;
                     if (image.Height > 1000)
                         image.Height = 1000;
+                    inkc.Children.Add(image);
                 }
                 catch (NotSupportedException) { }
             }
