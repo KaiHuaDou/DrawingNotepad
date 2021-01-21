@@ -4,6 +4,9 @@
     <Grid>
         <InkCanvas x:Name="inkc" Margin="0,0,155,0">
             <Image x:Name="image" Margin="0,0,0,0" />
+            <InkCanvas.DefaultDrawingAttributes>
+                <DrawingAttributes Height="20" Width="20"/>
+            </InkCanvas.DefaultDrawingAttributes>
         </InkCanvas>
         <ScrollViewer HorizontalAlignment="Right">
             <StackPanel>

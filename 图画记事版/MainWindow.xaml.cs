@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using System.Windows.Ink;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Xml.Serialization;
 using Microsoft.Win32;
 
 namespace 图画记事版
@@ -18,8 +17,6 @@ namespace 图画记事版
         public MainWindow( )
         {
             InitializeComponent( );
-            inkc.DefaultDrawingAttributes.Height = 20;
-            inkc.DefaultDrawingAttributes.Width = 20;
         }
         private void button_Click(object sender, RoutedEventArgs e)
         {
@@ -97,7 +94,7 @@ namespace 图画记事版
         private void OpenFile_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog( );
-            ofd.Filter = "绘画文件|*.draw|墨迹文件|*.ink|所有文件|*.*";
+            ofd.Filter = "绘画文件|*.draw|墨迹文件|*.ink|Windows墨迹文件|*.isf|所有文件|*.*";
             ofd.ShowDialog( );
             try
             {
@@ -110,7 +107,7 @@ namespace 图画记事版
         private void SaveFile_Click(object sender, RoutedEventArgs e)
         {
             SaveFileDialog sfd = new SaveFileDialog( );
-            sfd.Filter = "绘画文件|*.draw|墨迹文件|*.ink|所有文件|*.*";
+            sfd.Filter = "绘画文件|*.draw|墨迹文件|*.ink|Windows墨迹文件|*.isf|所有文件|*.*";
             sfd.ShowDialog( );
             try
             {
