@@ -118,6 +118,8 @@ namespace 图画记事版
                 inkc.Strokes.Save(fs, false);
             }
             catch (Exception) { }
+            inkc.EraserShape = new EllipseStylusShape(20, 20);
+            inkc.EraserShape = new RectangleStylusShape(20, 20);        
         }
 
         private void CopyDraw_Click(object sender, RoutedEventArgs e)
@@ -138,6 +140,16 @@ namespace 图画记事版
             {
                 inkc.Paste( );
             }
+        }
+
+        private void EraseShapeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            switch (InkShapeComboBox.SelectedIndex)
+            {
+                case 0: inkc.EraserShape = new EllipseStylusShape(inkc.EraserShape.Width, inkc.EraserShape.Height); break;
+                case 1: inkc.EraserShape = new RectangleStylusShape(inkc.EraserShape.Width, inkc.EraserShape.Height); break;
+            }
+
         }
     }
 }
