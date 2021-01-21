@@ -119,5 +119,25 @@ namespace 图画记事版
             }
             catch (Exception) { }
         }
+
+        private void CopyDraw_Click(object sender, RoutedEventArgs e)
+        {
+            if (inkc.GetSelectedStrokes( ).Count > 0)
+                inkc.CopySelection( );
+        }
+
+        private void CutDraw_Click(object sender, RoutedEventArgs e)
+        {
+            if(inkc.GetSelectedStrokes( ).Count > 0)
+                inkc.CutSelection( );
+        }
+
+        private void PasteDraw_Click(object sender, RoutedEventArgs e)
+        {
+            if(inkc.CanPaste( ) == true)
+            {
+                inkc.Paste( );
+            }
+        }
     }
 }

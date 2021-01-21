@@ -5,10 +5,10 @@
         <InkCanvas x:Name="inkc" Margin="0,0,155,0">
             <Image x:Name="image" Margin="0,0,0,0" />
         </InkCanvas>
-        <ScrollViewer>
+        <ScrollViewer Margin="605,0,0,0">
             <StackPanel>
                 <GroupBox Header="绘制" HorizontalAlignment="Right" Width="135" BorderThickness="2" BorderBrush="Black">
-                    <StackPanel Width="120" HorizontalAlignment="Right" Margin="0,0,0,0">
+                    <StackPanel>
                         <Label x:Name="EditingModeLabel" Content="绘制方式" />
                         <ComboBox x:Name="EditingComboBox" SelectionChanged="comboBox_SelectionChanged"
                                 SelectedIndex="0">
@@ -45,11 +45,13 @@
                 </GroupBox>
                 <GroupBox Header="编辑" HorizontalAlignment="Right" Width="135" BorderThickness="2" BorderBrush="Black">
                     <StackPanel>
-
+                        <Button x:Name="CopyDraw" Content="复制" Click="CopyDraw_Click"></Button>
+                        <Button x:Name="CutDraw" Content="剪切" Click="CutDraw_Click"></Button>
+                        <Button x:Name="PasteDraw" Content="粘贴" Click="PasteDraw_Click"></Button>
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="文件" HorizontalAlignment="Right" Width="135" BorderThickness="2" BorderBrush="Black">
-                    <StackPanel Width="120" HorizontalAlignment="Right" Margin="0,0,0,0">
+                    <StackPanel>
                         <Button x:Name="OpenPicture" Click="button_Click" Content="打开图片" />
                         <Button x:Name="OpenFile" Click="OpenFile_Click" Content="打开文件" />
                         <Button x:Name="SaveFile" Click="SaveFile_Click" Content="保存文件" />
