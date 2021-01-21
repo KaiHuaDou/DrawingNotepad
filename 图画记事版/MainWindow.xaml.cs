@@ -1,9 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Ink;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+using System.Xml.Serialization;
+using Microsoft.Win32;
 
 namespace 图画记事版
 {
@@ -15,6 +18,8 @@ namespace 图画记事版
         public MainWindow( )
         {
             InitializeComponent( );
+            inkc.DefaultDrawingAttributes.Height = 20;
+            inkc.DefaultDrawingAttributes.Width = 20;
         }
         private void button_Click(object sender, RoutedEventArgs e)
         {
@@ -87,6 +92,32 @@ namespace 图画记事版
         {
             inkc.DefaultDrawingAttributes.IsHighlighter = (bool) HighLighter.IsChecked;
             HighLighter.IsEnabled = false;
+        }
+
+        private void OpenFile_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog( );
+            ofd.Filter = "绘画文件|*.draw|墨迹文件|*.ink|所有文件|*.*";
+            ofd.ShowDialog( );
+            try
+            {
+                FileStream fs = new FileStream(ofd.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                inkc.Strokes = new StrokeCollection(fs);
+            }
+            catch (Exception) { } 
+        }
+
+        private void SaveFile_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog sfd = new SaveFileDialog( );
+            sfd.Filter = "绘画文件|*.draw|墨迹文件|*.ink|所有文件|*.*";
+            sfd.ShowDialog( );
+            try
+            {
+                FileStream fs = new FileStream(sfd.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                inkc.Strokes.Save(fs, false);
+            }
+            catch (Exception) { }
         }
     }
 }
