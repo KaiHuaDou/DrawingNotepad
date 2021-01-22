@@ -17,7 +17,6 @@ namespace 图画记事版
         public MainWindow( )
         {
             InitializeComponent( );
-            inkc.CacheMode = new BitmapCache( );
         }
         private void button_Click(object sender, RoutedEventArgs e)
         {
@@ -70,21 +69,11 @@ namespace 图画记事版
         {
             switch (EditingComboBox.SelectedIndex)
             {
-                case 0:
-                inkc.EditingMode = InkCanvasEditingMode.Ink;
-                break;
-                case 1:
-                inkc.EditingMode = InkCanvasEditingMode.EraseByPoint;
-                break;
-                case 2:
-                inkc.EditingMode = InkCanvasEditingMode.EraseByStroke;
-                break;
-                case 3:
-                inkc.EditingMode = InkCanvasEditingMode.Select;
-                break;
-                case 4:
-                inkc.EditingMode = InkCanvasEditingMode.None;
-                break;
+                case 0: inkc.EditingMode = InkCanvasEditingMode.Ink; break;
+                case 1: inkc.EditingMode = InkCanvasEditingMode.EraseByPoint; break;
+                case 2: inkc.EditingMode = InkCanvasEditingMode.EraseByStroke; break;
+                case 3: inkc.EditingMode = InkCanvasEditingMode.Select; break;
+                case 4: inkc.EditingMode = InkCanvasEditingMode.None; break;
             }
         }
 
@@ -150,6 +139,26 @@ namespace 图画记事版
                 case 1: inkc.EraserShape = new RectangleStylusShape(inkc.EraserShape.Width, inkc.EraserShape.Height); break;
             }
 
+        }
+
+        private void CacheModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            switch (CacheModeComboBox.SelectedIndex)
+            {
+                case 0: inkc.CacheMode = new BitmapCache( ); break;
+                case 1: inkc.CacheMode = null; break;
+            }
+        }
+
+        private void SelectAllDraw_Click(object sender, RoutedEventArgs e)
+        {
+            inkc.Select(inkc.Strokes);
+            EditingComboBox.SelectedIndex = 3;
+        }
+
+        private void DeleteDraw_Click(object sender, RoutedEventArgs e)
+        {
+            inkc.Strokes.Remove(inkc.GetSelectedStrokes( ));
         }
     }
 }
