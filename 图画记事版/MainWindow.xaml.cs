@@ -47,6 +47,12 @@ namespace 图画记事版
 
         private void comboBox1_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            try
+            {
+                if(ColorComboBox.SelectedIndex != 7)
+                    ColorComboBox.Items.RemoveAt(7);
+            }
+            catch (Exception) { }
             switch (ColorComboBox.SelectedIndex)
             {
                 case 0: inkc.DefaultDrawingAttributes.Color = Color.FromRgb(255, 0, 0); break;
@@ -55,7 +61,39 @@ namespace 图画记事版
                 case 4: inkc.DefaultDrawingAttributes.Color = Color.FromRgb(0, 0, 0); break;
                 case 5: inkc.DefaultDrawingAttributes.Color = Color.FromRgb(255, 255, 255); break;
                 case 1: inkc.DefaultDrawingAttributes.Color = Color.FromRgb(255, 255, 0); break;
+                case 6:
+                try
+                {
+                    Color color = ColorBox( );
+                    inkc.DefaultDrawingAttributes.Color = color;
+                    ComboBoxItem cbi = new ComboBoxItem( );
+                    cbi.Content = "A" + color.A + " R" + color.R + " G" + color.G + " B" + color.B;
+                    cbi.HorizontalAlignment = HorizontalAlignment.Right;
+                    cbi.Width = 137;
+                    ColorComboBox.Items.Add(cbi);
+                    ColorComboBox.SelectedIndex = 7;
+                }
+                catch (Exception)
+                {
+                    ColorComboBox.SelectedIndex = 4;
+                }
+                break;
             }
+        }
+
+        private Color ColorBox( )
+        {
+            System.Windows.Forms.ColorDialog cd = new System.Windows.Forms.ColorDialog( );
+            if (cd.ShowDialog( ) == System.Windows.Forms.DialogResult.OK)
+            {
+                Color color = new Color( );
+                color.A = cd.Color.A;
+                color.R = cd.Color.R;
+                color.G = cd.Color.G;
+                color.B = cd.Color.B;
+                return color;
+            }
+            throw new FormatException( );
         }
 
         private void comboBox2_SelectionChanged(object sender, SelectionChangedEventArgs e)

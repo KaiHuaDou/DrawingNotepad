@@ -36,6 +36,7 @@
                             <ComboBoxItem Content="绿" HorizontalAlignment="Left" Width="137" />
                             <ComboBoxItem Content="黑" HorizontalAlignment="Left" Width="137" />
                             <ComboBoxItem Content="白" HorizontalAlignment="Left" Width="137" />
+                            <ComboBoxItem Content="选择颜色" HorizontalAlignment="Left" Width="137" />
                         </ComboBox>
                         <Label x:Name="InkShapeLabel" Content="墨迹形状" />
                         <ComboBox x:Name="InkShapeComboBox" Height="30" SelectionChanged="comboBox2_SelectionChanged"
