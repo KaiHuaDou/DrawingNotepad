@@ -2,11 +2,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="图画记事版.MainWindow" Title="图画记事版"
         WindowStartupLocation="CenterScreen" WindowState="Maximized" Height="768">
     <Grid>
-        <InkCanvas x:Name="inkc" Margin="0,0,155,0">
+        <ScrollViewer x:Name="inkcScroll" Margin="0,0,155,0" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.HorizontalScrollBarVisibility="Auto">
+            <InkCanvas x:Name="inkc" Margin="0,0,0,0" Height="10000" Width="10000">
             <InkCanvas.DefaultDrawingAttributes>
                 <DrawingAttributes Height="20" Width="20"/>
             </InkCanvas.DefaultDrawingAttributes>
         </InkCanvas>
+        </ScrollViewer>
         <ScrollViewer HorizontalAlignment="Right">
             <StackPanel>
                 <GroupBox Header="绘制" HorizontalAlignment="Right" Width="135" BorderThickness="2" BorderBrush="Black">

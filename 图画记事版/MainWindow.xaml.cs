@@ -17,6 +17,7 @@ namespace 图画记事版
         public MainWindow( )
         {
             InitializeComponent( );
+            inkc.CacheMode = new BitmapCache( );
         }
         private void button_Click(object sender, RoutedEventArgs e)
         {
