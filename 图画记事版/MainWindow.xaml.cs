@@ -17,6 +17,8 @@ namespace 图画记事版
         public MainWindow( )
         {
             InitializeComponent( );
+            inkcScroll.ScrollToHorizontalOffset(2560);
+            inkcScroll.ScrollToVerticalOffset(1920);
         }
         private void button_Click(object sender, RoutedEventArgs e)
         {

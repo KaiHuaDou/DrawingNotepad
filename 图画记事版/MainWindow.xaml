@@ -4,7 +4,7 @@
     <Grid UseLayoutRounding="False">
         <ScrollViewer x:Name="inkcScroll" Margin="0,0,157,0" ScrollViewer.VerticalScrollBarVisibility="Auto"
                 ScrollViewer.HorizontalScrollBarVisibility="Auto">
-            <InkCanvas x:Name="inkc" Margin="0,0,0,0" Height="10000" Width="10000">
+            <InkCanvas x:Name="inkc" Margin="0,0,0,0" Height="3840" Width="5120">
                 <InkCanvas.DefaultDrawingAttributes>
                     <DrawingAttributes Height="20" Width="20" />
                 </InkCanvas.DefaultDrawingAttributes>
