@@ -30,10 +30,12 @@ namespace 图画记事版
                 try
                 {
                     image.Source = new BitmapImage(new Uri(ofd.FileName));
-                    if (image.Width > 1000)
-                        image.Width = 1000;
-                    if (image.Height > 1000)
-                        image.Height = 1000;
+                    if (image.Width > 900)
+                        image.Width = 900;
+                    if (image.Height > 700)
+                        image.Height = 700;
+                    image.HorizontalAlignment = HorizontalAlignment.Center;
+                    image.VerticalAlignment = VerticalAlignment.Center;
                     inkc.Children.Add(image);
                 }
                 catch (NotSupportedException) { }
