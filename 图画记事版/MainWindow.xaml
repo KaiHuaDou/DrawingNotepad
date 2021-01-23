@@ -6,7 +6,7 @@
                 ScrollViewer.HorizontalScrollBarVisibility="Auto">
             <InkCanvas x:Name="inkc" Margin="0,0,0,0" Height="3840" Width="5120">
                 <InkCanvas.DefaultDrawingAttributes>
-                    <DrawingAttributes Height="20" Width="20" />
+                    <DrawingAttributes Height="10" Width="10" />
                 </InkCanvas.DefaultDrawingAttributes>
             </InkCanvas>
         </ScrollViewer>

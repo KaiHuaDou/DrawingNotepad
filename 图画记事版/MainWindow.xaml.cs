@@ -67,7 +67,7 @@ namespace 图画记事版
                     Color color = ColorBox( );
                     inkc.DefaultDrawingAttributes.Color = color;
                     ComboBoxItem cbi = new ComboBoxItem( );
-                    cbi.Content = "A" + color.A + " R" + color.R + " G" + color.G + " B" + color.B;
+                    cbi.Content = color.R + " " + color.G + " " + color.B;
                     cbi.HorizontalAlignment = HorizontalAlignment.Right;
                     cbi.Width = 137;
                     ColorComboBox.Items.Add(cbi);
@@ -87,10 +87,10 @@ namespace 图画记事版
             if (cd.ShowDialog( ) == System.Windows.Forms.DialogResult.OK)
             {
                 Color color = new Color( );
-                color.A = cd.Color.A;
                 color.R = cd.Color.R;
                 color.G = cd.Color.G;
                 color.B = cd.Color.B;
+                color.A = 255;
                 return color;
             }
             throw new FormatException( );
