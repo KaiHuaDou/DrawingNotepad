@@ -1,9 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34607.119
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "图画记事版", "图画记事版\图画记事版.csproj", "{29BE712A-F0F4-44E5-8AC4-DA6ED356FF92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "图画记事版", "图画记事版\图画记事版.csproj", "{537F86BD-4AA2-49BB-BC80-57CD22F7E865}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "解决方案项", "解决方案项", "{BBC09FB4-7DD3-4F69-8051-098EB443409B}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		Settings.XamlStyler = Settings.XamlStyler
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,12 +19,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{29BE712A-F0F4-44E5-8AC4-DA6ED356FF92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{29BE712A-F0F4-44E5-8AC4-DA6ED356FF92}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{29BE712A-F0F4-44E5-8AC4-DA6ED356FF92}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{29BE712A-F0F4-44E5-8AC4-DA6ED356FF92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{537F86BD-4AA2-49BB-BC80-57CD22F7E865}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{537F86BD-4AA2-49BB-BC80-57CD22F7E865}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{537F86BD-4AA2-49BB-BC80-57CD22F7E865}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{537F86BD-4AA2-49BB-BC80-57CD22F7E865}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D37520B1-067E-4B0A-831A-293D66F7B988}
 	EndGlobalSection
 EndGlobal
