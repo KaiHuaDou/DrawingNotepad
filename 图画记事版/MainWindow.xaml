@@ -6,13 +6,129 @@
         FontSize="21"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized">
-    <Grid UseLayoutRounding="False">
-        <ScrollViewer x:Name="inkcScroll"
-                      Margin="0,0,157,0"
+    <DockPanel>
+        <ScrollViewer DockPanel.Dock="Right" Padding="10">
+            <StackPanel>
+                <GroupBox Header="绘制"
+                          Padding="5" HorizontalAlignment="Stretch"
+                          BorderBrush="Black" BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock x:Name="EditingModeTextBlock" Margin="0,0,0,5" Text="绘制方式" />
+                        <ComboBox x:Name="EditingComboBox"
+                                  Height="35"
+                                  SelectedIndex="0" SelectionChanged="EditingModeSelectionChanged">
+                            <ComboBoxItem Content="墨迹" />
+                            <ComboBoxItem Content="按点擦除" />
+                            <ComboBoxItem Content="按线擦除" />
+                            <ComboBoxItem Content="选择" />
+                            <ComboBoxItem Content="无" />
+                        </ComboBox>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="墨迹"
+                          Padding="5" HorizontalAlignment="Stretch"
+                          BorderBrush="Black" BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock x:Name="InkColorTextBlock" Margin="0,0,0,5" Text="墨迹颜色" />
+                        <ComboBox x:Name="ColorComboBox"
+                                  Height="35"
+                                  SelectedIndex="4" SelectionChanged="ColorSelectionChange">
+                            <ComboBoxItem Content="红" />
+                            <ComboBoxItem Content="黄" />
+                            <ComboBoxItem Content="蓝" />
+                            <ComboBoxItem Content="绿" />
+                            <ComboBoxItem Content="黑" />
+                            <ComboBoxItem Content="白" />
+                            <ComboBoxItem Content="选择颜色" />
+                        </ComboBox>
+                        <TextBlock x:Name="InkShapeTextBlock" Margin="0,5" Text="墨迹形状" />
+                        <ComboBox x:Name="InkShapeComboBox"
+                                  Height="35"
+                                  SelectedIndex="0" SelectionChanged="InkShapeSelectionChanged">
+                            <ComboBoxItem Content="椭圆" />
+                            <ComboBoxItem Content="长方形" />
+                        </ComboBox>
+                        <TextBlock x:Name="InkWidth" Margin="0,5" Text="墨迹宽度" />
+                        <TextBox x:Name="InkWidthTextBox" Text="{Binding DefaultDrawingAttributes.Width, ElementName=canvas, Mode=TwoWay}" TextWrapping="Wrap" />
+                        <TextBlock x:Name="InkHeight" Margin="0,5" Text="墨迹高度" />
+                        <TextBox x:Name="InkHeightTextBox" Text="{Binding DefaultDrawingAttributes.Height, ElementName=canvas, Mode=TwoWay}" TextWrapping="Wrap" />
+                        <CheckBox x:Name="HighLighterBox"
+                                  Width="115"
+                                  Margin="0,5,0,0"
+                                  Click="HighLighterBoxClicked" Content="荧光笔" />
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="橡皮擦"
+                          Padding="5" HorizontalAlignment="Stretch"
+                          BorderBrush="Black" BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock x:Name="EraseShapeTextBlock" Margin="0,0,0,5" Text="橡皮擦形状" />
+                        <ComboBox x:Name="EraseShapeComboBox"
+                                  Height="35"
+                                  SelectedIndex="0" SelectionChanged="EraseShapeComboBox_SelectionChanged">
+                            <ComboBoxItem Content="椭圆" />
+                            <ComboBoxItem Content="长方形" />
+                        </ComboBox>
+                    </StackPanel>
+                </GroupBox>
+                <!--<GroupBox Header="画板"
+                          Padding="5" HorizontalAlignment="Stretch"
+                          BorderBrush="Black" BorderThickness="1">
+                    <CheckBox Click="TransparentClick" Content="透明" />
+                </GroupBox>-->
+                <GroupBox Header="编辑"
+                          Padding="5,0" HorizontalAlignment="Stretch"
+                          BorderBrush="Black" BorderThickness="1">
+                    <StackPanel>
+                        <StackPanel.Resources>
+                            <Style TargetType="Button">
+                                <Setter Property="Margin" Value="0,5" />
+                                <Setter Property="Padding" Value="20,3" />
+                            </Style>
+                        </StackPanel.Resources>
+                        <Button x:Name="CopyDraw" Click="CopyDrawClick" Content="复制" />
+                        <Button x:Name="CutDraw" Click="CutDrawClick" Content="剪切" />
+                        <Button x:Name="PasteDraw" Click="PasteDrawClick" Content="粘贴" />
+                        <Button x:Name="SelectAllDraw" Click="SelectAllDrawClick" Content="全选" />
+                        <Button x:Name="DeleteDraw" Click="DeleteDrawClick" Content="删除" />
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="文件"
+                          Padding="5,0" HorizontalAlignment="Stretch"
+                          BorderBrush="Black" BorderThickness="1">
+                    <StackPanel>
+                        <StackPanel.Resources>
+                            <Style TargetType="Button">
+                                <Setter Property="Margin" Value="0,5" />
+                                <Setter Property="Padding" Value="20,3" />
+                            </Style>
+                        </StackPanel.Resources>
+                        <Button x:Name="OpenPicture" Click="OpenImage" Content="打开图片" />
+                        <Button x:Name="OpenFile" Click="OpenFileClick" Content="打开文件" />
+                        <Button x:Name="SaveFile" Click="SaveFile_Click" Content="保存文件" />
+                        <Button x:Name="Exit" Click="WindowClose" Content="退出" />
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="设置"
+                          Padding="5" HorizontalAlignment="Stretch"
+                          BorderBrush="Black" BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock x:Name="CacheModeTextBlock" Padding="0,0,0,5" Text="缓存方式" />
+                        <ComboBox x:Name="CacheModeComboBox"
+                                  Height="35"
+                                  SelectedIndex="0" SelectionChanged="CacheModeComboBox_SelectionChanged">
+                            <ComboBoxItem Content="位图" />
+                            <ComboBoxItem Content="普通" />
+                        </ComboBox>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+        <ScrollViewer x:Name="canvasScroll"
                       Background="Transparent"
                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
                       ScrollViewer.VerticalScrollBarVisibility="Auto">
-            <InkCanvas x:Name="inkc"
+            <InkCanvas x:Name="canvas"
                        Width="5120" Height="3840"
                        Margin="0,0,0,0"
                        Background="Transparent">
@@ -21,116 +137,5 @@
                 </InkCanvas.DefaultDrawingAttributes>
             </InkCanvas>
         </ScrollViewer>
-        <ScrollViewer HorizontalAlignment="Right">
-            <StackPanel>
-                <GroupBox Header="绘制"
-                          Width="135"
-                          HorizontalAlignment="Right"
-                          BorderBrush="Black" BorderThickness="2">
-                    <StackPanel>
-                        <Label x:Name="EditingModeLabel" Content="绘制方式" />
-                        <ComboBox x:Name="EditingComboBox"
-                                  Height="35"
-                                  SelectedIndex="0" SelectionChanged="comboBox_SelectionChanged">
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="墨迹" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="按点擦除" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="按线擦除" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="选择" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="无" />
-                        </ComboBox>
-                    </StackPanel>
-                </GroupBox>
-                <GroupBox Header="墨迹"
-                          Width="135"
-                          HorizontalAlignment="Right"
-                          BorderBrush="Black" BorderThickness="2">
-                    <StackPanel>
-                        <Label x:Name="InkColorLabel" Content="墨迹颜色" />
-                        <ComboBox x:Name="ColorComboBox"
-                                  Height="35"
-                                  SelectedIndex="4" SelectionChanged="comboBox1_SelectionChanged">
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="红" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="黄" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="蓝" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="绿" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="黑" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="白" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Left" Content="选择颜色" />
-                        </ComboBox>
-                        <Label x:Name="InkShapeLabel" Content="墨迹形状" />
-                        <ComboBox x:Name="InkShapeComboBox"
-                                  Height="35"
-                                  SelectedIndex="0" SelectionChanged="comboBox2_SelectionChanged">
-                            <ComboBoxItem Width="137" HorizontalAlignment="Right" Content="椭圆" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Right" Content="长方形" />
-                        </ComboBox>
-                        <Label x:Name="InkWidth" Content="墨迹宽度" />
-                        <TextBox x:Name="InkWidthTextBox" Text="{Binding DefaultDrawingAttributes.Width, ElementName=inkc, Mode=TwoWay}" TextWrapping="Wrap" />
-                        <Label x:Name="InkHeight" Content="墨迹高度" />
-                        <TextBox x:Name="InkHeightTextBox" Text="{Binding DefaultDrawingAttributes.Height, ElementName=inkc, Mode=TwoWay}" TextWrapping="Wrap" />
-                        <CheckBox x:Name="HighLighter"
-                                  Width="115"
-                                  Checked="HighLighter_Checked" Content="荧光笔" />
-                    </StackPanel>
-                </GroupBox>
-                <GroupBox Header="橡皮擦"
-                          Width="135"
-                          HorizontalAlignment="Right"
-                          BorderBrush="Black" BorderThickness="2">
-                    <StackPanel>
-                        <Label x:Name="EraseShapeLabel" Content="橡皮擦形状" />
-                        <ComboBox x:Name="EraseShapeComboBox"
-                                  Height="35"
-                                  SelectedIndex="0" SelectionChanged="EraseShapeComboBox_SelectionChanged">
-                            <ComboBoxItem Width="137" HorizontalAlignment="Right" Content="椭圆" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Right" Content="长方形" />
-                        </ComboBox>
-                    </StackPanel>
-                </GroupBox>
-                <GroupBox Header="画板"
-                          Width="135"
-                          HorizontalAlignment="Right"
-                          BorderBrush="Black" BorderThickness="2">
-                    <?CheckBox Content="透明" Click="Transparent_Click"></-?>
-                </GroupBox>
-                <GroupBox Header="编辑"
-                          Width="135"
-                          HorizontalAlignment="Right"
-                          BorderBrush="Black" BorderThickness="2">
-                    <StackPanel>
-                        <Button x:Name="CopyDraw" Click="CopyDraw_Click" Content="复制" />
-                        <Button x:Name="CutDraw" Click="CutDraw_Click" Content="剪切" />
-                        <Button x:Name="PasteDraw" Click="PasteDraw_Click" Content="粘贴" />
-                        <Button x:Name="SelectAllDraw" Click="SelectAllDraw_Click" Content="全选" />
-                        <Button x:Name="DeleteDraw" Click="DeleteDraw_Click" Content="删除" />
-                    </StackPanel>
-                </GroupBox>
-                <GroupBox Header="文件"
-                          Width="135"
-                          HorizontalAlignment="Right"
-                          BorderBrush="Black" BorderThickness="2">
-                    <StackPanel>
-                        <Button x:Name="OpenPicture" Click="button_Click" Content="打开图片" />
-                        <Button x:Name="OpenFile" Click="OpenFile_Click" Content="打开文件" />
-                        <Button x:Name="SaveFile" Click="SaveFile_Click" Content="保存文件" />
-                        <Button x:Name="Exit" Click="button1_Click" Content="退出" />
-                    </StackPanel>
-                </GroupBox>
-                <GroupBox Header="设置"
-                          Width="135"
-                          HorizontalAlignment="Right"
-                          BorderBrush="Black" BorderThickness="2">
-                    <StackPanel>
-                        <Label x:Name="CacheModeLabel" Content="缓存方式" />
-                        <ComboBox x:Name="CacheModeComboBox"
-                                  Height="35"
-                                  SelectedIndex="0" SelectionChanged="CacheModeComboBox_SelectionChanged">
-                            <ComboBoxItem Width="137" HorizontalAlignment="Right" Content="位图" />
-                            <ComboBoxItem Width="137" HorizontalAlignment="Right" Content="普通" />
-                        </ComboBox>
-                    </StackPanel>
-                </GroupBox>
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
+    </DockPanel>
 </Window>

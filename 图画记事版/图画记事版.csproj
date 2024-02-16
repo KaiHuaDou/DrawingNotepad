@@ -7,13 +7,10 @@
         <LangVersion>12.0</LangVersion>
     </PropertyGroup>
     <PropertyGroup>
-        <ApplicationIcon>Icon1.ico</ApplicationIcon>
+        <ApplicationIcon>Icon.ico</ApplicationIcon>
     </PropertyGroup>
     <ItemGroup>
-        <AppDesigner Include="Properties\" />
-        <Resource Include="Icon1.ico" />
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Properties\" />
+        <Resource Include="Icon.ico" />
+        <Folder Include="Properties\" />
     </ItemGroup>
 </Project>
