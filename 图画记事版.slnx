@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/解决方案项/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="README.md" />
+    <File Path="Settings.XamlStyler" />
+  </Folder>
+  <Project Path="图画记事版/图画记事版.csproj" />
+</Solution>

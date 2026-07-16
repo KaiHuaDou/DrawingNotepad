@@ -9,12 +9,12 @@
         "Grid.Row, Grid.RowSpan, Grid.Column, Grid.ColumnSpan, Canvas.Left, Canvas.Top, Canvas.Right, Canvas.Bottom, DockPanel.Dock",
         "Width, Height, MinWidth, MinHeight, MaxWidth, MaxHeight",
         "Margin, Padding, HorizontalAlignment, VerticalAlignment, HorizontalContentAlignment, VerticalContentAlignment, Panel.ZIndex",
+        "Checked, IsChecked, Unchecked, IsThreeState, IsEnabled, IsHitTestVisible, IsTabStop, Focusable, TabIndex, Visibility, x:Load, Load",
         "Style, Background, Foreground, Fill, BorderBrush, BorderThickness, Stroke, StrokeThickness, Opacity",
         "FontFamily, FontSize, FontWeight, LineHeight, FontStyle, FontStretch",
         "*:*, *",
         "PageSource, PageIndex, Offset, Color, TargetName, Property, Value, StartPoint, EndPoint",
         "mc:Ignorable, d:IsDataSource, d:LayoutOverrides, d:IsStaticText",
-        "IsEnabled, x:Load, Load",
         "Value, Maximum, Minimum"
     ],
     "AttributesIndentation": 0,

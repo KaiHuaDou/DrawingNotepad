@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+
 using Microsoft.Win32;
 
 namespace 图画记事版;
@@ -16,18 +17,19 @@ public partial class MainWindow : Window
         InitializeComponent( );
         canvasScroll.ScrollToHorizontalOffset(2560);
         canvasScroll.ScrollToVerticalOffset(1920);
-        //AllowsTransparency = true;
-        //WindowStyle = WindowStyle.None;
     }
 
-    private bool isTransparent = false;
+    private readonly bool isTransparent = false;
 
     private void OpenImage(object o, RoutedEventArgs e)
     {
         OpenFileDialog ofd = new( );
         ofd.ShowDialog( );
         if (string.IsNullOrWhiteSpace(ofd.FileName))
+        {
             return;
+        }
+
         try
         {
             Image image = new( )
@@ -37,26 +39,41 @@ public partial class MainWindow : Window
                 VerticalAlignment = VerticalAlignment.Center
             };
             if (image.Width > 900)
+            {
                 image.Width = 900;
+            }
+
             if (image.Height > 700)
+            {
                 image.Height = 700;
+            }
+
             canvas.Children.Add(image);
         }
         catch (NotSupportedException) { }
     }
 
-    private void WindowClose(object o, RoutedEventArgs e) => Close( );
+    private void WindowClose(object o, RoutedEventArgs e)
+    {
+        Close( );
+    }
 
     private void ColorSelectionChange(object o, SelectionChangedEventArgs e)
     {
         if (canvas is null)
+        {
             return;
+        }
+
         try
         {
             if (ColorComboBox.SelectedIndex != 7)
+            {
                 ColorComboBox.Items.RemoveAt(7);
+            }
         }
         catch { }
+
         switch (ColorComboBox.SelectedIndex)
         {
             case 0: canvas.DefaultDrawingAttributes.Color = Colors.Red; break;
@@ -67,10 +84,14 @@ public partial class MainWindow : Window
             case 5: canvas.DefaultDrawingAttributes.Color = Colors.White; break;
             case 6:
             {
-                Color color = (Color) ColorBox( );
-                ColorComboBox.SelectedIndex = color == null ? 4 : 7;
-                if (color == null) break;
+                Color? _color = ColorBox( );
+                ColorComboBox.SelectedIndex = _color == null ? 4 : 7;
+                if (_color == null)
+                {
+                    break;
+                }
 
+                var color = (Color) _color;
                 canvas.DefaultDrawingAttributes.Color = color;
                 ColorComboBox.Items.Add(new ComboBoxItem
                 {
@@ -83,7 +104,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private Color? ColorBox( )
+    private static Color? ColorBox( )
     {
         System.Windows.Forms.ColorDialog box = new( );
         return box.ShowDialog( ) != System.Windows.Forms.DialogResult.OK
@@ -94,7 +115,10 @@ public partial class MainWindow : Window
     private void InkShapeSelectionChanged(object o, SelectionChangedEventArgs e)
     {
         if (canvas is null)
+        {
             return;
+        }
+
         switch (InkShapeComboBox.SelectedIndex)
         {
             case 0: canvas.DefaultDrawingAttributes.StylusTip = StylusTip.Ellipse; break;
@@ -105,7 +129,10 @@ public partial class MainWindow : Window
     private void EditingModeSelectionChanged(object o, SelectionChangedEventArgs e)
     {
         if (canvas is null)
+        {
             return;
+        }
+
         switch (EditingComboBox.SelectedIndex)
         {
             case 0: canvas.EditingMode = InkCanvasEditingMode.Ink; break;
@@ -117,7 +144,9 @@ public partial class MainWindow : Window
     }
 
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
-        => canvas.DefaultDrawingAttributes.IsHighlighter = (bool) HighLighterBox.IsChecked;
+    {
+        canvas.DefaultDrawingAttributes.IsHighlighter = (bool) HighLighterBox.IsChecked;
+    }
 
     private void OpenFileClick(object o, RoutedEventArgs e)
     {
@@ -147,32 +176,39 @@ public partial class MainWindow : Window
             canvas.Strokes.Save(fs, false);
         }
         catch { }
-        //inkc.EraserShape = new EllipseStylusShape(20, 20);
-        //inkc.EraserShape = new RectangleStylusShape(20, 20);
     }
 
     private void CopyDrawClick(object o, RoutedEventArgs e)
     {
         if (canvas.GetSelectedStrokes( ).Count > 0)
+        {
             canvas.CopySelection( );
+        }
     }
 
     private void CutDrawClick(object o, RoutedEventArgs e)
     {
         if (canvas.GetSelectedStrokes( ).Count > 0)
+        {
             canvas.CutSelection( );
+        }
     }
 
     private void PasteDrawClick(object o, RoutedEventArgs e)
     {
         if (canvas.CanPaste( ))
+        {
             canvas.Paste( );
+        }
     }
 
     private void EraseShapeComboBox_SelectionChanged(object o, SelectionChangedEventArgs e)
     {
         if (canvas is null)
+        {
             return;
+        }
+
         switch (InkShapeComboBox.SelectedIndex)
         {
             case 0: canvas.EraserShape = new EllipseStylusShape(canvas.EraserShape.Width, canvas.EraserShape.Height); break;
@@ -183,7 +219,10 @@ public partial class MainWindow : Window
     private void CacheModeComboBox_SelectionChanged(object o, SelectionChangedEventArgs e)
     {
         if (canvas is null)
+        {
             return;
+        }
+
         switch (CacheModeComboBox.SelectedIndex)
         {
             case 0: canvas.CacheMode = new BitmapCache( ); break;
@@ -198,20 +237,7 @@ public partial class MainWindow : Window
     }
 
     private void DeleteDrawClick(object o, RoutedEventArgs e)
-        => canvas.Strokes.Remove(canvas.GetSelectedStrokes( ));
-
-    private void TransparentClick(object o, RoutedEventArgs e)
     {
-        if (isTransparent)
-        {
-            Background.Opacity = 100;
-            UpdateLayout( );
-        }
-        else
-        {
-            Background = new SolidColorBrush(Color.FromArgb(204, 255, 255, 255));
-            WindowStyle = WindowStyle.None;
-        }
-        isTransparent = !isTransparent;
+        canvas.Strokes.Remove(canvas.GetSelectedStrokes( ));
     }
 }
