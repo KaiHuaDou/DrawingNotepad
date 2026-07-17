@@ -1,4 +1,4 @@
-name: .NET Build
+name: Build
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 8.x
+          dotnet-version: 6.x
           cache: true
 
       - name: Build Solution

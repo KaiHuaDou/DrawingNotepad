@@ -21,11 +21,17 @@ public partial class MainWindow : Window
         MainCanvas.EraserShape = new RectangleStylusShape(100, 160);
         CanvasScroll.ScrollToHorizontalOffset(3840);
         CanvasScroll.ScrollToVerticalOffset(2160);
+        MainCanvas.Strokes.StrokesChanged += OnStrokesChanged;
     }
 
-    private void WindowClose(object o, RoutedEventArgs e)
+    private void CloseWindow(object o, RoutedEventArgs e)
     {
         Close( );
+    }
+
+    private void MinimizeWindow(object o, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
     }
 
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
@@ -42,7 +48,12 @@ public partial class MainWindow : Window
         try
         {
             using FileStream fs = new(ofd.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            MainCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
             MainCanvas.Strokes = new StrokeCollection(fs);
+            MainCanvas.Strokes.StrokesChanged += OnStrokesChanged;
+            undoStack.Clear( );
+            redoStack.Clear( );
+            UpdateUndoRedoButtons( );
         }
         catch { }
     }
@@ -172,6 +183,77 @@ public partial class MainWindow : Window
 
         var value = (int) ThicknessSlider.Value;
         MainCanvas.DefaultDrawingAttributes.Width = MainCanvas.DefaultDrawingAttributes.Height = value;
+    }
+
+    #endregion
+
+    #region UndoRedo
+
+    private sealed class StrokeChange(StrokeCollection added, StrokeCollection removed)
+    {
+        public StrokeCollection Added { get; } = added;
+        public StrokeCollection Removed { get; } = removed;
+    }
+
+    private readonly Stack<StrokeChange> undoStack = new( );
+    private readonly Stack<StrokeChange> redoStack = new( );
+    private bool isApplyingUndoRedo;
+
+    private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
+    {
+        if (isApplyingUndoRedo)
+        {
+            return;
+        }
+
+        if (e.Added.Count == 0 && e.Removed.Count == 0)
+        {
+            return;
+        }
+
+        undoStack.Push(new StrokeChange(e.Added, e.Removed));
+        redoStack.Clear( );
+        UpdateUndoRedoButtons( );
+    }
+
+    private void UndoButtonClick(object o, RoutedEventArgs e)
+    {
+        if (undoStack.Count == 0)
+        {
+            return;
+        }
+
+        isApplyingUndoRedo = true;
+        StrokeChange change = undoStack.Pop( );
+        MainCanvas.Strokes.Remove(change.Added);
+        MainCanvas.Strokes.Add(change.Removed);
+        isApplyingUndoRedo = false;
+
+        redoStack.Push(change);
+        UpdateUndoRedoButtons( );
+    }
+
+    private void RedoButtonClick(object o, RoutedEventArgs e)
+    {
+        if (redoStack.Count == 0)
+        {
+            return;
+        }
+
+        isApplyingUndoRedo = true;
+        StrokeChange change = redoStack.Pop( );
+        MainCanvas.Strokes.Remove(change.Removed);
+        MainCanvas.Strokes.Add(change.Added);
+        isApplyingUndoRedo = false;
+
+        undoStack.Push(change);
+        UpdateUndoRedoButtons( );
+    }
+
+    private void UpdateUndoRedoButtons( )
+    {
+        UndoButton.IsEnabled = undoStack.Count > 0;
+        RedoButton.IsEnabled = redoStack.Count > 0;
     }
 
     #endregion

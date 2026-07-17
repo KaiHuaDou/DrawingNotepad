@@ -4,7 +4,10 @@
         Title="LightBoard"
         Width="1920"
         Height="1080"
-        WindowStartupLocation="CenterScreen">
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        WindowStyle="None">
     <WindowChrome.WindowChrome>
         <WindowChrome GlassFrameThickness="-1" ResizeBorderThickness="0" />
     </WindowChrome.WindowChrome>
@@ -85,20 +88,25 @@
                                    Text="&#xE7E6;" />
                     </ToggleButton>
                     <Button x:Name="UndoButton"
+                            IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
-                            Click="HighLighterBoxClicked" Tag="&#xE7A7;" />
+                            Click="UndoButtonClick" Tag="&#xE7A7;" />
                     <Button x:Name="RedoButton"
+                            IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
-                            Click="HighLighterBoxClicked" Tag="&#xE7A6;" />
+                            Click="RedoButtonClick" Tag="&#xE7A6;" />
                     <Button x:Name="OpenFile"
                             Style="{StaticResource ButtonStyle}"
                             Click="OpenFileClick" Tag="&#xE8E5;" />
                     <Button x:Name="SaveFile"
                             Style="{StaticResource ButtonStyle}"
                             Click="SaveFileClick" Tag="&#xE74E;" />
+                    <Button x:Name="WindowMinimize"
+                            Style="{StaticResource ButtonStyle}"
+                            Click="MinimizeWindow" Tag="&#xF165;" />
                     <Button x:Name="Exit"
                             Style="{StaticResource ButtonStyle}"
-                            Click="WindowClose" Tag="&#xE7E8;" />
+                            Click="CloseWindow" Tag="&#xE7E8;" />
                 </StackPanel>
                 <StackPanel Margin="5,5,0,0" Orientation="Horizontal">
                     <Slider x:Name="ThicknessSlider"
@@ -130,7 +138,8 @@
                     <BitmapCache EnableClearType="True" />
                 </InkCanvas.CacheMode>
                 <InkCanvas.DefaultDrawingAttributes>
-                    <DrawingAttributes FitToCurve="True" StylusTip="Ellipse" />
+                    <DrawingAttributes Width="10" Height="10"
+                                       FitToCurve="True" StylusTip="Ellipse" />
                 </InkCanvas.DefaultDrawingAttributes>
             </InkCanvas>
         </ScrollViewer>
