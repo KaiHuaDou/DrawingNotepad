@@ -1,56 +1,26 @@
-using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
+using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 using Microsoft.Win32;
 
-namespace 图画记事版;
+namespace LightBoard;
 
 public partial class MainWindow : Window
 {
+    private const string fileFilter = "Windows 墨迹文件|*.isf|所有文件|*.*";
+
     public MainWindow( )
     {
         InitializeComponent( );
-        canvasScroll.ScrollToHorizontalOffset(2560);
-        canvasScroll.ScrollToVerticalOffset(1920);
-    }
-
-    private readonly bool isTransparent = false;
-
-    private void OpenImage(object o, RoutedEventArgs e)
-    {
-        OpenFileDialog ofd = new( );
-        ofd.ShowDialog( );
-        if (string.IsNullOrWhiteSpace(ofd.FileName))
-        {
-            return;
-        }
-
-        try
-        {
-            Image image = new( )
-            {
-                Source = new BitmapImage(new Uri(ofd.FileName)),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            if (image.Width > 900)
-            {
-                image.Width = 900;
-            }
-
-            if (image.Height > 700)
-            {
-                image.Height = 700;
-            }
-
-            canvas.Children.Add(image);
-        }
-        catch (NotSupportedException) { }
+        MainCanvas.EraserShape = new RectangleStylusShape(100, 160);
+        CanvasScroll.ScrollToHorizontalOffset(3840);
+        CanvasScroll.ScrollToVerticalOffset(2160);
     }
 
     private void WindowClose(object o, RoutedEventArgs e)
@@ -58,186 +28,151 @@ public partial class MainWindow : Window
         Close( );
     }
 
-    private void ColorSelectionChange(object o, SelectionChangedEventArgs e)
-    {
-        if (canvas is null)
-        {
-            return;
-        }
-
-        try
-        {
-            if (ColorComboBox.SelectedIndex != 7)
-            {
-                ColorComboBox.Items.RemoveAt(7);
-            }
-        }
-        catch { }
-
-        switch (ColorComboBox.SelectedIndex)
-        {
-            case 0: canvas.DefaultDrawingAttributes.Color = Colors.Red; break;
-            case 1: canvas.DefaultDrawingAttributes.Color = Colors.Yellow; break;
-            case 2: canvas.DefaultDrawingAttributes.Color = Colors.Blue; break;
-            case 3: canvas.DefaultDrawingAttributes.Color = Colors.Green; break;
-            case 4: canvas.DefaultDrawingAttributes.Color = Colors.Black; break;
-            case 5: canvas.DefaultDrawingAttributes.Color = Colors.White; break;
-            case 6:
-            {
-                Color? _color = ColorBox( );
-                ColorComboBox.SelectedIndex = _color == null ? 4 : 7;
-                if (_color == null)
-                {
-                    break;
-                }
-
-                var color = (Color) _color;
-                canvas.DefaultDrawingAttributes.Color = color;
-                ColorComboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = color.R + " " + color.G + " " + color.B,
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    Width = 137
-                });
-                break;
-            }
-        }
-    }
-
-    private static Color? ColorBox( )
-    {
-        System.Windows.Forms.ColorDialog box = new( );
-        return box.ShowDialog( ) != System.Windows.Forms.DialogResult.OK
-            ? null
-            : Color.FromRgb(box.Color.R, box.Color.G, box.Color.B);
-    }
-
-    private void InkShapeSelectionChanged(object o, SelectionChangedEventArgs e)
-    {
-        if (canvas is null)
-        {
-            return;
-        }
-
-        switch (InkShapeComboBox.SelectedIndex)
-        {
-            case 0: canvas.DefaultDrawingAttributes.StylusTip = StylusTip.Ellipse; break;
-            case 1: canvas.DefaultDrawingAttributes.StylusTip = StylusTip.Rectangle; break;
-        }
-    }
-
-    private void EditingModeSelectionChanged(object o, SelectionChangedEventArgs e)
-    {
-        if (canvas is null)
-        {
-            return;
-        }
-
-        switch (EditingComboBox.SelectedIndex)
-        {
-            case 0: canvas.EditingMode = InkCanvasEditingMode.Ink; break;
-            case 1: canvas.EditingMode = InkCanvasEditingMode.EraseByPoint; break;
-            case 2: canvas.EditingMode = InkCanvasEditingMode.EraseByStroke; break;
-            case 3: canvas.EditingMode = InkCanvasEditingMode.Select; break;
-            case 4: canvas.EditingMode = InkCanvasEditingMode.None; break;
-        }
-    }
-
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
     {
-        canvas.DefaultDrawingAttributes.IsHighlighter = (bool) HighLighterBox.IsChecked;
+        MainCanvas.DefaultDrawingAttributes.IsHighlighter = (bool) HighLighterToggle.IsChecked;
     }
+
+    #region IO
 
     private void OpenFileClick(object o, RoutedEventArgs e)
     {
-        OpenFileDialog ofd = new( )
-        {
-            Filter = "绘画文件|*.draw|墨迹文件|*.ink|Windows 墨迹文件|*.isf|所有文件|*.*"
-        };
+        OpenFileDialog ofd = new( ) { Filter = fileFilter };
         ofd.ShowDialog( );
         try
         {
-            FileStream fs = new(ofd.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            canvas.Strokes = new StrokeCollection(fs);
+            using FileStream fs = new(ofd.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            MainCanvas.Strokes = new StrokeCollection(fs);
         }
         catch { }
     }
 
-    private void SaveFile_Click(object o, RoutedEventArgs e)
+    private void SaveFileClick(object o, RoutedEventArgs e)
     {
-        SaveFileDialog sfd = new( )
-        {
-            Filter = "绘画文件|*.draw|墨迹文件|*.ink|Windows墨迹文件|*.isf|所有文件|*.*"
-        };
+        SaveFileDialog sfd = new( ) { Filter = fileFilter };
         sfd.ShowDialog( );
         try
         {
-            FileStream fs = new(sfd.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            canvas.Strokes.Save(fs, false);
+            using FileStream fs = new(sfd.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            MainCanvas.Strokes.Save(fs, false);
         }
         catch { }
     }
 
-    private void CopyDrawClick(object o, RoutedEventArgs e)
+    #endregion
+
+    #region Dragging
+
+    private readonly HashSet<int> activeTouches = [];
+    private readonly Dictionary<int, Point> touchPoints = [];
+    private Point touchCenter;
+    private Point scrollStart;
+    private InkCanvasEditingMode savedEditingMode = InkCanvasEditingMode.Ink;
+
+    private void MainCanvasPreviewTouchDown(object o, TouchEventArgs e)
     {
-        if (canvas.GetSelectedStrokes( ).Count > 0)
+        var id = e.TouchDevice.Id;
+        activeTouches.Add(id);
+        touchPoints[id] = e.GetTouchPoint(CanvasScroll).Position;
+        MainCanvas.CaptureTouch(e.TouchDevice);
+
+        if (activeTouches.Count == 2 && MainCanvas.EditingMode != InkCanvasEditingMode.None)
         {
-            canvas.CopySelection( );
+            savedEditingMode = MainCanvas.EditingMode;
+            MainCanvas.EditingMode = InkCanvasEditingMode.None;
+            touchCenter = CenterOfTouches( );
+            scrollStart = new Point(CanvasScroll.HorizontalOffset, CanvasScroll.VerticalOffset);
         }
     }
 
-    private void CutDrawClick(object o, RoutedEventArgs e)
+    private void MainCanvasPreviewTouchMove(object o, TouchEventArgs e)
     {
-        if (canvas.GetSelectedStrokes( ).Count > 0)
-        {
-            canvas.CutSelection( );
-        }
-    }
-
-    private void PasteDrawClick(object o, RoutedEventArgs e)
-    {
-        if (canvas.CanPaste( ))
-        {
-            canvas.Paste( );
-        }
-    }
-
-    private void EraseShapeComboBox_SelectionChanged(object o, SelectionChangedEventArgs e)
-    {
-        if (canvas is null)
-        {
-            return;
-        }
-
-        switch (InkShapeComboBox.SelectedIndex)
-        {
-            case 0: canvas.EraserShape = new EllipseStylusShape(canvas.EraserShape.Width, canvas.EraserShape.Height); break;
-            case 1: canvas.EraserShape = new RectangleStylusShape(canvas.EraserShape.Width, canvas.EraserShape.Height); break;
-        }
-    }
-
-    private void CacheModeComboBox_SelectionChanged(object o, SelectionChangedEventArgs e)
-    {
-        if (canvas is null)
+        if (activeTouches.Count < 2)
         {
             return;
         }
 
-        switch (CacheModeComboBox.SelectedIndex)
+        touchPoints[e.TouchDevice.Id] = e.GetTouchPoint(CanvasScroll).Position;
+        Vector delta = CenterOfTouches( ) - touchCenter;
+        CanvasScroll.ScrollToHorizontalOffset(scrollStart.X - delta.X);
+        CanvasScroll.ScrollToVerticalOffset(scrollStart.Y - delta.Y);
+    }
+
+    private void MainCanvasPreviewTouchUp(object o, TouchEventArgs e)
+    {
+        ReleaseTouch(e.TouchDevice.Id);
+    }
+
+    private void MainCanvasPreviewTouchLostCapture(object o, TouchEventArgs e)
+    {
+        ReleaseTouch(e.TouchDevice.Id);
+    }
+
+    private void ReleaseTouch(int id)
+    {
+        activeTouches.Remove(id);
+        touchPoints.Remove(id);
+
+        if (activeTouches.Count < 2 && MainCanvas.EditingMode == InkCanvasEditingMode.None)
         {
-            case 0: canvas.CacheMode = new BitmapCache( ); break;
-            case 1: canvas.CacheMode = null; break;
+            MainCanvas.EditingMode = savedEditingMode;
         }
     }
 
-    private void SelectAllDrawClick(object o, RoutedEventArgs e)
+    private Point CenterOfTouches( )
     {
-        canvas.Select(canvas.Strokes);
-        EditingComboBox.SelectedIndex = 3;
+        return new Point(touchPoints.Values.Average(p => p.X), touchPoints.Values.Average(p => p.Y));
     }
 
-    private void DeleteDrawClick(object o, RoutedEventArgs e)
+    #endregion
+
+    #region Selection
+
+    private void ColorRadioChecked(object o, RoutedEventArgs e)
     {
-        canvas.Strokes.Remove(canvas.GetSelectedStrokes( ));
+        if (o is not RadioButton { Background: SolidColorBrush brush })
+        {
+            return;
+        }
+
+        MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        MainCanvas.DefaultDrawingAttributes.Color = brush.Color;
     }
+
+    private void ToolRadioChecked(object o, RoutedEventArgs e)
+    {
+        if (o is not RadioButton { Tag: string tag })
+        {
+            return;
+        }
+
+        switch (tag)
+        {
+            case "\uED60": MainCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint; break;
+            case "\uED61": MainCanvas.EditingMode = InkCanvasEditingMode.EraseByStroke; break;
+            case "\uEF20": MainCanvas.EditingMode = InkCanvasEditingMode.Select; break;
+        }
+    }
+
+    private void EraseAll(object o, RoutedEventArgs e)
+    {
+        MainCanvas.Strokes.Clear( );
+    }
+
+    #endregion
+
+    #region Thickness
+
+    private void ThicknessSliderValueChanged(object o, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (MainCanvas is null)
+        {
+            return;
+        }
+
+        var value = (int) ThicknessSlider.Value;
+        MainCanvas.DefaultDrawingAttributes.Width = MainCanvas.DefaultDrawingAttributes.Height = value;
+    }
+
+    #endregion
 }

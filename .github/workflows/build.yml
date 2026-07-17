@@ -1,0 +1,32 @@
+name: .NET Build
+
+on:
+  push:
+    branches: ["master"]
+
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.x
+          cache: true
+
+      - name: Build Solution
+        run: |
+          dotnet publish -p:PublishProfile=FolderProfile
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: App
+          path: ./图画记事板/bin/publish/*

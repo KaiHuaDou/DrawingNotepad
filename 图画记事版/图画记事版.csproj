@@ -8,9 +8,20 @@
     </PropertyGroup>
     <PropertyGroup>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
+        <StartupObject>LightBoard.App.Program</StartupObject>
+        <AnalysisLevel>latest-recommended</AnalysisLevel>
+    </PropertyGroup>
+    <PropertyGroup Condition="$(Configuration)==Debug">
+        <DebugType>full</DebugType>
+    </PropertyGroup>
+    <PropertyGroup Condition="$(Configuration)==Release">
+        <DebugType>none</DebugType>
     </PropertyGroup>
     <ItemGroup>
         <Resource Include="Icon.ico" />
         <Folder Include="Properties\" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="SingleInstanceCore" Version="2.2.2" />
     </ItemGroup>
 </Project>

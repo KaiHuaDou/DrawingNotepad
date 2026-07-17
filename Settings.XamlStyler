@@ -38,7 +38,6 @@
     "RemoveEndingTagOfEmptyElement": true,
     "ReorderCanvasChildren": false,
     "ReorderGridChildren": false,
-    "ReorderSetters": 3,
     "ReorderVSM": 0,
     "RootElementLineBreakRule": 1,
     "SeparateByGroups": true,
