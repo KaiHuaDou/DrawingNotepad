@@ -1,12 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net6.0-windows</TargetFramework>
+        <TargetFrameworks>net6.0-windows;net9.0-windows</TargetFrameworks>
         <OutputType>WinExe</OutputType>
         <UseWPF>true</UseWPF>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <PropertyGroup>
-        <ApplicationIcon>Icon.ico</ApplicationIcon>
         <StartupObject>LightBoard.App.Program</StartupObject>
         <AnalysisLevel>latest-recommended</AnalysisLevel>
     </PropertyGroup>
@@ -17,7 +16,6 @@
         <DebugType>none</DebugType>
     </PropertyGroup>
     <ItemGroup>
-        <Resource Include="Icon.ico" />
         <Folder Include="Properties\" />
     </ItemGroup>
     <ItemGroup>

@@ -1,8 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Style x:Key="ColorRadioStyle" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="64" />
-        <Setter Property="Height" Value="64" />
+        <Setter Property="Width" Value="48" />
+        <Setter Property="Height" Value="48" />
         <Setter Property="Margin" Value="5" />
         <Setter Property="Template">
             <Setter.Value>
@@ -27,8 +27,8 @@
         </Setter>
     </Style>
     <Style x:Key="RadioStyle" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="64" />
-        <Setter Property="Height" Value="64" />
+        <Setter Property="Width" Value="48" />
+        <Setter Property="Height" Value="48" />
         <Setter Property="Margin" Value="5" />
         <Setter Property="Template">
             <Setter.Value>
@@ -43,8 +43,8 @@
         </Setter>
     </Style>
     <Style x:Key="ButtonStyle" BasedOn="{StaticResource {x:Type Button}}" TargetType="{x:Type Button}">
-        <Setter Property="Width" Value="64" />
-        <Setter Property="Height" Value="64" />
+        <Setter Property="Width" Value="48" />
+        <Setter Property="Height" Value="48" />
         <Setter Property="Margin" Value="5" />
         <Setter Property="ContentTemplate">
             <Setter.Value>

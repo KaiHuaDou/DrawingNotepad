@@ -19,7 +19,6 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 6.x
-          cache: true
 
       - name: Build Solution
         run: |
@@ -29,4 +28,4 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: App
-          path: ./图画记事板/bin/publish/*
+          path: ./LightBoard/bin/publish/*

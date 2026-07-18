@@ -34,11 +34,6 @@ public partial class MainWindow : Window
         WindowState = WindowState.Minimized;
     }
 
-    private void HighLighterBoxClicked(object o, RoutedEventArgs e)
-    {
-        MainCanvas.DefaultDrawingAttributes.IsHighlighter = (bool) HighLighterToggle.IsChecked;
-    }
-
     #region IO
 
     private void OpenFileClick(object o, RoutedEventArgs e)
@@ -70,9 +65,9 @@ public partial class MainWindow : Window
         catch { }
     }
 
-    #endregion
+    #endregion IO
 
-    #region Dragging
+    #region Touch
 
     private readonly HashSet<int> activeTouches = [];
     private readonly Dictionary<int, Point> touchPoints = [];
@@ -135,9 +130,14 @@ public partial class MainWindow : Window
         return new Point(touchPoints.Values.Average(p => p.X), touchPoints.Values.Average(p => p.Y));
     }
 
-    #endregion
+    #endregion Touch
 
     #region Selection
+
+    private void HighLighterBoxClicked(object o, RoutedEventArgs e)
+    {
+        MainCanvas.DefaultDrawingAttributes.IsHighlighter = (bool) HighLighterToggle.IsChecked;
+    }
 
     private void ColorRadioChecked(object o, RoutedEventArgs e)
     {
@@ -170,7 +170,7 @@ public partial class MainWindow : Window
         MainCanvas.Strokes.Clear( );
     }
 
-    #endregion
+    #endregion Selection
 
     #region Thickness
 
@@ -185,7 +185,7 @@ public partial class MainWindow : Window
         MainCanvas.DefaultDrawingAttributes.Width = MainCanvas.DefaultDrawingAttributes.Height = value;
     }
 
-    #endregion
+    #endregion Thickness
 
     #region UndoRedo
 
@@ -256,5 +256,5 @@ public partial class MainWindow : Window
         RedoButton.IsEnabled = redoStack.Count > 0;
     }
 
-    #endregion
+    #endregion UndoRedo
 }

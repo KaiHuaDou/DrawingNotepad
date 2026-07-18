@@ -20,15 +20,15 @@
         <ResourceDictionary Source="/Theme.xaml" />
     </Window.Resources>
     <Grid Background="#333333">
-        <Border Margin="0,0,0,25" Padding="15" HorizontalAlignment="Center"
-                VerticalAlignment="Bottom" Panel.ZIndex="64"
+        <Border Margin="0,0,0,25" Padding="10" HorizontalAlignment="Center"
+                VerticalAlignment="Bottom" Panel.ZIndex="48"
                 BorderBrush="#CDD3E6" BorderThickness="1"
                 CornerRadius="10">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <LinearGradientBrush.GradientStops>
-                        <GradientStop Offset="0" Color="#89D9F4FF" />
-                        <GradientStop Offset="1" Color="#899BDDFB" />
+                        <GradientStop Offset="0" Color="#AAD9F4FF" />
+                        <GradientStop Offset="1" Color="#AA9BDDFB" />
                     </LinearGradientBrush.GradientStops>
                 </LinearGradientBrush>
             </Border.Background>
@@ -81,7 +81,7 @@
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xEF20;" />
                     <ToggleButton x:Name="HighLighterToggle"
-                                  Width="64" Height="64"
+                                  Width="48" Height="48"
                                   Margin="5,0,5,0"
                                   Click="HighLighterBoxClicked">
                         <TextBlock FontFamily="Segoe Fluent Icons" FontSize="32" FontWeight="Heavy"

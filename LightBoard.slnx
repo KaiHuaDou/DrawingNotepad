@@ -7,5 +7,5 @@
     <File Path="README.md" />
     <File Path="Settings.XamlStyler" />
   </Folder>
-  <Project Path="图画记事版/图画记事版.csproj" />
+  <Project Path="LightBoard/LightBoard.csproj" />
 </Solution>
