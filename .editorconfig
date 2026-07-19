@@ -105,53 +105,90 @@ csharp_style_var_elsewhere = false:suggestion
 csharp_style_var_for_built_in_types = true:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_using_directive_placement = outside_namespace:silent
+
+[*.cs]
+#### 命名样式 ####
+
+# 命名规则
+
 dotnet_naming_rule.interface_should_be_interface.severity = suggestion
-dotnet_naming_rule.interface_should_be_interface.style = interface
 dotnet_naming_rule.interface_should_be_interface.symbols = interface
-dotnet_naming_rule.non_field_members_should_be_bigstart.severity = suggestion
-dotnet_naming_rule.non_field_members_should_be_bigstart.style = bigstart
-dotnet_naming_rule.non_field_members_should_be_bigstart.symbols = non_field_members
-dotnet_naming_rule.private_or_internal_field_should_be_smallstart.severity = suggestion
-dotnet_naming_rule.private_or_internal_field_should_be_smallstart.style = smallstart
-dotnet_naming_rule.private_or_internal_field_should_be_smallstart.symbols = private_or_internal_field
-dotnet_naming_rule.private_or_internal_static_field_should_be_smallstart.severity = suggestion
-dotnet_naming_rule.private_or_internal_static_field_should_be_smallstart.style = smallstart
-dotnet_naming_rule.private_or_internal_static_field_should_be_smallstart.symbols = private_or_internal_static_field
+dotnet_naming_rule.interface_should_be_interface.style = interface
+
 dotnet_naming_rule.types_should_be_bigstart.severity = suggestion
-dotnet_naming_rule.types_should_be_bigstart.style = bigstart
 dotnet_naming_rule.types_should_be_bigstart.symbols = types
-dotnet_naming_style.bigstart.capitalization = pascal_case
-dotnet_naming_style.bigstart.capitalization = pascal_case
-dotnet_naming_style.bigstart.required_prefix =
-dotnet_naming_style.bigstart.required_prefix =
-dotnet_naming_style.bigstart.required_suffix =
-dotnet_naming_style.bigstart.required_suffix =
-dotnet_naming_style.bigstart.word_separator =
-dotnet_naming_style.bigstart.word_separator =
-dotnet_naming_style.interface.capitalization = pascal_case
+dotnet_naming_rule.types_should_be_bigstart.style = bigstart
+
+dotnet_naming_rule.non_field_members_should_be_bigstart.severity = suggestion
+dotnet_naming_rule.non_field_members_should_be_bigstart.symbols = non_field_members
+dotnet_naming_rule.non_field_members_should_be_bigstart.style = bigstart
+
+dotnet_naming_rule.const_should_be_bigstart.severity = suggestion
+dotnet_naming_rule.const_should_be_bigstart.symbols = const
+dotnet_naming_rule.const_should_be_bigstart.style = bigstart
+
+dotnet_naming_rule.private_or_internal_field_should_be_smallstart.severity = suggestion
+dotnet_naming_rule.private_or_internal_field_should_be_smallstart.symbols = private_or_internal_field
+dotnet_naming_rule.private_or_internal_field_should_be_smallstart.style = smallstart
+
+dotnet_naming_rule.private_or_internal_static_field_should_be_smallstart.severity = suggestion
+dotnet_naming_rule.private_or_internal_static_field_should_be_smallstart.symbols = private_or_internal_static_field
+dotnet_naming_rule.private_or_internal_static_field_should_be_smallstart.style = smallstart
+
+# 符号规范
+
+dotnet_naming_symbols.interface.applicable_kinds = interface
+dotnet_naming_symbols.interface.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.interface.required_modifiers =
+
+dotnet_naming_symbols.types.applicable_kinds = class, struct, interface, enum
+dotnet_naming_symbols.types.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.types.required_modifiers =
+
+dotnet_naming_symbols.non_field_members.applicable_kinds = property, event, method
+dotnet_naming_symbols.non_field_members.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+dotnet_naming_symbols.non_field_members.required_modifiers =
+
+dotnet_naming_symbols.const.applicable_kinds = namespace, property, field, event, parameter, local, class, struct, interface, enum, delegate, method, local_function
+dotnet_naming_symbols.const.applicable_accessibilities = *
+dotnet_naming_symbols.const.required_modifiers = const
+
+dotnet_naming_symbols.private_or_internal_field.applicable_kinds = field
+dotnet_naming_symbols.private_or_internal_field.applicable_accessibilities = internal, private, private_protected
+dotnet_naming_symbols.private_or_internal_field.required_modifiers =
+
+dotnet_naming_symbols.private_or_internal_static_field.applicable_kinds = field
+dotnet_naming_symbols.private_or_internal_static_field.applicable_accessibilities = internal, private, private_protected
+dotnet_naming_symbols.private_or_internal_static_field.required_modifiers = static
+
+# 命名样式
+
 dotnet_naming_style.interface.required_prefix = I
 dotnet_naming_style.interface.required_suffix =
 dotnet_naming_style.interface.word_separator =
-dotnet_naming_style.smallstart.capitalization = camel_case
-dotnet_naming_style.smallstart.capitalization = camel_case
-dotnet_naming_style.smallstart.required_prefix =
+dotnet_naming_style.interface.capitalization = pascal_case
+
+dotnet_naming_style.bigstart.required_prefix =
+dotnet_naming_style.bigstart.required_suffix =
+dotnet_naming_style.bigstart.word_separator =
+dotnet_naming_style.bigstart.capitalization = pascal_case
+
+dotnet_naming_style.bigstart.required_prefix =
+dotnet_naming_style.bigstart.required_suffix =
+dotnet_naming_style.bigstart.word_separator =
+dotnet_naming_style.bigstart.capitalization = pascal_case
+
+dotnet_naming_style.bigstart.required_prefix =
+dotnet_naming_style.bigstart.required_suffix =
+dotnet_naming_style.bigstart.word_separator =
+dotnet_naming_style.bigstart.capitalization = pascal_case
+
 dotnet_naming_style.smallstart.required_prefix =
 dotnet_naming_style.smallstart.required_suffix =
+dotnet_naming_style.smallstart.word_separator =
+dotnet_naming_style.smallstart.capitalization = camel_case
+
+dotnet_naming_style.smallstart.required_prefix =
 dotnet_naming_style.smallstart.required_suffix =
 dotnet_naming_style.smallstart.word_separator =
-dotnet_naming_style.smallstart.word_separator =
-dotnet_naming_symbols.interface.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
-dotnet_naming_symbols.interface.applicable_kinds = interface
-dotnet_naming_symbols.interface.required_modifiers =
-dotnet_naming_symbols.non_field_members.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
-dotnet_naming_symbols.non_field_members.applicable_kinds = property, event, method
-dotnet_naming_symbols.non_field_members.required_modifiers =
-dotnet_naming_symbols.private_or_internal_field.applicable_accessibilities = internal, private, private_protected
-dotnet_naming_symbols.private_or_internal_field.applicable_kinds = field
-dotnet_naming_symbols.private_or_internal_field.required_modifiers =
-dotnet_naming_symbols.private_or_internal_static_field.applicable_accessibilities = internal, private, private_protected
-dotnet_naming_symbols.private_or_internal_static_field.applicable_kinds = field
-dotnet_naming_symbols.private_or_internal_static_field.required_modifiers = static
-dotnet_naming_symbols.types.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
-dotnet_naming_symbols.types.applicable_kinds = class, struct, interface, enum
-dotnet_naming_symbols.types.required_modifiers =
+dotnet_naming_style.smallstart.capitalization = camel_case

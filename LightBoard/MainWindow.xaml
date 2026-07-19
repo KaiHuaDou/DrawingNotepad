@@ -4,7 +4,7 @@
         Title="LightBoard"
         Width="1920"
         Height="1080"
-        ResizeMode="NoResize"
+        Deactivated="WindowDeactivated"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         WindowStyle="None">
@@ -19,40 +19,37 @@
     <Window.Resources>
         <ResourceDictionary Source="/Theme.xaml" />
     </Window.Resources>
-    <Grid Background="#333333">
+    <Grid>
+        <Grid.CacheMode>
+            <BitmapCache EnableClearType="True" />
+        </Grid.CacheMode>
         <Border Margin="0,0,0,25" Padding="10" HorizontalAlignment="Center"
                 VerticalAlignment="Bottom" Panel.ZIndex="48"
-                BorderBrush="#CDD3E6" BorderThickness="1"
+                BorderThickness="1"
                 CornerRadius="10">
+            <Border.BorderBrush>
+                <SolidColorBrush Opacity="0.84" Color="#F4F6F7" />
+            </Border.BorderBrush>
             <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <LinearGradientBrush.GradientStops>
-                        <GradientStop Offset="0" Color="#AAD9F4FF" />
-                        <GradientStop Offset="1" Color="#AA9BDDFB" />
-                    </LinearGradientBrush.GradientStops>
-                </LinearGradientBrush>
+                <SolidColorBrush Opacity="0.25" Color="#2E78C2" />
             </Border.Background>
             <StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <RadioButton Checked="ColorRadioChecked"
+                    <RadioButton Checked="ColorRadioChecked" IsChecked="True"
                                  Style="{StaticResource ColorRadioStyle}"
-                                 Background="#FF0000"
+                                 Background="#E6E6E6"
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"
-                                 Background="#FFFFFF"
+                                 Background="#1E1E1E"
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"
-                                 Background="#000000"
+                                 Background="#DF6A63"
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"
-                                 Background="#6683FC"
-                                 GroupName="EditGroup" />
-                    <RadioButton Checked="ColorRadioChecked"
-                                 Style="{StaticResource ColorRadioStyle}"
-                                 Background="#6ABFBF"
+                                 Background="#D7BA7D"
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"
@@ -60,16 +57,34 @@
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"
+                                 Background="#9184EE"
+                                 GroupName="EditGroup" />
+                    <RadioButton Checked="ColorRadioChecked"
+                                 Style="{StaticResource ColorRadioStyle}"
+                                 Background="#569CD6"
+                                 GroupName="EditGroup" />
+                    <RadioButton Checked="ColorRadioChecked"
+                                 Style="{StaticResource ColorRadioStyle}"
                                  Background="#92CAF4"
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"
-                                 Background="#BBA08C"
+                                 Background="#4EC9B0"
                                  GroupName="EditGroup" />
-                    <RadioButton Checked="ColorRadioChecked"
-                                 Style="{StaticResource ColorRadioStyle}"
-                                 Background="#9184EE"
-                                 GroupName="EditGroup" />
+                    <RadioButton MinWidth="3"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton MinWidth="5"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton MinWidth="10"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton MinWidth="32"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
                     <RadioButton Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xED60;" />
@@ -95,51 +110,40 @@
                             IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
                             Click="RedoButtonClick" Tag="&#xE7A6;" />
-                    <Button x:Name="OpenFile"
+                    <Button x:Name="OpenFileButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="OpenFileClick" Tag="&#xE8E5;" />
-                    <Button x:Name="SaveFile"
+                    <Button x:Name="SaveFileButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="SaveFileClick" Tag="&#xE74E;" />
-                    <Button x:Name="WindowMinimize"
+                    <Button x:Name="ExportImageButton"
+                            Style="{StaticResource ButtonStyle}"
+                            Click="ExportImageClick" Tag="&#xEE71;" />
+                    <Button x:Name="WindowMinimizeButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="MinimizeWindow" Tag="&#xF165;" />
-                    <Button x:Name="Exit"
+                    <Button x:Name="ExitButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="CloseWindow" Tag="&#xE7E8;" />
                 </StackPanel>
-                <StackPanel Margin="5,5,0,0" Orientation="Horizontal">
-                    <Slider x:Name="ThicknessSlider"
-                            Width="512"
-                            Margin="5"
-                            IsMoveToPointEnabled="True" IsSnapToTickEnabled="True" LargeChange="4"
-                            SmallChange="2" TickPlacement="TopLeft" Ticks="2,4,6,8,10,12,14"
-                            ValueChanged="ThicknessSliderValueChanged"
-                            Value="8"
-                            Maximum="16" Minimum="1" />
-                </StackPanel>
             </StackPanel>
         </Border>
-        <ScrollViewer x:Name="CanvasScroll"
-                      Background="Transparent"
-                      CanContentScroll="True" PanningMode="None"
-                      ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+        <ScrollViewer x:Name="MainScroll"
+                      CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                       ScrollViewer.VerticalScrollBarVisibility="Hidden">
             <InkCanvas x:Name="MainCanvas"
-                       Width="7680" Height="4320"
+                       Width="32768" Height="16384"
                        Margin="0,0,0,0"
-                       IsHitTestVisible="True"
-                       Background="Transparent"
-                       LostTouchCapture="MainCanvasPreviewTouchLostCapture"
+                       Background="#1E1E1E"
+                       LostTouchCapture="MainCanvasLostTouchCapture"
                        PreviewTouchDown="MainCanvasPreviewTouchDown"
                        PreviewTouchMove="MainCanvasPreviewTouchMove"
-                       PreviewTouchUp="MainCanvasPreviewTouchUp">
-                <InkCanvas.CacheMode>
-                    <BitmapCache EnableClearType="True" />
-                </InkCanvas.CacheMode>
+                       PreviewTouchUp="MainCanvasPreviewTouchUp" Stylus.IsPressAndHoldEnabled="False"
+                       TouchLeave="MainCanvasTouchLeave">
                 <InkCanvas.DefaultDrawingAttributes>
-                    <DrawingAttributes Width="10" Height="10"
-                                       FitToCurve="True" StylusTip="Ellipse" />
+                    <DrawingAttributes Width="5" Height="5"
+                                       FitToCurve="True" StylusTip="Ellipse"
+                                       Color="#E6E6E6" />
                 </InkCanvas.DefaultDrawingAttributes>
             </InkCanvas>
         </ScrollViewer>

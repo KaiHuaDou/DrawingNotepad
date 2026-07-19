@@ -8,6 +8,10 @@
     <PropertyGroup>
         <StartupObject>LightBoard.App.Program</StartupObject>
         <AnalysisLevel>latest-recommended</AnalysisLevel>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <PublishSingleFile>true</PublishSingleFile>
+        <PublishReadyToRun>true</PublishReadyToRun>
+        <PublishReadyToRunComposite>false</PublishReadyToRunComposite>
     </PropertyGroup>
     <PropertyGroup Condition="$(Configuration)==Debug">
         <DebugType>full</DebugType>

@@ -1,11 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
-using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 using Microsoft.Win32;
 
@@ -13,16 +14,8 @@ namespace LightBoard;
 
 public partial class MainWindow : Window
 {
-    private const string fileFilter = "Windows 墨迹文件|*.isf|所有文件|*.*";
-
-    public MainWindow( )
-    {
-        InitializeComponent( );
-        MainCanvas.EraserShape = new RectangleStylusShape(100, 160);
-        CanvasScroll.ScrollToHorizontalOffset(3840);
-        CanvasScroll.ScrollToVerticalOffset(2160);
-        MainCanvas.Strokes.StrokesChanged += OnStrokesChanged;
-    }
+    private const string FileFilter = "Windows 墨迹文件|*.isf|所有文件|*.*";
+    private const string ImageFilter = "PNG 图像|*.png|所有文件|*.*";
 
     private void CloseWindow(object o, RoutedEventArgs e)
     {
@@ -38,11 +31,15 @@ public partial class MainWindow : Window
 
     private void OpenFileClick(object o, RoutedEventArgs e)
     {
-        OpenFileDialog ofd = new( ) { Filter = fileFilter };
-        ofd.ShowDialog( );
+        OpenFileDialog dialog = new( ) { Filter = FileFilter };
+        if (dialog.ShowDialog( ) != true)
+        {
+            return;
+        }
+
         try
         {
-            using FileStream fs = new(ofd.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            using FileStream fs = new(dialog.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
             MainCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
             MainCanvas.Strokes = new StrokeCollection(fs);
             MainCanvas.Strokes.StrokesChanged += OnStrokesChanged;
@@ -55,84 +52,89 @@ public partial class MainWindow : Window
 
     private void SaveFileClick(object o, RoutedEventArgs e)
     {
-        SaveFileDialog sfd = new( ) { Filter = fileFilter };
-        sfd.ShowDialog( );
-        try
-        {
-            using FileStream fs = new(sfd.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            MainCanvas.Strokes.Save(fs, false);
-        }
-        catch { }
-    }
-
-    #endregion IO
-
-    #region Touch
-
-    private readonly HashSet<int> activeTouches = [];
-    private readonly Dictionary<int, Point> touchPoints = [];
-    private Point touchCenter;
-    private Point scrollStart;
-    private InkCanvasEditingMode savedEditingMode = InkCanvasEditingMode.Ink;
-
-    private void MainCanvasPreviewTouchDown(object o, TouchEventArgs e)
-    {
-        var id = e.TouchDevice.Id;
-        activeTouches.Add(id);
-        touchPoints[id] = e.GetTouchPoint(CanvasScroll).Position;
-        MainCanvas.CaptureTouch(e.TouchDevice);
-
-        if (activeTouches.Count == 2 && MainCanvas.EditingMode != InkCanvasEditingMode.None)
-        {
-            savedEditingMode = MainCanvas.EditingMode;
-            MainCanvas.EditingMode = InkCanvasEditingMode.None;
-            touchCenter = CenterOfTouches( );
-            scrollStart = new Point(CanvasScroll.HorizontalOffset, CanvasScroll.VerticalOffset);
-        }
-    }
-
-    private void MainCanvasPreviewTouchMove(object o, TouchEventArgs e)
-    {
-        if (activeTouches.Count < 2)
+        var dialog = new SaveFileDialog( ) { Filter = FileFilter };
+        if (dialog.ShowDialog( ) != true)
         {
             return;
         }
 
-        touchPoints[e.TouchDevice.Id] = e.GetTouchPoint(CanvasScroll).Position;
-        Vector delta = CenterOfTouches( ) - touchCenter;
-        CanvasScroll.ScrollToHorizontalOffset(scrollStart.X - delta.X);
-        CanvasScroll.ScrollToVerticalOffset(scrollStart.Y - delta.Y);
-    }
-
-    private void MainCanvasPreviewTouchUp(object o, TouchEventArgs e)
-    {
-        ReleaseTouch(e.TouchDevice.Id);
-    }
-
-    private void MainCanvasPreviewTouchLostCapture(object o, TouchEventArgs e)
-    {
-        ReleaseTouch(e.TouchDevice.Id);
-    }
-
-    private void ReleaseTouch(int id)
-    {
-        activeTouches.Remove(id);
-        touchPoints.Remove(id);
-
-        if (activeTouches.Count < 2 && MainCanvas.EditingMode == InkCanvasEditingMode.None)
+        try
         {
-            MainCanvas.EditingMode = savedEditingMode;
+            using var stream = new FileStream(dialog.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            MainCanvas.Strokes.Save(stream, false);
         }
+        catch { }
     }
 
-    private Point CenterOfTouches( )
+    private void ExportImageClick(object o, RoutedEventArgs e)
     {
-        return new Point(touchPoints.Values.Average(p => p.X), touchPoints.Values.Average(p => p.Y));
+        var dialog = new SaveFileDialog( ) { Filter = ImageFilter };
+        if (dialog.ShowDialog( ) != true)
+        {
+            return;
+        }
+
+        StrokeCollection strokes = MainCanvas.Strokes.Clone( );
+        DpiScale dpi = VisualTreeHelper.GetDpi(this);
+        var fileName = dialog.FileName;
+
+        ExportImageButton.IsEnabled = false;
+        Task.Run(( ) =>
+        {
+            try
+            {
+                ExportImage(strokes, fileName, dpi);
+            }
+            finally
+            {
+                Dispatcher.Invoke(( ) => ExportImageButton.IsEnabled = true);
+            }
+        });
     }
 
-    #endregion Touch
+    private static void ExportImage(StrokeCollection strokes, string fileName, DpiScale dpi)
+    {
+        if (strokes.Count == 0)
+        {
+            return;
+        }
 
-    #region Selection
+        Rect bounds = strokes.GetBounds( );
+        bounds.Inflate(64, 64);
+
+        var background = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
+        var visual = new DrawingVisual( );
+        using (DrawingContext context = visual.RenderOpen( ))
+        {
+            context.DrawRectangle(background, null, new Rect(0, 0, bounds.Width, bounds.Height));
+            foreach (Stroke stroke in strokes)
+            {
+                Stroke copy = stroke.Clone( );
+                var matrix = new Matrix(1, 0, 0, 1, -bounds.X, -bounds.Y);
+                copy.Transform(matrix, false);
+                copy.Draw(context);
+            }
+        }
+
+        var pixelWidth = Math.Max(1, (int) Math.Ceiling(bounds.Width * dpi.DpiScaleX));
+        var pixelHeight = Math.Max(1, (int) Math.Ceiling(bounds.Height * dpi.DpiScaleY));
+
+        var render = new RenderTargetBitmap(
+            pixelWidth, pixelHeight,
+            dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32
+        );
+        render.Render(visual);
+
+        var encoder = new PngBitmapEncoder( );
+        encoder.Frames.Add(BitmapFrame.Create(render));
+
+        using var stream = new FileStream(fileName, FileMode.Create);
+        encoder.Save(stream);
+    }
+
+    #endregion IO
+
+    #region Editing
 
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
     {
@@ -148,6 +150,16 @@ public partial class MainWindow : Window
 
         MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
         MainCanvas.DefaultDrawingAttributes.Color = brush.Color;
+    }
+
+    private void ThicknessRadioClick(object o, RoutedEventArgs e)
+    {
+        if (o is not RadioButton { MinWidth: double thickness })
+        {
+            return;
+        }
+
+        MainCanvas.DefaultDrawingAttributes.Width = MainCanvas.DefaultDrawingAttributes.Height = thickness;
     }
 
     private void ToolRadioChecked(object o, RoutedEventArgs e)
@@ -170,22 +182,7 @@ public partial class MainWindow : Window
         MainCanvas.Strokes.Clear( );
     }
 
-    #endregion Selection
-
-    #region Thickness
-
-    private void ThicknessSliderValueChanged(object o, RoutedPropertyChangedEventArgs<double> e)
-    {
-        if (MainCanvas is null)
-        {
-            return;
-        }
-
-        var value = (int) ThicknessSlider.Value;
-        MainCanvas.DefaultDrawingAttributes.Width = MainCanvas.DefaultDrawingAttributes.Height = value;
-    }
-
-    #endregion Thickness
+    #endregion Editing
 
     #region UndoRedo
 
