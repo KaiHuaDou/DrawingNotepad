@@ -49,9 +49,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Border"
-                            Background="#F0F0F0" BorderThickness="2"
-                            CornerRadius="5">
+                    <Border x:Name="Border" Background="#F0F0F0" CornerRadius="5">
                         <Ellipse Width="{TemplateBinding MinWidth}" Height="{TemplateBinding MinWidth}" Fill="#1E1E1E" />
                     </Border>
                     <ControlTemplate.Triggers>

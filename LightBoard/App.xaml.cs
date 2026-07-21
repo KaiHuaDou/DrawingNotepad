@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -8,11 +9,19 @@ namespace LightBoard;
 
 public partial class App : Application, ISingleInstance
 {
+    public static readonly string AppPath = Path.GetDirectoryName(Environment.ProcessPath);
+    public static string PendingOpen { get; set; }
+
     public static class Program
     {
         [STAThread]
-        public static void Main( )
+        public static void Main(string[] args)
         {
+            if(args.Length >= 1)
+            {
+                PendingOpen = args[1];
+            }
+
             App app = new( );
             app.InitializeComponent( );
             app.Run( );
@@ -36,11 +45,19 @@ public partial class App : Application, ISingleInstance
 
     private void AppDispatcherUnhandledException(object o, DispatcherUnhandledExceptionEventArgs e)
     {
-        // TODO: Save Data.
+        (Current.MainWindow as MainWindow).SaveStrokes(Path.Join(AppPath, DateTime.Now.Ticks.ToString( )));
+        File.AppendAllText(Path.Join(AppPath, "error.log"), $"\n{e.Exception.Message}\n{e.Exception.StackTrace}\n");
+        MessageBox.Show(
+            "程序出现致命错误，即将关闭。错误日志已记录。墨迹已备份。",
+            "轻白板",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error
+        );
+        Application.Current.Shutdown(1);
     }
 
-    private void AppExit(object sender, ExitEventArgs e)
+    private void AppExit(object o, ExitEventArgs e)
     {
-        // TODO: Save Data.
+        // Preserved.
     }
 }

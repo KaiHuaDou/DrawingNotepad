@@ -23,7 +23,7 @@
         <Grid.CacheMode>
             <BitmapCache EnableClearType="True" />
         </Grid.CacheMode>
-        <Border Margin="0,0,0,25" Padding="10" HorizontalAlignment="Center"
+        <Border Margin="0,0,0,15" Padding="10" HorizontalAlignment="Center"
                 VerticalAlignment="Bottom" Panel.ZIndex="48"
                 BorderThickness="1"
                 CornerRadius="10">
@@ -34,7 +34,7 @@
                 <SolidColorBrush Opacity="0.25" Color="#2E78C2" />
             </Border.Background>
             <StackPanel>
-                <StackPanel Orientation="Horizontal">
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                     <RadioButton Checked="ColorRadioChecked" IsChecked="True"
                                  Style="{StaticResource ColorRadioStyle}"
                                  Background="#E6E6E6"
@@ -71,10 +71,12 @@
                                  Style="{StaticResource ColorRadioStyle}"
                                  Background="#4EC9B0"
                                  GroupName="EditGroup" />
+                    <Border Width="58" Visibility="Hidden" />
                     <RadioButton MinWidth="3"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <RadioButton MinWidth="5"
+                                 IsChecked="True"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <RadioButton MinWidth="10"
@@ -83,18 +85,6 @@
                     <RadioButton MinWidth="32"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <RadioButton Checked="ToolRadioChecked"
-                                 Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xED60;" />
-                    <RadioButton Checked="ToolRadioChecked"
-                                 Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xED61;" />
-                    <Button Style="{StaticResource ButtonStyle}" Click="EraseAll" Tag="&#xED62;" />
-                    <RadioButton Checked="ToolRadioChecked"
-                                 Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xEF20;" />
                     <ToggleButton x:Name="HighLighterToggle"
                                   Width="48" Height="48"
                                   Margin="5,0,5,0"
@@ -102,6 +92,20 @@
                         <TextBlock FontFamily="Segoe Fluent Icons" FontSize="32" FontWeight="Heavy"
                                    Text="&#xE7E6;" />
                     </ToggleButton>
+                </StackPanel>
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                    <RadioButton Checked="ToolRadioChecked"
+                                 Style="{StaticResource RadioStyle}"
+                                 GroupName="EditGroup" Tag="&#xEF20;" />
+                    <RadioButton Checked="ToolRadioChecked"
+                                 Style="{StaticResource RadioStyle}"
+                                 GroupName="EditGroup" Tag="&#xED60;" />
+                    <RadioButton Checked="ToolRadioChecked"
+                                 Style="{StaticResource RadioStyle}"
+                                 GroupName="EditGroup" Tag="&#xED61;" />
+                    <Button Style="{StaticResource ButtonStyle}"
+                            Foreground="#F25767"
+                            Click="EraseAll" Tag="&#xED62;" />
                     <Button x:Name="UndoButton"
                             IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
@@ -112,25 +116,34 @@
                             Click="RedoButtonClick" Tag="&#xE7A6;" />
                     <Button x:Name="OpenFileButton"
                             Style="{StaticResource ButtonStyle}"
-                            Click="OpenFileClick" Tag="&#xE8E5;" />
+                            Click="OpenFileClick" Tag="&#xE8DA;" />
                     <Button x:Name="SaveFileButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="SaveFileClick" Tag="&#xE74E;" />
                     <Button x:Name="ExportImageButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="ExportImageClick" Tag="&#xEE71;" />
+                    <Border Width="58" Visibility="Hidden" />
                     <Button x:Name="WindowMinimizeButton"
                             Style="{StaticResource ButtonStyle}"
-                            Click="MinimizeWindow" Tag="&#xF165;" />
+                            Click="MinimizeWindow" Tag="&#xE921;" />
                     <Button x:Name="ExitButton"
                             Style="{StaticResource ButtonStyle}"
-                            Click="CloseWindow" Tag="&#xE7E8;" />
+                            Click="CloseWindow" Tag="&#xE711;" />
+                    <Border Width="58" Visibility="Hidden" />
+                    <Button x:Name="PrevPageButton"
+                            IsEnabled="False"
+                            Style="{StaticResource ButtonStyle}"
+                            Tag="&#xE72B;" />
+                    <Button x:Name="NewNextPageButton"
+                            IsEnabled="False"
+                            Style="{StaticResource ButtonStyle}"
+                            Tag="&#xE710;" />
+
                 </StackPanel>
             </StackPanel>
         </Border>
-        <ScrollViewer x:Name="MainScroll"
-                      CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                      ScrollViewer.VerticalScrollBarVisibility="Hidden">
+        <ScrollViewer x:Name="MainScroll" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden">
             <InkCanvas x:Name="MainCanvas"
                        Width="32768" Height="16384"
                        Margin="0,0,0,0"

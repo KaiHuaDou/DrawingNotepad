@@ -22,7 +22,7 @@ jobs:
 
       - name: Build Solution
         run: |
-          dotnet publish -p:PublishProfile=FolderProfile
+          dotnet publish -p:PublishProfile=FolderProfile -f net6.0-windows
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v7

@@ -9,9 +9,16 @@ trim_trailing_whitespace = true
 insert_final_newline = true
 
 [*.{cs,vb}]
+tab_width = 4
+
 dotnet_code_quality_unused_parameters = all:suggestion
+
+dotnet_diagnostic.CA1305.severity = none
+dotnet_diagnostic.CA1307.severity = none
+dotnet_diagnostic.CA1310.severity = none
 dotnet_diagnostic.CA1862.severity = none
 dotnet_diagnostic.RCS1155.severity = none
+
 dotnet_style_allow_multiple_blank_lines_experimental = false:suggestion
 dotnet_style_allow_statement_immediately_after_block_experimental = false:suggestion
 dotnet_style_coalesce_expression = true:suggestion
@@ -43,7 +50,6 @@ dotnet_style_qualification_for_method = false:suggestion
 dotnet_style_qualification_for_property = false:suggestion
 dotnet_style_readonly_field = true:suggestion
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
-tab_width = 4
 
 [*.cs]
 

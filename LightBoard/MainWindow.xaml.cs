@@ -17,9 +17,27 @@ public partial class MainWindow : Window
     private const string FileFilter = "Windows 墨迹文件|*.isf|所有文件|*.*";
     private const string ImageFilter = "PNG 图像|*.png|所有文件|*.*";
 
+    private bool dirty;
+
     private void CloseWindow(object o, RoutedEventArgs e)
     {
-        Close( );
+        if (!dirty)
+        {
+            Close( );
+            return;
+        }
+
+        switch (MessageBox.Show(
+            "已修改。是否保存？",
+            "轻白板",
+            MessageBoxButton.YesNoCancel,
+            MessageBoxImage.Asterisk
+        ))
+        {
+            case MessageBoxResult.Yes: SaveFileClick(o, e); break;
+            case MessageBoxResult.No: Close( ); break;
+            default: return;
+        }
     }
 
     private void MinimizeWindow(object o, RoutedEventArgs e)
@@ -37,22 +55,34 @@ public partial class MainWindow : Window
             return;
         }
 
+        OpenStrokes(dialog.FileName);
+    }
+
+    private void OpenStrokes(string fileName)
+    {
         try
         {
-            using FileStream fs = new(dialog.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            using FileStream fs = new(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+
             MainCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
             MainCanvas.Strokes = new StrokeCollection(fs);
             MainCanvas.Strokes.StrokesChanged += OnStrokesChanged;
             undoStack.Clear( );
             redoStack.Clear( );
             UpdateUndoRedoButtons( );
+
+            dirty = false;
         }
         catch { }
     }
 
     private void SaveFileClick(object o, RoutedEventArgs e)
     {
-        var dialog = new SaveFileDialog( ) { Filter = FileFilter };
+        var dialog = new SaveFileDialog( )
+        {
+            Filter = FileFilter,
+            FileName = $"{DateTime.Now:yyyyMMdd-HHmmss}"
+        };
         if (dialog.ShowDialog( ) != true)
         {
             return;
@@ -60,15 +90,25 @@ public partial class MainWindow : Window
 
         try
         {
-            using var stream = new FileStream(dialog.FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-            MainCanvas.Strokes.Save(stream, false);
+            SaveStrokes(dialog.FileName);
+            dirty = false;
         }
         catch { }
     }
 
+    public void SaveStrokes(string fileName)
+    {
+        var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        MainCanvas.Strokes.Save(stream, false);
+    }
+
     private void ExportImageClick(object o, RoutedEventArgs e)
     {
-        var dialog = new SaveFileDialog( ) { Filter = ImageFilter };
+        var dialog = new SaveFileDialog( )
+        {
+            Filter = ImageFilter,
+            FileName = $"{DateTime.Now:yyyyMMdd-HHmmss}"
+        };
         if (dialog.ShowDialog( ) != true)
         {
             return;
@@ -79,7 +119,7 @@ public partial class MainWindow : Window
         var fileName = dialog.FileName;
 
         ExportImageButton.IsEnabled = false;
-        Task.Run(( ) =>
+        Task.Run([STAThread] ( ) =>
         {
             try
             {
@@ -198,12 +238,10 @@ public partial class MainWindow : Window
 
     private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
     {
-        if (isApplyingUndoRedo)
-        {
-            return;
-        }
+        dirty = true;
 
-        if (e.Added.Count == 0 && e.Removed.Count == 0)
+        if (isApplyingUndoRedo
+            || (e.Added.Count == 0 && e.Removed.Count == 0))
         {
             return;
         }
