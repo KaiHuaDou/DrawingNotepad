@@ -17,6 +17,8 @@ dotnet_diagnostic.CA1305.severity = none
 dotnet_diagnostic.CA1307.severity = none
 dotnet_diagnostic.CA1310.severity = none
 dotnet_diagnostic.CA1862.severity = none
+dotnet_diagnostic.NETSDK1138.severity = none
+dotnet_diagnostic.RCS1123.severity = none
 dotnet_diagnostic.RCS1155.severity = none
 
 dotnet_style_allow_multiple_blank_lines_experimental = false:suggestion

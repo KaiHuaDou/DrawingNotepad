@@ -1,5 +1,9 @@
 <Solution>
-  <Folder Name="/解决方案项/">
+  <Folder Name="/Documents/">
+    <File Path="README.md" />
+    <File Path="TouchStates.md" />
+  </Folder>
+  <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
     <File Path=".github/workflows/build.yml" />

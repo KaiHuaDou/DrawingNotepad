@@ -23,25 +23,33 @@
         <Grid.CacheMode>
             <BitmapCache EnableClearType="True" />
         </Grid.CacheMode>
-        <Border Margin="0,0,0,15" Padding="10" HorizontalAlignment="Center"
-                VerticalAlignment="Bottom" Panel.ZIndex="48"
-                BorderThickness="1"
-                CornerRadius="10">
-            <Border.BorderBrush>
-                <SolidColorBrush Opacity="0.84" Color="#F4F6F7" />
-            </Border.BorderBrush>
-            <Border.Background>
-                <SolidColorBrush Opacity="0.25" Color="#2E78C2" />
-            </Border.Background>
+        <Border Margin="10,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                Style="{StaticResource ContainerStyle}">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="ExitButton"
+                        Style="{StaticResource ButtonStyle}"
+                        Click="CloseWindow" Tag="&#xE711;" />
+                <Button x:Name="WindowMinimizeButton"
+                        Style="{StaticResource ButtonStyle}"
+                        Click="MinimizeWindow" Tag="&#xE921;" />
+                <Button x:Name="OpenFileButton"
+                        Style="{StaticResource ButtonStyle}"
+                        Click="OpenFileClick" Tag="&#xE8DA;" />
+                <Button x:Name="SaveFileButton"
+                        Style="{StaticResource ButtonStyle}"
+                        Click="SaveFileClick" Tag="&#xE74E;" />
+                <Button x:Name="ExportImageButton"
+                        Style="{StaticResource ButtonStyle}"
+                        Click="ExportImageClick" Tag="&#xEE71;" />
+            </StackPanel>
+        </Border>
+        <Border Margin="0,0,0,10" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Style="{StaticResource ContainerStyle}">
             <StackPanel>
-                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal">
                     <RadioButton Checked="ColorRadioChecked" IsChecked="True"
                                  Style="{StaticResource ColorRadioStyle}"
                                  Background="#E6E6E6"
-                                 GroupName="EditGroup" />
-                    <RadioButton Checked="ColorRadioChecked"
-                                 Style="{StaticResource ColorRadioStyle}"
-                                 Background="#1E1E1E"
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"
@@ -71,7 +79,19 @@
                                  Style="{StaticResource ColorRadioStyle}"
                                  Background="#4EC9B0"
                                  GroupName="EditGroup" />
-                    <Border Width="58" Visibility="Hidden" />
+                    <Border Width="50" Visibility="Hidden" />
+                    <RadioButton Checked="ToolRadioChecked"
+                                 Style="{StaticResource RadioStyle}"
+                                 GroupName="EditGroup" Tag="&#xED60;" />
+                    <RadioButton Checked="ToolRadioChecked"
+                                 Style="{StaticResource RadioStyle}"
+                                 GroupName="EditGroup" Tag="&#xED61;" />
+                    <Button Style="{StaticResource ButtonStyle}"
+                            Foreground="#F25767"
+                            Click="EraseAll" Tag="&#xED62;" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="75" Visibility="Hidden" />
                     <RadioButton MinWidth="3"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
@@ -86,26 +106,16 @@
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <ToggleButton x:Name="HighLighterToggle"
-                                  Width="48" Height="48"
+                                  Width="40" Height="40"
                                   Margin="5,0,5,0"
                                   Click="HighLighterBoxClicked">
-                        <TextBlock FontFamily="Segoe Fluent Icons" FontSize="32" FontWeight="Heavy"
+                        <TextBlock FontFamily="Segoe Fluent Icons" FontSize="28" FontWeight="Heavy"
                                    Text="&#xE7E6;" />
                     </ToggleButton>
-                </StackPanel>
-                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                    <Border Width="125" Visibility="Hidden" />
                     <RadioButton Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xEF20;" />
-                    <RadioButton Checked="ToolRadioChecked"
-                                 Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xED60;" />
-                    <RadioButton Checked="ToolRadioChecked"
-                                 Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xED61;" />
-                    <Button Style="{StaticResource ButtonStyle}"
-                            Foreground="#F25767"
-                            Click="EraseAll" Tag="&#xED62;" />
                     <Button x:Name="UndoButton"
                             IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
@@ -114,33 +124,20 @@
                             IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
                             Click="RedoButtonClick" Tag="&#xE7A6;" />
-                    <Button x:Name="OpenFileButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="OpenFileClick" Tag="&#xE8DA;" />
-                    <Button x:Name="SaveFileButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="SaveFileClick" Tag="&#xE74E;" />
-                    <Button x:Name="ExportImageButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="ExportImageClick" Tag="&#xEE71;" />
-                    <Border Width="58" Visibility="Hidden" />
-                    <Button x:Name="WindowMinimizeButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="MinimizeWindow" Tag="&#xE921;" />
-                    <Button x:Name="ExitButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="CloseWindow" Tag="&#xE711;" />
-                    <Border Width="58" Visibility="Hidden" />
-                    <Button x:Name="PrevPageButton"
-                            IsEnabled="False"
-                            Style="{StaticResource ButtonStyle}"
-                            Tag="&#xE72B;" />
-                    <Button x:Name="NewNextPageButton"
-                            IsEnabled="False"
-                            Style="{StaticResource ButtonStyle}"
-                            Tag="&#xE710;" />
-
                 </StackPanel>
+            </StackPanel>
+        </Border>
+        <Border Margin="0,0,10,10" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Style="{StaticResource ContainerStyle}">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="PrevPageButton"
+                        IsEnabled="False"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xE72B;" />
+                <Button x:Name="NewNextPageButton"
+                        IsEnabled="False"
+                        Style="{StaticResource ButtonStyle}"
+                        Tag="&#xE710;" />
             </StackPanel>
         </Border>
         <ScrollViewer x:Name="MainScroll" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden">

@@ -62,7 +62,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            using FileStream fs = new(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            using var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
 
             MainCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
             MainCanvas.Strokes = new StrokeCollection(fs);
@@ -234,14 +234,13 @@ public partial class MainWindow : Window
 
     private readonly Stack<StrokeChange> undoStack = new( );
     private readonly Stack<StrokeChange> redoStack = new( );
-    private bool isApplyingUndoRedo;
+    private bool applyingUndoRedo;
 
     private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
     {
         dirty = true;
 
-        if (isApplyingUndoRedo
-            || (e.Added.Count == 0 && e.Removed.Count == 0))
+        if (applyingUndoRedo || (e.Added.Count == 0 && e.Removed.Count == 0))
         {
             return;
         }
@@ -258,11 +257,11 @@ public partial class MainWindow : Window
             return;
         }
 
-        isApplyingUndoRedo = true;
+        applyingUndoRedo = true;
         StrokeChange change = undoStack.Pop( );
         MainCanvas.Strokes.Remove(change.Added);
         MainCanvas.Strokes.Add(change.Removed);
-        isApplyingUndoRedo = false;
+        applyingUndoRedo = false;
 
         redoStack.Push(change);
         UpdateUndoRedoButtons( );
@@ -275,11 +274,11 @@ public partial class MainWindow : Window
             return;
         }
 
-        isApplyingUndoRedo = true;
+        applyingUndoRedo = true;
         StrokeChange change = redoStack.Pop( );
         MainCanvas.Strokes.Remove(change.Removed);
         MainCanvas.Strokes.Add(change.Added);
-        isApplyingUndoRedo = false;
+        applyingUndoRedo = false;
 
         undoStack.Push(change);
         UpdateUndoRedoButtons( );
