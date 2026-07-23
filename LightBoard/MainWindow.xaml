@@ -142,21 +142,35 @@
             </StackPanel>
         </Border>
         <ScrollViewer x:Name="MainScroll" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden">
-            <InkCanvas x:Name="MainCanvas"
-                       Width="32768" Height="16384"
-                       Margin="0,0,0,0"
-                       Background="#1E1E1E"
-                       LostTouchCapture="MainCanvasLostTouchCapture"
-                       PreviewTouchDown="MainCanvasPreviewTouchDown"
-                       PreviewTouchMove="MainCanvasPreviewTouchMove"
-                       PreviewTouchUp="MainCanvasPreviewTouchUp" Stylus.IsPressAndHoldEnabled="False"
-                       TouchLeave="MainCanvasTouchLeave">
-                <InkCanvas.DefaultDrawingAttributes>
-                    <DrawingAttributes Width="5" Height="5"
-                                       FitToCurve="True" StylusTip="Ellipse"
-                                       Color="#E6E6E6" />
-                </InkCanvas.DefaultDrawingAttributes>
-            </InkCanvas>
+            <Grid>
+                <InkCanvas x:Name="MainCanvas"
+                           Width="32768" Height="16384"
+                           Margin="0,0,0,0"
+                           Background="#1E1E1E"
+                           LostTouchCapture="MainCanvasLostTouchCapture"
+                           PreviewMouseDown="MainCanvasPreviewMouseDown"
+                           PreviewMouseMove="MainCanvasPreviewMouseMove"
+                           PreviewMouseUp="MainCanvasPreviewMouseUp"
+                           PreviewTouchDown="MainCanvasPreviewTouchDown"
+                           PreviewTouchMove="MainCanvasPreviewTouchMove"
+                           PreviewTouchUp="MainCanvasPreviewTouchUp" Stylus.IsPressAndHoldEnabled="False"
+                           TouchLeave="MainCanvasTouchLeave">
+                    <InkCanvas.DefaultDrawingAttributes>
+                        <DrawingAttributes Width="5" Height="5"
+                                           FitToCurve="True" StylusTip="Ellipse"
+                                           Color="#E6E6E6" />
+                    </InkCanvas.DefaultDrawingAttributes>
+                </InkCanvas>
+                <Canvas x:Name="EraserOverlayCanvas"
+                        Panel.ZIndex="1"
+                        IsHitTestVisible="False"
+                        Background="Transparent">
+                    <Ellipse x:Name="EraserFeedback"
+                             Width="0" Height="0"
+                             Visibility="Collapsed"
+                             Fill="White" />
+                </Canvas>
+            </Grid>
         </ScrollViewer>
     </Grid>
 </Window>

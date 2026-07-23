@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -18,6 +19,30 @@ public partial class MainWindow : Window
     private const string ImageFilter = "PNG 图像|*.png|所有文件|*.*";
 
     private bool dirty;
+    private readonly Eraser eraser;
+
+    public MainWindow( )
+    {
+        InitializeComponent( );
+        eraser = new Eraser(MainCanvas, EraserFeedback);
+
+        if (!string.IsNullOrWhiteSpace(App.PendingOpen))
+        {
+            OpenStrokes(App.PendingOpen);
+        }
+
+        MainCanvas.EraserShape = new RectangleStylusShape(100, 160);
+        MainCanvas.LayoutTransform = canvasScaleTransform;
+
+        MainCanvas.Strokes.StrokesChanged += OnStrokesChanged;
+
+        baseEditingMode = MainCanvas.EditingMode;
+        distanceThreshold = 0.6 * SystemParameters.WorkArea.Width;
+        distanceThreshold2 = distanceThreshold * distanceThreshold;
+
+        MainScroll.ScrollToHorizontalOffset(8192);
+        MainScroll.ScrollToVerticalOffset(8192);
+    }
 
     private void CloseWindow(object o, RoutedEventArgs e)
     {
@@ -178,7 +203,7 @@ public partial class MainWindow : Window
 
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
     {
-        MainCanvas.DefaultDrawingAttributes.IsHighlighter = (bool) HighLighterToggle.IsChecked;
+        MainCanvas.DefaultDrawingAttributes.IsHighlighter = HighLighterToggle.IsChecked ?? false;
     }
 
     private void ColorRadioChecked(object o, RoutedEventArgs e)
@@ -188,6 +213,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        areaEraserSelected = false;
         MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
         MainCanvas.DefaultDrawingAttributes.Color = brush.Color;
     }
@@ -211,9 +237,18 @@ public partial class MainWindow : Window
 
         switch (tag)
         {
-            case "\uED60": MainCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint; break;
-            case "\uED61": MainCanvas.EditingMode = InkCanvasEditingMode.EraseByStroke; break;
-            case "\uEF20": MainCanvas.EditingMode = InkCanvasEditingMode.Select; break;
+            case "\uED60":
+                areaEraserSelected = true;
+                MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
+                break;
+            case "\uED61":
+                areaEraserSelected = false;
+                MainCanvas.EditingMode = InkCanvasEditingMode.EraseByStroke;
+                break;
+            case "\uEF20":
+                areaEraserSelected = false;
+                MainCanvas.EditingMode = InkCanvasEditingMode.Select;
+                break;
         }
     }
 
@@ -223,72 +258,4 @@ public partial class MainWindow : Window
     }
 
     #endregion Editing
-
-    #region UndoRedo
-
-    private sealed class StrokeChange(StrokeCollection added, StrokeCollection removed)
-    {
-        public StrokeCollection Added { get; } = added;
-        public StrokeCollection Removed { get; } = removed;
-    }
-
-    private readonly Stack<StrokeChange> undoStack = new( );
-    private readonly Stack<StrokeChange> redoStack = new( );
-    private bool applyingUndoRedo;
-
-    private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
-    {
-        dirty = true;
-
-        if (applyingUndoRedo || (e.Added.Count == 0 && e.Removed.Count == 0))
-        {
-            return;
-        }
-
-        undoStack.Push(new StrokeChange(e.Added, e.Removed));
-        redoStack.Clear( );
-        UpdateUndoRedoButtons( );
-    }
-
-    private void UndoButtonClick(object o, RoutedEventArgs e)
-    {
-        if (undoStack.Count == 0)
-        {
-            return;
-        }
-
-        applyingUndoRedo = true;
-        StrokeChange change = undoStack.Pop( );
-        MainCanvas.Strokes.Remove(change.Added);
-        MainCanvas.Strokes.Add(change.Removed);
-        applyingUndoRedo = false;
-
-        redoStack.Push(change);
-        UpdateUndoRedoButtons( );
-    }
-
-    private void RedoButtonClick(object o, RoutedEventArgs e)
-    {
-        if (redoStack.Count == 0)
-        {
-            return;
-        }
-
-        applyingUndoRedo = true;
-        StrokeChange change = redoStack.Pop( );
-        MainCanvas.Strokes.Remove(change.Removed);
-        MainCanvas.Strokes.Add(change.Added);
-        applyingUndoRedo = false;
-
-        undoStack.Push(change);
-        UpdateUndoRedoButtons( );
-    }
-
-    private void UpdateUndoRedoButtons( )
-    {
-        UndoButton.IsEnabled = undoStack.Count > 0;
-        RedoButton.IsEnabled = redoStack.Count > 0;
-    }
-
-    #endregion UndoRedo
 }

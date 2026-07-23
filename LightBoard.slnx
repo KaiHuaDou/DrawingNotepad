@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Documents/">
+    <File Path="Eraser.md" />
     <File Path="LICENSE" />
     <File Path="README.md" />
     <File Path="TouchStates.md" />
