@@ -3,7 +3,7 @@
 - `and`: all conditions should be true.
 - `d`: the current max distance of the fingers.
 - `l`: distance threshold, set to `0.6 * ActualWidth`.
-- `c`: displacement threshold, set to 15px.
+- `c`: displacement threshold, set to 20px.
 - `count`: the current finger count.
 - `x`: the displacement of the first finger.
 
@@ -53,17 +53,14 @@ stateDiagram-v2
     MultiDraw --> Draw: count == 1
 
     PanZoom --> Idle: count == 0
-    PanZoom --> Draw: count == 1
     PanZoom --> Pan: (count == 3 or count == 4) and d <= l
     PanZoom --> Eraser: count >= 5 and d <= l
     PanZoom --> MultiDraw: count > 2 and d > l
 
     Pan --> Idle: count == 0
-    Pan --> Draw: count == 1
     Pan --> Eraser: count >= 5 and d <= l
     Pan --> MultiDraw: count > 3 and d > l
 
     Eraser --> Idle: count == 0
-    Eraser --> EvalDraw: count == 1
     Eraser --> MultiDraw: count > 5 and d > l
 ```

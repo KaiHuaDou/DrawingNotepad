@@ -5,6 +5,7 @@
         Width="1920"
         Height="1080"
         Deactivated="WindowDeactivated"
+        Loaded="WindowLoaded"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         WindowStyle="None">
@@ -53,7 +54,7 @@
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"
-                                 Background="#DF6A63"
+                                 Background="#FF4345"
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"
@@ -61,7 +62,7 @@
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"
-                                 Background="#E1D37D"
+                                 Background="#ECD201"
                                  GroupName="EditGroup" />
                     <RadioButton Checked="ColorRadioChecked"
                                  Style="{StaticResource ColorRadioStyle}"

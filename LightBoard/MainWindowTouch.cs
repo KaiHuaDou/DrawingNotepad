@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
 
+using static LightBoard.Geometry;
+
 namespace LightBoard;
+
 public enum TouchState
 {
     Idle,
@@ -21,20 +25,29 @@ public enum TouchState
 
 public partial class MainWindow : Window
 {
-    private const double TouchDisplThreshold = 15.0;
-
-    private readonly Dictionary<int, (TouchDevice Device, Point Position)> activeTouches = [];
+    /// <summary>
+    /// 升级需注意：此处依赖 .NET Core 3.1+ 内部实现细节：<br />
+    /// 1. 未调用 Remove/TrimExcess 时迭代顺序等同于插入顺序。<br />
+    /// 2. 调用 Remove 后，只影响所移除元素后面的元素。<br />
+    /// 3. 实际情况：防止跳变即可，因此允许 Hack。<br />
+    /// 4. 变通方案：OrderDictionary、手动维护前两根手指。
+    /// </summary>
+    private readonly Dictionary<int, (TouchDevice Device, Point Position)> activeTouches = new(20);
     private readonly Dictionary<int, Point> touchStartPositions = [];
     private readonly ScaleTransform canvasScaleTransform = new(1.0, 1.0);
-    private double DistanceThreshold => 0.6 * ActualWidth;
+
+    private readonly double touchDisplThreshold = 20.0;
+    private readonly double distanceThreshold;
+    private readonly double distanceThreshold2;
 
     private TouchState currentState = TouchState.Idle;
     private InkCanvasEditingMode baseEditingMode = InkCanvasEditingMode.Ink;
-    private Point prevCentroid;
-    private double prevDistance;
+    private Point prevMidpoint;
+    private Point viewportOrigin;
     private double currentScale = 1.0;
+    private double initialScale = 1.0;
+    private double initialDistance;
     private bool releasingCaptures;
-    private int firstTouchId;
 
     public MainWindow( )
     {
@@ -51,9 +64,16 @@ public partial class MainWindow : Window
         MainCanvas.Strokes.StrokesChanged += OnStrokesChanged;
 
         baseEditingMode = MainCanvas.EditingMode;
+        distanceThreshold = 0.6 * SystemParameters.WorkArea.Width;
+        distanceThreshold2 = distanceThreshold * distanceThreshold;
 
         MainScroll.ScrollToHorizontalOffset(8192);
         MainScroll.ScrollToVerticalOffset(8192);
+    }
+
+    private void WindowLoaded(object o, RoutedEventArgs e)
+    {
+        viewportOrigin = MainScroll.TranslatePoint(new Point(0, 0), this);
     }
 
     private void MainCanvasPreviewTouchDown(object o, TouchEventArgs e)
@@ -61,7 +81,7 @@ public partial class MainWindow : Window
         Point position = e.GetTouchPoint(this).Position;
         TrackTouchDown(e.TouchDevice.Id, e.TouchDevice, position);
         SubscribeDeactivated(e.TouchDevice);
-        e.Handled = UpdateTouchState( );
+        e.Handled = UpdateState( );
     }
 
     private void MainCanvasPreviewTouchMove(object o, TouchEventArgs e)
@@ -75,7 +95,7 @@ public partial class MainWindow : Window
 
         switch (currentState)
         {
-            case TouchState.EvalDraw: UpdateTouchState( ); break;
+            case TouchState.EvalDraw: UpdateState( ); break;
             case TouchState.PanZoom: ProcessPanZoom( ); e.Handled = true; break;
             case TouchState.Pan: ProcessPan( ); e.Handled = true; break;
         }
@@ -88,7 +108,7 @@ public partial class MainWindow : Window
         {
             TrackTouchUp(e.TouchDevice.Id);
             UnsubscribeDeactivated(e.TouchDevice);
-            UpdateTouchState( );
+            UpdateState( );
         }
 
         e.Handled = wasHandled;
@@ -96,11 +116,6 @@ public partial class MainWindow : Window
 
     private void TrackTouchDown(int id, TouchDevice device, Point position)
     {
-        if (activeTouches.Count == 0)
-        {
-            firstTouchId = id;
-        }
-
         activeTouches[id] = (device, position);
         touchStartPositions[id] = position;
 
@@ -114,11 +129,6 @@ public partial class MainWindow : Window
     {
         activeTouches.Remove(id);
         touchStartPositions.Remove(id);
-
-        if (id == firstTouchId && activeTouches.Count > 0)
-        {
-            firstTouchId = activeTouches.Keys.Min( );
-        }
 
         if (currentState is TouchState.Pan or TouchState.PanZoom)
         {
@@ -148,7 +158,7 @@ public partial class MainWindow : Window
         {
             TrackTouchUp(e.TouchDevice.Id);
             UnsubscribeDeactivated(e.TouchDevice);
-            UpdateTouchState( );
+            UpdateState( );
         }
     }
 
@@ -163,18 +173,17 @@ public partial class MainWindow : Window
         {
             TrackTouchUp(e.TouchDevice.Id);
             UnsubscribeDeactivated(e.TouchDevice);
-            UpdateTouchState( );
+            UpdateState( );
         }
     }
 
-    private bool UpdateTouchState( )
+    private bool UpdateState( )
     {
         var count = activeTouches.Count;
         var d2 = GetMaxDistance2( );
-        var l = DistanceThreshold;
-        var l2 = l * l;
+        var l2 = distanceThreshold2;
         var x2 = Get1stFingerDispl2( );
-        var c2 = TouchDisplThreshold * TouchDisplThreshold;
+        var c2 = touchDisplThreshold * touchDisplThreshold;
 
         TouchState newState = currentState switch
         {
@@ -217,7 +226,6 @@ public partial class MainWindow : Window
             TouchState.PanZoom => count switch
             {
                 0 => TouchState.Idle,
-                1 => TouchState.Draw,
                 3 or 4 when d2 <= l2 => TouchState.Pan,
                 >= 5 when d2 <= l2 => TouchState.Eraser,
                 > 2 when d2 > l2 => TouchState.MultiDraw,
@@ -227,7 +235,6 @@ public partial class MainWindow : Window
             TouchState.Pan => count switch
             {
                 0 => TouchState.Idle,
-                1 => TouchState.Draw,
                 >= 5 when d2 <= l2 => TouchState.Eraser,
                 > 3 when d2 > l2 => TouchState.MultiDraw,
                 _ => currentState,
@@ -236,7 +243,6 @@ public partial class MainWindow : Window
             TouchState.Eraser => count switch
             {
                 0 => TouchState.Idle,
-                1 => TouchState.EvalDraw,
                 > 5 when d2 > l2 => TouchState.MultiDraw,
                 _ => currentState,
             },
@@ -264,21 +270,21 @@ public partial class MainWindow : Window
             case (TouchState.Idle, TouchState.PanZoom):
             case (TouchState.Idle, TouchState.Pan):
                 baseEditingMode = MainCanvas.EditingMode;
-                ReleaseAllCaptures( );
+                ReleaseAll( );
                 MainCanvas.EditingMode = InkCanvasEditingMode.None;
-                CaptureAllTouches( );
+                CaptureAll( );
                 InitializeGesture( );
                 break;
 
             case (TouchState.Idle, TouchState.Eraser):
                 baseEditingMode = MainCanvas.EditingMode;
-                ReleaseAllCaptures( );
+                ReleaseAll( );
                 MainCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
                 break;
 
             case (TouchState.Idle, TouchState.MultiDraw):
                 baseEditingMode = MainCanvas.EditingMode;
-                ReleaseAllCaptures( );
+                ReleaseAll( );
                 MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
                 break;
 
@@ -288,7 +294,7 @@ public partial class MainWindow : Window
             case (TouchState.PanZoom, TouchState.Idle):
             case (TouchState.Pan, TouchState.Idle):
             case (TouchState.Eraser, TouchState.Idle):
-                ReleaseAllCaptures( );
+                ReleaseAll( );
                 RestoreEditingMode( );
                 break;
 
@@ -298,34 +304,13 @@ public partial class MainWindow : Window
 
             case (TouchState.EvalDraw, TouchState.PanZoom):
             case (TouchState.EvalDraw, TouchState.Pan):
-                ReleaseAllCaptures( );
+                ReleaseAll( );
                 MainCanvas.EditingMode = InkCanvasEditingMode.None;
-                CaptureAllTouches( );
+                CaptureAll( );
                 InitializeGesture( );
                 break;
 
-            case (TouchState.EvalDraw, TouchState.Eraser):
-                ReleaseAllCaptures( );
-                MainCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
-                break;
-
-            case (TouchState.EvalDraw, TouchState.MultiDraw):
-                ReleaseAllCaptures( );
-                MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
-                break;
-
-            case (TouchState.Draw, TouchState.MultiDraw):
-                ReleaseAllCaptures( );
-                MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
-                break;
-
             case (TouchState.MultiDraw, TouchState.Draw):
-                RestoreEditingMode( );
-                break;
-
-            case (TouchState.PanZoom, TouchState.Draw):
-            case (TouchState.Pan, TouchState.Draw):
-                ReleaseAllCaptures( );
                 RestoreEditingMode( );
                 break;
 
@@ -333,24 +318,19 @@ public partial class MainWindow : Window
                 InitializeGesture( );
                 break;
 
+            case (TouchState.EvalDraw, TouchState.Eraser):
             case (TouchState.PanZoom, TouchState.Eraser):
             case (TouchState.Pan, TouchState.Eraser):
-                ReleaseAllCaptures( );
+                ReleaseAll( );
                 MainCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
                 break;
 
+            case (TouchState.EvalDraw, TouchState.MultiDraw):
+            case (TouchState.Draw, TouchState.MultiDraw):
             case (TouchState.PanZoom, TouchState.MultiDraw):
             case (TouchState.Pan, TouchState.MultiDraw):
-                ReleaseAllCaptures( );
-                MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
-                break;
-
-            case (TouchState.Eraser, TouchState.EvalDraw):
-                RestoreEditingMode( );
-                break;
-
             case (TouchState.Eraser, TouchState.MultiDraw):
-                ReleaseAllCaptures( );
+                ReleaseAll( );
                 MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
                 break;
 
@@ -380,29 +360,12 @@ public partial class MainWindow : Window
 
         Span<Point> positions = stackalloc Point[count];
         var index = 0;
-        foreach ((TouchDevice _, Point position) in activeTouches.Values)
+        foreach ((_, Point position) in activeTouches.Values)
         {
             positions[index++] = position;
         }
 
-        double max2 = 0;
-        for (var i = 0; i < positions.Length; i++)
-        {
-            Point first = positions[i];
-            for (var j = i + 1; j < positions.Length; j++)
-            {
-                Point second = positions[j];
-                var dx = first.X - second.X;
-                var dy = first.Y - second.Y;
-                var d2 = dx * dx + dy * dy;
-                if (d2 > max2)
-                {
-                    max2 = d2;
-                }
-            }
-        }
-
-        return max2;
+        return MaxDistance2(ref positions);
     }
 
     private double Get1stFingerDispl2( )
@@ -412,27 +375,30 @@ public partial class MainWindow : Window
             return 0;
         }
 
-        Point current = activeTouches[firstTouchId].Position;
-        Point start = touchStartPositions[firstTouchId];
-        var dx = current.X - start.X;
-        var dy = current.Y - start.Y;
-        return dx * dx + dy * dy;
+        KeyValuePair<int, (TouchDevice Device, Point Position)> first = activeTouches.First( );
+        if (!touchStartPositions.TryGetValue(first.Key, out Point start))
+        {
+            return 0;
+        }
+
+        Point current = first.Value.Position;
+        return Distance2(current, start);
     }
 
-    private void CaptureAllTouches( )
+    private void CaptureAll( )
     {
-        foreach ((TouchDevice Device, Point Position) in activeTouches.Values)
+        foreach ((TouchDevice Device, _) in activeTouches.Values)
         {
             Device.Capture(MainCanvas);
         }
     }
 
-    private void ReleaseAllCaptures( )
+    private void ReleaseAll( )
     {
         releasingCaptures = true;
         try
         {
-            foreach ((TouchDevice Device, Point Position) in activeTouches.Values)
+            foreach ((TouchDevice Device, _) in activeTouches.Values)
             {
                 Device.Capture(null);
             }
@@ -454,7 +420,7 @@ public partial class MainWindow : Window
         {
             TrackTouchUp(device.Id);
             UnsubscribeDeactivated(device);
-            UpdateTouchState( );
+            UpdateState( );
         }
     }
 
@@ -468,7 +434,7 @@ public partial class MainWindow : Window
         releasingCaptures = true;
         try
         {
-            foreach ((TouchDevice Device, Point Position) in activeTouches.Values)
+            foreach ((TouchDevice Device, _) in activeTouches.Values)
             {
                 UnsubscribeDeactivated(Device);
                 Device.Capture(null);
@@ -476,7 +442,6 @@ public partial class MainWindow : Window
 
             activeTouches.Clear( );
             touchStartPositions.Clear( );
-            firstTouchId = 0;
             SetState(TouchState.Idle);
         }
         finally
@@ -487,88 +452,79 @@ public partial class MainWindow : Window
 
     private void InitializeGesture( )
     {
-        (prevCentroid, prevDistance) = GetGestureMetrics( );
+        (prevMidpoint, initialDistance) = GetGestureMetrics( );
+        initialScale = currentScale;
     }
 
     private void ProcessPanZoom( )
     {
-        (Point centroid, var distance) = GetGestureMetrics( );
+        (Point midpoint, var distance) = GetGestureMetrics( );
 
-        var deltaScale = prevDistance > 0 && distance > 0
-            ? distance / prevDistance
+        var ratio = initialDistance > 0 && distance > 0
+            ? distance / initialDistance
             : 1.0;
 
-        var newScale = Math.Clamp(currentScale * deltaScale, 0.1, 10.0);
-        deltaScale = newScale / currentScale;
-        currentScale = newScale;
+        var scale = Math.Clamp(initialScale * ratio, 0.1, 10.0);
 
-        Point viewportOrigin = MainScroll.TranslatePoint(new Point(0, 0), this);
+        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = scale;
 
-        var newOffsetX = MainScroll.HorizontalOffset * deltaScale
-            + (prevCentroid.X - viewportOrigin.X) * deltaScale
-            - (centroid.X - viewportOrigin.X);
-        var newOffsetY = MainScroll.VerticalOffset * deltaScale
-            + (prevCentroid.Y - viewportOrigin.Y) * deltaScale
-            - (centroid.Y - viewportOrigin.Y);
+        ratio = scale / currentScale;
+
+        var newOffsetX = MainScroll.HorizontalOffset * ratio
+            + (prevMidpoint.X - viewportOrigin.X) * ratio
+            - (midpoint.X - viewportOrigin.X);
+        var newOffsetY = MainScroll.VerticalOffset * ratio
+            + (prevMidpoint.Y - viewportOrigin.Y) * ratio
+            - (midpoint.Y - viewportOrigin.Y);
 
         MainScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, MainScroll.ScrollableWidth));
         MainScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, MainScroll.ScrollableHeight));
 
-        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = currentScale;
-
-        prevCentroid = centroid;
-        prevDistance = distance;
+        currentScale = scale;
+        prevMidpoint = midpoint;
     }
 
     private void ProcessPan( )
     {
-        (Point centroid, var _) = GetGestureMetrics( );
+        (Point midpoint, _) = GetGestureMetrics( );
 
-        var newOffsetX = MainScroll.HorizontalOffset + prevCentroid.X - centroid.X;
-        var newOffsetY = MainScroll.VerticalOffset + prevCentroid.Y - centroid.Y;
+        var newOffsetX = MainScroll.HorizontalOffset + prevMidpoint.X - midpoint.X;
+        var newOffsetY = MainScroll.VerticalOffset + prevMidpoint.Y - midpoint.Y;
 
         MainScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, MainScroll.ScrollableWidth));
         MainScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, MainScroll.ScrollableHeight));
 
-        prevCentroid = centroid;
+        prevMidpoint = midpoint;
     }
 
-    private (Point Centroid, double Distance) GetGestureMetrics( )
+#pragma warning disable IDE0008
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private (Point Midpoint, double Distance) GetGestureMetrics( )
     {
-        double sumX = 0;
-        double sumY = 0;
-        Point first = default;
-        Point second = default;
-        var count = 0;
+        var values = activeTouches.Values;
+        var count = values.Count;
 
-        foreach ((_, Point position) in activeTouches.Values)
+        if (count == 0)
         {
-            sumX += position.X;
-            sumY += position.Y;
-
-            if (count == 0)
-            {
-                first = position;
-            }
-            else if (count == 1)
-            {
-                second = position;
-            }
-
-            count++;
+            return (new Point(0, 0), 0);
         }
 
-        Point centroid = count > 0 ? new Point(sumX / count, sumY / count) : new Point(0, 0);
+        using var enumerator = values.GetEnumerator( );
+        enumerator.MoveNext( );
+        Point first = enumerator.Current.Position;
 
-        var distance = count == 2 ? Distance(first, second) : 0;
+        if (count == 1)
+        {
+            return (first, 0);
+        }
 
-        return (centroid, distance);
-    }
+        enumerator.MoveNext( );
+        Point second = enumerator.Current.Position;
 
-    private static double Distance(Point a, Point b)
-    {
-        var dx = a.X - b.X;
-        var dy = a.Y - b.Y;
-        return Math.Sqrt(dx * dx + dy * dy);
+        Point midpoint = Midpoint(first, second);
+        var distance = Distance(first, second);
+
+        return (midpoint, distance);
     }
 }
