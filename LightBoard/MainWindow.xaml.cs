@@ -1,14 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+using InkCanvasNext;
 using Microsoft.Win32;
 
 namespace LightBoard;
@@ -19,29 +18,20 @@ public partial class MainWindow : Window
     private const string ImageFilter = "PNG 图像|*.png|所有文件|*.*";
 
     private bool dirty;
-    private readonly Eraser eraser;
 
     public MainWindow( )
     {
         InitializeComponent( );
-        eraser = new Eraser(MainCanvas, EraserFeedback);
 
         if (!string.IsNullOrWhiteSpace(App.PendingOpen))
         {
             OpenStrokes(App.PendingOpen);
         }
+    }
 
-        MainCanvas.EraserShape = new RectangleStylusShape(100, 160);
-        MainCanvas.LayoutTransform = canvasScaleTransform;
-
-        MainCanvas.Strokes.StrokesChanged += OnStrokesChanged;
-
-        baseEditingMode = MainCanvas.EditingMode;
-        distanceThreshold = 0.6 * SystemParameters.WorkArea.Width;
-        distanceThreshold2 = distanceThreshold * distanceThreshold;
-
-        MainScroll.ScrollToHorizontalOffset(8192);
-        MainScroll.ScrollToVerticalOffset(8192);
+    private void WindowDeactivated(object o, EventArgs e)
+    {
+        CanvasNext.ResetTouchState( );
     }
 
     private void CloseWindow(object o, RoutedEventArgs e)
@@ -89,13 +79,7 @@ public partial class MainWindow : Window
         {
             using var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
 
-            MainCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
-            MainCanvas.Strokes = new StrokeCollection(fs);
-            MainCanvas.Strokes.StrokesChanged += OnStrokesChanged;
-            undoStack.Clear( );
-            redoStack.Clear( );
-            UpdateUndoRedoButtons( );
-
+            CanvasNext.Strokes = new StrokeCollection(fs);
             dirty = false;
         }
         catch { }
@@ -124,7 +108,7 @@ public partial class MainWindow : Window
     public void SaveStrokes(string fileName)
     {
         var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-        MainCanvas.Strokes.Save(stream, false);
+        CanvasNext.Strokes.Save(stream, false);
     }
 
     private void ExportImageClick(object o, RoutedEventArgs e)
@@ -139,7 +123,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        StrokeCollection strokes = MainCanvas.Strokes.Clone( );
+        StrokeCollection strokes = CanvasNext.Strokes.Clone( );
         DpiScale dpi = VisualTreeHelper.GetDpi(this);
         var fileName = dialog.FileName;
 
@@ -203,7 +187,7 @@ public partial class MainWindow : Window
 
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
     {
-        MainCanvas.DefaultDrawingAttributes.IsHighlighter = HighLighterToggle.IsChecked ?? false;
+        CanvasNext.DefaultDrawingAttributes.IsHighlighter = HighLighterToggle.IsChecked ?? false;
     }
 
     private void ColorRadioChecked(object o, RoutedEventArgs e)
@@ -213,9 +197,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        areaEraserSelected = false;
-        MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
-        MainCanvas.DefaultDrawingAttributes.Color = brush.Color;
+        CanvasNext.Mode = InkCanvasNextMode.Ink;
+        CanvasNext.DefaultDrawingAttributes.Color = brush.Color;
     }
 
     private void ThicknessRadioClick(object o, RoutedEventArgs e)
@@ -225,7 +208,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        MainCanvas.DefaultDrawingAttributes.Width = MainCanvas.DefaultDrawingAttributes.Height = thickness;
+        CanvasNext.DefaultDrawingAttributes.Width = CanvasNext.DefaultDrawingAttributes.Height = thickness;
     }
 
     private void ToolRadioChecked(object o, RoutedEventArgs e)
@@ -235,26 +218,43 @@ public partial class MainWindow : Window
             return;
         }
 
-        switch (tag)
+        CanvasNext.Mode = tag switch
         {
-            case "\uED60":
-                areaEraserSelected = true;
-                MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
-                break;
-            case "\uED61":
-                areaEraserSelected = false;
-                MainCanvas.EditingMode = InkCanvasEditingMode.EraseByStroke;
-                break;
-            case "\uEF20":
-                areaEraserSelected = false;
-                MainCanvas.EditingMode = InkCanvasEditingMode.Select;
-                break;
-        }
+            "\uED60" => InkCanvasNextMode.EraseArea,
+            "\uED61" => InkCanvasNextMode.EraseStroke,
+            "\uEF20" => InkCanvasNextMode.Select,
+            _ => CanvasNext.Mode,
+        };
     }
 
     private void EraseAll(object o, RoutedEventArgs e)
     {
-        MainCanvas.Strokes.Clear( );
+        CanvasNext.Strokes.Clear( );
+    }
+
+    private void UndoButtonClick(object o, RoutedEventArgs e)
+    {
+        CanvasNext.Undo( );
+    }
+
+    private void RedoButtonClick(object o, RoutedEventArgs e)
+    {
+        CanvasNext.Redo( );
+    }
+
+    private void CanvasNextStrokesChanged(object o, EventArgs e)
+    {
+        dirty = true;
+    }
+
+    private void CanvasNextCanUndoChanged(object o, DependencyPropertyChangedEventArgs e)
+    {
+        UndoButton.IsEnabled = CanvasNext.CanUndo;
+    }
+
+    private void CanvasNextCanRedoChanged(object o, DependencyPropertyChangedEventArgs e)
+    {
+        RedoButton.IsEnabled = CanvasNext.CanRedo;
     }
 
     #endregion Editing

@@ -1,8 +1,8 @@
 using System.Windows.Controls;
 
-namespace LightBoard;
+namespace InkCanvasNext;
 
-public enum TouchState
+internal enum TouchState
 {
     Idle,
     EvalDraw,
@@ -13,11 +13,8 @@ public enum TouchState
     MultiDraw
 }
 
-public partial class MainWindow
+public partial class InkCanvasNext
 {
-    private TouchState currentState = TouchState.Idle;
-    private InkCanvasEditingMode baseEditingMode = InkCanvasEditingMode.Ink;
-
     private bool UpdateState( )
     {
         var count = touches.Count;
@@ -105,28 +102,28 @@ public partial class MainWindow
         switch ((currentState, newState))
         {
             case (TouchState.Idle, TouchState.EvalDraw):
-                baseEditingMode = MainCanvas.EditingMode;
+                baseEditingMode = Mode;
                 break;
 
             case (TouchState.Idle, TouchState.PanZoom):
             case (TouchState.Idle, TouchState.Pan):
-                baseEditingMode = MainCanvas.EditingMode;
+                baseEditingMode = Mode;
                 ReleaseAll( );
-                MainCanvas.EditingMode = InkCanvasEditingMode.None;
+                Canvas.EditingMode = InkCanvasEditingMode.None;
                 CaptureAll( );
                 InitGesture( );
                 break;
 
             case (TouchState.Idle, TouchState.Eraser):
-                baseEditingMode = MainCanvas.EditingMode;
+                baseEditingMode = Mode;
                 ReleaseAll( );
-                MainCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
+                Canvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
                 break;
 
             case (TouchState.Idle, TouchState.MultiDraw):
-                baseEditingMode = MainCanvas.EditingMode;
+                baseEditingMode = Mode;
                 ReleaseAll( );
-                MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
+                Canvas.EditingMode = InkCanvasEditingMode.Ink;
                 break;
 
             case (TouchState.EvalDraw, TouchState.Idle):
@@ -140,13 +137,12 @@ public partial class MainWindow
                 break;
 
             case (TouchState.EvalDraw, TouchState.Draw):
-                // 保持已画笔画，不切换编辑模式
                 break;
 
             case (TouchState.EvalDraw, TouchState.PanZoom):
             case (TouchState.EvalDraw, TouchState.Pan):
                 ReleaseAll( );
-                MainCanvas.EditingMode = InkCanvasEditingMode.None;
+                Canvas.EditingMode = InkCanvasEditingMode.None;
                 CaptureAll( );
                 InitGesture( );
                 break;
@@ -163,7 +159,7 @@ public partial class MainWindow
             case (TouchState.PanZoom, TouchState.Eraser):
             case (TouchState.Pan, TouchState.Eraser):
                 ReleaseAll( );
-                MainCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
+                Canvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
                 break;
 
             case (TouchState.EvalDraw, TouchState.MultiDraw):
@@ -172,11 +168,10 @@ public partial class MainWindow
             case (TouchState.Pan, TouchState.MultiDraw):
             case (TouchState.Eraser, TouchState.MultiDraw):
                 ReleaseAll( );
-                MainCanvas.EditingMode = InkCanvasEditingMode.Ink;
+                Canvas.EditingMode = InkCanvasEditingMode.Ink;
                 break;
 
             default:
-                // 未显式处理的状态转换不执行额外动作，由方法末尾统一更新 currentState。
                 break;
         }
 
@@ -185,9 +180,18 @@ public partial class MainWindow
 
     private void RestoreEditingMode( )
     {
-        if (MainCanvas.EditingMode != baseEditingMode)
+        switch (baseEditingMode)
         {
-            MainCanvas.EditingMode = baseEditingMode;
+            case InkCanvasNextMode.Ink:
+            case InkCanvasNextMode.EraseArea:
+                Canvas.EditingMode = InkCanvasEditingMode.Ink;
+                break;
+            case InkCanvasNextMode.EraseStroke:
+                Canvas.EditingMode = InkCanvasEditingMode.EraseByStroke;
+                break;
+            case InkCanvasNextMode.Select:
+                Canvas.EditingMode = InkCanvasEditingMode.Select;
+                break;
         }
     }
 }

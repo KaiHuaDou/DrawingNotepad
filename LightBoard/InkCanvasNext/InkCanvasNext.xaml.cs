@@ -1,0 +1,201 @@
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Ink;
+using System.Windows.Media;
+
+namespace InkCanvasNext;
+
+public enum InkCanvasNextMode
+{
+    Ink,
+    EraseStroke,
+    EraseArea,
+    Select
+}
+
+public partial class InkCanvasNext : UserControl
+{
+#pragma warning disable IDE1006
+
+    private static readonly DependencyPropertyKey CanRedoPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(CanRedo),
+            typeof(bool),
+            typeof(InkCanvasNext),
+            new PropertyMetadata(false));
+
+    private static readonly DependencyPropertyKey CanUndoPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(CanUndo),
+            typeof(bool),
+            typeof(InkCanvasNext),
+            new PropertyMetadata(false));
+
+#pragma warning restore IDE1006
+
+    public static readonly DependencyProperty CanRedoProperty = CanRedoPropertyKey.DependencyProperty;
+
+    public static readonly DependencyProperty CanUndoProperty = CanUndoPropertyKey.DependencyProperty;
+
+    public static readonly DependencyProperty DefaultDrawingAttributesProperty =
+        DependencyProperty.Register(
+            nameof(DefaultDrawingAttributes),
+            typeof(DrawingAttributes),
+            typeof(InkCanvasNext),
+            new PropertyMetadata(OnDefaultDrawingAttributesChanged));
+
+    public static readonly DependencyProperty ModeProperty =
+        DependencyProperty.Register(
+            nameof(Mode),
+            typeof(InkCanvasNextMode),
+            typeof(InkCanvasNext),
+            new PropertyMetadata(InkCanvasNextMode.Ink, OnModeChanged));
+
+    public static readonly DependencyProperty EraserDiameterProperty =
+        DependencyProperty.Register(
+            nameof(EraserDiameter),
+            typeof(double),
+            typeof(InkCanvasNext),
+            new PropertyMetadata(50.0));
+
+    public static readonly DependencyProperty StrokesProperty =
+        DependencyProperty.Register(
+            nameof(Strokes),
+            typeof(StrokeCollection),
+            typeof(InkCanvasNext),
+            new PropertyMetadata(OnStrokesPropertyChanged));
+
+    private readonly ScaleTransform canvasScaleTransform = new(1.0, 1.0);
+
+    private readonly Eraser eraser;
+
+    private InkCanvasNextMode baseEditingMode = InkCanvasNextMode.Ink;
+
+    private TouchState currentState = TouchState.Idle;
+
+    public InkCanvasNext( )
+    {
+        InitializeComponent( );
+
+        eraser = new Eraser(Canvas, EraserFeedback);
+
+        Canvas.LayoutTransform = canvasScaleTransform;
+
+        Canvas.Strokes.StrokesChanged += OnStrokesChanged;
+
+        Strokes = Canvas.Strokes;
+        DefaultDrawingAttributes = Canvas.DefaultDrawingAttributes;
+        DefaultDrawingAttributes.IsHighlighter = Canvas.DefaultDrawingAttributes.IsHighlighter;
+
+        baseEditingMode = InkCanvasNextMode.Ink;
+        distanceThreshold = 0.6 * SystemParameters.WorkArea.Width;
+        distanceThreshold2 = distanceThreshold * distanceThreshold;
+
+        CanvasScroll.ScrollToHorizontalOffset(8192);
+        CanvasScroll.ScrollToVerticalOffset(8192);
+    }
+
+    public event EventHandler<DependencyPropertyChangedEventArgs>? CanRedoChanged;
+
+    public event EventHandler<DependencyPropertyChangedEventArgs>? CanUndoChanged;
+
+    public event EventHandler? StrokesChanged;
+
+    public bool CanRedo
+    {
+        get => (bool) GetValue(CanRedoProperty);
+        private set => SetValue(CanRedoPropertyKey, value);
+    }
+
+    public bool CanUndo
+    {
+        get => (bool) GetValue(CanUndoProperty);
+        private set => SetValue(CanUndoPropertyKey, value);
+    }
+
+    public DrawingAttributes DefaultDrawingAttributes
+    {
+        get => (DrawingAttributes) GetValue(DefaultDrawingAttributesProperty);
+        set => SetValue(DefaultDrawingAttributesProperty, value);
+    }
+
+    public InkCanvasNextMode Mode
+    {
+        get => (InkCanvasNextMode) GetValue(ModeProperty);
+        set => SetValue(ModeProperty, value);
+    }
+
+    public double EraserDiameter
+    {
+        get => (double) GetValue(EraserDiameterProperty);
+        set => SetValue(EraserDiameterProperty, value);
+    }
+
+    public StrokeCollection Strokes
+    {
+        get => (StrokeCollection) GetValue(StrokesProperty);
+        set => SetValue(StrokesProperty, value);
+    }
+
+    private static void OnDefaultDrawingAttributesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var control = (InkCanvasNext) d;
+        if (e.NewValue is DrawingAttributes attributes)
+        {
+            control.Canvas.DefaultDrawingAttributes = attributes;
+        }
+    }
+
+    private static void OnModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var control = (InkCanvasNext) d;
+        control.ApplyEditingMode((InkCanvasNextMode) e.NewValue);
+    }
+
+    private static void OnIsHighlighterChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var control = (InkCanvasNext) d;
+        control.Canvas.DefaultDrawingAttributes.IsHighlighter = (bool) e.NewValue;
+    }
+
+    private static void OnStrokesPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var control = (InkCanvasNext) d;
+        control.ApplyStrokes((StrokeCollection?) e.NewValue);
+    }
+
+    private void ApplyEditingMode(InkCanvasNextMode mode)
+    {
+        baseEditingMode = mode;
+        if (currentState != TouchState.Idle)
+        {
+            return;
+        }
+
+        switch (mode)
+        {
+            case InkCanvasNextMode.Ink:
+                Canvas.EditingMode = InkCanvasEditingMode.Ink;
+                break;
+            case InkCanvasNextMode.EraseStroke:
+                Canvas.EditingMode = InkCanvasEditingMode.EraseByStroke;
+                break;
+            case InkCanvasNextMode.EraseArea:
+                Canvas.EditingMode = InkCanvasEditingMode.None;
+                break;
+            case InkCanvasNextMode.Select:
+                Canvas.EditingMode = InkCanvasEditingMode.Select;
+                break;
+        }
+    }
+
+    private void ApplyStrokes(StrokeCollection? strokes)
+    {
+        StrokeCollection newStrokes = strokes ?? [];
+        Canvas.Strokes.StrokesChanged -= OnStrokesChanged;
+        Canvas.Strokes = newStrokes;
+        Canvas.Strokes.StrokesChanged += OnStrokesChanged;
+        ClearHistory( );
+    }
+}

@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Windows;
 
-namespace LightBoard;
+namespace InkCanvasNext;
 
 public static class Geometry
 {

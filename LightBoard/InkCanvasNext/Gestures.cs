@@ -1,15 +1,13 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Media;
 
-using static LightBoard.Geometry;
+using static InkCanvasNext.Geometry;
 
-namespace LightBoard;
+namespace InkCanvasNext;
 
-public partial class MainWindow
+public partial class InkCanvasNext
 {
-    private readonly ScaleTransform canvasScaleTransform = new(1.0, 1.0);
     private readonly double distanceThreshold;
     private readonly double distanceThreshold2;
 
@@ -19,24 +17,25 @@ public partial class MainWindow
     private double initialScale = 1.0;
     private double initialDistance;
 
-    private void WindowLoaded(object o, RoutedEventArgs e)
+    protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
     {
-        viewportOrigin = MainScroll.TranslatePoint(new Point(0, 0), this);
+        base.OnRenderSizeChanged(sizeInfo);
+        viewportOrigin = CanvasScroll.TranslatePoint(new Point(0, 0), this);
     }
 
     private void InitGesture( )
     {
         (Point? first, Point? second) = GetMajorTouches( );
-        prevMidpoint = second is null ? first!.Value : Midpoint(first!.Value, second!.Value);
-        initialDistance = second is null ? 0 : Distance(first!.Value, second!.Value);
+        prevMidpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
+        initialDistance = second is null ? 0 : Distance(first!.Value, second.Value);
         initialScale = currentScale;
     }
 
     private void PanZoom( )
     {
         (Point? first, Point? second) = GetMajorTouches( );
-        Point midpoint = second is null ? first!.Value : Midpoint(first!.Value, second!.Value);
-        var distance = second is null ? 0 : Distance(first!.Value, second!.Value);
+        Point midpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
+        var distance = second is null ? 0 : Distance(first!.Value, second.Value);
 
         var ratio = initialDistance > 0 && distance > 0
             ? distance / initialDistance
@@ -48,15 +47,15 @@ public partial class MainWindow
 
         ratio = scale / currentScale;
 
-        var newOffsetX = MainScroll.HorizontalOffset * ratio
+        var newOffsetX = CanvasScroll.HorizontalOffset * ratio
             + (prevMidpoint.X - viewportOrigin.X) * ratio
             - (midpoint.X - viewportOrigin.X);
-        var newOffsetY = MainScroll.VerticalOffset * ratio
+        var newOffsetY = CanvasScroll.VerticalOffset * ratio
             + (prevMidpoint.Y - viewportOrigin.Y) * ratio
             - (midpoint.Y - viewportOrigin.Y);
 
-        MainScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, MainScroll.ScrollableWidth));
-        MainScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, MainScroll.ScrollableHeight));
+        CanvasScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, CanvasScroll.ScrollableWidth));
+        CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
 
         currentScale = scale;
         prevMidpoint = midpoint;
@@ -65,13 +64,13 @@ public partial class MainWindow
     private void Pan( )
     {
         (Point? first, Point? second) = GetMajorTouches( );
-        Point midpoint = second is null ? first!.Value : Midpoint(first!.Value, second!.Value);
+        Point midpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
 
-        var newOffsetX = MainScroll.HorizontalOffset + prevMidpoint.X - midpoint.X;
-        var newOffsetY = MainScroll.VerticalOffset + prevMidpoint.Y - midpoint.Y;
+        var newOffsetX = CanvasScroll.HorizontalOffset + prevMidpoint.X - midpoint.X;
+        var newOffsetY = CanvasScroll.VerticalOffset + prevMidpoint.Y - midpoint.Y;
 
-        MainScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, MainScroll.ScrollableWidth));
-        MainScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, MainScroll.ScrollableHeight));
+        CanvasScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, CanvasScroll.ScrollableWidth));
+        CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
 
         prevMidpoint = midpoint;
     }
