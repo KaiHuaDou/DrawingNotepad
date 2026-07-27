@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
@@ -10,93 +11,10 @@ namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
-    private readonly Stack<StrokeChange> undoStack = new( );
-    private readonly Stack<StrokeChange> redoStack = new( );
-    private bool applyingUndoRedo;
-
-    private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
-    {
-        StrokesChanged?.Invoke(this, EventArgs.Empty);
-
-        if (applyingUndoRedo || eraser.IsActive || (e.Added.Count == 0 && e.Removed.Count == 0))
-        {
-            return;
-        }
-
-        undoStack.Push(new StrokeChange(e.Added, e.Removed));
-        redoStack.Clear( );
-        UpdateCanUndoRedo( );
-    }
-
-    public void Undo( )
-    {
-        if (undoStack.Count == 0)
-        {
-            return;
-        }
-
-        applyingUndoRedo = true;
-        StrokeChange change = undoStack.Pop( );
-        Canvas.Strokes.Remove(change.Added);
-        Canvas.Strokes.Add(change.Removed);
-        applyingUndoRedo = false;
-
-        redoStack.Push(change);
-        UpdateCanUndoRedo( );
-    }
-
-    public void Redo( )
-    {
-        if (redoStack.Count == 0)
-        {
-            return;
-        }
-
-        applyingUndoRedo = true;
-        StrokeChange change = redoStack.Pop( );
-        Canvas.Strokes.Remove(change.Removed);
-        Canvas.Strokes.Add(change.Added);
-        applyingUndoRedo = false;
-
-        undoStack.Push(change);
-        UpdateCanUndoRedo( );
-    }
-
-    private void ClearHistory( )
-    {
-        undoStack.Clear( );
-        redoStack.Clear( );
-        UpdateCanUndoRedo( );
-    }
-
-    private void UpdateCanUndoRedo( )
-    {
-        var canUndo = undoStack.Count > 0;
-        var canRedo = redoStack.Count > 0;
-
-        if (CanUndo != canUndo)
-        {
-            CanUndo = canUndo;
-            CanUndoChanged?.Invoke(this, new DependencyPropertyChangedEventArgs(CanUndoProperty, !canUndo, canUndo));
-        }
-
-        if (CanRedo != canRedo)
-        {
-            CanRedo = canRedo;
-            CanRedoChanged?.Invoke(this, new DependencyPropertyChangedEventArgs(CanRedoProperty, !canRedo, canRedo));
-        }
-    }
-
     private void EndEraserCycle( )
     {
-        if (!eraser.IsActive)
-        {
-            return;
-        }
+        var change = eraser.End( );
 
-        eraser.End( );
-
-        StrokeChange change = eraser.CollectChanges( );
         if (change.Added.Count > 0 || change.Removed.Count > 0)
         {
             undoStack.Push(change);
@@ -105,142 +23,155 @@ public partial class InkCanvasNext
         }
     }
 
-    private void CanvasPreviewMouseDown(object o, MouseButtonEventArgs e)
+    private bool IsAreaEraserActive(TouchState state)
     {
-        if (e.StylusDevice != null || Mode != InkCanvasNextMode.EraseArea)
+        if (state == TouchState.Eraser)
         {
+            return true;
+        }
+
+        return Mode == InkCanvasNextMode.EraseArea
+            && state is TouchState.EvalDraw or TouchState.Draw or TouchState.MultiDraw;
+    }
+
+    private void UpdateAreaEraser( )
+    {
+        if (!IsAreaEraserActive(state))
+        {
+            EndEraserCycle( );
             return;
         }
 
-        Point position = e.GetPosition(Canvas);
-        eraser.Diameter = EraserDiameter;
-        eraser.Start(position);
-        e.Handled = true;
+        eraser.Scale = currentScale;
+
+        if (state == TouchState.Eraser)
+        {
+            (var screenCenter, var radius) = Eraser.GetCircle(touches);
+            eraser.Diameter = radius;
+
+            var canvasCenter = GetCanvasCenter(touches);
+            eraser.Show(screenCenter);
+            eraser.Update(canvasCenter);
+        }
+        else
+        {
+            eraser.Diameter = EraserDiameter;
+
+            (var Device, var Position) = touches.First( ).Value;
+            var screenPosition = Position;
+            var canvasPosition = Device.GetTouchPoint(Canvas).Position;
+
+            eraser.Show(screenPosition);
+
+            if (state != TouchState.EvalDraw)
+            {
+                eraser.Update(canvasPosition);
+            }
+        }
     }
 
-    private void CanvasPreviewMouseMove(object o, MouseEventArgs e)
+    private Point GetCanvasCenter(Dictionary<int, (TouchDevice Device, Point Position)> touches)
     {
-        if (e.StylusDevice != null || !eraser.IsActive)
+        double sumX = 0, sumY = 0;
+        foreach (var kv in touches)
         {
-            return;
+            var pos = kv.Value.Device.GetTouchPoint(Canvas).Position;
+            sumX += pos.X;
+            sumY += pos.Y;
         }
 
-        eraser.Move(e.GetPosition(Canvas));
-        e.Handled = true;
+        return new Point(sumX / touches.Count, sumY / touches.Count);
     }
-
-    private void CanvasPreviewMouseUp(object o, MouseButtonEventArgs e)
-    {
-        if (e.StylusDevice != null || !eraser.IsActive)
-        {
-            return;
-        }
-
-        EndEraserCycle( );
-        e.Handled = true;
-    }
-}
-internal sealed class StrokeChange(StrokeCollection added, StrokeCollection removed)
-{
-    public StrokeCollection Added { get; } = added;
-    public StrokeCollection Removed { get; } = removed;
 }
 
 internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
 {
-    private readonly StrokeCollection added = [];
-    private readonly StrokeCollection removed = [];
-    private IncrementalStrokeHitTester? hitTester;
+    public StrokeChanges StrokeChanges { get; } = new([], []);
 
     public double Diameter { get; set; } = 50.0;
 
-    public bool IsActive { get; private set; }
+    public double Scale { get; set; } = 1.0;
 
-    public bool IsVisible => feedback.Visibility == Visibility.Visible;
+    public bool Active { get; private set; }
 
-    public void Show(Point position)
+    private double LogicalDiameter => Diameter / Scale;
+
+    private IncrementalStrokeHitTester? hitTester;
+
+    public void Show(Point screenPosition)
     {
         feedback.Width = Diameter;
         feedback.Height = Diameter;
-        Canvas.SetLeft(feedback, position.X - Diameter / 2);
-        Canvas.SetTop(feedback, position.Y - Diameter / 2);
+        Canvas.SetLeft(feedback, screenPosition.X - Diameter / 2);
+        Canvas.SetTop(feedback, screenPosition.Y - Diameter / 2);
         feedback.Visibility = Visibility.Visible;
     }
 
-    public void Hide( )
+    public void Start(Point canvasPosition)
     {
-        feedback.Visibility = Visibility.Collapsed;
-    }
-
-    public void Start(Point position)
-    {
-        if (IsActive)
+        if (Active)
         {
             return;
         }
 
-        IsActive = true;
-        added.Clear( );
-        removed.Clear( );
-        CreateHitTester(position);
+        Active = true;
+        StrokeChanges.Added.Clear( );
+        StrokeChanges.Removed.Clear( );
+        CreateHitTester(canvasPosition);
     }
 
-    public void Restart(Point position)
+    public void Move(Point canvasPosition)
     {
-        if (IsActive)
-        {
-            hitTester?.EndHitTesting( );
-        }
-
-        IsActive = true;
-        CreateHitTester(position);
-    }
-
-    public void Move(Point position)
-    {
-        if (!IsActive)
+        if (!Active)
         {
             return;
         }
 
-        hitTester?.AddPoint(position);
-        Show(position);
+        hitTester?.AddPoint(canvasPosition);
     }
 
-    public void End( )
+    public void Update(Point canvasPosition)
     {
-        if (!IsActive)
+        if (!Active)
         {
-            return;
+            Start(canvasPosition);
+        }
+        else
+        {
+            Move(canvasPosition);
+        }
+    }
+
+    public StrokeChanges End( )
+    {
+        if (!Active)
+        {
+            return new StrokeChanges([], []);
         }
 
-        IsActive = false;
+        Active = false;
         hitTester?.EndHitTesting( );
         hitTester = null;
-        Hide( );
+        feedback.Visibility = Visibility.Collapsed;
+
+        var change = new StrokeChanges([.. StrokeChanges.Added], [.. StrokeChanges.Removed]);
+        StrokeChanges.Added.Clear( );
+        StrokeChanges.Removed.Clear( );
+        return change;
     }
 
     private void CreateHitTester(Point position)
     {
-        var shape = new EllipseStylusShape(Diameter, Diameter);
+        var shape = new EllipseStylusShape(LogicalDiameter, LogicalDiameter);
         hitTester = canvas.Strokes.GetIncrementalStrokeHitTester(shape);
         hitTester.StrokeHit += OnStrokeHit;
         hitTester.AddPoint(position);
-        Show(position);
-    }
-
-    public StrokeChange CollectChanges( )
-    {
-        var change = new StrokeChange(new StrokeCollection(added), new StrokeCollection(removed));
-        added.Clear( );
-        removed.Clear( );
-        return change;
     }
 
     private void OnStrokeHit(object sender, StrokeHitEventArgs e)
     {
-        StrokeCollection result = e.GetPointEraseResults( );
-        Stroke hitStroke = e.HitStroke;
+        var result = e.GetPointEraseResults( );
+        var hitStroke = e.HitStroke;
 
         if (!canvas.Strokes.Contains(hitStroke))
         {
@@ -250,7 +181,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
         canvas.Strokes.Replace([hitStroke], result);
 
         TrackRemoved(hitStroke);
-        foreach (Stroke stroke in result)
+        foreach (var stroke in result)
         {
             TrackAdded(stroke);
         }
@@ -258,17 +189,48 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
 
     private void TrackAdded(Stroke stroke)
     {
-        if (!removed.Remove(stroke))
+        if (!StrokeChanges.Removed.Remove(stroke))
         {
-            added.Add(stroke);
+            StrokeChanges.Added.Add(stroke);
         }
     }
 
     private void TrackRemoved(Stroke stroke)
     {
-        if (!added.Remove(stroke))
+        if (!StrokeChanges.Added.Remove(stroke))
         {
-            removed.Add(stroke);
+            StrokeChanges.Removed.Add(stroke);
         }
+    }
+
+    public static (Point center, double radius) GetCircle(IReadOnlyDictionary<int, (TouchDevice Device, Point Position)> touches)
+    {
+        var count = touches.Count;
+        if (count == 0)
+        {
+            return default;
+        }
+
+        double sumX = 0, sumY = 0;
+        foreach (var kv in touches)
+        {
+            var pos = kv.Value.Position;
+            sumX += pos.X;
+            sumY += pos.Y;
+        }
+
+        var center = new Point(sumX / count, sumY / count);
+
+        double max = 0;
+        foreach (var kv in touches)
+        {
+            var distance2 = Geometry.Distance2(kv.Value.Position, center);
+            if (distance2 > max)
+            {
+                max = distance2;
+            }
+        }
+
+        return (center, Math.Sqrt(max));
     }
 }

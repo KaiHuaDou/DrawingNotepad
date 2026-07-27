@@ -3,11 +3,14 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Ink;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 
 using InkCanvasNext;
+
 using Microsoft.Win32;
 
 namespace LightBoard;
@@ -27,6 +30,8 @@ public partial class MainWindow : Window
         {
             OpenStrokes(App.PendingOpen);
         }
+
+        PagePreviewsBox.ItemsSource = PagePreviews;
     }
 
     private void WindowDeactivated(object o, EventArgs e)
@@ -107,7 +112,7 @@ public partial class MainWindow : Window
 
     public void SaveStrokes(string fileName)
     {
-        var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        using var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
         CanvasNext.Strokes.Save(stream, false);
     }
 
@@ -247,6 +252,8 @@ public partial class MainWindow : Window
         dirty = true;
     }
 
+#pragma warning disable IDE0060
+
     private void CanvasNextCanUndoChanged(object o, DependencyPropertyChangedEventArgs e)
     {
         UndoButton.IsEnabled = CanvasNext.CanUndo;
@@ -257,5 +264,24 @@ public partial class MainWindow : Window
         RedoButton.IsEnabled = CanvasNext.CanRedo;
     }
 
+#pragma warning restore IDE0060
     #endregion Editing
+
+    private void AllPageToogleClick(object o, RoutedEventArgs e)
+    {
+        if (o is not ToggleButton { IsChecked: bool isChecked })
+        {
+            return;
+        }
+
+        var heightAnimation = new DoubleAnimation
+        {
+            From = PagingBorder.ActualHeight,
+            To = isChecked ? ActualHeight - 20 : 66,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
+        };
+
+        PagingBorder.BeginAnimation(Border.HeightProperty, heightAnimation);
+    }
 }

@@ -17,7 +17,7 @@ public partial class App : Application, ISingleInstance
         [STAThread]
         public static void Main(string[] args)
         {
-            if (args.Length > 0)
+            if (args?.Length > 0)
             {
                 PendingOpen = args[0];
             }
@@ -46,7 +46,7 @@ public partial class App : Application, ISingleInstance
     private void AppDispatcherUnhandledException(object o, DispatcherUnhandledExceptionEventArgs e)
     {
         File.AppendAllText(Path.Join(AppPath, "error.log"), $"\n{e.Exception.Message}\n{e.Exception.StackTrace}\n");
-        (Current.MainWindow as MainWindow)!.SaveStrokes(Path.Join(AppPath, DateTime.Now.Ticks.ToString( ), ".isf"));
+        (Current.MainWindow as MainWindow)!.SaveStrokes(Path.Join(AppPath, $"{DateTime.Now.Ticks}.isf"));
         MessageBox.Show(
             "程序出现致命错误，即将关闭。错误日志已记录。墨迹已备份。",
             "轻白板",

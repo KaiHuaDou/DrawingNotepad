@@ -12,8 +12,8 @@
     - The transition only happends when `count` changes.
     - `d > l` never happend unless a new finger down.
         - Because:
-          - This state machines is designed for a enough huge screen.
-          - `d > l` goes to `MultiDraw`. `MultiDraw` is designed to let two people put down finger on the two side.
+            - This state machines is designed for a enough huge screen.
+            - `d > l` goes to `MultiDraw`. `MultiDraw` is designed to let two people put down finger on the two side.
 
 - Requires
     - When `EvalDraw --> Draw`, keep the drawed stroke.

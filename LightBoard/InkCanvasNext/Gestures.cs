@@ -25,7 +25,12 @@ public partial class InkCanvasNext
 
     private void InitGesture( )
     {
-        (Point? first, Point? second) = GetMajorTouches( );
+        (var first, var second) = GetMajorTouches( );
+        if (first is null)
+        {
+            return;
+        }
+
         prevMidpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
         initialDistance = second is null ? 0 : Distance(first!.Value, second.Value);
         initialScale = currentScale;
@@ -33,8 +38,8 @@ public partial class InkCanvasNext
 
     private void PanZoom( )
     {
-        (Point? first, Point? second) = GetMajorTouches( );
-        Point midpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
+        (var first, var second) = GetMajorTouches( );
+        var midpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
         var distance = second is null ? 0 : Distance(first!.Value, second.Value);
 
         var ratio = initialDistance > 0 && distance > 0
@@ -44,6 +49,7 @@ public partial class InkCanvasNext
         var scale = Math.Clamp(initialScale * ratio, 0.1, 10.0);
 
         canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = scale;
+        eraser.Scale = scale;
 
         ratio = scale / currentScale;
 
@@ -63,8 +69,8 @@ public partial class InkCanvasNext
 
     private void Pan( )
     {
-        (Point? first, Point? second) = GetMajorTouches( );
-        Point midpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
+        (var first, var second) = GetMajorTouches( );
+        var midpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
 
         var newOffsetX = CanvasScroll.HorizontalOffset + prevMidpoint.X - midpoint.X;
         var newOffsetY = CanvasScroll.VerticalOffset + prevMidpoint.Y - midpoint.Y;
@@ -90,7 +96,7 @@ public partial class InkCanvasNext
 
         using var enumerator = values.GetEnumerator( );
         enumerator.MoveNext( );
-        Point first = enumerator.Current.Position;
+        var first = enumerator.Current.Position;
 
         if (count == 1)
         {
@@ -98,7 +104,7 @@ public partial class InkCanvasNext
         }
 
         enumerator.MoveNext( );
-        Point second = enumerator.Current.Position;
+        var second = enumerator.Current.Position;
 
         return (first, second);
     }

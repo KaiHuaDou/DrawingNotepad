@@ -1,33 +1,35 @@
 <UserControl x:Class="InkCanvasNext.InkCanvasNext"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer x:Name="CanvasScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
-        <Grid>
-            <InkCanvas x:Name="Canvas"
-                       Width="32768" Height="16384"
-                       Margin="0,0,0,0"
-                       Background="{Binding Background, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                       LostTouchCapture="CanvasLostTouchCapture"
-                       PreviewMouseDown="CanvasPreviewMouseDown"
-                       PreviewMouseMove="CanvasPreviewMouseMove" PreviewMouseUp="CanvasPreviewMouseUp"
-                       PreviewTouchDown="CanvasPreviewTouchDown"
-                       PreviewTouchMove="CanvasPreviewTouchMove" PreviewTouchUp="CanvasPreviewTouchUp"
-                       Stylus.IsPressAndHoldEnabled="False" TouchLeave="CanvasTouchLeave">
-                <InkCanvas.DefaultDrawingAttributes>
-                    <DrawingAttributes Width="5" Height="5"
-                                       FitToCurve="True" StylusTip="Ellipse"
-                                       Color="#E6E6E6" />
-                </InkCanvas.DefaultDrawingAttributes>
-            </InkCanvas>
-            <Canvas x:Name="EraserOverlayCanvas"
-                    Panel.ZIndex="1"
-                    IsHitTestVisible="False"
-                    Background="Transparent">
-                <Ellipse x:Name="EraserFeedback"
-                         Width="0" Height="0"
-                         Visibility="Collapsed"
-                         Fill="White" />
-            </Canvas>
-        </Grid>
-    </ScrollViewer>
+    <Grid>
+        <ScrollViewer x:Name="CanvasScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
+            <Grid>
+                <InkCanvas x:Name="Canvas"
+                           Width="32768" Height="16384"
+                           Background="{Binding Background, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           LostTouchCapture="CanvasLostTouchCapture"
+                           PreviewMouseDown="CanvasPreviewMouseDown"
+                           PreviewMouseMove="CanvasPreviewMouseMove" PreviewMouseUp="CanvasPreviewMouseUp"
+                           PreviewTouchDown="CanvasPreviewTouchDown"
+                           PreviewTouchMove="CanvasPreviewTouchMove" PreviewTouchUp="CanvasPreviewTouchUp"
+                           Stylus.IsPressAndHoldEnabled="False" TouchLeave="CanvasTouchLeave">
+                    <InkCanvas.DefaultDrawingAttributes>
+                        <DrawingAttributes Width="5" Height="5"
+                                           FitToCurve="True" StylusTip="Ellipse"
+                                           Color="#E6E6E6" />
+                    </InkCanvas.DefaultDrawingAttributes>
+                </InkCanvas>
+            </Grid>
+        </ScrollViewer>
+
+        <Canvas x:Name="EraserOverlayCanvas"
+                Panel.ZIndex="1"
+                IsHitTestVisible="False"
+                Background="Transparent">
+            <Ellipse x:Name="EraserFeedback"
+                     Width="0" Height="0"
+                     Visibility="Collapsed"
+                     Fill="White" />
+        </Canvas>
+    </Grid>
 </UserControl>

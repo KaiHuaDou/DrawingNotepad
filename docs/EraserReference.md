@@ -15,7 +15,7 @@
 核心文件：
 
 | 文件 | 职责 |
-|------|------|
+| ------ | ------ |
 | [MW_Eraser.cs](file:///d:/Code/Clones/community/Ink%20Canvas/MainWindow_cs/MW_Eraser.cs) | 橡皮擦覆盖层、增量碰撞检测、尺寸/形状计算 |
 | [MW_FloatingBarIcons.cs](file:///d:/Code/Clones/community/Ink%20Canvas/MainWindow_cs/MW_FloatingBarIcons.cs) | 工具栏按钮点击、模式切换、UI 高亮 |
 | [MainWindow.xaml.cs](file:///d:/Code/Clones/community/Ink%20Canvas/MainWindow.xaml.cs) | `SetCurrentToolMode`、`SetCursorBasedOnEditingMode`、自动切回批注 |
@@ -208,7 +208,7 @@ internal void EraserIconByStrokes_Click(object sender, MouseButtonEventArgs e)
 关键区别：
 
 | | 面积擦 | 线擦 |
-|---|---|---|
+| --- | --- | --- |
 | `EditingMode` | `EraseByPoint` | `EraseByStroke` |
 | 覆盖层 | 启用 `EraserOverlayCanvas` | 禁用覆盖层 |
 | 擦除粒度 | 按几何点拆分笔画 | 整根笔画删除 |
@@ -252,7 +252,7 @@ internal bool SetCurrentToolMode(InkCanvasEditingMode newMode, Action additional
     }
     catch (Exception ex)
     {
-        LogHelper.WriteLogToFile($"设置工具模式时出错: {ex.Message}", LogHelper.LogType.Error);
+        LogHelper.WriteLogToFile($"设置工具模式时出错：{ex.Message}", LogHelper.LogType.Error);
         return false;
     }
 }
@@ -733,7 +733,7 @@ private void HandleEraserOperationEnded()
     }
     catch (Exception ex)
     {
-        LogHelper.WriteLogToFile($"处理橡皮擦操作结束事件失败: {ex.Message}", LogHelper.LogType.Error);
+        LogHelper.WriteLogToFile($"处理橡皮擦操作结束事件失败：{ex.Message}", LogHelper.LogType.Error);
     }
 }
 ```
@@ -766,7 +766,7 @@ private void EraserAutoSwitchBackTimer_Tick(object sender, EventArgs e)
     }
     catch (Exception ex)
     {
-        LogHelper.WriteLogToFile($"橡皮擦自动切换计时器事件处理失败: {ex.Message}", LogHelper.LogType.Error);
+        LogHelper.WriteLogToFile($"橡皮擦自动切换计时器事件处理失败：{ex.Message}", LogHelper.LogType.Error);
     }
 }
 ```
@@ -799,7 +799,7 @@ internal static readonly Guid FrozenStrokePropertyGuid = new Guid("12345678-1234
 
 - 尺寸下拉框（5 档）
 - 形状 Tab（圆形 / 黑板擦）
-- 清墨、清墨+清空历史按钮
+- 清墨、清墨 + 清空历史按钮
 
 事件在 `MainWindow.xaml.cs` [L333-L351](file:///d:/Code/Clones/community/Ink%20Canvas/MainWindow.xaml.cs#L333-L351) 中统一绑定：
 
@@ -843,7 +843,7 @@ private void ComboBoxEraserSizeFloatingBar_SelectionChanged(object sender, Selec
     }
     catch (Exception ex)
     {
-        LogHelper.WriteLogToFile($"切换橡皮擦大小时出错: {ex.Message}", LogHelper.LogType.Error);
+        LogHelper.WriteLogToFile($"切换橡皮擦大小时出错：{ex.Message}", LogHelper.LogType.Error);
     }
 }
 ```
@@ -873,7 +873,7 @@ private void EraserTypeTab_SelectionChanged(object sender, SelectionChangedEvent
 ## 13. 关键状态变量汇总
 
 | 变量 | 文件 | 含义 |
-|---|---|---|
+| --- | --- | --- |
 | `isUsingGeometryEraser` | MW_Eraser.cs | 是否正在使用几何橡皮擦 |
 | `isUsingStrokesEraser` | MW_Eraser.cs | 是否使用笔画橡皮擦（HitTest 模式） |
 | `isEraserCircleShape` | MW_Eraser.cs | 当前是否为圆形橡皮擦 |
@@ -891,5 +891,5 @@ private void EraserTypeTab_SelectionChanged(object sender, SelectionChangedEvent
 2. 启用 `EraserOverlayCanvas`、设置 `EditingMode = EraseByPoint`
 3. 用户按下时创建 `IncrementalStrokeHitTester` 并订阅 `StrokeHit`
 4. 移动时不断调用 `hitTester.AddPoint(pt)`，命中笔画后拆分/删除
-5. 抬起时结束碰撞检测、提交历史、 optionally 启动自动切回批注计时器
+5. 抬起时结束碰撞检测、提交历史、optionally 启动自动切回批注计时器
 6. 线擦则直接切到 `EraseByStroke`，由 WPF 完成整笔画擦除

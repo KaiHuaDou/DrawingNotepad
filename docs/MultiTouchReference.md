@@ -5,6 +5,7 @@
 Ink Canvas 通过自定义 WPF 的 `InkCanvas` 事件处理，实现了多指同时书写（Multi-Touch Ink）能力。默认 WPF `InkCanvas` 同一时间只响应单个触摸输入；本项目通过为每一根手指/手写笔维护独立的 `StrokeVisual` 与 `VisualCanvas`，在 `PreviewTouchDown`、`PreviewTouchMove`、`PreviewTouchUp` 及 `StylusDown/Move/Up` 事件中分别处理，最终把每一路笔迹提交到 `inkCanvas.Strokes` 集合。
 
 核心设计要点：
+
 - **按设备 ID 隔离笔迹**：`Dictionary<int, StrokeVisual>` 与 `Dictionary<int, VisualCanvas>` 以 `TouchDevice.Id` / `StylusDevice.Id` 为键。
 - **自定义渲染管线**：`StrokeVisual` 在 `DrawingVisual` 上实时绘制线段，`VisualCanvas` 作为 `FrameworkElement` 宿主这些视觉对象。
 - **实时速度笔锋**：对无压感触摸输入，通过移动速度动态计算 `PressureFactor`，模拟毛笔/钢笔效果。
@@ -462,6 +463,7 @@ private void InkCanvas_PreviewTouchMove(object sender, TouchEventArgs e)
 位置：`Ink Canvas/MainWindow_cs/MW_TouchEvents.cs:1831-1986`
 
 主要工作：
+
 1. 将 `StrokeVisual.Stroke` 提交到 `inkCanvas.Strokes`。
 2. 触发 `inkCanvas_StrokeCollected` 事件，以便时间机器记录。
 3. 清理字典与 `VisualCanvas`。
@@ -522,6 +524,7 @@ private void InkCanvas_PreviewTouchUp(object sender, TouchEventArgs e)
 位置：`Ink Canvas/MainWindow_cs/MW_TouchEvents.cs:902-1252`
 
 手写笔通过 `StylusDown / StylusMove / StylusUp` 处理。关键点：
+
 - 忽略来自触摸屏的 Stylus 设备（`IsTouchStylusDevice`），避免与 `Touch` 事件重复处理。
 - 倒置笔尾自动切换为 `EraseByPoint`。
 - 实时速度笔锋路径与普通 `Ink` 路径并存。
@@ -983,7 +986,7 @@ InkCanvas_PreviewTouchDown
 ## 15. 文件索引
 
 | 文件 | 说明 |
-|------|------|
+| ------ | ------ |
 | [MW_TouchEvents.cs](file:///d:/Code/Clones/community/Ink%20Canvas/MainWindow_cs/MW_TouchEvents.cs) | 多指/手写笔事件处理、实时笔锋、插值、停顿拉直 |
 | [MultiTouchInput.cs](file:///d:/Code/Clones/community/Ink%20Canvas/Helpers/MultiTouchInput.cs) | `VisualCanvas`、`StrokeVisual` 自定义渲染 |
 | [MW_Settings.cs](file:///d:/Code/Clones/community/Ink%20Canvas/MainWindow_cs/MW_Settings.cs) | 多指模式开关事件、与双指手势互斥 |

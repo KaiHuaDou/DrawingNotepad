@@ -23,7 +23,7 @@ public partial class InkCanvasNext
         var x2 = Get1stFingerDispl2( );
         var c2 = touchDisplThreshold * touchDisplThreshold;
 
-        TouchState newState = currentState switch
+        var newState = state switch
         {
             TouchState.Idle => count switch
             {
@@ -33,7 +33,7 @@ public partial class InkCanvasNext
                 3 or 4 when d2 <= l2 => TouchState.Pan,
                 >= 5 when d2 <= l2 => TouchState.Eraser,
                 >= 2 when d2 > l2 => TouchState.MultiDraw,
-                _ => currentState,
+                _ => state,
             },
 
             TouchState.EvalDraw => count switch
@@ -44,21 +44,21 @@ public partial class InkCanvasNext
                 3 or 4 when d2 <= l2 => TouchState.Pan,
                 >= 5 when d2 <= l2 => TouchState.Eraser,
                 >= 2 when d2 > l2 => TouchState.MultiDraw,
-                _ => currentState,
+                _ => state,
             },
 
             TouchState.Draw => count switch
             {
                 0 => TouchState.Idle,
                 >= 2 when d2 > l2 => TouchState.MultiDraw,
-                _ => currentState,
+                _ => state,
             },
 
             TouchState.MultiDraw => count switch
             {
                 0 => TouchState.Idle,
                 1 => TouchState.Draw,
-                _ => currentState,
+                _ => state,
             },
 
             TouchState.PanZoom => count switch
@@ -67,7 +67,7 @@ public partial class InkCanvasNext
                 3 or 4 when d2 <= l2 => TouchState.Pan,
                 >= 5 when d2 <= l2 => TouchState.Eraser,
                 > 2 when d2 > l2 => TouchState.MultiDraw,
-                _ => currentState,
+                _ => state,
             },
 
             TouchState.Pan => count switch
@@ -75,17 +75,17 @@ public partial class InkCanvasNext
                 0 => TouchState.Idle,
                 >= 5 when d2 <= l2 => TouchState.Eraser,
                 > 3 when d2 > l2 => TouchState.MultiDraw,
-                _ => currentState,
+                _ => state,
             },
 
             TouchState.Eraser => count switch
             {
                 0 => TouchState.Idle,
                 > 5 when d2 > l2 => TouchState.MultiDraw,
-                _ => currentState,
+                _ => state,
             },
 
-            _ => currentState,
+            _ => state,
         };
 
         SetState(newState);
@@ -94,20 +94,25 @@ public partial class InkCanvasNext
 
     private void SetState(TouchState newState)
     {
-        if (currentState == newState)
+        if (state == newState)
         {
             return;
         }
 
-        switch ((currentState, newState))
+        switch ((state, newState))
         {
             case (TouchState.Idle, TouchState.EvalDraw):
-                baseEditingMode = Mode;
+                prevMode = Mode;
+                if (Mode == InkCanvasNextMode.EraseArea)
+                {
+                    CaptureAll( );
+                }
+
                 break;
 
             case (TouchState.Idle, TouchState.PanZoom):
             case (TouchState.Idle, TouchState.Pan):
-                baseEditingMode = Mode;
+                prevMode = Mode;
                 ReleaseAll( );
                 Canvas.EditingMode = InkCanvasEditingMode.None;
                 CaptureAll( );
@@ -115,28 +120,38 @@ public partial class InkCanvasNext
                 break;
 
             case (TouchState.Idle, TouchState.Eraser):
-                baseEditingMode = Mode;
+                prevMode = Mode;
                 ReleaseAll( );
-                Canvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
+                Canvas.EditingMode = InkCanvasEditingMode.None;
+                CaptureAll( );
                 break;
 
             case (TouchState.Idle, TouchState.MultiDraw):
-                baseEditingMode = Mode;
+                prevMode = Mode;
                 ReleaseAll( );
                 Canvas.EditingMode = InkCanvasEditingMode.Ink;
                 break;
 
             case (TouchState.EvalDraw, TouchState.Idle):
             case (TouchState.Draw, TouchState.Idle):
+                ReleaseAll( );
+                RestoreMode( );
+                break;
+
             case (TouchState.MultiDraw, TouchState.Idle):
             case (TouchState.PanZoom, TouchState.Idle):
             case (TouchState.Pan, TouchState.Idle):
             case (TouchState.Eraser, TouchState.Idle):
                 ReleaseAll( );
-                RestoreEditingMode( );
+                RestoreMode( );
                 break;
 
             case (TouchState.EvalDraw, TouchState.Draw):
+                if (Mode == InkCanvasNextMode.EraseArea)
+                {
+                    CaptureAll( );
+                }
+
                 break;
 
             case (TouchState.EvalDraw, TouchState.PanZoom):
@@ -148,7 +163,7 @@ public partial class InkCanvasNext
                 break;
 
             case (TouchState.MultiDraw, TouchState.Draw):
-                RestoreEditingMode( );
+                RestoreMode( );
                 break;
 
             case (TouchState.PanZoom, TouchState.Pan):
@@ -159,7 +174,8 @@ public partial class InkCanvasNext
             case (TouchState.PanZoom, TouchState.Eraser):
             case (TouchState.Pan, TouchState.Eraser):
                 ReleaseAll( );
-                Canvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
+                Canvas.EditingMode = InkCanvasEditingMode.None;
+                CaptureAll( );
                 break;
 
             case (TouchState.EvalDraw, TouchState.MultiDraw):
@@ -170,21 +186,25 @@ public partial class InkCanvasNext
                 ReleaseAll( );
                 Canvas.EditingMode = InkCanvasEditingMode.Ink;
                 break;
-
-            default:
-                break;
         }
 
-        currentState = newState;
+        if (IsAreaEraserActive(state) && !IsAreaEraserActive(newState))
+        {
+            EndEraserCycle( );
+        }
+
+        state = newState;
     }
 
-    private void RestoreEditingMode( )
+    private void RestoreMode( )
     {
-        switch (baseEditingMode)
+        switch (prevMode)
         {
             case InkCanvasNextMode.Ink:
-            case InkCanvasNextMode.EraseArea:
                 Canvas.EditingMode = InkCanvasEditingMode.Ink;
+                break;
+            case InkCanvasNextMode.EraseArea:
+                Canvas.EditingMode = InkCanvasEditingMode.None;
                 break;
             case InkCanvasNextMode.EraseStroke:
                 Canvas.EditingMode = InkCanvasEditingMode.EraseByStroke;

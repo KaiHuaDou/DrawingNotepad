@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net6.0-windows</TargetFramework>
         <OutputType>WinExe</OutputType>
@@ -8,11 +8,12 @@
     </PropertyGroup>
     <PropertyGroup>
         <StartupObject>LightBoard.App.Program</StartupObject>
-        <AnalysisLevel>latest-recommended</AnalysisLevel>
-        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <AnalysisLevel>latest-all</AnalysisLevel>
         <PublishSingleFile>true</PublishSingleFile>
         <PublishReadyToRun>true</PublishReadyToRun>
         <PublishReadyToRunComposite>false</PublishReadyToRunComposite>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <WarningLevel>8</WarningLevel>
     </PropertyGroup>
     <PropertyGroup Condition="$(Configuration)==Debug">
         <DebugType>full</DebugType>
@@ -22,6 +23,10 @@
     </PropertyGroup>
     <ItemGroup>
         <Folder Include="Properties\" />
+        <None Include="..\LICENSE">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="SingleInstanceCore" Version="2.2.2" />

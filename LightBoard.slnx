@@ -1,9 +1,9 @@
 <Solution>
   <Folder Name="/Documents/">
-    <File Path="Eraser.md" />
-    <File Path="LICENSE" />
+    <File Path="docs/Eraser.md" />
+    <File Path="docs/TODO.md" />
+    <File Path="docs/TouchStates.md" />
     <File Path="README.md" />
-    <File Path="TouchStates.md" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />

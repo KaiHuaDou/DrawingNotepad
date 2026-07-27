@@ -1,6 +1,7 @@
 <Window x:Class="LightBoard.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:LightBoard"
         xmlns:next="clr-namespace:InkCanvasNext"
         Title="LightBoard"
         Width="1920"
@@ -128,18 +129,38 @@
                 </StackPanel>
             </StackPanel>
         </Border>
-        <Border Margin="0,0,10,10" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+        <Border x:Name="PagingBorder"
+                Height="66"
+                Margin="0,10,10,10" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}">
-            <StackPanel Orientation="Horizontal">
-                <Button x:Name="PrevPageButton"
-                        IsEnabled="False"
-                        Style="{StaticResource ButtonStyle}"
-                        Tag="&#xE72B;" />
-                <Button x:Name="NewNextPageButton"
-                        IsEnabled="False"
-                        Style="{StaticResource ButtonStyle}"
-                        Tag="&#xE710;" />
-            </StackPanel>
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
+                    <Button x:Name="PrevPageButton"
+                            IsEnabled="False"
+                            Style="{StaticResource ButtonStyle}"
+                            Tag="&#xE72B;" />
+                    <ToggleButton x:Name="AllPageToogle"
+                                  Width="60" Height="40"
+                                  Margin="5,0,5,0"
+                                  Click="AllPageToogleClick">
+                        <TextBlock FontSize="19" Text="1/1" />
+                    </ToggleButton>
+                    <Button x:Name="NewNextPageButton" Style="{StaticResource ButtonStyle}" Tag="&#xE710;" />
+                </StackPanel>
+                <ListBox x:Name="PagePreviewsBox"
+                         Margin="0,0,0,10"
+                         Background="{x:Null}"
+                         BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="local:PagePreview">
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <TextBlock Foreground="#E6E6E6" FontSize="19" Text="{Binding Number}" />
+                                <Image HorizontalAlignment="Stretch" Source="{Binding Preview}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
         </Border>
         <next:InkCanvasNext x:Name="CanvasNext"
                             Background="#1E1E1E"

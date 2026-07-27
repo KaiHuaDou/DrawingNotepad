@@ -70,9 +70,9 @@ public partial class InkCanvasNext : UserControl
 
     private readonly Eraser eraser;
 
-    private InkCanvasNextMode baseEditingMode = InkCanvasNextMode.Ink;
+    private InkCanvasNextMode prevMode = InkCanvasNextMode.Ink;
 
-    private TouchState currentState = TouchState.Idle;
+    private TouchState state = TouchState.Idle;
 
     public InkCanvasNext( )
     {
@@ -86,9 +86,8 @@ public partial class InkCanvasNext : UserControl
 
         Strokes = Canvas.Strokes;
         DefaultDrawingAttributes = Canvas.DefaultDrawingAttributes;
-        DefaultDrawingAttributes.IsHighlighter = Canvas.DefaultDrawingAttributes.IsHighlighter;
 
-        baseEditingMode = InkCanvasNextMode.Ink;
+        prevMode = InkCanvasNextMode.Ink;
         distanceThreshold = 0.6 * SystemParameters.WorkArea.Width;
         distanceThreshold2 = distanceThreshold * distanceThreshold;
 
@@ -153,12 +152,6 @@ public partial class InkCanvasNext : UserControl
         control.ApplyEditingMode((InkCanvasNextMode) e.NewValue);
     }
 
-    private static void OnIsHighlighterChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        var control = (InkCanvasNext) d;
-        control.Canvas.DefaultDrawingAttributes.IsHighlighter = (bool) e.NewValue;
-    }
-
     private static void OnStrokesPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var control = (InkCanvasNext) d;
@@ -167,8 +160,8 @@ public partial class InkCanvasNext : UserControl
 
     private void ApplyEditingMode(InkCanvasNextMode mode)
     {
-        baseEditingMode = mode;
-        if (currentState != TouchState.Idle)
+        prevMode = mode;
+        if (state != TouchState.Idle)
         {
             return;
         }
@@ -192,7 +185,7 @@ public partial class InkCanvasNext : UserControl
 
     private void ApplyStrokes(StrokeCollection? strokes)
     {
-        StrokeCollection newStrokes = strokes ?? [];
+        var newStrokes = strokes ?? [];
         Canvas.Strokes.StrokesChanged -= OnStrokesChanged;
         Canvas.Strokes = newStrokes;
         Canvas.Strokes.StrokesChanged += OnStrokesChanged;
