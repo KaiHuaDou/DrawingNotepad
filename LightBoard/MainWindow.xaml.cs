@@ -25,13 +25,15 @@ public partial class MainWindow : Window
     public MainWindow( )
     {
         InitializeComponent( );
+        InitializePages( );
+        LoadPageState(CurrentPage);
 
         if (!string.IsNullOrWhiteSpace(App.PendingOpen))
         {
             OpenStrokes(App.PendingOpen);
         }
 
-        PagePreviewsBox.ItemsSource = PagePreviews;
+        UpdatePageUI( );
     }
 
     private void WindowDeactivated(object o, EventArgs e)
@@ -63,6 +65,67 @@ public partial class MainWindow : Window
     private void MinimizeWindow(object o, RoutedEventArgs e)
     {
         WindowState = WindowState.Minimized;
+    }
+
+    private void AllPageToogleClick(object o, RoutedEventArgs e)
+    {
+        if (o is not ToggleButton { IsChecked: bool isChecked })
+        {
+            return;
+        }
+
+        var heightAnimation = new DoubleAnimation
+        {
+            From = RightBorder.ActualHeight,
+            To = isChecked ? ActualHeight - 20 : 66,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
+        };
+
+        RightBorder.BeginAnimation(Border.HeightProperty, heightAnimation);
+    }
+
+    private void AboutClick(object o, RoutedEventArgs e)
+    {
+        MessageBox.Show(
+            "轻白板 / LightBoard 26H3\n源代码: https://github.com/KaiHuaDou/DrawingNotepad/\n发布版本: https://github.com/KaiHuaDou/DrawingNotepad/releases/",
+            "轻白板",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information
+        );
+    }
+
+    private void CollapseExpandClick(object o, RoutedEventArgs e)
+    {
+        var flag = CollapseExpandButton.IsChecked == true;
+
+        CollapseExpandIcon.Text = flag ? "\uE70E" : "\uE70D";
+
+        var animationLeft = new DoubleAnimation
+        {
+            From = flag ? 0 : -LeftBorder.ActualWidth - 10,
+            To = flag ? -LeftBorder.ActualWidth - 10 : 0,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+        };
+        var animationCenter = new DoubleAnimation
+        {
+            From = flag ? 0 : CenterBorder.ActualHeight + 10,
+            To = flag ? CenterBorder.ActualHeight + 10 : 0,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+        };
+        var animationRight = new DoubleAnimation
+        {
+            From = flag ? 0 : RightBorder.ActualWidth + 10 - 70,
+            To = flag ? RightBorder.ActualWidth + 10 - 70 : 0,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+        };
+
+        LeftTransform.BeginAnimation(TranslateTransform.XProperty, animationLeft);
+        CenterTransform.BeginAnimation(TranslateTransform.YProperty, animationCenter);
+        RightTransform.BeginAnimation(TranslateTransform.XProperty, animationRight);
     }
 
     #region IO
@@ -128,8 +191,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        StrokeCollection strokes = CanvasNext.Strokes.Clone( );
-        DpiScale dpi = VisualTreeHelper.GetDpi(this);
+        var strokes = CanvasNext.Strokes.Clone( );
+        var dpi = VisualTreeHelper.GetDpi(this);
         var fileName = dialog.FileName;
 
         ExportImageButton.IsEnabled = false;
@@ -153,17 +216,17 @@ public partial class MainWindow : Window
             return;
         }
 
-        Rect bounds = strokes.GetBounds( );
+        var bounds = strokes.GetBounds( );
         bounds.Inflate(64, 64);
 
         var background = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
         var visual = new DrawingVisual( );
-        using (DrawingContext context = visual.RenderOpen( ))
+        using (var context = visual.RenderOpen( ))
         {
             context.DrawRectangle(background, null, new Rect(0, 0, bounds.Width, bounds.Height));
-            foreach (Stroke stroke in strokes)
+            foreach (var stroke in strokes)
             {
-                Stroke copy = stroke.Clone( );
+                var copy = stroke.Clone( );
                 var matrix = new Matrix(1, 0, 0, 1, -bounds.X, -bounds.Y);
                 copy.Transform(matrix, false);
                 copy.Draw(context);
@@ -265,23 +328,31 @@ public partial class MainWindow : Window
     }
 
 #pragma warning restore IDE0060
-    #endregion Editing
 
-    private void AllPageToogleClick(object o, RoutedEventArgs e)
+    private void CopyClick(object o, RoutedEventArgs e)
     {
-        if (o is not ToggleButton { IsChecked: bool isChecked })
-        {
-            return;
-        }
-
-        var heightAnimation = new DoubleAnimation
-        {
-            From = PagingBorder.ActualHeight,
-            To = isChecked ? ActualHeight - 20 : 66,
-            Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
-        };
-
-        PagingBorder.BeginAnimation(Border.HeightProperty, heightAnimation);
+        CanvasNext.CopySelected( );
     }
+
+    private void PasteClick(object o, RoutedEventArgs e)
+    {
+        CanvasNext.Paste( );
+    }
+
+    private void CutClick(object o, RoutedEventArgs e)
+    {
+        CanvasNext.CutSelected( );
+    }
+
+    private void DeleteClick(object o, RoutedEventArgs e)
+    {
+        CanvasNext.DeleteSelected( );
+    }
+
+    private void CloneClick(object o, RoutedEventArgs e)
+    {
+        CanvasNext.CloneSelected( );
+    }
+
+    #endregion Editing
 }

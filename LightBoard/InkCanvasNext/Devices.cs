@@ -222,8 +222,6 @@ public partial class InkCanvasNext
         e.Handled = true;
     }
 
-#pragma warning disable IDE0008
-
     private double GetMaxDistance2( )
     {
         var count = touches.Count;

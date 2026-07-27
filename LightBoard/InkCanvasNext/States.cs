@@ -130,6 +130,7 @@ public partial class InkCanvasNext
                 prevMode = Mode;
                 ReleaseAll( );
                 Canvas.EditingMode = InkCanvasEditingMode.Ink;
+                CaptureAll( );
                 break;
 
             case (TouchState.EvalDraw, TouchState.Idle):
@@ -185,6 +186,7 @@ public partial class InkCanvasNext
             case (TouchState.Eraser, TouchState.MultiDraw):
                 ReleaseAll( );
                 Canvas.EditingMode = InkCanvasEditingMode.Ink;
+                CaptureAll( );
                 break;
         }
 

@@ -1,7 +1,7 @@
 <Solution>
   <Folder Name="/Documents/">
     <File Path="docs/Eraser.md" />
-    <File Path="docs/TODO.md" />
+    <File Path="docs/ROADMAP.md" />
     <File Path="docs/TouchStates.md" />
     <File Path="README.md" />
   </Folder>

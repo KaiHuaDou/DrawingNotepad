@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Timers;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -11,6 +12,8 @@ public partial class App : Application, ISingleInstance
 {
     public static readonly string AppPath = Path.GetDirectoryName(Environment.ProcessPath)!;
     public static string? PendingOpen { get; set; }
+
+    private Timer timer = new(60000);
 
     public static class Program
     {
@@ -35,6 +38,14 @@ public partial class App : Application, ISingleInstance
         {
             Current.Shutdown( );
         }
+
+        timer.Elapsed += TimerElapsed;
+        timer.Start();
+    }
+
+    private void TimerElapsed(object? o, ElapsedEventArgs e)
+    {
+        (Current.MainWindow as MainWindow)!.SaveStrokes(Path.Join(AppPath, "recover", $"{DateTime.Now.Ticks}.isf"));
     }
 
     public void OnInstanceInvoked(string[] args)

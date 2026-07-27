@@ -10,12 +10,16 @@ public partial class InkCanvasNext
 {
     private readonly double distanceThreshold;
     private readonly double distanceThreshold2;
+    private readonly double smoothingFactor = 0.3;
 
     private Point prevMidpoint;
     private Point viewportOrigin;
+
+    private double initialDistance;
+
     private double currentScale = 1.0;
     private double initialScale = 1.0;
-    private double initialDistance;
+    private double smoothedScale;
 
     protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
     {
@@ -34,6 +38,7 @@ public partial class InkCanvasNext
         prevMidpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
         initialDistance = second is null ? 0 : Distance(first!.Value, second.Value);
         initialScale = currentScale;
+        smoothedScale = currentScale;
     }
 
     private void PanZoom( )
@@ -46,12 +51,13 @@ public partial class InkCanvasNext
             ? distance / initialDistance
             : 1.0;
 
-        var scale = Math.Clamp(initialScale * ratio, 0.1, 10.0);
+        var targetScale = Math.Clamp(initialScale * ratio, 0.1, 10.0);
+        smoothedScale = smoothingFactor * targetScale + (1 - smoothingFactor) * smoothedScale;
 
-        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = scale;
-        eraser.Scale = scale;
+        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = smoothedScale;
+        eraser.Scale = smoothedScale;
 
-        ratio = scale / currentScale;
+        ratio = smoothedScale / currentScale;
 
         var newOffsetX = CanvasScroll.HorizontalOffset * ratio
             + (prevMidpoint.X - viewportOrigin.X) * ratio
@@ -63,7 +69,7 @@ public partial class InkCanvasNext
         CanvasScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, CanvasScroll.ScrollableWidth));
         CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
 
-        currentScale = scale;
+        currentScale = smoothedScale;
         prevMidpoint = midpoint;
     }
 
@@ -80,8 +86,6 @@ public partial class InkCanvasNext
 
         prevMidpoint = midpoint;
     }
-
-#pragma warning disable IDE0008
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private (Point? First, Point? Second) GetMajorTouches( )

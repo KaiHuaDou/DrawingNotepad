@@ -5,7 +5,7 @@ using System.Windows.Ink;
 
 namespace InkCanvasNext;
 
-internal sealed class StrokeChanges(StrokeCollection added, StrokeCollection removed)
+public sealed class StrokeChanges(StrokeCollection added, StrokeCollection removed)
 {
     public StrokeCollection Added { get; } = added;
     public StrokeCollection Removed { get; } = removed;
@@ -88,5 +88,36 @@ public partial class InkCanvasNext
             CanRedo = canRedo;
             CanRedoChanged?.Invoke(this, new DependencyPropertyChangedEventArgs(CanRedoProperty, !canRedo, canRedo));
         }
+    }
+
+    public void SwapHistory(
+        out Stack<StrokeChanges>? oldUndo,
+        out Stack<StrokeChanges>? oldRedo,
+        Stack<StrokeChanges>? newUndo,
+        Stack<StrokeChanges>? newRedo)
+    {
+        oldUndo = undoStack.Count > 0 ? new Stack<StrokeChanges>(undoStack) : null;
+        oldRedo = redoStack.Count > 0 ? new Stack<StrokeChanges>(redoStack) : null;
+
+        undoStack.Clear( );
+        redoStack.Clear( );
+
+        if (newUndo is not null)
+        {
+            foreach (var change in newUndo)
+            {
+                undoStack.Push(change);
+            }
+        }
+
+        if (newRedo is not null)
+        {
+            foreach (var change in newRedo)
+            {
+                redoStack.Push(change);
+            }
+        }
+
+        UpdateCanUndoRedo( );
     }
 }

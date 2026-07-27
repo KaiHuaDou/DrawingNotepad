@@ -137,6 +137,39 @@ public partial class InkCanvasNext : UserControl
         set => SetValue(StrokesProperty, value);
     }
 
+    public StrokeCollection SelectedStrokes => Canvas.GetSelectedStrokes( );
+
+    public bool HasSelection => Canvas.GetSelectedStrokes( ).Count > 0;
+
+    /// <summary>
+    /// 不应使用此属性。
+    /// </summary>
+    public InkCanvas InnerCanvas => Canvas;
+
+    public double CurrentScale
+    {
+        get => currentScale;
+        set
+        {
+            currentScale = value;
+            smoothedScale = value;
+            canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = value;
+            eraser.Scale = value;
+        }
+    }
+
+    public double OffsetX
+    {
+        get => CanvasScroll.HorizontalOffset;
+        set => CanvasScroll.ScrollToHorizontalOffset(value);
+    }
+
+    public double OffsetY
+    {
+        get => CanvasScroll.VerticalOffset;
+        set => CanvasScroll.ScrollToVerticalOffset(value);
+    }
+
     private static void OnDefaultDrawingAttributesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var control = (InkCanvasNext) d;
@@ -186,9 +219,13 @@ public partial class InkCanvasNext : UserControl
     private void ApplyStrokes(StrokeCollection? strokes)
     {
         var newStrokes = strokes ?? [];
+
         Canvas.Strokes.StrokesChanged -= OnStrokesChanged;
         Canvas.Strokes = newStrokes;
         Canvas.Strokes.StrokesChanged += OnStrokesChanged;
+
+        Strokes = newStrokes;
+
         ClearHistory( );
     }
 }
