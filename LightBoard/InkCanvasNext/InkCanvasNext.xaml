@@ -29,7 +29,7 @@
             <Ellipse x:Name="EraserFeedback"
                      Width="0" Height="0"
                      Visibility="Collapsed"
-                     Fill="White" />
+                     Fill="White" Stroke="Black" />
         </Canvas>
     </Grid>
 </UserControl>

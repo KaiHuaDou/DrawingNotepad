@@ -11,6 +11,8 @@ namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
+    private readonly Eraser eraser;
+
     private void EndEraserCycle( )
     {
         var change = eraser.End( );
@@ -72,6 +74,11 @@ public partial class InkCanvasNext
 
     private Point GetCanvasCenter(Dictionary<int, (TouchDevice Device, Point Position)> touches)
     {
+        if (touches.Count == 0)
+        {
+            return default;
+        }
+
         double sumX = 0, sumY = 0;
         foreach (var kv in touches)
         {
@@ -208,7 +215,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
         var count = touches.Count;
         if (count == 0)
         {
-            return default;
+            return (default, 1);
         }
 
         double sumX = 0, sumY = 0;

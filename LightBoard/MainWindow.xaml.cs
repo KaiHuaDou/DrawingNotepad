@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
@@ -8,10 +10,13 @@ using System.Windows.Ink;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 using InkCanvasNext;
 
 using Microsoft.Win32;
+
+using Ookii.Dialogs.Wpf;
 
 namespace LightBoard;
 
@@ -21,6 +26,9 @@ public partial class MainWindow : Window
     private const string ImageFilter = "PNG 图像|*.png|所有文件|*.*";
 
     private bool dirty;
+
+    private readonly DispatcherTimer timeTimer;
+    private readonly DispatcherTimer recoverTimer;
 
     public MainWindow( )
     {
@@ -34,6 +42,22 @@ public partial class MainWindow : Window
         }
 
         UpdatePageUI( );
+
+        timeTimer = new(
+            TimeSpan.FromSeconds(1),
+            DispatcherPriority.Normal,
+            (o, e) => TimeText.Text = $"{DateTime.Now:HH:mm}",
+            Dispatcher.CurrentDispatcher
+        );
+        timeTimer.Start( );
+
+        recoverTimer = new(
+            TimeSpan.FromMinutes(1),
+            DispatcherPriority.Normal,
+            (o, e) => SaveStrokes(Path.Join(App.AppPath, "recover", $"{DateTime.Now.Ticks}.isf")),
+            Dispatcher.CurrentDispatcher
+        );
+        recoverTimer.Start( );
     }
 
     private void WindowDeactivated(object o, EventArgs e)
@@ -41,28 +65,53 @@ public partial class MainWindow : Window
         CanvasNext.ResetTouchState( );
     }
 
-    private void CloseWindow(object o, RoutedEventArgs e)
+    private void CloseWindowClick(object o, RoutedEventArgs e)
+    {
+        Close( );
+    }
+
+    private bool CloseWindow( )
     {
         if (!dirty)
         {
-            Close( );
-            return;
+            return false;
         }
 
-        switch (MessageBox.Show(
-            "已修改。是否保存？",
-            "轻白板",
-            MessageBoxButton.YesNoCancel,
-            MessageBoxImage.Asterisk
-        ))
+        using TaskDialog dialog = new( )
         {
-            case MessageBoxResult.Yes: SaveFileClick(o, e); break;
-            case MessageBoxResult.No: Close( ); break;
-            default: return;
+            WindowTitle = "轻白板",
+            MainInstruction = "有未保存的墨迹，是否保存？",
+            MainIcon = TaskDialogIcon.Warning,
+            ButtonStyle = TaskDialogButtonStyle.CommandLinks
+        };
+
+        var saveButton = new TaskDialogButton("保存");
+        var discardButton = new TaskDialogButton("放弃");
+        var cancelButton = new TaskDialogButton(ButtonType.Cancel);
+        dialog.Buttons.Add(saveButton);
+        dialog.Buttons.Add(discardButton);
+        dialog.Buttons.Add(cancelButton);
+        var result = dialog.ShowDialog( );
+
+        if (result == saveButton)
+        {
+            SaveFile( );
+            return false;
         }
+        else if (result == discardButton)
+        {
+            return false;
+        }
+
+        return true;
     }
 
-    private void MinimizeWindow(object o, RoutedEventArgs e)
+    private void WindowClosing(object o, CancelEventArgs e)
+    {
+        e.Cancel = CloseWindow( );
+    }
+
+    private void MinimizeWindowClick(object o, RoutedEventArgs e)
     {
         WindowState = WindowState.Minimized;
     }
@@ -83,16 +132,26 @@ public partial class MainWindow : Window
         };
 
         RightBorder.BeginAnimation(Border.HeightProperty, heightAnimation);
+        TimeText.Visibility = isChecked ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void AboutClick(object o, RoutedEventArgs e)
     {
-        MessageBox.Show(
-            "轻白板 / LightBoard 26H3\n源代码: https://github.com/KaiHuaDou/DrawingNotepad/\n发布版本: https://github.com/KaiHuaDou/DrawingNotepad/releases/",
-            "轻白板",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information
-        );
+        using TaskDialog dialog = new( )
+        {
+            WindowTitle = "轻白板",
+            MainInstruction = "轻白板 / LightBoard 26H3",
+            MainIcon = TaskDialogIcon.Information,
+            Content =
+            """
+            源代码: <a href="https://github.com/KaiHuaDou/DrawingNotepad/">https://github.com/KaiHuaDou/DrawingNotepad/</a>        
+            发布版本: <a href="https://github.com/KaiHuaDou/DrawingNotepad/releases/">https://github.com/KaiHuaDou/DrawingNotepad/releases/</a>
+            """,
+            EnableHyperlinks = true,
+        };
+        dialog.HyperlinkClicked += (o, e) => Process.Start(new ProcessStartInfo(e.Href) { UseShellExecute = true });
+        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+        dialog.ShowDialog( );
     }
 
     private void CollapseExpandClick(object o, RoutedEventArgs e)
@@ -145,21 +204,36 @@ public partial class MainWindow : Window
     {
         try
         {
-            using var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+            using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
 
-            CanvasNext.Strokes = new StrokeCollection(fs);
+            CanvasNext.Strokes = new StrokeCollection(stream);
+            CurrentPage.Strokes = CanvasNext.Strokes.Clone( );
+
             dirty = false;
+            CanvasNext.CurrentScale = 1.0;
+            CanvasNext.OffsetX = 8192;
+            CanvasNext.OffsetY = 8192;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            App.LogException(ex);
+            App.ShowException(ex, "错误日志已记录");
+        }
     }
 
     private void SaveFileClick(object o, RoutedEventArgs e)
+    {
+        SaveFile( );
+    }
+
+    private void SaveFile( )
     {
         var dialog = new SaveFileDialog( )
         {
             Filter = FileFilter,
             FileName = $"{DateTime.Now:yyyyMMdd-HHmmss}"
         };
+
         if (dialog.ShowDialog( ) != true)
         {
             return;
@@ -170,7 +244,14 @@ public partial class MainWindow : Window
             SaveStrokes(dialog.FileName);
             dirty = false;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            App.LogException(ex);
+            App.ShowException(ex, "错误日志已记录");
+            return;
+        }
+
+        App.ShowInfo("墨迹已保存");
     }
 
     public void SaveStrokes(string fileName)
@@ -181,72 +262,87 @@ public partial class MainWindow : Window
 
     private void ExportImageClick(object o, RoutedEventArgs e)
     {
-        var dialog = new SaveFileDialog( )
+        if (CanvasNext.Strokes.Count == 0)
+        {
+            App.ShowInfo("没有可以导出的墨迹");
+            return;
+        }
+
+        using TaskDialog scaleDialog = new( )
+        {
+            WindowTitle = "轻白板",
+            MainInstruction = "请选择缩放比例",
+            MainIcon = TaskDialogIcon.Information,
+            ButtonStyle = TaskDialogButtonStyle.CommandLinks
+        };
+
+        var zoom25 = new TaskDialogButton("25%");
+        var zoom50 = new TaskDialogButton("50%");
+        var zoom100 = new TaskDialogButton("100%");
+        var cancelButton = new TaskDialogButton(ButtonType.Cancel);
+        scaleDialog.Buttons.Add(zoom25);
+        scaleDialog.Buttons.Add(zoom50);
+        scaleDialog.Buttons.Add(zoom100);
+        scaleDialog.Buttons.Add(cancelButton);
+        var result = scaleDialog.ShowDialog( );
+
+        var scale = 100;
+        if (result == cancelButton)
+        {
+            return;
+        }
+        else if (result == zoom25)
+        {
+            scale = 25;
+        }
+        else if (result == zoom50)
+        {
+            scale = 50;
+        }
+        else if (result == zoom100)
+        {
+            scale = 100;
+        }
+
+        var fileDialog = new SaveFileDialog( )
         {
             Filter = ImageFilter,
             FileName = $"{DateTime.Now:yyyyMMdd-HHmmss}"
         };
-        if (dialog.ShowDialog( ) != true)
+        if (fileDialog.ShowDialog( ) != true)
         {
             return;
         }
 
-        var strokes = CanvasNext.Strokes.Clone( );
-        var dpi = VisualTreeHelper.GetDpi(this);
-        var fileName = dialog.FileName;
+        var fileName = fileDialog.FileName;
+        var strokes = CanvasNext.Strokes;
+        var dpi = VisualTreeHelper.GetDpi(CanvasNext);
 
-        ExportImageButton.IsEnabled = false;
+        ExportImageMenu.IsEnabled = false;
         Task.Run([STAThread] ( ) =>
         {
             try
             {
-                ExportImage(strokes, fileName, dpi);
+                var image = strokes.Image(dpi, scale);
+                var encoder = new PngBitmapEncoder( );
+                encoder.Frames.Add(BitmapFrame.Create(image));
+
+                using var stream = new FileStream(fileName, FileMode.Create);
+                encoder.Save(stream);
+            }
+            catch (Exception ex)
+            {
+                App.LogException(ex);
+                App.ShowException(ex, "错误日志已记录");
+                return;
             }
             finally
             {
-                Dispatcher.Invoke(( ) => ExportImageButton.IsEnabled = true);
+                Dispatcher.Invoke(( ) => ExportImageMenu.IsEnabled = true);
             }
+
+            App.ShowInfo("导出图片成功");
         });
-    }
-
-    private static void ExportImage(StrokeCollection strokes, string fileName, DpiScale dpi)
-    {
-        if (strokes.Count == 0)
-        {
-            return;
-        }
-
-        var bounds = strokes.GetBounds( );
-        bounds.Inflate(64, 64);
-
-        var background = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
-        var visual = new DrawingVisual( );
-        using (var context = visual.RenderOpen( ))
-        {
-            context.DrawRectangle(background, null, new Rect(0, 0, bounds.Width, bounds.Height));
-            foreach (var stroke in strokes)
-            {
-                var copy = stroke.Clone( );
-                var matrix = new Matrix(1, 0, 0, 1, -bounds.X, -bounds.Y);
-                copy.Transform(matrix, false);
-                copy.Draw(context);
-            }
-        }
-
-        var pixelWidth = Math.Max(1, (int) Math.Ceiling(bounds.Width * dpi.DpiScaleX));
-        var pixelHeight = Math.Max(1, (int) Math.Ceiling(bounds.Height * dpi.DpiScaleY));
-
-        var render = new RenderTargetBitmap(
-            pixelWidth, pixelHeight,
-            dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32
-        );
-        render.Render(visual);
-
-        var encoder = new PngBitmapEncoder( );
-        encoder.Frames.Add(BitmapFrame.Create(render));
-
-        using var stream = new FileStream(fileName, FileMode.Create);
-        encoder.Save(stream);
     }
 
     #endregion IO

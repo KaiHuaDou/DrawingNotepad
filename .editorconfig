@@ -11,15 +11,18 @@ insert_final_newline = true
 [*.{cs,vb}]
 
 tab_width = 4
+dotnet_diagnostic.CA1001.severity = none
 dotnet_diagnostic.CA1031.severity = none
 dotnet_diagnostic.CA1034.severity = none
 dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.CA1303.severity = none
 dotnet_diagnostic.CA1305.severity = none
 dotnet_diagnostic.CA1307.severity = none
 dotnet_diagnostic.CA1310.severity = none
 dotnet_diagnostic.CA1515.severity = none
 dotnet_diagnostic.CA1724.severity = none
 dotnet_diagnostic.CA1862.severity = none
+dotnet_diagnostic.CA2227.severity = none
 dotnet_diagnostic.IDE0130.severity = none
 dotnet_diagnostic.NETSDK1138.severity = none
 dotnet_diagnostic.RCS1123.severity = none
@@ -187,21 +190,6 @@ dotnet_naming_style.bigstart.required_prefix =
 dotnet_naming_style.bigstart.required_suffix =
 dotnet_naming_style.bigstart.word_separator =
 dotnet_naming_style.bigstart.capitalization = pascal_case
-
-dotnet_naming_style.bigstart.required_prefix =
-dotnet_naming_style.bigstart.required_suffix =
-dotnet_naming_style.bigstart.word_separator =
-dotnet_naming_style.bigstart.capitalization = pascal_case
-
-dotnet_naming_style.bigstart.required_prefix =
-dotnet_naming_style.bigstart.required_suffix =
-dotnet_naming_style.bigstart.word_separator =
-dotnet_naming_style.bigstart.capitalization = pascal_case
-
-dotnet_naming_style.smallstart.required_prefix =
-dotnet_naming_style.smallstart.required_suffix =
-dotnet_naming_style.smallstart.word_separator =
-dotnet_naming_style.smallstart.capitalization = camel_case
 
 dotnet_naming_style.smallstart.required_prefix =
 dotnet_naming_style.smallstart.required_suffix =

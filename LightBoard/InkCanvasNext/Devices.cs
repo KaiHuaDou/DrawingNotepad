@@ -59,6 +59,19 @@ public partial class InkCanvasNext
         TrackTouchDown(e.TouchDevice.Id, e.TouchDevice, position);
         SubscribeDeactivated(e.TouchDevice);
         e.Handled = UpdateState( ) || IsAreaEraserActive(state);
+
+        if (state == TouchState.MultiDraw)
+        {
+            e.TouchDevice.Capture(Canvas);
+            if (!multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
+            {
+                var canvasPos = e.GetTouchPoint(Canvas).Position;
+                StartMultiTouchStroke(e.TouchDevice.Id, canvasPos);
+            }
+
+            e.Handled = true;
+        }
+
         UpdateAreaEraser( );
     }
 
@@ -70,6 +83,14 @@ public partial class InkCanvasNext
         }
 
         touches[e.TouchDevice.Id] = (e.TouchDevice, e.GetTouchPoint(this).Position);
+
+        if (multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
+        {
+            var canvasPos = e.GetTouchPoint(Canvas).Position;
+            ContinueMultiTouchStroke(e.TouchDevice.Id, canvasPos);
+            e.Handled = true;
+            return;
+        }
 
         switch (state)
         {
@@ -90,8 +111,15 @@ public partial class InkCanvasNext
     {
         var wasHandled = state is TouchState.PanZoom or TouchState.Pan;
         var wasAreaEraser = IsAreaEraserActive(state);
+        var wasMultiTouch = multiTouchStrokes.ContainsKey(e.TouchDevice.Id);
+
+        if (wasMultiTouch)
+        {
+            EndMultiTouchStroke(e.TouchDevice.Id);
+        }
+
         RemoveDevice(e.TouchDevice);
-        e.Handled = wasHandled || wasAreaEraser;
+        e.Handled = wasHandled || wasAreaEraser || wasMultiTouch;
         UpdateAreaEraser( );
     }
 
@@ -176,6 +204,7 @@ public partial class InkCanvasNext
             InitGesture( );
         }
     }
+
     private void UnsubscribeDeactivated(TouchDevice device)
     {
         device.Deactivated -= TouchDeviceDeactivated;

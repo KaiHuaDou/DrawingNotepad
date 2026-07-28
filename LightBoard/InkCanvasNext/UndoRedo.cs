@@ -26,7 +26,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        undoStack.Push(new StrokeChanges(e.Added, e.Removed));
+        undoStack.PushWithLimit(new StrokeChanges(e.Added, e.Removed));
         redoStack.Clear( );
         UpdateCanUndoRedo( );
     }
@@ -106,7 +106,7 @@ public partial class InkCanvasNext
         {
             foreach (var change in newUndo)
             {
-                undoStack.Push(change);
+                undoStack.PushWithLimit(change);
             }
         }
 
@@ -114,10 +114,36 @@ public partial class InkCanvasNext
         {
             foreach (var change in newRedo)
             {
-                redoStack.Push(change);
+                redoStack.PushWithLimit(change);
             }
         }
 
         UpdateCanUndoRedo( );
+    }
+}
+
+internal static class StrokeChangesStackExtensions
+{
+    private const int MaxHistoryCount = 200;
+
+    public static void PushWithLimit(this Stack<StrokeChanges> stack, StrokeChanges change)
+    {
+        if (stack.Count >= MaxHistoryCount)
+        {
+            var temp = new Stack<StrokeChanges>(stack.Count);
+            while (stack.Count > 0)
+            {
+                temp.Push(stack.Pop( ));
+            }
+
+            temp.Pop( );
+
+            while (temp.Count > 0)
+            {
+                stack.Push(temp.Pop( ));
+            }
+        }
+
+        stack.Push(change);
     }
 }

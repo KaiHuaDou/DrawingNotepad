@@ -2,7 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
-using System.Windows.Media;
+using System.Xml.Schema;
 
 namespace InkCanvasNext;
 
@@ -65,14 +65,6 @@ public partial class InkCanvasNext : UserControl
             typeof(StrokeCollection),
             typeof(InkCanvasNext),
             new PropertyMetadata(OnStrokesPropertyChanged));
-
-    private readonly ScaleTransform canvasScaleTransform = new(1.0, 1.0);
-
-    private readonly Eraser eraser;
-
-    private InkCanvasNextMode prevMode = InkCanvasNextMode.Ink;
-
-    private TouchState state = TouchState.Idle;
 
     public InkCanvasNext( )
     {
@@ -137,15 +129,6 @@ public partial class InkCanvasNext : UserControl
         set => SetValue(StrokesProperty, value);
     }
 
-    public StrokeCollection SelectedStrokes => Canvas.GetSelectedStrokes( );
-
-    public bool HasSelection => Canvas.GetSelectedStrokes( ).Count > 0;
-
-    /// <summary>
-    /// 不应使用此属性。
-    /// </summary>
-    public InkCanvas InnerCanvas => Canvas;
-
     public double CurrentScale
     {
         get => currentScale;
@@ -172,23 +155,20 @@ public partial class InkCanvasNext : UserControl
 
     private static void OnDefaultDrawingAttributesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var control = (InkCanvasNext) d;
         if (e.NewValue is DrawingAttributes attributes)
         {
-            control.Canvas.DefaultDrawingAttributes = attributes;
+            (d as InkCanvasNext)?.Canvas.DefaultDrawingAttributes = attributes;
         }
     }
 
     private static void OnModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var control = (InkCanvasNext) d;
-        control.ApplyEditingMode((InkCanvasNextMode) e.NewValue);
+        (d as InkCanvasNext)?.ApplyEditingMode((InkCanvasNextMode) e.NewValue);
     }
 
     private static void OnStrokesPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var control = (InkCanvasNext) d;
-        control.ApplyStrokes((StrokeCollection?) e.NewValue);
+        (d as InkCanvasNext)?.ApplyStrokes(e.NewValue as StrokeCollection);
     }
 
     private void ApplyEditingMode(InkCanvasNextMode mode)

@@ -29,6 +29,7 @@
         </None>
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
         <PackageReference Include="SingleInstanceCore" Version="2.2.2" />
     </ItemGroup>
 </Project>

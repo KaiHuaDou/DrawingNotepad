@@ -4,6 +4,8 @@ using System.Timers;
 using System.Windows;
 using System.Windows.Threading;
 
+using Ookii.Dialogs.Wpf;
+
 using SingleInstanceCore;
 
 namespace LightBoard;
@@ -12,8 +14,6 @@ public partial class App : Application, ISingleInstance
 {
     public static readonly string AppPath = Path.GetDirectoryName(Environment.ProcessPath)!;
     public static string? PendingOpen { get; set; }
-
-    private Timer timer = new(60000);
 
     public static class Program
     {
@@ -39,13 +39,7 @@ public partial class App : Application, ISingleInstance
             Current.Shutdown( );
         }
 
-        timer.Elapsed += TimerElapsed;
-        timer.Start();
-    }
-
-    private void TimerElapsed(object? o, ElapsedEventArgs e)
-    {
-        (Current.MainWindow as MainWindow)!.SaveStrokes(Path.Join(AppPath, "recover", $"{DateTime.Now.Ticks}.isf"));
+        Directory.CreateDirectory(Path.Join(AppPath, "recover"));
     }
 
     public void OnInstanceInvoked(string[] args)
@@ -56,19 +50,51 @@ public partial class App : Application, ISingleInstance
 
     private void AppDispatcherUnhandledException(object o, DispatcherUnhandledExceptionEventArgs e)
     {
-        File.AppendAllText(Path.Join(AppPath, "error.log"), $"\n{e.Exception.Message}\n{e.Exception.StackTrace}\n");
+        LogException(e.Exception);
+
         (Current.MainWindow as MainWindow)!.SaveStrokes(Path.Join(AppPath, $"{DateTime.Now.Ticks}.isf"));
-        MessageBox.Show(
-            "程序出现致命错误，即将关闭。错误日志已记录。墨迹已备份。",
-            "轻白板",
-            MessageBoxButton.OK,
-            MessageBoxImage.Error
-        );
+
+        ShowException(e.Exception, "程序即将关闭。错误日志已记录。墨迹已备份。");
+
         Application.Current.Shutdown(1);
     }
 
-    private void AppExit(object o, ExitEventArgs e)
+    public static void ShowInfo(string message)
     {
-        // Preserved.
+        using TaskDialog dialog = new( )
+        {
+            WindowTitle = "轻白板",
+            MainInstruction = message,
+            MainIcon = TaskDialogIcon.Information,
+            Content = message,
+        };
+        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+        dialog.ShowDialog( );
+    }
+
+    public static void ShowException(Exception e, string message)
+    {
+        var details = $"{e.Message}\n{e.StackTrace}";
+        using TaskDialog dialog = new( )
+        {
+            WindowTitle = "轻白板",
+            MainInstruction = "程序出现错误",
+            MainIcon = TaskDialogIcon.Error,
+            Content = message,
+            ExpandedInformation = details,
+        };
+        var copyButton = new TaskDialogButton("复制错误信息");
+        dialog.Buttons.Add(copyButton);
+        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+        var result = dialog.ShowDialog( );
+        if (result == copyButton)
+        {
+            Clipboard.SetText(details);
+        }
+    }
+
+    public static void LogException(Exception e)
+    {
+        File.AppendAllText(Path.Join(AppPath, "error.log"), $"\n{e.Message}\n{e.StackTrace}\n");
     }
 }

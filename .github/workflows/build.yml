@@ -18,7 +18,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 6.x
+          dotnet-version: 10.x
 
       - name: Build Solution
         run: |

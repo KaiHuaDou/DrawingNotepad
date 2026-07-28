@@ -15,6 +15,9 @@ internal enum TouchState
 
 public partial class InkCanvasNext
 {
+    private InkCanvasNextMode prevMode = InkCanvasNextMode.Ink;
+    private TouchState state = TouchState.Idle;
+
     private bool UpdateState( )
     {
         var count = touches.Count;
@@ -129,8 +132,9 @@ public partial class InkCanvasNext
             case (TouchState.Idle, TouchState.MultiDraw):
                 prevMode = Mode;
                 ReleaseAll( );
-                Canvas.EditingMode = InkCanvasEditingMode.Ink;
+                Canvas.EditingMode = InkCanvasEditingMode.None;
                 CaptureAll( );
+                StartMultiTouch( );
                 break;
 
             case (TouchState.EvalDraw, TouchState.Idle):
@@ -140,6 +144,11 @@ public partial class InkCanvasNext
                 break;
 
             case (TouchState.MultiDraw, TouchState.Idle):
+                EndMultiTouch( );
+                ReleaseAll( );
+                RestoreMode( );
+                break;
+
             case (TouchState.PanZoom, TouchState.Idle):
             case (TouchState.Pan, TouchState.Idle):
             case (TouchState.Eraser, TouchState.Idle):
@@ -164,6 +173,7 @@ public partial class InkCanvasNext
                 break;
 
             case (TouchState.MultiDraw, TouchState.Draw):
+                EndMultiTouch( );
                 RestoreMode( );
                 break;
 
@@ -185,8 +195,9 @@ public partial class InkCanvasNext
             case (TouchState.Pan, TouchState.MultiDraw):
             case (TouchState.Eraser, TouchState.MultiDraw):
                 ReleaseAll( );
-                Canvas.EditingMode = InkCanvasEditingMode.Ink;
+                Canvas.EditingMode = InkCanvasEditingMode.None;
                 CaptureAll( );
+                StartMultiTouch( );
                 break;
         }
 

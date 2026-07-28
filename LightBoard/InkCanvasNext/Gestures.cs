@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Media;
 
 using static InkCanvasNext.Geometry;
 
@@ -8,6 +9,8 @@ namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
+    private readonly ScaleTransform canvasScaleTransform = new(1.0, 1.0);
+
     private readonly double distanceThreshold;
     private readonly double distanceThreshold2;
     private readonly double smoothingFactor = 0.3;

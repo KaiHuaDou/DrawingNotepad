@@ -6,6 +6,7 @@
         Title="轻白板"
         Width="1920"
         Height="1080"
+        Closing="WindowClosing"
         Deactivated="WindowDeactivated"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
@@ -25,7 +26,12 @@
         <Grid.CacheMode>
             <BitmapCache EnableClearType="True" />
         </Grid.CacheMode>
-        <Grid x:Name="ToolbarGrid" Panel.ZIndex="32">
+        <next:InkCanvasNext x:Name="CanvasNext"
+                            Background="#1E1E1E"
+                            CanRedoChanged="CanvasNextCanRedoChanged"
+                            CanUndoChanged="CanvasNextCanUndoChanged"
+                            StrokesChanged="CanvasNextStrokesChanged" />
+        <Grid x:Name="ToolbarGrid" Panel.ZIndex="8">
             <Border x:Name="LeftBorder"
                     Margin="10,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom"
                     Style="{StaticResource ContainerStyle}">
@@ -35,24 +41,56 @@
                 <StackPanel Orientation="Horizontal">
                     <Button x:Name="ExitButton"
                             Style="{StaticResource ButtonStyle}"
-                            Click="CloseWindow" Tag="&#xE711;" />
+                            Click="CloseWindowClick" Tag="&#xE711;" />
                     <Button x:Name="WindowMinimizeButton"
                             Style="{StaticResource ButtonStyle}"
-                            Click="MinimizeWindow" Tag="&#xE921;" />
-                    <Button x:Name="AboutButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="AboutClick" Tag="&#xE946;" />
-                    <Button x:Name="OpenFileButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="OpenFileClick" Tag="&#xE8DA;" />
-                    <Button x:Name="SaveFileButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="SaveFileClick" Tag="&#xE74E;" />
-                    <Button x:Name="ExportImageButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="ExportImageClick" Tag="&#xEE71;" />
+                            Click="MinimizeWindowClick" Tag="&#xE921;" />
+                    <ToggleButton x:Name="MoreButton"
+                                  Width="40" Height="40"
+                                  Margin="5,0,5,0">
+                        <TextBlock FontFamily="Segoe Fluent Icons" FontSize="28" FontWeight="Heavy"
+                                   Text="&#xE712;" />
+                    </ToggleButton>
                 </StackPanel>
             </Border>
+            <Popup x:Name="MorePopup"
+                   AllowsTransparency="True"
+                   IsOpen="{Binding IsChecked, ElementName=MoreButton, Mode=TwoWay}"
+                   Placement="Top"
+                   PlacementTarget="{Binding ElementName=MoreButton}"
+                   StaysOpen="False">
+                <Border Padding="5" Background="#F0F0F0" CornerRadius="10">
+                    <Menu Background="Transparent">
+                        <Menu.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Vertical" />
+                            </ItemsPanelTemplate>
+                        </Menu.ItemsPanel>
+                        <MenuItem Header="关于" Style="{StaticResource MenuItemStyle}" Click="AboutClick">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource IconTextBlockStyle}" Text="&#xE946;" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="打开" Style="{StaticResource MenuItemStyle}" Click="OpenFileClick">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource IconTextBlockStyle}" Text="&#xE8DA;" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="保存" Style="{StaticResource MenuItemStyle}" Click="SaveFileClick">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource IconTextBlockStyle}" Text="&#xE74E;" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="ExportImageMenu" Header="导出"
+                                  Style="{StaticResource MenuItemStyle}"
+                                  Click="ExportImageClick">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource IconTextBlockStyle}" Text="&#xEE71;" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </Menu>
+                </Border>
+            </Popup>
             <Border x:Name="CenterBorder"
                     Margin="0,0,0,10" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                     Style="{StaticResource ContainerStyle}">
@@ -184,7 +222,8 @@
                              Background="{x:Null}"
                              BorderThickness="0"
                              ItemsSource="{Binding Pages, RelativeSource={RelativeSource AncestorType=Window}}"
-                             SelectionChanged="PagePreviewsBoxSelectionChanged">
+                             SelectionChanged="PagePreviewsBoxSelectionChanged"
+                             VirtualizingPanel.IsVirtualizing="True">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Style.Resources>
@@ -213,10 +252,10 @@
                 </DockPanel>
             </Border>
         </Grid>
-        <next:InkCanvasNext x:Name="CanvasNext"
-                            Background="#1E1E1E"
-                            CanRedoChanged="CanvasNextCanRedoChanged"
-                            CanUndoChanged="CanvasNextCanUndoChanged"
-                            StrokesChanged="CanvasNextStrokesChanged" />
+        <TextBlock x:Name="TimeText"
+                   Margin="0,20,25,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                   Panel.ZIndex="16"
+                   Foreground="Gray"
+                   FontSize="48" />
     </Grid>
 </Window>
