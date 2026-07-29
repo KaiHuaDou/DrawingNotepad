@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Ink;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
@@ -28,17 +27,25 @@ public partial class MainWindow : Window
     private bool dirty;
 
     private readonly DispatcherTimer timeTimer;
-    private readonly DispatcherTimer recoverTimer;
 
     public MainWindow( )
     {
         InitializeComponent( );
-        InitializePages( );
-        LoadPageState(CurrentPage);
+        App.InitializePages( );
+        App.PageChanged += OnPageChanged;
+        LoadPageStateToView( );
 
         if (!string.IsNullOrWhiteSpace(App.PendingOpen))
         {
-            OpenStrokes(App.PendingOpen);
+            try
+            {
+                App.OpenStrokes(App.PendingOpen);
+            }
+            catch (Exception ex)
+            {
+                App.LogException(ex);
+                App.ShowException(ex, "错误日志已记录");
+            }
         }
 
         UpdatePageUI( );
@@ -50,14 +57,6 @@ public partial class MainWindow : Window
             Dispatcher.CurrentDispatcher
         );
         timeTimer.Start( );
-
-        recoverTimer = new(
-            TimeSpan.FromMinutes(1),
-            DispatcherPriority.Normal,
-            (o, e) => SaveStrokes(Path.Join(App.AppPath, "recover", $"{DateTime.Now.Ticks}.isf")),
-            Dispatcher.CurrentDispatcher
-        );
-        recoverTimer.Start( );
     }
 
     private void WindowDeactivated(object o, EventArgs e)
@@ -204,15 +203,8 @@ public partial class MainWindow : Window
     {
         try
         {
-            using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-
-            CanvasNext.Strokes = new StrokeCollection(stream);
-            CurrentPage.Strokes = CanvasNext.Strokes.Clone( );
-
+            App.OpenStrokes(fileName);
             dirty = false;
-            CanvasNext.CurrentScale = 1.0;
-            CanvasNext.OffsetX = 8192;
-            CanvasNext.OffsetY = 8192;
         }
         catch (Exception ex)
         {
@@ -241,7 +233,7 @@ public partial class MainWindow : Window
 
         try
         {
-            SaveStrokes(dialog.FileName);
+            App.SaveStrokes(dialog.FileName);
             dirty = false;
         }
         catch (Exception ex)
@@ -254,15 +246,9 @@ public partial class MainWindow : Window
         App.ShowInfo("墨迹已保存");
     }
 
-    public void SaveStrokes(string fileName)
-    {
-        using var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-        CanvasNext.Strokes.Save(stream, false);
-    }
-
     private void ExportImageClick(object o, RoutedEventArgs e)
     {
-        if (CanvasNext.Strokes.Count == 0)
+        if (App.CurrentPage.Strokes.Count == 0)
         {
             App.ShowInfo("没有可以导出的墨迹");
             return;
@@ -315,7 +301,7 @@ public partial class MainWindow : Window
         }
 
         var fileName = fileDialog.FileName;
-        var strokes = CanvasNext.Strokes;
+        var strokes = App.CurrentPage.Strokes;
         var dpi = VisualTreeHelper.GetDpi(CanvasNext);
 
         ExportImageMenu.IsEnabled = false;
@@ -393,6 +379,7 @@ public partial class MainWindow : Window
 
     private void EraseAll(object o, RoutedEventArgs e)
     {
+        CanvasNext.ClearMultiTouchVisuals( );
         CanvasNext.Strokes.Clear( );
     }
 

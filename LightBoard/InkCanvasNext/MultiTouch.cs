@@ -10,20 +10,16 @@ namespace InkCanvasNext;
 public partial class InkCanvasNext
 {
     private readonly Dictionary<int, StrokeVisual> multiTouchStrokes = [];
-    private readonly Dictionary<int, VisualCanvas> multiTouchVisuals = [];
+    private readonly VisualCanvas multiTouchCanvas = new( );
 
     private void StartMultiTouchStroke(int touchId, Point canvasPoint)
     {
         var attributes = Canvas.DefaultDrawingAttributes.Clone( );
-        var strokeVisual = new StrokeVisual(attributes);
-        var visualCanvas = new VisualCanvas( );
-        strokeVisual.SetVisualCanvas(visualCanvas);
+        var initialPoint = new StylusPoint(canvasPoint.X, canvasPoint.Y, 0.5f);
+        var strokeVisual = new StrokeVisual(attributes, initialPoint);
+        strokeVisual.SetVisualCanvas(multiTouchCanvas);
 
         multiTouchStrokes[touchId] = strokeVisual;
-        multiTouchVisuals[touchId] = visualCanvas;
-        Canvas.Children.Add(visualCanvas);
-
-        strokeVisual.Add(new StylusPoint(canvasPoint.X, canvasPoint.Y, 0.5f));
         strokeVisual.Redraw( );
     }
 
@@ -58,26 +54,33 @@ public partial class InkCanvasNext
             return;
         }
 
-        var stroke = strokeVisual.Stroke;
-        if (stroke?.StylusPoints.Count > 0)
+        var stroke = strokeVisual.BuildStroke( );
+        if (stroke is not null)
         {
             Canvas.Strokes.Add(stroke);
         }
 
-        if (multiTouchVisuals.TryGetValue(touchId, out var visualCanvas))
-        {
-            Canvas.Children.Remove(visualCanvas);
-        }
+        strokeVisual.Cleanup( );
 
         multiTouchStrokes.Remove(touchId);
-        multiTouchVisuals.Remove(touchId);
     }
 
     private void EndMultiTouch( )
     {
-        foreach (var id in multiTouchStrokes.Keys.ToList( ))
+        foreach (var id in multiTouchStrokes.Keys.ToArray( ))
         {
             EndMultiTouchStroke(id);
+        }
+    }
+
+    /// <summary>
+    /// 清空所有进行中的多指笔画视觉（已提交 + 未提交段）。
+    /// </summary>
+    public void ClearMultiTouchVisuals( )
+    {
+        foreach (var strokeVisual in multiTouchStrokes.Values)
+        {
+            strokeVisual.Cleanup( );
         }
     }
 }
@@ -105,16 +108,6 @@ internal sealed class VisualCanvas : FrameworkElement
         RemoveVisualChild(visual);
     }
 
-    public void Clear( )
-    {
-        foreach (var visual in visuals)
-        {
-            RemoveVisualChild(visual);
-        }
-
-        visuals.Clear( );
-    }
-
     protected override Visual GetVisualChild(int index)
     {
         return visuals[index];
@@ -123,15 +116,13 @@ internal sealed class VisualCanvas : FrameworkElement
     protected override int VisualChildrenCount => visuals.Count;
 }
 
-internal sealed class StrokeVisual(DrawingAttributes drawingAttributes)
+internal sealed class StrokeVisual(DrawingAttributes drawingAttributes, StylusPoint initialPoint)
 {
     private readonly DrawingAttributes drawingAttributes = drawingAttributes;
     private VisualCanvas? visualCanvas;
     private DrawingVisual? activeVisual;
-    private int lastCommittedPointCount;
-    private const int CommitPointThreshold = 24;
 
-    public Stroke? Stroke { get; private set; }
+    public Stroke Stroke { get; } = new Stroke([initialPoint], drawingAttributes);
 
     public void SetVisualCanvas(VisualCanvas visualCanvas)
     {
@@ -140,79 +131,56 @@ internal sealed class StrokeVisual(DrawingAttributes drawingAttributes)
 
     public void Add(StylusPoint point)
     {
-        if (Stroke == null)
-        {
-            var collection = new StylusPointCollection { point };
-            Stroke = new Stroke(collection) { DrawingAttributes = drawingAttributes };
-        }
-        else
-        {
-            Stroke.StylusPoints.Add(point);
-        }
+        Stroke.StylusPoints.Add(point);
     }
 
     public void Redraw( )
     {
-        if (Stroke == null || visualCanvas == null)
+        if (visualCanvas == null || Stroke.StylusPoints.Count == 0)
         {
             return;
         }
 
-        var currentCount = Stroke.StylusPoints.Count;
-        if (currentCount == 0)
-        {
-            return;
-        }
+        activeVisual ??= CreateAndAttachVisual( );
 
-        if (activeVisual == null)
-        {
-            activeVisual = new DrawingVisual( );
-            visualCanvas.AddVisual(activeVisual);
-        }
-
-        var startIndex = lastCommittedPointCount == 0 ? 0 : lastCommittedPointCount - 1;
         using var context = activeVisual.RenderOpen( );
-        DrawSegment(context, startIndex, currentCount);
-
-        if (currentCount - lastCommittedPointCount >= CommitPointThreshold)
-        {
-            lastCommittedPointCount = currentCount;
-            activeVisual = null;
-        }
+        var geometry = Stroke.GetGeometry(drawingAttributes);
+        context.DrawGeometry(CreateBrush( ), null, geometry);
     }
 
-    public void ForceRedraw( )
+    public Stroke? BuildStroke( )
     {
-        if (Stroke == null || visualCanvas == null)
+        return Stroke.StylusPoints.Count > 0 ? Stroke : null;
+    }
+
+    public void Cleanup( )
+    {
+        if (activeVisual is null || visualCanvas is null)
         {
             return;
         }
 
-        if (Stroke.StylusPoints.Count < lastCommittedPointCount)
-        {
-            visualCanvas.Clear( );
-            activeVisual = null;
-            lastCommittedPointCount = 0;
-        }
-
-        Redraw( );
+        visualCanvas.RemoveVisual(activeVisual);
+        activeVisual = null;
     }
 
-    private void DrawSegment(DrawingContext context, int startIndex, int endIndex)
+    private DrawingVisual CreateAndAttachVisual( )
     {
-        if (startIndex >= endIndex || Stroke == null)
+        var visual = new DrawingVisual( );
+        visualCanvas!.AddVisual(visual);
+        return visual;
+    }
+
+    private SolidColorBrush CreateBrush( )
+    {
+        var brush = new SolidColorBrush(drawingAttributes.Color);
+
+        if (drawingAttributes.IsHighlighter)
         {
-            return;
+            brush.Opacity = 0.5;
         }
 
-        var count = endIndex - startIndex;
-        var points = new StylusPointCollection(count);
-        for (var i = startIndex; i < endIndex; i++)
-        {
-            points.Add(Stroke.StylusPoints[i]);
-        }
-
-        var segment = new Stroke(points) { DrawingAttributes = drawingAttributes };
-        segment.Draw(context);
+        brush.Freeze( );
+        return brush;
     }
 }

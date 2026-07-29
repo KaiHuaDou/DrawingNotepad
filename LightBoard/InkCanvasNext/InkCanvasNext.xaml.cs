@@ -2,7 +2,6 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
-using System.Xml.Schema;
 
 namespace InkCanvasNext;
 
@@ -85,6 +84,8 @@ public partial class InkCanvasNext : UserControl
 
         CanvasScroll.ScrollToHorizontalOffset(8192);
         CanvasScroll.ScrollToVerticalOffset(8192);
+
+        Canvas.Children.Add(multiTouchCanvas);
     }
 
     public event EventHandler<DependencyPropertyChangedEventArgs>? CanRedoChanged;

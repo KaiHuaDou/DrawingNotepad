@@ -19,9 +19,7 @@ public partial class InkCanvasNext
 
         if (change.Added.Count > 0 || change.Removed.Count > 0)
         {
-            undoStack.Push(change);
-            redoStack.Clear( );
-            UpdateCanUndoRedo( );
+            PushChange(change);
         }
     }
 

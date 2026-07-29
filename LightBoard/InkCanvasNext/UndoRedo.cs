@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Ink;
 
@@ -11,11 +10,30 @@ public sealed class StrokeChanges(StrokeCollection added, StrokeCollection remov
     public StrokeCollection Removed { get; } = removed;
 }
 
+public sealed class HistorySnapshot(StrokeChanges[] changes, int position)
+{
+    public StrokeChanges[] Changes { get; } = changes;
+    public int Position { get; } = position;
+}
+
 public partial class InkCanvasNext
 {
-    private readonly Stack<StrokeChanges> undoStack = new( );
-    private readonly Stack<StrokeChanges> redoStack = new( );
+    private const int MaxHistoryCount = 200;
+    private readonly RingBuffer<StrokeChanges> history = new(MaxHistoryCount);
+    private int position;
     private bool applyingUndoRedo;
+
+    private void PushChange(StrokeChanges change)
+    {
+        if (position < history.Count)
+        {
+            history.Truncate(position);
+        }
+
+        history.Enqueue(change);
+        position = history.Count;
+        UpdateCanUndoRedo( );
+    }
 
     private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
     {
@@ -26,56 +44,54 @@ public partial class InkCanvasNext
             return;
         }
 
-        undoStack.PushWithLimit(new StrokeChanges(e.Added, e.Removed));
-        redoStack.Clear( );
-        UpdateCanUndoRedo( );
+        PushChange(new StrokeChanges(e.Added, e.Removed));
     }
 
     public void Undo( )
     {
-        if (undoStack.Count == 0)
+        if (position == 0)
         {
             return;
         }
 
         applyingUndoRedo = true;
-        var change = undoStack.Pop( );
+        position--;
+        var change = history[position];
         Canvas.Strokes.Remove(change.Added);
         Canvas.Strokes.Add(change.Removed);
         applyingUndoRedo = false;
 
-        redoStack.Push(change);
         UpdateCanUndoRedo( );
     }
 
     public void Redo( )
     {
-        if (redoStack.Count == 0)
+        if (position >= history.Count)
         {
             return;
         }
 
         applyingUndoRedo = true;
-        var change = redoStack.Pop( );
+        var change = history[position];
+        position++;
         Canvas.Strokes.Remove(change.Removed);
         Canvas.Strokes.Add(change.Added);
         applyingUndoRedo = false;
 
-        undoStack.Push(change);
         UpdateCanUndoRedo( );
     }
 
     private void ClearHistory( )
     {
-        undoStack.Clear( );
-        redoStack.Clear( );
+        history.Clear( );
+        position = 0;
         UpdateCanUndoRedo( );
     }
 
     private void UpdateCanUndoRedo( )
     {
-        var canUndo = undoStack.Count > 0;
-        var canRedo = redoStack.Count > 0;
+        var canUndo = position > 0;
+        var canRedo = position < history.Count;
 
         if (CanUndo != canUndo)
         {
@@ -90,60 +106,22 @@ public partial class InkCanvasNext
         }
     }
 
-    public void SwapHistory(
-        out Stack<StrokeChanges>? oldUndo,
-        out Stack<StrokeChanges>? oldRedo,
-        Stack<StrokeChanges>? newUndo,
-        Stack<StrokeChanges>? newRedo)
+    public void SwapHistory(out HistorySnapshot? old, HistorySnapshot? @new)
     {
-        oldUndo = undoStack.Count > 0 ? new Stack<StrokeChanges>(undoStack) : null;
-        oldRedo = redoStack.Count > 0 ? new Stack<StrokeChanges>(redoStack) : null;
+        old = history.Count > 0 ? new HistorySnapshot(history.ToArray( ), position) : null;
+        history.Clear( );
+        position = 0;
 
-        undoStack.Clear( );
-        redoStack.Clear( );
-
-        if (newUndo is not null)
+        if (@new is not null)
         {
-            foreach (var change in newUndo)
+            for (var i = 0; i < @new.Changes.Length; i++)
             {
-                undoStack.PushWithLimit(change);
+                history.Enqueue(@new.Changes[i]);
             }
-        }
 
-        if (newRedo is not null)
-        {
-            foreach (var change in newRedo)
-            {
-                redoStack.PushWithLimit(change);
-            }
+            position = @new.Position;
         }
 
         UpdateCanUndoRedo( );
-    }
-}
-
-internal static class StrokeChangesStackExtensions
-{
-    private const int MaxHistoryCount = 200;
-
-    public static void PushWithLimit(this Stack<StrokeChanges> stack, StrokeChanges change)
-    {
-        if (stack.Count >= MaxHistoryCount)
-        {
-            var temp = new Stack<StrokeChanges>(stack.Count);
-            while (stack.Count > 0)
-            {
-                temp.Push(stack.Pop( ));
-            }
-
-            temp.Pop( );
-
-            while (temp.Count > 0)
-            {
-                stack.Push(temp.Pop( ));
-            }
-        }
-
-        stack.Push(change);
     }
 }

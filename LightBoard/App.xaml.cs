@@ -1,6 +1,6 @@
 using System;
+using System.Collections.ObjectModel;
 using System.IO;
-using System.Timers;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -13,6 +13,20 @@ namespace LightBoard;
 public partial class App : Application, ISingleInstance
 {
     public static readonly string AppPath = Path.GetDirectoryName(Environment.ProcessPath)!;
+
+    private readonly DispatcherTimer recoverTimer = new( );
+
+    /// <summary>
+    /// 当前页索引变化或当前页 Strokes 被整体替换时触发；视图据此重新同步 CanvasNext。
+    /// </summary>
+    public static event EventHandler? PageChanged;
+
+    public static Page CurrentPage => Pages[PageIndex];
+
+    public static int PageIndex { get; private set; } = -1;
+
+    public static ObservableCollection<Page> Pages { get; } = [];
+
     public static string? PendingOpen { get; set; }
 
     public static class Program
@@ -32,44 +46,9 @@ public partial class App : Application, ISingleInstance
         }
     }
 
-    private void AppStartup(object o, StartupEventArgs e)
+    public static void LogException(Exception e)
     {
-        if (!this.InitializeAsFirstInstance("LightBoardInstanceInvariantVersion"))
-        {
-            Current.Shutdown( );
-        }
-
-        Directory.CreateDirectory(Path.Join(AppPath, "recover"));
-    }
-
-    public void OnInstanceInvoked(string[] args)
-    {
-        Current.MainWindow.Show( );
-        Current.MainWindow.Activate( );
-    }
-
-    private void AppDispatcherUnhandledException(object o, DispatcherUnhandledExceptionEventArgs e)
-    {
-        LogException(e.Exception);
-
-        (Current.MainWindow as MainWindow)!.SaveStrokes(Path.Join(AppPath, $"{DateTime.Now.Ticks}.isf"));
-
-        ShowException(e.Exception, "程序即将关闭。错误日志已记录。墨迹已备份。");
-
-        Application.Current.Shutdown(1);
-    }
-
-    public static void ShowInfo(string message)
-    {
-        using TaskDialog dialog = new( )
-        {
-            WindowTitle = "轻白板",
-            MainInstruction = message,
-            MainIcon = TaskDialogIcon.Information,
-            Content = message,
-        };
-        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
-        dialog.ShowDialog( );
+        File.AppendAllText(Path.Join(AppPath, "error.log"), $"\n{e.Message}\n{e.StackTrace}\n");
     }
 
     public static void ShowException(Exception e, string message)
@@ -93,8 +72,51 @@ public partial class App : Application, ISingleInstance
         }
     }
 
-    public static void LogException(Exception e)
+    public static void ShowInfo(string message)
     {
-        File.AppendAllText(Path.Join(AppPath, "error.log"), $"\n{e.Message}\n{e.StackTrace}\n");
+        using TaskDialog dialog = new( )
+        {
+            WindowTitle = "轻白板",
+            MainInstruction = message,
+            MainIcon = TaskDialogIcon.Information,
+            Content = message,
+        };
+        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+        dialog.ShowDialog( );
+    }
+
+    public void OnInstanceInvoked(string[] args)
+    {
+        Current.MainWindow.Show( );
+        Current.MainWindow.Activate( );
+    }
+
+    private void AppDispatcherUnhandledException(object o, DispatcherUnhandledExceptionEventArgs e)
+    {
+        LogException(e.Exception);
+
+        try
+        {
+            SaveStrokes(Path.Join(AppPath, $"{DateTime.Now.Ticks}.isf"));
+        }
+        catch { }
+
+        ShowException(e.Exception, "程序即将关闭。错误日志已记录。墨迹已备份。");
+
+        Application.Current.Shutdown(1);
+    }
+
+    private void AppStartup(object o, StartupEventArgs e)
+    {
+        if (!this.InitializeAsFirstInstance("LightBoardInstanceInvariantVersion"))
+        {
+            Current.Shutdown( );
+        }
+
+        Directory.CreateDirectory(Path.Join(AppPath, "recover"));
+
+        recoverTimer.Interval = TimeSpan.FromMinutes(1);
+        recoverTimer.Tick += (_, _) => SaveStrokes(Path.Join(AppPath, "recover", $"{DateTime.Now.Ticks}.isf"));
+        recoverTimer.Start( );
     }
 }
