@@ -8,6 +8,8 @@ using Ookii.Dialogs.Wpf;
 
 using SingleInstanceCore;
 
+using Syncfusion.Licensing;
+
 namespace LightBoard;
 
 public partial class App : Application, ISingleInstance
@@ -16,14 +18,20 @@ public partial class App : Application, ISingleInstance
 
     private readonly DispatcherTimer recoverTimer = new( );
 
-    /// <summary>
-    /// 当前页索引变化或当前页 Strokes 被整体替换时触发；视图据此重新同步 CanvasNext。
-    /// </summary>
     public static event EventHandler? PageChanged;
 
     public static Page CurrentPage => Pages[PageIndex];
 
-    public static int PageIndex { get; private set; } = -1;
+    public static int PageIndex
+    {
+
+        get => field;
+        private set
+        {
+            field = value;
+            PageChanged?.Invoke(Current.MainWindow, EventArgs.Empty);
+        }
+    } = -1;
 
     public static ObservableCollection<Page> Pages { get; } = [];
 
@@ -34,7 +42,9 @@ public partial class App : Application, ISingleInstance
         [STAThread]
         public static void Main(string[] args)
         {
-            if (args?.Length > 0)
+            RegisterSyncfusionLicense( );
+
+            if (args?.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
             {
                 PendingOpen = args[0];
             }
@@ -44,11 +54,30 @@ public partial class App : Application, ISingleInstance
             app.Run( );
             SingleInstance.Cleanup( );
         }
+
+        private static void RegisterSyncfusionLicense( )
+        {
+            var key = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE");
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                var licenseFile = Path.Join(AppPath, "syncfusion.license");
+                if (File.Exists(licenseFile))
+                {
+                    key = File.ReadAllText(licenseFile).Trim( );
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                SyncfusionLicenseProvider.RegisterLicense(key);
+            }
+        }
     }
 
     public static void LogException(Exception e)
     {
-        File.AppendAllText(Path.Join(AppPath, "error.log"), $"\n{e.Message}\n{e.StackTrace}\n");
+        File.AppendAllText(Path.Join(AppPath, "error.log"), $"\nTime:{DateTime.Now:yyyy-MM-dd HH:mm:ss}\n{e.Message}\n{e.StackTrace}\n");
     }
 
     public static void ShowException(Exception e, string message)
@@ -95,11 +124,7 @@ public partial class App : Application, ISingleInstance
     {
         LogException(e.Exception);
 
-        try
-        {
-            SaveStrokes(Path.Join(AppPath, $"{DateTime.Now.Ticks}.isf"));
-        }
-        catch { }
+        try { SaveRecover( ); } catch { }
 
         ShowException(e.Exception, "程序即将关闭。错误日志已记录。墨迹已备份。");
 
@@ -116,7 +141,20 @@ public partial class App : Application, ISingleInstance
         Directory.CreateDirectory(Path.Join(AppPath, "recover"));
 
         recoverTimer.Interval = TimeSpan.FromMinutes(1);
-        recoverTimer.Tick += (_, _) => SaveStrokes(Path.Join(AppPath, "recover", $"{DateTime.Now.Ticks}.isf"));
+        recoverTimer.Tick += (_, _) => SaveRecover( );
         recoverTimer.Start( );
+    }
+
+    private static void SaveRecover( )
+    {
+        var pad = (int) (Math.Log10(Pages.Count) + 1);
+        foreach (var page in Pages)
+        {
+            page.SaveStrokes(Path.Join(
+                AppPath,
+                "recover",
+                $"{DateTime.Now.Ticks}-{page.Number.ToString( ).PadLeft(pad, '0')}.isf"
+            ));
+        }
     }
 }

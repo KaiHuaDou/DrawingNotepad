@@ -37,7 +37,9 @@
 
 ## 下载
 
-前往 [Releases](./releases/latest) 下载最新版本。
+前往 [Releases](https://github.com/KaiHuaDou/DrawingNotepad/releases/latest) 下载最新版本。
+
+前往 [Actions](https://github.com/KaiHuaDou/DrawingNotepad/action) 下载构建版本。
 
 ## 系统要求
 
@@ -48,7 +50,11 @@
     - 对于 Windows 7 SP1，在安装特定补丁后，有可能能正常安装并使用最新的 .NET 桌面运行时
 - [Segoe Fluent Icons 字体](https://learn.microsoft.com/zh-cn/windows/apps/design/style/segoe-fluent-icons-font)
 
-## 构建
+## 开发与构建
+
+- IDE：Visual Studio Community 2022 或更新版本
+    - 工作负载：C# 桌面开发
+    - 预览功能：使用 .NET SDK 预览版
 
 - .NET **9.0** SDK 或更新版本（需要 C# `preview` 语言版本）
 - 为兼容 Windows 7，默认目标框架为 `net6.0-windows`

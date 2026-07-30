@@ -3,10 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid>
         <ScrollViewer x:Name="CanvasScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
-            <Grid>
+            <Grid Background="{Binding Background, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                <Image x:Name="BackgroundImage"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Stretch="None" />
                 <InkCanvas x:Name="Canvas"
                            Width="32768" Height="16384"
-                           Background="{Binding Background, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           Panel.ZIndex="32"
+                           Background="Transparent"
                            LostTouchCapture="CanvasLostTouchCapture"
                            PreviewMouseDown="CanvasPreviewMouseDown"
                            PreviewMouseMove="CanvasPreviewMouseMove" PreviewMouseUp="CanvasPreviewMouseUp"

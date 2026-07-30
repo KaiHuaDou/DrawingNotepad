@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 using InkCanvasNext;
 
@@ -19,38 +20,69 @@ public class Page : INotifyPropertyChanged
     public double OffsetY { get; set; } = 8192;
     public HistorySnapshot? History { get; set; }
 
-    private ImageSource preview = StrokeCollectionExtension.PreviewEmpty( );
     public ImageSource Preview
     {
-        get => preview;
-        set
+        get; set
         {
-            preview = value;
+            field = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Preview)));
         }
-    }
+    } = StrokeCollectionExtension.PreviewEmpty( );
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public void SaveStrokes(string fileName)
+    {
+        using var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        Strokes.Save(stream, false);
+    }
+
+    public void OpenStrokes(string fileName)
+    {
+        using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+        Strokes = new StrokeCollection(stream);
+        Scale = 1.0;
+        OffsetX = 8192;
+        OffsetY = 8192;
+        History = null;
+        Preview = Strokes.Count > 0 ? Strokes.Preview( ) : StrokeCollectionExtension.PreviewEmpty( );
+    }
+
+    public void ExportStokes(string fileName, DpiScale dpi, int scale)
+    {
+        var image = Strokes.Render(dpi, scale);
+        var encoder = new PngBitmapEncoder( );
+        encoder.Frames.Add(BitmapFrame.Create(image));
+
+        using var stream = new FileStream(fileName, FileMode.Create);
+        encoder.Save(stream);
+    }
 }
 
 public partial class MainWindow
 {
-    private void OnPageChanged(object? sender, EventArgs e)
+    private async void OnPageChanged(object? sender, EventArgs e)
     {
-        LoadPageStateToView( );
+        var target = App.PageIndex;
         UpdatePageUI( );
-        PagePreviewsBox.SelectedIndex = App.PageIndex;
-    }
+        PagePreviewsBox.SelectedIndex = target;
 
-    private void LoadPageStateToView( )
-    {
-        var page = App.CurrentPage;
         CanvasNext.ResetTouchState( );
-        CanvasNext.Strokes = page.Strokes;
-        CanvasNext.CurrentScale = page.Scale;
-        CanvasNext.OffsetX = page.OffsetX;
-        CanvasNext.OffsetY = page.OffsetY;
-        CanvasNext.SwapHistory(out _, page.History);
+        CanvasNext.Strokes = App.CurrentPage.Strokes;
+        CanvasNext.CurrentScale = App.CurrentPage.Scale;
+        CanvasNext.OffsetX = App.CurrentPage.OffsetX;
+        CanvasNext.OffsetY = App.CurrentPage.OffsetY;
+        CanvasNext.SwapHistory(out _, App.CurrentPage.History);
+
+        if (App.Raster?.Session is null)
+        {
+            CanvasNext.SetImage(null);
+            return;
+        }
+
+        LoadingBorder.Visibility = Visibility.Visible;
+        CanvasNext.IsEnabled = false;
+        await LoadImageAsync(target);
     }
 
     private void SaveCurrentViewToPage( )
@@ -64,22 +96,12 @@ public partial class MainWindow
         page.Preview = page.Strokes.Preview( );
     }
 
-    private void SwitchPage(int pageIndex)
-    {
-        if (pageIndex < 0 || pageIndex >= App.Pages.Count || pageIndex == App.PageIndex)
-        {
-            return;
-        }
-
-        SaveCurrentViewToPage( );
-        App.SwitchPage(pageIndex);
-    }
-
     private void PrevPage(object o, RoutedEventArgs e)
     {
         if (App.PageIndex > 0)
         {
-            SwitchPage(App.PageIndex - 1);
+            SaveCurrentViewToPage( );
+            App.SwitchPage(App.PageIndex - 1);
         }
     }
 
@@ -87,7 +109,8 @@ public partial class MainWindow
     {
         if (App.PageIndex < App.Pages.Count - 1)
         {
-            SwitchPage(App.PageIndex + 1);
+            SaveCurrentViewToPage( );
+            App.SwitchPage(App.PageIndex + 1);
         }
         else
         {
@@ -100,7 +123,8 @@ public partial class MainWindow
     {
         if (PagePreviewsBox.SelectedIndex >= 0 && PagePreviewsBox.SelectedIndex != App.PageIndex)
         {
-            SwitchPage(PagePreviewsBox.SelectedIndex);
+            SaveCurrentViewToPage( );
+            App.SwitchPage(PagePreviewsBox.SelectedIndex);
         }
     }
 
@@ -128,7 +152,6 @@ public partial class App
         }
 
         PageIndex = newIndex;
-        PageChanged?.Invoke(Current.MainWindow, EventArgs.Empty);
         return true;
     }
 
@@ -136,26 +159,5 @@ public partial class App
     {
         Pages.Add(new Page { Number = Pages.Count + 1, Scale = 1.0, OffsetX = 8192, OffsetY = 8192 });
         PageIndex = Pages.Count - 1;
-        PageChanged?.Invoke(Current.MainWindow, EventArgs.Empty);
-    }
-
-    public static void SaveStrokes(string fileName)
-    {
-        using var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-        CurrentPage.Strokes.Save(stream, false);
-    }
-
-    public static void OpenStrokes(string fileName)
-    {
-        using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-        CurrentPage.Strokes = new StrokeCollection(stream);
-        CurrentPage.Scale = 1.0;
-        CurrentPage.OffsetX = 8192;
-        CurrentPage.OffsetY = 8192;
-        CurrentPage.History = null;
-        CurrentPage.Preview = CurrentPage.Strokes.Count > 0
-            ? CurrentPage.Strokes.Preview( )
-            : StrokeCollectionExtension.PreviewEmpty( );
-        PageChanged?.Invoke(Current.MainWindow, EventArgs.Empty);
     }
 }

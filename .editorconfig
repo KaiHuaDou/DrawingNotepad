@@ -22,6 +22,7 @@ dotnet_diagnostic.CA1310.severity = none
 dotnet_diagnostic.CA1515.severity = none
 dotnet_diagnostic.CA1724.severity = none
 dotnet_diagnostic.CA1862.severity = none
+dotnet_diagnostic.CA2007.severity = none
 dotnet_diagnostic.CA2227.severity = none
 dotnet_diagnostic.IDE0130.severity = none
 dotnet_diagnostic.NETSDK1138.severity = none

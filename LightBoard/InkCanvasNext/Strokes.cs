@@ -108,7 +108,12 @@ internal static class StrokeCollectionExtension
     private const int PreviewHeight = PreviewWidth / 16 * 9;
     private static readonly SolidColorBrush background = new(Color.FromRgb(0x1E, 0x1E, 0x1E));
 
-    public static RenderTargetBitmap Image(
+    static StrokeCollectionExtension( )
+    {
+        background.Freeze( );
+    }
+
+    public static RenderTargetBitmap Render(
         this StrokeCollection strokes,
         DpiScale dpi,
         int scale = 100)
@@ -179,7 +184,7 @@ internal static class StrokeCollectionExtension
         return render;
     }
 
-    public static DrawingVisual CreateVisual(
+    private static DrawingVisual CreateVisual(
         this StrokeCollection strokes,
         Brush background,
         Rect bounds,

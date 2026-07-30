@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Ink;
 
@@ -12,7 +13,7 @@ public sealed class StrokeChanges(StrokeCollection added, StrokeCollection remov
 
 public sealed class HistorySnapshot(StrokeChanges[] changes, int position)
 {
-    public StrokeChanges[] Changes { get; } = changes;
+    public IReadOnlyList<StrokeChanges> Changes { get; } = changes;
     public int Position { get; } = position;
 }
 
@@ -114,7 +115,7 @@ public partial class InkCanvasNext
 
         if (@new is not null)
         {
-            for (var i = 0; i < @new.Changes.Length; i++)
+            for (var i = 0; i < @new.Changes.Count; i++)
             {
                 history.Enqueue(@new.Changes[i]);
             }

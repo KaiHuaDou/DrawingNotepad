@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
+using System.Windows.Media;
 
 namespace InkCanvasNext;
 
@@ -72,6 +73,7 @@ public partial class InkCanvasNext : UserControl
         eraser = new Eraser(Canvas, EraserFeedback);
 
         Canvas.LayoutTransform = canvasScaleTransform;
+        BackgroundImage.LayoutTransform = canvasScaleTransform;
 
         Canvas.Strokes.StrokesChanged += OnStrokesChanged;
 
@@ -208,5 +210,11 @@ public partial class InkCanvasNext : UserControl
         Strokes = newStrokes;
 
         ClearHistory( );
+    }
+
+    public void SetImage(ImageSource? source)
+    {
+        BackgroundImage.Source = source;
+        BackgroundImage.Visibility = source is null ? Visibility.Collapsed : Visibility.Visible;
     }
 }

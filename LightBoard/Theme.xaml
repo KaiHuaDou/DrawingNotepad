@@ -3,7 +3,8 @@
     <Style x:Key="ColorRadioStyle" TargetType="{x:Type RadioButton}">
         <Setter Property="Width" Value="40" />
         <Setter Property="Height" Value="40" />
-        <Setter Property="Margin" Value="5" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Margin" Value="3" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -29,7 +30,8 @@
     <Style x:Key="RadioStyle" TargetType="{x:Type RadioButton}">
         <Setter Property="Width" Value="40" />
         <Setter Property="Height" Value="40" />
-        <Setter Property="Margin" Value="5" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Margin" Value="3" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -45,7 +47,8 @@
     <Style x:Key="SelectiveRadioStyle" TargetType="{x:Type RadioButton}">
         <Setter Property="Width" Value="40" />
         <Setter Property="Height" Value="40" />
-        <Setter Property="Margin" Value="5" />
+        <Setter Property="Margin" Value="3" />
+        <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -85,7 +88,8 @@
     <Style x:Key="ButtonStyle" BasedOn="{StaticResource {x:Type Button}}" TargetType="{x:Type Button}">
         <Setter Property="Width" Value="40" />
         <Setter Property="Height" Value="40" />
-        <Setter Property="Margin" Value="5" />
+        <Setter Property="Margin" Value="3" />
+        <Setter Property="BorderThickness" Value="0" />
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate>
@@ -96,10 +100,8 @@
         </Setter>
     </Style>
     <Style x:Key="ContainerStyle" TargetType="{x:Type Border}">
-        <Setter Property="Padding" Value="7" />
+        <Setter Property="Padding" Value="7,5,7,5" />
         <Setter Property="Panel.ZIndex" Value="40" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="10" />
         <Setter Property="BorderBrush">
             <Setter.Value>
                 <SolidColorBrush Opacity="0.84" Color="#F4F6F7" />
@@ -107,7 +109,7 @@
         </Setter>
         <Setter Property="Background">
             <Setter.Value>
-                <SolidColorBrush Opacity="0.25" Color="#2E78C2" />
+                <SolidColorBrush Opacity="0.75" Color="#2E2E2E" />
             </Setter.Value>
         </Setter>
     </Style>

@@ -8,7 +8,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 using InkCanvasNext;
@@ -21,8 +20,8 @@ namespace LightBoard;
 
 public partial class MainWindow : Window
 {
-    private const string FileFilter = "Windows 墨迹文件|*.isf|所有文件|*.*";
-    private const string ImageFilter = "PNG 图像|*.png|所有文件|*.*";
+    private const string FileFilter =
+        "可打开的文件|*.isf;*.pptx;*.ppt;*.docx;*.doc|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|所有文件|*.*";
 
     private bool dirty;
 
@@ -33,22 +32,13 @@ public partial class MainWindow : Window
         InitializeComponent( );
         App.InitializePages( );
         App.PageChanged += OnPageChanged;
-        LoadPageStateToView( );
 
-        if (!string.IsNullOrWhiteSpace(App.PendingOpen))
+        if (App.PendingOpen is not null)
         {
-            try
-            {
-                App.OpenStrokes(App.PendingOpen);
-            }
-            catch (Exception ex)
-            {
-                App.LogException(ex);
-                App.ShowException(ex, "错误日志已记录");
-            }
+            OpenFile(App.PendingOpen);
         }
 
-        UpdatePageUI( );
+        OnPageChanged(this, EventArgs.Empty);
 
         timeTimer = new(
             TimeSpan.FromSeconds(1),
@@ -139,7 +129,7 @@ public partial class MainWindow : Window
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
-            MainInstruction = "轻白板 / LightBoard 26H3",
+            MainInstruction = "轻白板 / LightBoard 26H4 Beta",
             MainIcon = TaskDialogIcon.Information,
             Content =
             """
@@ -156,29 +146,29 @@ public partial class MainWindow : Window
     private void CollapseExpandClick(object o, RoutedEventArgs e)
     {
         var flag = CollapseExpandButton.IsChecked == true;
-
         CollapseExpandIcon.Text = flag ? "\uE70E" : "\uE70D";
 
+        var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
         var animationLeft = new DoubleAnimation
         {
-            From = flag ? 0 : -LeftBorder.ActualWidth - 10,
-            To = flag ? -LeftBorder.ActualWidth - 10 : 0,
+            From = flag ? 0 : -LeftBorder.ActualWidth,
+            To = flag ? -LeftBorder.ActualWidth : 0,
             Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+            EasingFunction = ease
         };
         var animationCenter = new DoubleAnimation
         {
-            From = flag ? 0 : CenterBorder.ActualHeight + 10,
-            To = flag ? CenterBorder.ActualHeight + 10 : 0,
+            From = flag ? 0 : CenterBorder.ActualHeight,
+            To = flag ? CenterBorder.ActualHeight : 0,
             Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+            EasingFunction = ease
         };
         var animationRight = new DoubleAnimation
         {
-            From = flag ? 0 : RightBorder.ActualWidth + 10 - 70,
-            To = flag ? RightBorder.ActualWidth + 10 - 70 : 0,
+            From = flag ? 0 : RightBorder.ActualWidth - 60,
+            To = flag ? RightBorder.ActualWidth - 60 : 0,
             Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+            EasingFunction = ease
         };
 
         LeftTransform.BeginAnimation(TranslateTransform.XProperty, animationLeft);
@@ -196,14 +186,31 @@ public partial class MainWindow : Window
             return;
         }
 
-        OpenStrokes(dialog.FileName);
+        OpenFile(dialog.FileName);
     }
 
-    private void OpenStrokes(string fileName)
+    private async void OpenFile(string fileName)
     {
         try
         {
-            App.OpenStrokes(fileName);
+            if (IsDocumentFile(fileName))
+            {
+                LoadingBorder.Visibility = Visibility.Visible;
+                CanvasNext.IsEnabled = false;
+                await App.OpenDocument(fileName);
+
+                if (App.Raster?.Session is null)
+                {
+                    LoadingBorder.Visibility = Visibility.Hidden;
+                    CanvasNext.IsEnabled = true;
+                }
+            }
+            else
+            {
+                App.CurrentPage.OpenStrokes(fileName);
+                OnPageChanged(this, EventArgs.Empty);
+            }
+
             dirty = false;
         }
         catch (Exception ex)
@@ -233,7 +240,7 @@ public partial class MainWindow : Window
 
         try
         {
-            App.SaveStrokes(dialog.FileName);
+            App.CurrentPage.SaveStrokes(dialog.FileName);
             dirty = false;
         }
         catch (Exception ex)
@@ -290,31 +297,33 @@ public partial class MainWindow : Window
             scale = 100;
         }
 
-        var fileDialog = new SaveFileDialog( )
+        var fileDialog = new VistaFolderBrowserDialog( )
         {
-            Filter = ImageFilter,
-            FileName = $"{DateTime.Now:yyyyMMdd-HHmmss}"
+            RootFolder = Environment.SpecialFolder.MyComputer,
+            Multiselect = false,
+            ShowNewFolderButton = true
         };
         if (fileDialog.ShowDialog( ) != true)
         {
             return;
         }
 
-        var fileName = fileDialog.FileName;
-        var strokes = App.CurrentPage.Strokes;
+        var directory = Path.Join(fileDialog.SelectedPath, DateTime.Now.Ticks.ToString( ));
+        Directory.CreateDirectory(directory);
+
         var dpi = VisualTreeHelper.GetDpi(CanvasNext);
 
         ExportImageMenu.IsEnabled = false;
-        Task.Run([STAThread] ( ) =>
+        Task.Run(( ) =>
         {
             try
             {
-                var image = strokes.Image(dpi, scale);
-                var encoder = new PngBitmapEncoder( );
-                encoder.Frames.Add(BitmapFrame.Create(image));
-
-                using var stream = new FileStream(fileName, FileMode.Create);
-                encoder.Save(stream);
+                foreach (var page in App.Pages)
+                {
+                    var pad = (int) (Math.Log10(App.Pages.Count) + 1);
+                    var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.png");
+                    page.ExportStokes(fileName, dpi, scale);
+                }
             }
             catch (Exception ex)
             {
@@ -438,4 +447,18 @@ public partial class MainWindow : Window
     }
 
     #endregion Editing
+
+    private void TransparentModeClick(object o, RoutedEventArgs e)
+    {
+        var mode = TransparentModeButton.IsChecked == true;
+        var blackBrush = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
+        var borderBrush = new SolidColorBrush(Color.FromArgb(128, 0x2E, 0x2E, 0x2E));
+
+        CanvasNext.Background = mode ? Brushes.Transparent : blackBrush;
+        TimeText.Visibility = mode || AllPageToogle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
+        LeftBorder.Background = mode ? blackBrush : borderBrush;
+        CenterBorder.Background = mode ? blackBrush : borderBrush;
+        RightBorder.Background = mode ? blackBrush : borderBrush;
+        TransparentModeText.Text = mode ? "\uE7C3" : "\uE729";
+    }
 }
