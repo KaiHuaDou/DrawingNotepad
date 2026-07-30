@@ -23,10 +23,6 @@ public partial class MainWindow
         {
             image = await App.Raster!.GetOrRenderAsync(index);
         }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
         catch (Exception ex)
         {
             image = Image.Error(ex.Message);
@@ -51,43 +47,34 @@ public partial class App
 {
     public static RasterService? Raster { get; private set; }
 
-    public static async Task OpenDocument(string path)
+    public static async Task OpenDocument(string path, IProgress<(int done, int total)>? progress = null)
     {
         Raster?.Dispose( );
-        Raster = new RasterService( );
+        var raster = new RasterService( );
 
-        RasterSession? session = null;
         try
         {
-            session = await Raster.OpenAsync(path);
-            if (!session.IsPageCountReady)
-            {
-                await session.PageCountReady;
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            Raster.Dispose( );
-            Raster = null;
-            return;
+            await raster.OpenAsync(path, progress);
+            await raster.WaitReadyAsync( );
         }
         catch (Exception ex)
         {
-            Raster.Dispose( );
-            Raster = null;
+            raster.Dispose( );
 
             Current.Dispatcher.Invoke(( ) =>
             {
                 LogException(ex);
-                ShowException(ex, "无法打开文档");
+                ShowInfo("无法打开文档", ex.Message);
             });
             return;
         }
 
+        Raster = raster;
+
         Current.Dispatcher.Invoke(( ) =>
         {
             Pages.Clear( );
-            for (var i = 0; i < session.PageCount; i++)
+            for (var i = 0; i < raster.PageCount; i++)
             {
                 Pages.Add(new Page
                 {

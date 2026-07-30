@@ -1,8 +1,7 @@
 using System;
-using System.IO;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Media;
 
@@ -10,58 +9,51 @@ using static LightBoard.Raster.Image;
 
 namespace LightBoard.Raster;
 
-public sealed class RasterSession(IRasterDocument document)
-{
-    ~RasterSession( )
-    {
-        Document.Dispose( );
-    }
-
-    public IRasterDocument Document { get; } = document;
-
-    public bool IsPageCountReady => Document.IsReady;
-
-    public int PageCount => Document.PageCount;
-
-    public Task PageCountReady => Document.WaitReadyAsync(CancellationToken.None);
-}
-
 public sealed class RasterService : IDisposable
 {
     private const int MemoryCapacity = 50;
 
     private readonly LruCache<int, ImageSource> memory = new(MemoryCapacity);
     private readonly ConcurrentDictionary<int, Task<ImageSource?>> pageLoads = [];
-    private readonly CancellationTokenSource tokenSource = new( );
 
-    public RasterSession? Session { get; private set; }
+    private RasterDocument? document;
 
-    public void Close( )
+    public bool HasDocument => document is not null;
+
+    public bool IsReady => document?.IsReady == true;
+
+    public int PageCount => document?.PageCount ?? 0;
+
+    public Task WaitReadyAsync( )
     {
-        tokenSource.Cancel( );
+        return document?.WaitReadyAsync( ) ?? Task.CompletedTask;
+    }
+
+    public async Task OpenAsync(string path, IProgress<(int done, int total)>? progress = null)
+    {
+        // 未知扩展名（如 .wps）按 docx 尝试打开。
+        RasterDocument opened = Path.GetExtension(path).ToUpperInvariant( ) switch
+        {
+            ".PPTX" or ".PPT" => new PptxDocument(path),
+            _ => new DocxDocument(path)
+        };
 
         try
         {
-            Task.WhenAll(pageLoads.Values).Wait(TimeSpan.FromSeconds(2));
+            await opened.OpenAsync(progress);
         }
-        catch { }
+        catch
+        {
+            opened.Dispose( );
+            throw;
+        }
 
-        pageLoads.Clear( );
-        memory.Clear( );
-
-        Session?.Document.Dispose( );
-        Session = null;
-    }
-
-    public void Dispose( )
-    {
-        Close( );
-        tokenSource.Dispose( );
+        document = opened;
     }
 
     public async Task<ImageSource?> GetOrRenderAsync(int pageIndex)
     {
-        var doc = Session?.Document ?? throw new InvalidOperationException("尚未打开文档。");
+        var doc = document ?? throw new InvalidOperationException("尚未打开文档。");
         if (pageIndex < 0 || (doc.IsReady && pageIndex >= doc.PageCount))
         {
             return null;
@@ -87,39 +79,10 @@ public sealed class RasterService : IDisposable
         }
     }
 
-    public async Task<RasterSession> OpenAsync(string path)
-    {
-        var kind = Path.GetExtension(path).ToUpperInvariant( ) switch
-        {
-            ".PPTX" or ".PPT" => RasterKind.Pptx,
-            ".DOCX" or ".DOC" => RasterKind.Docx,
-            _ => RasterKind.Docx // 尝试认作 docx，以处理打开 .wps 等的情况
-        };
-
-#pragma warning disable CA2000
-
-        IRasterDocument document = kind == RasterKind.Pptx
-            ? new PptxRaster(path)
-            : new DocxRaster(path);
-
-#pragma warning restore CA2000
-
-        await document.OpenAsync(tokenSource.Token);
-
-        var session = new RasterSession(document);
-        Session = session;
-        return session;
-    }
-
     public async Task PrefetchAsync(int pageIndex)
     {
-        var current = Session;
-        if (current?.IsPageCountReady != true)
-        {
-            return;
-        }
-
-        if (pageIndex < 0 || pageIndex >= current.PageCount)
+        var doc = document;
+        if (doc?.IsReady != true || pageIndex < 0 || pageIndex >= doc.PageCount)
         {
             return;
         }
@@ -127,19 +90,38 @@ public sealed class RasterService : IDisposable
         await GetOrRenderAsync(pageIndex);
     }
 
-    private async Task<ImageSource?> LoadPageAsync(IRasterDocument document, int pageIndex)
+    public void Close( )
     {
-        var ct = tokenSource.Token;
+        // 给在途渲染最多 2 秒收尾，超时或失败均直接放弃。
+        try
+        {
+            Task.WhenAll(pageLoads.Values).Wait(TimeSpan.FromSeconds(2));
+        }
+        catch { }
 
-        await document.WaitReadyAsync(ct);
+        pageLoads.Clear( );
+        memory.Clear( );
 
-        var stream = await document.RenderPageAsync(pageIndex, ct);
+        document?.Dispose( );
+        document = null;
+    }
+
+    public void Dispose( )
+    {
+        Close( );
+    }
+
+    private async Task<ImageSource?> LoadPageAsync(RasterDocument doc, int pageIndex)
+    {
+        await doc.WaitReadyAsync( );
+
+        await using var stream = await doc.RenderPageAsync(pageIndex);
         if (stream is null)
         {
-            return null;
+            return Error("Stream is null");
         }
 
-        var image = await Task.Run(( ) => FromStream(stream), ct);
+        var image = FromStream(stream);
         memory.Set(pageIndex, image);
         return image;
     }

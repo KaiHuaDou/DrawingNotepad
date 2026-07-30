@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.IO;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
@@ -64,6 +65,7 @@ public partial class MainWindow
     private async void OnPageChanged(object? sender, EventArgs e)
     {
         var target = App.PageIndex;
+
         UpdatePageUI( );
         PagePreviewsBox.SelectedIndex = target;
 
@@ -74,12 +76,14 @@ public partial class MainWindow
         CanvasNext.OffsetY = App.CurrentPage.OffsetY;
         CanvasNext.SwapHistory(out _, App.CurrentPage.History);
 
-        if (App.Raster?.Session is null)
+        if (App.Raster?.HasDocument != true)
         {
             CanvasNext.SetImage(null);
             return;
         }
 
+        LoadingBar.IsIndeterminate = true;
+        LoadingText.Text = "正在解析文档…";
         LoadingBorder.Visibility = Visibility.Visible;
         CanvasNext.IsEnabled = false;
         await LoadImageAsync(target);

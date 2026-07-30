@@ -97,18 +97,18 @@ public partial class App : Application, ISingleInstance
         var result = dialog.ShowDialog( );
         if (result == copyButton)
         {
-            Clipboard.SetText(details);
+            try { Clipboard.SetDataObject(details, true); } catch { }
         }
     }
 
-    public static void ShowInfo(string message)
+    public static void ShowInfo(string message, string? content = null)
     {
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
             MainInstruction = message,
             MainIcon = TaskDialogIcon.Information,
-            Content = message,
+            Content = content ?? message,
         };
         dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
         dialog.ShowDialog( );

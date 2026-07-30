@@ -20,21 +20,21 @@ jobs:
         with:
           dotnet-version: 10.x
 
-      - name: Publish App
+      - name: Build
         run: |
-          dotnet publish -p:PublishProfile=FolderProfile -f net6.0-windows -c Release
+          dotnet publish -p:PublishProfile=FolderProfile
 
-      - name: Upload Artifacts
+      - name: Upload
         uses: actions/upload-artifact@v7
         with:
           name: LightBoard
           path: ./LightBoard/bin/publish/*
 
-      - name: Publish App with Runtime
+      - name: Build with Runtime
         run: |
-          dotnet publish -p:PublishProfile=FolderProfile -f net6.0-windows -c Release --self-contained -p:EnableCompressionInSingleFile=true /p:IncludeAllContentForSelfExtract=true
+          dotnet publish -p:PublishProfile=FolderProfile --self-contained
 
-      - name: Upload Artifacts with Runtime
+      - name: Upload with Runtime
         uses: actions/upload-artifact@v7
         with:
           name: LightBoard-with-runtime
