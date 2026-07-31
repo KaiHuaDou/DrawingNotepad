@@ -32,12 +32,6 @@ public class Page : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public void SaveStrokes(string fileName)
-    {
-        using var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-        Strokes.Save(stream, false);
-    }
-
     public void OpenStrokes(string fileName)
     {
         using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
@@ -163,5 +157,30 @@ public partial class App
     {
         Pages.Add(new Page { Number = Pages.Count + 1, Scale = 1.0, OffsetX = 8192, OffsetY = 8192 });
         PageIndex = Pages.Count - 1;
+    }
+
+    public static void LoadBoard(string path)
+    {
+        var content = BoardFile.Read(path);
+
+        Raster?.Dispose( );
+        Raster = null;
+
+        Pages.Clear( );
+        for (var i = 0; i < content.Pages.Count; i++)
+        {
+            var p = content.Pages[i];
+            Pages.Add(new Page
+            {
+                Number = i + 1,
+                Strokes = p.Strokes,
+                Scale = p.Scale,
+                OffsetX = p.OffsetX,
+                OffsetY = p.OffsetY,
+                Preview = p.Strokes.Count > 0 ? p.Strokes.Preview( ) : StrokeCollectionExtension.PreviewEmpty( ),
+            });
+        }
+
+        PageIndex = 0;
     }
 }

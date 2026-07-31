@@ -7,12 +7,11 @@
         <LangVersion>preview</LangVersion>
     </PropertyGroup>
     <PropertyGroup>
-        <StartupObject>LightBoard.App.Program</StartupObject>
         <AnalysisLevel>latest-all</AnalysisLevel>
-        <PublishSingleFile>true</PublishSingleFile>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PublishReadyToRun>true</PublishReadyToRun>
         <PublishReadyToRunComposite>false</PublishReadyToRunComposite>
-        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <StartupObject>LightBoard.App.Program</StartupObject>
         <WarningLevel>8</WarningLevel>
     </PropertyGroup>
     <PropertyGroup Condition="$(Configuration)==Debug">

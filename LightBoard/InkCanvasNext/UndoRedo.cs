@@ -48,6 +48,11 @@ public partial class InkCanvasNext
         PushChange(new StrokeChanges(e.Added, e.Removed));
     }
 
+    private void OnSelectionChanged(object? sender, EventArgs e)
+    {
+        SelectionChanged?.Invoke(sender, e);
+    }
+
     public void Undo( )
     {
         if (position == 0)

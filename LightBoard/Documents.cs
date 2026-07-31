@@ -18,14 +18,16 @@ public partial class MainWindow
 
     private async Task LoadImageAsync(int index)
     {
-        ImageSource? image;
+        ImageSource? image = null;
+        string? error = null;
+
         try
         {
             image = await App.Raster!.GetOrRenderAsync(index);
         }
         catch (Exception ex)
         {
-            image = Image.Error(ex.Message);
+            error = ex.Message;
         }
 
         if (App.PageIndex != index)
@@ -33,13 +35,15 @@ public partial class MainWindow
             return;
         }
 
-        await Dispatcher.InvokeAsync(( ) => CanvasNext.SetImage(image));
+        await Dispatcher.InvokeAsync(( ) =>
+            CanvasNext.SetImage(error is null ? image : Image.Error(error))
+        );
 
         LoadingBorder.Visibility = Visibility.Hidden;
         CanvasNext.IsEnabled = true;
 
-        await App.Raster!.PrefetchAsync(index - 1);
         await App.Raster!.PrefetchAsync(index + 1);
+        await App.Raster!.PrefetchAsync(index - 1);
     }
 }
 

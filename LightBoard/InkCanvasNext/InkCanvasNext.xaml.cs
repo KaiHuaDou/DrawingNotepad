@@ -76,6 +76,7 @@ public partial class InkCanvasNext : UserControl
         BackgroundImage.LayoutTransform = canvasScaleTransform;
 
         Canvas.Strokes.StrokesChanged += OnStrokesChanged;
+        Canvas.SelectionChanged += OnSelectionChanged;
 
         Strokes = Canvas.Strokes;
         DefaultDrawingAttributes = Canvas.DefaultDrawingAttributes;
@@ -95,6 +96,8 @@ public partial class InkCanvasNext : UserControl
     public event EventHandler<DependencyPropertyChangedEventArgs>? CanUndoChanged;
 
     public event EventHandler? StrokesChanged;
+
+    public event EventHandler? SelectionChanged;
 
     public bool CanRedo
     {

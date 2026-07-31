@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
@@ -68,6 +69,27 @@ public partial class MainWindow
     private void CanvasNextStrokesChanged(object o, EventArgs e)
     {
         dirty = true;
+
+        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedStrokes.Count == 0)
+        {
+            SelectionBorder.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void CanvasNextSelectionChanged(object o, EventArgs e)
+    {
+        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedStrokes.Count == 0)
+        {
+            SelectionBorder.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        if (SelectionBorder.Parent is UIElement parent)
+        {
+            SelectionBorder.Visibility = Visibility.Visible;
+            var position = Mouse.GetPosition(parent);
+            SelectionBorder.Margin = new Thickness(position.X, position.Y, 0, 0);
+        }
     }
 
     private void CloneClick(object o, RoutedEventArgs e)
@@ -127,11 +149,13 @@ public partial class MainWindow
     private void CutClick(object o, RoutedEventArgs e)
     {
         CanvasNext.CutSelected( );
+        SelectionBorder.Visibility = Visibility.Collapsed;
     }
 
     private void DeleteClick(object o, RoutedEventArgs e)
     {
         CanvasNext.DeleteSelected( );
+        SelectionBorder.Visibility = Visibility.Collapsed;
     }
 
     private void EraseAll(object o, RoutedEventArgs e)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -138,8 +139,6 @@ public partial class App : Application, ISingleInstance
             Current.Shutdown( );
         }
 
-        Directory.CreateDirectory(Path.Join(AppPath, "recover"));
-
         recoverTimer.Interval = TimeSpan.FromMinutes(1);
         recoverTimer.Tick += (_, _) => SaveRecover( );
         recoverTimer.Start( );
@@ -147,14 +146,15 @@ public partial class App : Application, ISingleInstance
 
     private static void SaveRecover( )
     {
-        var pad = (int) (Math.Log10(Pages.Count) + 1);
-        foreach (var page in Pages)
+        if (!Pages.Any(p => p.Strokes.Count > 0))
         {
-            page.SaveStrokes(Path.Join(
-                AppPath,
-                "recover",
-                $"{DateTime.Now.Ticks}-{page.Number.ToString( ).PadLeft(pad, '0')}.isf"
-            ));
+            return;
         }
+
+        try
+        {
+            BoardFile.Write(Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}"), Pages);
+        }
+        catch { }
     }
 }

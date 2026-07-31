@@ -15,7 +15,7 @@ namespace LightBoard;
 public partial class MainWindow : Window
 {
     private const string FileFilter =
-        "可打开的文件|*.isf;*.pptx;*.ppt;*.docx;*.doc|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|所有文件|*.*";
+        "可打开的文件|*.lbf;*.isf;*.pptx;*.ppt;*.docx;*.doc|轻白板文件|*.lbf|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|所有文件|*.*";
 
     private bool dirty;
 
@@ -78,8 +78,7 @@ public partial class MainWindow : Window
 
         if (result == saveButton)
         {
-            SaveFile( );
-            return false;
+            return !SaveFile( );
         }
         else if (result == discardButton)
         {
@@ -114,7 +113,11 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (IsDocumentFile(fileName))
+            if (IsBoardFile(fileName))
+            {
+                App.LoadBoard(fileName);
+            }
+            else if (IsDocumentFile(fileName))
             {
                 UpdatePageUI( );
 
@@ -154,46 +157,50 @@ public partial class MainWindow : Window
         }
     }
 
+    private static bool IsBoardFile(string fileName)
+    {
+        return Path.GetExtension(fileName).Equals(BoardFile.Extension, StringComparison.OrdinalIgnoreCase);
+    }
+
     private void SaveFileClick(object o, RoutedEventArgs e)
     {
         SaveFile( );
     }
 
-    private void SaveFile( )
+    private bool SaveFile( )
     {
-        var dialog = new VistaFolderBrowserDialog( )
+        var current = App.CurrentPage;
+        current.Scale = CanvasNext.CurrentScale;
+        current.OffsetX = CanvasNext.OffsetX;
+        current.OffsetY = CanvasNext.OffsetY;
+
+        var dialog = new VistaSaveFileDialog( )
         {
-            RootFolder = Environment.SpecialFolder.MyComputer,
-            Multiselect = false,
-            ShowNewFolderButton = true
+            Filter = "轻白板文件 (*.lbf)|*.lbf",
+            DefaultExt = ".lbf",
+            AddExtension = true,
+            OverwritePrompt = true,
+            FileName = $"{DateTime.Now:yyyyMMdd-HHmmss}",
         };
         if (dialog.ShowDialog( ) != true)
         {
-            return;
+            return false;
         }
-
-        var directory = Path.Join(dialog.SelectedPath, DateTime.Now.Ticks.ToString( ));
-        Directory.CreateDirectory(directory);
 
         try
         {
-            foreach (var page in App.Pages)
-            {
-                var pad = (int) (Math.Log10(App.Pages.Count) + 1);
-                var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.isf");
-                page.SaveStrokes(fileName);
-            }
-
+            BoardFile.Write(dialog.FileName, App.Pages);
             dirty = false;
         }
         catch (Exception ex)
         {
             App.LogException(ex);
             App.ShowException(ex, "保存失败。错误日志已记录。");
-            return;
+            return false;
         }
 
         App.ShowInfo("墨迹已保存");
+        return true;
     }
 
     private void ExportImageClick(object o, RoutedEventArgs e)
