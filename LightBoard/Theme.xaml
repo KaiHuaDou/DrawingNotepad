@@ -1,8 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Style x:Key="ColorRadioStyle" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="40" />
-        <Setter Property="Height" Value="40" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="Template">
@@ -28,8 +28,8 @@
         </Setter>
     </Style>
     <Style x:Key="RadioStyle" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="40" />
-        <Setter Property="Height" Value="40" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="Template">
@@ -37,7 +37,7 @@
                 <ControlTemplate TargetType="RadioButton">
                     <ToggleButton x:Name="Toogle" IsChecked="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" BorderThickness="2">
                         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   FontFamily="Segoe Fluent Icons" FontSize="28" FontWeight="Heavy"
+                                   FontFamily="Segoe Fluent Icons" FontSize="24" FontWeight="Heavy"
                                    Text="{TemplateBinding Tag}" />
                     </ToggleButton>
                 </ControlTemplate>
@@ -45,8 +45,8 @@
         </Setter>
     </Style>
     <Style x:Key="SelectiveRadioStyle" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="40" />
-        <Setter Property="Height" Value="40" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Template">
@@ -86,14 +86,14 @@
         </Setter>
     </Style>
     <Style x:Key="ButtonStyle" BasedOn="{StaticResource {x:Type Button}}" TargetType="{x:Type Button}">
-        <Setter Property="Width" Value="40" />
-        <Setter Property="Height" Value="40" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate>
-                    <TextBlock FontFamily="Segoe Fluent Icons" FontSize="28" FontWeight="Heavy"
+                    <TextBlock FontFamily="Segoe Fluent Icons" FontSize="24" FontWeight="Heavy"
                                Text="{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}" />
                 </DataTemplate>
             </Setter.Value>
@@ -101,7 +101,7 @@
     </Style>
     <Style x:Key="ContainerStyle" TargetType="{x:Type Border}">
         <Setter Property="Padding" Value="7,5,7,5" />
-        <Setter Property="Panel.ZIndex" Value="40" />
+        <Setter Property="Panel.ZIndex" Value="32" />
         <Setter Property="BorderBrush">
             <Setter.Value>
                 <SolidColorBrush Opacity="0.84" Color="#F4F6F7" />

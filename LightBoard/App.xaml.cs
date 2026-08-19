@@ -1,7 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -142,19 +141,5 @@ public partial class App : Application, ISingleInstance
         recoverTimer.Interval = TimeSpan.FromMinutes(1);
         recoverTimer.Tick += (_, _) => SaveRecover( );
         recoverTimer.Start( );
-    }
-
-    private static void SaveRecover( )
-    {
-        if (!Pages.Any(p => p.Strokes.Count > 0))
-        {
-            return;
-        }
-
-        try
-        {
-            BoardFile.Write(Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}"), Pages);
-        }
-        catch { }
     }
 }

@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.IO;
-using System.Threading;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
@@ -182,5 +182,41 @@ public partial class App
         }
 
         PageIndex = 0;
+    }
+
+    private static void SaveRecover( )
+    {
+        if (!Pages.Any(p => p.Strokes.Count > 0))
+        {
+            return;
+        }
+
+        try
+        {
+            BoardFile.Write(Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"), Pages);
+        }
+        catch { }
+    }
+
+    public static void ExportAllImage(int scale, string directory, DpiScale dpi)
+    {
+        var exported = 0;
+        foreach (var page in Pages)
+        {
+            if (page.Strokes.Count == 0)
+            {
+                continue;
+            }
+
+            var pad = (int) (Math.Log10(Pages.Count) + 1);
+            var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.png");
+            page.ExportStokes(fileName, dpi, scale);
+            exported++;
+        }
+
+        if (exported == 0)
+        {
+            ShowInfo("没有可以导出的墨迹");
+        }
     }
 }

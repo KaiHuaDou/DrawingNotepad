@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net6.0-windows</TargetFramework>
+        <TargetFrameworks>net6.0-windows;net9.0-windows</TargetFrameworks>
         <OutputType>WinExe</OutputType>
         <UseWPF>true</UseWPF>
         <Nullable>enable</Nullable>
@@ -30,7 +30,7 @@
     <ItemGroup>
         <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
         <PackageReference Include="SingleInstanceCore" Version="2.2.2" />
-        <PackageReference Include="Syncfusion.DocIORenderer.Net.Core" Version="34.1.33" />
-        <PackageReference Include="Syncfusion.PresentationRenderer.Net.Core" Version="34.1.33" />
+        <PackageReference Include="Syncfusion.DocIORenderer.Net.Core" Version="34.2.4" />
+        <PackageReference Include="Syncfusion.PresentationRenderer.Net.Core" Version="34.2.4" />
     </ItemGroup>
 </Project>

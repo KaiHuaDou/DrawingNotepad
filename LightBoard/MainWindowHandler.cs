@@ -50,6 +50,7 @@ public partial class MainWindow
 
         RightBorder.BeginAnimation(Border.HeightProperty, heightAnimation);
         TimeText.Visibility = isChecked ? Visibility.Collapsed : Visibility.Visible;
+        PagePreviewsBox.Visibility = isChecked ? Visibility.Visible : Visibility.Collapsed;
     }
 
 #pragma warning disable IDE0060
@@ -119,8 +120,8 @@ public partial class MainWindow
         };
         var animationRight = new DoubleAnimation
         {
-            From = flag ? 0 : RightBorder.ActualWidth - 60,
-            To = flag ? RightBorder.ActualWidth - 60 : 0,
+            From = flag ? 0 : RightBorder.ActualWidth - 52,
+            To = flag ? RightBorder.ActualWidth - 52 : 0,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = ease
         };

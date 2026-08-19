@@ -11,6 +11,11 @@ jobs:
   build:
     runs-on: windows-latest
 
+    strategy:
+      fail-fast: true
+      matrix:
+        tfm: [net6.0-windows, net9.0-windows]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -20,22 +25,22 @@ jobs:
         with:
           dotnet-version: 10.x
 
-      - name: Build
+      - name: Build ${{ matrix.tfm }}
         run: |
-          dotnet publish -p:PublishProfile=FolderProfile
+          dotnet publish -p:PublishProfile=FolderProfile -c Release -f ${{ matrix.tfm }}
 
       - name: Upload
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard
+          name: LightBoard-${{ matrix.tfm }}
           path: ./LightBoard/bin/publish/*
 
-      - name: Build with Runtime
+      - name: Build ${{ matrix.tfm }} with Runtime
         run: |
-          dotnet publish -p:PublishProfile=FolderProfile --self-contained
+          dotnet publish -p:PublishProfile=FolderProfile -c Release -f ${{ matrix.tfm }} --self-contained
 
       - name: Upload with Runtime
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard-with-runtime
+          name: LightBoard-${{ matrix.tfm }}-with-runtime
           path: ./LightBoard/bin/publish/*

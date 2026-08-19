@@ -59,7 +59,6 @@ public partial class App
         try
         {
             await raster.OpenAsync(path, progress);
-            await raster.WaitReadyAsync( );
         }
         catch (Exception ex)
         {

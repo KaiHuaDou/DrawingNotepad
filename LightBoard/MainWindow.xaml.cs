@@ -205,12 +205,6 @@ public partial class MainWindow : Window
 
     private void ExportImageClick(object o, RoutedEventArgs e)
     {
-        if (App.CurrentPage.Strokes.Count == 0)
-        {
-            App.ShowInfo("没有可以导出的墨迹");
-            return;
-        }
-
         using TaskDialog scaleDialog = new( )
         {
             WindowTitle = "轻白板",
@@ -268,12 +262,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                foreach (var page in App.Pages)
-                {
-                    var pad = (int) (Math.Log10(App.Pages.Count) + 1);
-                    var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.png");
-                    page.ExportStokes(fileName, dpi, scale);
-                }
+                App.ExportAllImage(scale, directory, dpi);
             }
             catch (Exception ex)
             {
@@ -289,4 +278,5 @@ public partial class MainWindow : Window
             App.ShowInfo("导出图片成功");
         });
     }
+
 }
