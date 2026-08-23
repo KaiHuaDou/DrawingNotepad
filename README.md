@@ -7,29 +7,31 @@
 
 ## 功能
 
-- 快速更换笔触颜色与粗细
+- 快速更换笔触颜色与粗细（8 种颜色 × 4 档粗细）
 - 荧光笔模式
 - 线擦 / 面积擦 / 选择
-- 撤销 / 重做
-- 多页面管理，支持页面切换、缩略图预览
-- 复制 / 粘贴 / 克隆 / 删除选中墨迹
+- 撤销 / 重做（上限 200 步）
+- 多页面管理，支持页面切换、缩略图预览，每页独立保存视图状态（缩放/偏移/撤销历史）
+- 复制 / 粘贴 / 克隆 / 删除选中墨迹（使用 Windows 墨迹剪贴板格式，可跨应用粘贴）
 - 工具栏可一键收起/展开
-- 打开 / 保存 `*.lbf` 轻白板文件（多页整体存档，可续课）
+- 打开 / 保存 `*.lbf` 轻白板文件（zip 容器：`manifest.json` + 每页独立 ISF，多页整体存档，可续课）
 - 打开 `*.isf` Windows 墨迹文件
-- 导出画布为 `*.png`
+- 打开 `*.pptx / *.ppt / *.docx / *.doc` 演示文稿与 Word 文档（通过本机 Office 栅格化为页面，可继续书写批注）
+- 导出画布为 `*.png`（支持 25% / 50% / 100% 缩放）
 - 自动备份当前墨迹（每分钟保存到 `recover/`），崩溃后下次启动可一键恢复
 - 支持单实例运行
 - 多人同时书写（大屏两侧各人独立绘制，互不干扰）
 - 标题栏实时时间显示
+- 透明背景模式
 
 ## 触摸手势
 
-| 手指数量        | 状态        | 说明                               |
-| --------------- | ----------- | ---------------------------------- |
-| 1               | 绘图        | 单指轻触即可书写或绘制             |
-| 2（近距离）     | 平移 + 缩放 | 双指移动平移，张合缩放             |
-| 3 ~ 4（近距离） | 平移        | 多指拖动平移画布                   |
-| ≥ 5（近距离）   | 橡皮擦      | 多指用作大面积橡皮擦               |
+| 手指数量        | 状态        | 说明                                 |
+| --------------- | ----------- | ------------------------------------ |
+| 1               | 绘图        | 单指轻触即可书写或绘制               |
+| 2（近距离）     | 平移 + 缩放 | 双指移动平移，张合缩放               |
+| 3 ~ 4（近距离） | 平移        | 多指拖动平移画布                     |
+| ≥ 5（近距离）   | 橡皮擦      | 多指用作大面积橡皮擦                 |
 | ≥ 2（远距离）   | 多人绘制    | 多人在大屏两侧同时书写，每人独立笔迹 |
 
 > 近距离/远距离由窗口宽度的 60% 作为阈值判断。
@@ -45,10 +47,13 @@
 ## 系统要求
 
 - Windows 7 SP1 或更新版本
-    - Windows 7 RTM 理论支持，但未经测试
-- .NET 6 桌面运行时或更新版本
-    - 建议使用最新的 .NET 桌面运行时以获得免费的性能提升
-    - 对于 Windows 7 SP1，在安装特定补丁后，有可能能正常安装并使用最新的 .NET 桌面运行时
+    - **已测试：Windows 7 SP1 上可以正常安装 .NET 9.0 Desktop Runtime，并能成功无错误运行本程序**
+- .NET 9.0 Desktop Runtime（x64）或更新版本
+    - 使用 `with-runtime` 版本可以免安装运行时
+- Microsoft Office（打开 Office 文档时需要）
+    - 打开 `*.pptx / *.ppt` 需要本机安装 PowerPoint
+    - 打开 `*.docx / *.doc` 需要本机安装 Word
+    - **要求任意已激活的 Office 版本，版本号 >= 2007**（XPS 导出功能自 Office 2007 起提供）
 - [Segoe Fluent Icons 字体](https://learn.microsoft.com/zh-cn/windows/apps/design/style/segoe-fluent-icons-font)
 
 ## 开发与构建
@@ -58,14 +63,20 @@
     - 预览功能：使用 .NET SDK 预览版
 
 - .NET **9.0** SDK 或更新版本（需要 C# `preview` 语言版本）
-- 为兼容 Windows 7，默认目标框架为 `net6.0-windows`
-    - 如需针对其他目标，可自行修改 `.csproj`
 
 ```bash
-dotnet publish -p:PublishProfile=FolderProfile -f net6.0-windows -c Release
+dotnet publish -p:PublishProfile=FolderProfile -c Release -f net9.0-windows
 ```
 
 输出位于 `LightBoard/bin/publish/`。
+
+如需免装运行时（自包含）版本：
+
+```bash
+dotnet publish -p:PublishProfile=FolderProfile -c Release -f net9.0-windows --self-contained
+```
+
+CI 在 GitHub Actions（`windows-latest` + .NET SDK 10.x）中构建并同时产出框架依赖版与自包含版两个构建物。
 
 ## 项目结构
 
@@ -74,14 +85,20 @@ LightBoard/               # 主程序
 ├─ InkCanvasNext/         # WPF InkCanvas 现代封装（可独立复用）
 │  ├─ Devices.cs          # 触摸/鼠标设备事件处理与捕获
 │  ├─ States.cs           # 触摸状态机
-│  ├─ Gestures.cs         # 平移/缩放手势
+│  ├─ Gestures.cs         # 平移/缩放手势（带平滑）
 │  ├─ MultiTouch.cs       # 多人同时绘制与增量渲染
-│  ├─ Eraser.cs           # 橡皮擦反馈与命中
-│  ├─ Strokes.cs          # 墨迹集合与撤销/重做
-│  └─ UndoRedo.cs         # 历史栈管理
+│  ├─ Eraser.cs           # 橡皮擦反馈与增量命中
+│  ├─ Strokes.cs          # 墨迹集合、剪贴板与预览/导出
+│  ├─ UndoRedo.cs         # 历史栈管理
+│  ├─ Geometry.cs         # 几何工具
+│  └─ RingBuffer.cs       # 定容环形缓冲（撤销栈）
+├─ Documents.cs           # PPT/DOCX 文档栅格化（Office COM → XPS）与缓存
 ├─ Paging.cs              # 多页面管理
 ├─ BoardFile.cs           # 多页整体存档（.lbf）与自动恢复
 ├─ MainWindow.xaml(.cs)   # 主窗口与工具栏
+├─ MainWindowHandler.cs   # 工具栏交互、菜单与动画
+├─ Theme.xaml             # 主题样式（图标/按钮/颜色选择器）
+├─ External/NativeMethods.cs  # Win32 互操作（窗口切换）
 └─ App.xaml(.cs)          # 应用入口、单实例与崩溃恢复
 docs/                     # 设计文档与参考资料
 ```
@@ -145,17 +162,19 @@ public enum InkCanvasNextMode
 
 #### 方法
 
-| 方法                | 说明                               |
-| ------------------- | ---------------------------------- |
-| `Undo()`            | 撤销上一步墨迹变更                 |
-| `Redo()`            | 重做上一步墨迹变更                 |
-| `CopySelected()`    | 复制选中的墨迹到剪贴板             |
-| `CutSelected()`     | 剪切选中的墨迹到剪贴板             |
-| `Paste()`           | 从剪贴板粘贴墨迹到画布中心         |
-| `DeleteSelected()`  | 删除选中的墨迹                     |
-| `CloneSelected()`   | 克隆选中的墨迹并偏移显示           |
-| `ResetTouchState()` | 重置当前触摸状态并释放所有触摸捕获 |
-| `SwapHistory(...)`  | 交换控件当前的撤销/重做历史栈      |
+| 方法                       | 说明                               |
+| -------------------------- | ---------------------------------- |
+| `Undo()`                   | 撤销上一步墨迹变更                 |
+| `Redo()`                   | 重做上一步墨迹变更                 |
+| `CopySelected()`           | 复制选中的墨迹到剪贴板             |
+| `CutSelected()`            | 剪切选中的墨迹到剪贴板             |
+| `Paste()`                  | 从剪贴板粘贴墨迹到画布中心         |
+| `DeleteSelected()`         | 删除选中的墨迹                     |
+| `CloneSelected()`          | 克隆选中的墨迹并偏移显示           |
+| `ResetTouchState()`        | 重置当前触摸状态并释放所有触摸捕获 |
+| `SwapHistory(...)`         | 交换控件当前的撤销/重做历史栈      |
+| `SetDocumentPage(...)`     | 设置/清除文档页面背景图像          |
+| `ClearMultiTouchVisuals()` | 清空进行中的多指笔画视觉           |
 
 ## 许可证
 
