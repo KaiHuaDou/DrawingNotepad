@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -60,15 +64,21 @@ public partial class MainWindow
 }
 public sealed class DocumentService : IDisposable
 {
+    private const long CacheQuotaBytes = 512L * 1024 * 1024;
+
+    private const long TrimWatermarkBytes = 400L * 1024 * 1024;
+
+    private static readonly string cacheDir = Path.Join(App.AppPath, "XpsCache");
+    private static readonly ConcurrentDictionary<string, Lazy<Task<(string Path, string? Temp)>>> converting = new( );
     private readonly FixedDocumentSequence sequence;
-    private readonly string tempPath;
+    private readonly string? tempPath;
     private readonly XpsDocument xps;
 
-    private DocumentService(XpsDocument xps, string tempPath, FixedDocumentSequence sequence)
+    private DocumentService(XpsDocument xps, FixedDocumentSequence sequence, string? tempPath)
     {
         this.xps = xps;
-        this.tempPath = tempPath;
         this.sequence = sequence;
+        this.tempPath = tempPath;
         PageCount = CountPages(sequence);
     }
 
@@ -76,24 +86,48 @@ public sealed class DocumentService : IDisposable
 
     public static async Task<DocumentService> OpenAsync(string path)
     {
-        var tempPath = await RunOnStaAsync(( ) => ConvertToTempXps(path));
+        var cachePath = await Task.Run(( ) =>
+        {
+            TrimCache( );
+            return GetCachePath(path);
+        });
+
+        // 命中缓存直接打开；缓存损坏直接删除（删除失败忽略），落到下方重新转换。
+        if (File.Exists(cachePath))
+        {
+            try
+            {
+                Touch(cachePath);
+                return OpenXps(cachePath);
+            }
+            catch
+            {
+                try { File.Delete(cachePath); } catch { }
+            }
+        }
+
+        // 同一源文件并发打开时只转换一次。
+        var lazy = converting.GetOrAdd(cachePath, key => new Lazy<Task<(string Path, string? Temp)>>(
+            ( ) => ConvertAndCacheAsync(key, path), LazyThreadSafetyMode.ExecutionAndPublication));
         try
         {
-            var xps = new XpsDocument(tempPath, FileAccess.Read);
-            return new DocumentService(xps, tempPath, xps.GetFixedDocumentSequence( ));
+            var (ready, temp) = await lazy.Value;
+            return OpenXps(ready, temp);
         }
-        catch
+        finally
         {
-            try { File.Delete(tempPath); } catch { }
-
-            throw;
+            converting.TryRemove(new KeyValuePair<string, Lazy<Task<(string Path, string? Temp)>>>(cachePath, lazy));
         }
     }
 
     public void Dispose( )
     {
+        // 缓存文件留给下次打开复用，这里只释放 XPS 句柄；临时产物（缓存写入失败时）删除，失败忽略。
         xps.Close( );
-        try { File.Delete(tempPath); } catch { }
+        if (tempPath != null)
+        {
+            try { File.Delete(tempPath); } catch { }
+        }
     }
 
     public ImageSource? GetPage(int index)
@@ -112,6 +146,39 @@ public sealed class DocumentService : IDisposable
         }
 
         return null;
+    }
+
+    private static async Task<(string Path, string? Temp)> ConvertAndCacheAsync(string cachePath, string sourcePath)
+    {
+        var staging = Path.Combine(Path.GetTempPath( ), $"lightboard-{Guid.NewGuid( ):N}.xps");
+        try
+        {
+            var staged = await RunOnStaAsync(( ) => ConvertToXps(sourcePath, staging));
+            // 先写临时文件再原子改名进缓存；任何失败直接忽略，退化为临时文件（Dispose 时清理）。
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+                File.Move(staged, cachePath);
+                return (cachePath, null);
+            }
+            catch (IOException) when (File.Exists(cachePath))
+            {
+                // 并发下已有结果，直接复用缓存。
+                try { File.Delete(staged); } catch { }
+
+                return (cachePath, null);
+            }
+            catch
+            {
+                return (staged, staged);
+            }
+        }
+        catch
+        {
+            try { File.Delete(staging); } catch { }
+
+            throw;
+        }
     }
 
     private static void ConvertDocx(string path, string outputPath)
@@ -156,21 +223,19 @@ public sealed class DocumentService : IDisposable
         }
     }
 
-    private static string ConvertToTempXps(string path)
+    private static string ConvertToXps(string sourcePath, string outputPath)
     {
-        var tempPath = Path.Combine(Path.GetTempPath( ), $"lightboard-{Guid.NewGuid( ):N}.xps");
-
-        if (Path.GetExtension(path).ToUpperInvariant( ) is ".PPTX" or ".PPT")
+        if (Path.GetExtension(sourcePath).ToUpperInvariant( ) is ".PPTX" or ".PPT")
         {
-            ConvertPptx(path, tempPath);
+            ConvertPptx(sourcePath, outputPath);
         }
         else
         {
             // 未知扩展名（如 .wps）按 Word 尝试打开。
-            ConvertDocx(path, tempPath);
+            ConvertDocx(sourcePath, outputPath);
         }
 
-        return tempPath;
+        return outputPath;
     }
 
     private static int CountPages(FixedDocumentSequence sequence)
@@ -182,6 +247,26 @@ public sealed class DocumentService : IDisposable
         }
 
         return count;
+    }
+
+    private static string GetCachePath(string path)
+    {
+        using var stream = File.OpenRead(path);
+        using var sha = SHA256.Create( );
+        return Path.Join(cacheDir, Convert.ToHexString(sha.ComputeHash(stream)) + ".xps");
+    }
+    private static DocumentService OpenXps(string cachePath, string? tempPath = null)
+    {
+        var xps = new XpsDocument(cachePath, FileAccess.Read);
+        try
+        {
+            return new DocumentService(xps, xps.GetFixedDocumentSequence( ), tempPath);
+        }
+        catch
+        {
+            xps.Close( );
+            throw;
+        }
     }
 
     private static RenderTargetBitmap RenderFixedPage(FixedPage fixedPage)
@@ -220,5 +305,42 @@ public sealed class DocumentService : IDisposable
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start( );
         return tcs.Task;
+    }
+
+    // 更新最近使用时间，供 LRU 清理排序。
+    private static void Touch(string cachePath)
+    {
+        try { File.SetLastAccessTime(cachePath, DateTime.Now); } catch { }
+    }
+
+    // 超出配额按最近使用时间从旧到新清理；正在被打开的缓存文件删除会失败，跳过即可。
+    private static void TrimCache( )
+    {
+        try
+        {
+            var dir = new DirectoryInfo(cacheDir);
+            if (!dir.Exists)
+            {
+                return;
+            }
+
+            var files = dir.GetFiles("*.xps").OrderBy(f => f.LastAccessTime).ToList( );
+            var total = files.Sum(f => f.Length);
+            if (total <= CacheQuotaBytes)
+            {
+                return;
+            }
+
+            foreach (var file in files)
+            {
+                if (total <= TrimWatermarkBytes)
+                {
+                    break;
+                }
+
+                try { total -= file.Length; file.Delete( ); } catch { }
+            }
+        }
+        catch { }
     }
 }

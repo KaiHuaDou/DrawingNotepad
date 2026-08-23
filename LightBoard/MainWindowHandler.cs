@@ -140,16 +140,16 @@ public partial class MainWindow
         }
 
         colorRadio = radio;
-        penColor = brush.Color;
+        pen = pen with { Color = brush.Color };
 
         if (inHighlighter)
         {
-            inHighlighter = false;
-            HighLighterToggle.IsChecked = false;
-            thicknessRadio?.IsChecked = true;
+            ExitHighlighter(true);
         }
-
-        ApplyPen(penColor, penWidth);
+        else
+        {
+            ApplyPen(pen);
+        }
     }
 
     private void CopyClick(object o, RoutedEventArgs e)
@@ -175,10 +175,13 @@ public partial class MainWindow
         CanvasNext.Strokes.Clear( );
     }
 
-    private Color penColor = Color.FromRgb(0xE6, 0xE6, 0xE6);
-    private double penWidth = 3;
+    private sealed record PenProfile(Color Color, double Width, bool IsHighlighter);
+
+    private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false);
+    private static readonly PenProfile Highlighter = new(Colors.Yellow, 36, true);
     private RadioButton? colorRadio;
     private RadioButton? thicknessRadio;
+    private RadioButton? toolRadio;
     private bool inHighlighter;
 
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
@@ -189,22 +192,34 @@ public partial class MainWindow
         {
             colorRadio?.IsChecked = false;
             thicknessRadio?.IsChecked = false;
-            ApplyPen(Colors.Yellow, 36);
+            toolRadio?.IsChecked = false;
+            ApplyPen(Highlighter);
         }
         else
         {
-            colorRadio?.IsChecked = true;
-            thicknessRadio?.IsChecked = true;
-            ApplyPen(penColor, penWidth);
+            ExitHighlighter(true);
         }
     }
 
-    private void ApplyPen(Color color, double width)
+    private void ExitHighlighter(bool backToPen)
+    {
+        inHighlighter = false;
+        HighLighterToggle.IsChecked = false;
+        if (backToPen)
+        {
+            colorRadio?.IsChecked = true;
+        }
+
+        thicknessRadio?.IsChecked = true;
+        ApplyPen(pen);
+    }
+
+    private void ApplyPen(PenProfile p)
     {
         var da = CanvasNext.DefaultDrawingAttributes;
-        da.Color = color;
-        da.Width = da.Height = width;
-        da.IsHighlighter = inHighlighter;
+        da.Color = p.Color;
+        da.Width = da.Height = p.Width;
+        da.IsHighlighter = p.IsHighlighter;
         CanvasNext.Mode = InkCanvasNextMode.Ink;
     }
 
@@ -245,23 +260,29 @@ public partial class MainWindow
         }
 
         thicknessRadio = radio;
-        penWidth = thickness;
+        pen = pen with { Width = thickness };
 
         if (inHighlighter)
         {
-            inHighlighter = false;
-            HighLighterToggle.IsChecked = false;
-            colorRadio?.IsChecked = true;
+            ExitHighlighter(true);
         }
-
-        ApplyPen(penColor, penWidth);
+        else
+        {
+            ApplyPen(pen);
+        }
     }
 
     private void ToolRadioChecked(object o, RoutedEventArgs e)
     {
-        if (o is not RadioButton { Tag: string tag })
+        if (o is not RadioButton { Tag: string tag } radio)
         {
             return;
+        }
+
+        toolRadio = radio;
+        if (inHighlighter)
+        {
+            ExitHighlighter(false);
         }
 
         CanvasNext.Mode = tag switch
