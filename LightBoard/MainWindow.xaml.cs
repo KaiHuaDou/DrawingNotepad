@@ -26,6 +26,8 @@ public partial class MainWindow : Window
     public MainWindow( )
     {
         InitializeComponent( );
+        colorRadio ??= DefaultColorRadio;
+        thicknessRadio ??= DefaultThicknessRadio;
         App.InitializePages( );
         App.PageChanged += OnPageChanged;
 
@@ -80,7 +82,7 @@ public partial class MainWindow : Window
         dialog.Buttons.Add(cancelButton);
         var result = dialog.ShowDialog( );
 
-        if(result == fastSaveButton)
+        if (result == fastSaveButton)
         {
             BoardFile.Write(Path.Join(App.AppPath, "fastsave", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"), App.Pages);
             dirty = false;
@@ -128,33 +130,31 @@ public partial class MainWindow : Window
     {
         try
         {
+            CloseDocumentViewer( );
+
             if (IsBoardFile(fileName))
             {
                 App.LoadBoard(fileName);
             }
             else if (IsDocumentFile(fileName))
             {
-                UpdatePageUI( );
-
                 LoadingBar.IsIndeterminate = true;
-                LoadingBar.Value = 0;
                 LoadingText.Text = "解析文档中...";
                 LoadingBorder.Visibility = Visibility.Visible;
-                CanvasNext.IsEnabled = false;
 
-                var progress = new Progress<(int done, int total)>(p =>
+                try
                 {
-                    LoadingBar.IsIndeterminate = false;
-                    LoadingBar.Value = 100.0 * p.done / p.total;
-                    LoadingText.Text = $"{p.done} / {p.total} 页";
-                });
-
-                await App.OpenDocument(fileName, progress);
-
-                if (App.Raster?.HasDocument != true)
+                    await App.OpenDocument(fileName);
+                }
+                catch (Exception ex)
+                {
+                    App.LogException(ex);
+                    App.ShowDetailedInfo("无法打开文档", ex.Message, $"{ex.Message}\n{ex.StackTrace}");
+                    return;
+                }
+                finally
                 {
                     LoadingBorder.Visibility = Visibility.Hidden;
-                    CanvasNext.IsEnabled = true;
                 }
             }
             else

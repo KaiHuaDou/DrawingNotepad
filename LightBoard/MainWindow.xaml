@@ -28,7 +28,7 @@
             <BitmapCache EnableClearType="True" />
         </Grid.CacheMode>
         <next:InkCanvasNext x:Name="CanvasNext"
-                            Background="#000000"
+                            Background="{StaticResource MajorGridBrush}"
                             CanRedoChanged="CanvasNextCanRedoChanged"
                             CanUndoChanged="CanvasNextCanUndoChanged"
                             SelectionChanged="CanvasNextSelectionChanged"
@@ -105,7 +105,8 @@
                                  Style="{StaticResource ColorRadioStyle}"
                                  Background="#1E1E1E"
                                  GroupName="EditGroup" />
-                    <RadioButton Checked="ColorRadioChecked" IsChecked="True"
+                    <RadioButton x:Name="DefaultColorRadio"
+                                 Checked="ColorRadioChecked" IsChecked="True"
                                  Style="{StaticResource ColorRadioStyle}"
                                  Background="#E6E6E6"
                                  GroupName="EditGroup" />
@@ -158,18 +159,22 @@
                 <StackPanel Orientation="Horizontal">
                     <Border Width="96" Visibility="Hidden" />
                     <RadioButton MinWidth="1"
+                                 Checked="ThicknessRadioClick"
                                  Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <RadioButton MinWidth="3"
-                                 IsChecked="True"
+                                 GroupName="ThicknessGroup" />
+                    <RadioButton x:Name="DefaultThicknessRadio"
+                                 MinWidth="3"
+                                 Checked="ThicknessRadioClick" IsChecked="True"
                                  Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                                 GroupName="ThicknessGroup" />
                     <RadioButton MinWidth="5"
+                                 Checked="ThicknessRadioClick"
                                  Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                                 GroupName="ThicknessGroup" />
                     <RadioButton MinWidth="10"
+                                 Checked="ThicknessRadioClick"
                                  Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                                 GroupName="ThicknessGroup" />
                     <Border Width="127" Visibility="Hidden" />
                     <RadioButton Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"

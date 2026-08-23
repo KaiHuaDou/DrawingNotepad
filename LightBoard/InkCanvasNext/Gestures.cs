@@ -111,7 +111,7 @@ public partial class InkCanvasNext
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private double Smooth(double x)
+    private static double Smooth(double x)
     {
         const double T = 0.2;
         const double Q = 0.5;

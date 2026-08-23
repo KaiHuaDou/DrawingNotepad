@@ -8,8 +8,6 @@ using Ookii.Dialogs.Wpf;
 
 using SingleInstanceCore;
 
-using Syncfusion.Licensing;
-
 namespace LightBoard;
 
 public partial class App : Application, ISingleInstance
@@ -42,8 +40,6 @@ public partial class App : Application, ISingleInstance
         [STAThread]
         public static void Main(string[] args)
         {
-            RegisterSyncfusionLicense( );
-
             if (args?.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
             {
                 PendingOpen = args[0];
@@ -53,25 +49,6 @@ public partial class App : Application, ISingleInstance
             app.InitializeComponent( );
             app.Run( );
             SingleInstance.Cleanup( );
-        }
-
-        private static void RegisterSyncfusionLicense( )
-        {
-            var key = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE");
-
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                var licenseFile = Path.Join(AppPath, "syncfusion.license");
-                if (File.Exists(licenseFile))
-                {
-                    key = File.ReadAllText(licenseFile).Trim( );
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(key))
-            {
-                SyncfusionLicenseProvider.RegisterLicense(key);
-            }
         }
     }
 

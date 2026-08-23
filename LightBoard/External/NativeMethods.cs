@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace LightBoard.External;
 
-internal sealed class NativeMethods
+internal static class NativeMethods
 {
     [DllImport("user32.dll")]
     public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);

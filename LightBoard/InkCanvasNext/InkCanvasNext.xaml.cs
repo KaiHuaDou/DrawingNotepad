@@ -72,8 +72,7 @@ public partial class InkCanvasNext : UserControl
 
         eraser = new Eraser(Canvas, EraserFeedback);
 
-        Canvas.LayoutTransform = canvasScaleTransform;
-        BackgroundImage.LayoutTransform = canvasScaleTransform;
+        CanvasGrid.LayoutTransform = canvasScaleTransform;
 
         Canvas.Strokes.StrokesChanged += OnStrokesChanged;
         Canvas.SelectionChanged += OnSelectionChanged;
@@ -214,9 +213,9 @@ public partial class InkCanvasNext : UserControl
         ClearHistory( );
     }
 
-    public void SetImage(ImageSource? source)
+    public void SetDocumentPage(ImageSource? page)
     {
-        BackgroundImage.Source = source;
-        BackgroundImage.Visibility = source is null ? Visibility.Collapsed : Visibility.Visible;
+        DocumentHost.Child = page is null ? null : new Image { Source = page };
+        DocumentHost.Visibility = page is null ? Visibility.Collapsed : Visibility.Visible;
     }
 }

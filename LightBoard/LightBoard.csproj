@@ -30,9 +30,9 @@
         </None>
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="NetOfficeFw.PowerPoint" Version="1.9.10" />
+        <PackageReference Include="NetOfficeFw.Word" Version="1.9.10" />
         <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
         <PackageReference Include="SingleInstanceCore" Version="2.2.2" />
-        <PackageReference Include="Syncfusion.DocIORenderer.Net.Core" Version="34.2.4" />
-        <PackageReference Include="Syncfusion.PresentationRenderer.Net.Core" Version="34.2.4" />
     </ItemGroup>
 </Project>

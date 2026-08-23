@@ -7,15 +7,14 @@ internal sealed class RingBuffer<T>(int capacity)
     private readonly T[] buffer = new T[capacity];
     private readonly int capacity = capacity;
     private int head;
-    private int count;
 
-    public int Count => count;
+    public int Count { get; private set; }
 
     public T this[int index]
     {
         get
         {
-            if ((uint) index >= (uint) count)
+            if ((uint) index >= (uint) Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
@@ -26,39 +25,39 @@ internal sealed class RingBuffer<T>(int capacity)
 
     public void Enqueue(T item)
     {
-        if (count == capacity)
+        if (Count == capacity)
         {
             buffer[head] = item;
             head = (head + 1) % capacity;
         }
         else
         {
-            buffer[(head + count) % capacity] = item;
-            count++;
+            buffer[(head + Count) % capacity] = item;
+            Count++;
         }
     }
 
     public void Truncate(int newCount)
     {
-        if (newCount < 0 || newCount > count)
+        if (newCount < 0 || newCount > Count)
         {
             throw new ArgumentOutOfRangeException(nameof(newCount));
         }
 
-        count = newCount;
+        Count = newCount;
     }
 
     public void Clear( )
     {
         Array.Clear(buffer, 0, capacity);
         head = 0;
-        count = 0;
+        Count = 0;
     }
 
     public T[] ToArray( )
     {
-        var arr = new T[count];
-        for (var i = 0; i < count; i++)
+        var arr = new T[Count];
+        for (var i = 0; i < Count; i++)
         {
             arr[i] = buffer[(head + i) % capacity];
         }

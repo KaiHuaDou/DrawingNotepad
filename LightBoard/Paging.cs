@@ -56,7 +56,7 @@ public class Page : INotifyPropertyChanged
 
 public partial class MainWindow
 {
-    private async void OnPageChanged(object? sender, EventArgs e)
+    private void OnPageChanged(object? sender, EventArgs e)
     {
         var target = App.PageIndex;
 
@@ -70,17 +70,7 @@ public partial class MainWindow
         CanvasNext.OffsetY = App.CurrentPage.OffsetY;
         CanvasNext.SwapHistory(out _, App.CurrentPage.History);
 
-        if (App.Raster?.HasDocument != true)
-        {
-            CanvasNext.SetImage(null);
-            return;
-        }
-
-        LoadingBar.IsIndeterminate = true;
-        LoadingText.Text = "正在解析文档…";
-        LoadingBorder.Visibility = Visibility.Visible;
-        CanvasNext.IsEnabled = false;
-        await LoadImageAsync(target);
+        CanvasNext.SetDocumentPage(App.Document?.GetPage(target));
     }
 
     private void SaveCurrentViewToPage( )
@@ -162,9 +152,6 @@ public partial class App
     public static void LoadBoard(string path)
     {
         var content = BoardFile.Read(path);
-
-        Raster?.Dispose( );
-        Raster = null;
 
         Pages.Clear( );
         for (var i = 0; i < content.Pages.Count; i++)

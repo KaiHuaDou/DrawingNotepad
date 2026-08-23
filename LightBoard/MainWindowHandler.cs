@@ -134,13 +134,22 @@ public partial class MainWindow
 
     private void ColorRadioChecked(object o, RoutedEventArgs e)
     {
-        if (o is not RadioButton { Background: SolidColorBrush brush })
+        if (o is not RadioButton { Background: SolidColorBrush brush } radio)
         {
             return;
         }
 
-        CanvasNext.Mode = InkCanvasNextMode.Ink;
-        CanvasNext.DefaultDrawingAttributes.Color = brush.Color;
+        colorRadio = radio;
+        penColor = brush.Color;
+
+        if (inHighlighter)
+        {
+            inHighlighter = false;
+            HighLighterToggle.IsChecked = false;
+            thicknessRadio?.IsChecked = true;
+        }
+
+        ApplyPen(penColor, penWidth);
     }
 
     private void CopyClick(object o, RoutedEventArgs e)
@@ -166,9 +175,37 @@ public partial class MainWindow
         CanvasNext.Strokes.Clear( );
     }
 
+    private Color penColor = Color.FromRgb(0xE6, 0xE6, 0xE6);
+    private double penWidth = 3;
+    private RadioButton? colorRadio;
+    private RadioButton? thicknessRadio;
+    private bool inHighlighter;
+
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
     {
-        CanvasNext.DefaultDrawingAttributes.IsHighlighter = HighLighterToggle.IsChecked ?? false;
+        inHighlighter = HighLighterToggle.IsChecked == true;
+
+        if (inHighlighter)
+        {
+            colorRadio?.IsChecked = false;
+            thicknessRadio?.IsChecked = false;
+            ApplyPen(Colors.Yellow, 36);
+        }
+        else
+        {
+            colorRadio?.IsChecked = true;
+            thicknessRadio?.IsChecked = true;
+            ApplyPen(penColor, penWidth);
+        }
+    }
+
+    private void ApplyPen(Color color, double width)
+    {
+        var da = CanvasNext.DefaultDrawingAttributes;
+        da.Color = color;
+        da.Width = da.Height = width;
+        da.IsHighlighter = inHighlighter;
+        CanvasNext.Mode = InkCanvasNextMode.Ink;
     }
 
     private void MoreToggleClick(object o, RoutedEventArgs e)
@@ -202,12 +239,22 @@ public partial class MainWindow
 
     private void ThicknessRadioClick(object o, RoutedEventArgs e)
     {
-        if (o is not RadioButton { MinWidth: double thickness })
+        if (o is not RadioButton { MinWidth: double thickness } radio)
         {
             return;
         }
 
-        CanvasNext.DefaultDrawingAttributes.Width = CanvasNext.DefaultDrawingAttributes.Height = thickness;
+        thicknessRadio = radio;
+        penWidth = thickness;
+
+        if (inHighlighter)
+        {
+            inHighlighter = false;
+            HighLighterToggle.IsChecked = false;
+            colorRadio?.IsChecked = true;
+        }
+
+        ApplyPen(penColor, penWidth);
     }
 
     private void ToolRadioChecked(object o, RoutedEventArgs e)
