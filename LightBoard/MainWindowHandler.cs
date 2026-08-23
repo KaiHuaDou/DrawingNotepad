@@ -19,7 +19,7 @@ public partial class MainWindow
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
-            MainInstruction = "轻白板 / LightBoard 26H4 Beta",
+            MainInstruction = "轻白板 / LightBoard v1.0.0 RC",
             MainIcon = TaskDialogIcon.Information,
             Content =
             """
@@ -43,14 +43,15 @@ public partial class MainWindow
         var heightAnimation = new DoubleAnimation
         {
             From = RightBorder.ActualHeight,
-            To = isChecked ? ActualHeight - 20 : 57,
+            To = isChecked ? ActualHeight - 20 : 44,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
         };
 
-        RightBorder.BeginAnimation(Border.HeightProperty, heightAnimation);
         TimeText.Visibility = isChecked ? Visibility.Collapsed : Visibility.Visible;
-        PagePreviewsBox.Visibility = isChecked ? Visibility.Visible : Visibility.Collapsed;
+        heightAnimation.Completed += (_, _) => PagePreviewsBox.Visibility = isChecked ? Visibility.Visible : Visibility.Collapsed;
+
+        RightBorder.BeginAnimation(HeightProperty, heightAnimation);
     }
 
 #pragma warning disable IDE0060
@@ -120,8 +121,8 @@ public partial class MainWindow
         };
         var animationRight = new DoubleAnimation
         {
-            From = flag ? 0 : RightBorder.ActualWidth - 52,
-            To = flag ? RightBorder.ActualWidth - 52 : 0,
+            From = flag ? 0 : RightBorder.ActualWidth - 85,
+            To = flag ? RightBorder.ActualWidth - 85 : 0,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = ease
         };
@@ -168,6 +169,20 @@ public partial class MainWindow
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
     {
         CanvasNext.DefaultDrawingAttributes.IsHighlighter = HighLighterToggle.IsChecked ?? false;
+    }
+
+    private void MoreToggleClick(object o, RoutedEventArgs e)
+    {
+        var isChecked = MoreToggle.IsChecked == true;
+        var heightAnimation = new DoubleAnimation
+        {
+            From = CenterBorder.ActualHeight,
+            To = isChecked ? CenterBorder.ActualHeight * 2 : CenterBorder.ActualHeight / 2,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
+        };
+
+        CenterBorder.BeginAnimation(HeightProperty, heightAnimation);
     }
 
     private void PasteClick(object o, RoutedEventArgs e)
@@ -222,6 +237,6 @@ public partial class MainWindow
         LeftBorder.Background = mode ? blackBrush : borderBrush;
         CenterBorder.Background = mode ? blackBrush : borderBrush;
         RightBorder.Background = mode ? blackBrush : borderBrush;
-        TransparentModeText.Text = mode ? "\uE7C3" : "\uE729";
+        TransparentModeButton.Tag = mode ? "\uE7C3" : "\uE729";
     }
 }

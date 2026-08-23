@@ -15,9 +15,9 @@ public partial class InkCanvasNext
     /// 1. 未调用 Remove/TrimExcess 时迭代顺序等同于插入顺序。<br />
     /// 2. 调用 Remove 后，只影响所移除元素后面的元素。<br />
     /// 3. 实际情况：防止跳变即可，因此允许 Hack。<br />
-    /// 4. 变通方案：OrderDictionary、手动维护前两根手指。
+    /// 4. 变通方案：OrderedDictionary、手动维护前两根手指。
     /// </summary>
-    private readonly Dictionary<int, (TouchDevice Device, Point Position)> touches = new(20);
+    private readonly OrderedDictionary<int, (TouchDevice Device, Point Position)> touches = new(20);
     private readonly Dictionary<int, Point> touchStarts = [];
     private bool releasingCaptures;
 

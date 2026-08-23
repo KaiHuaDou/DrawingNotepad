@@ -28,7 +28,7 @@
             <BitmapCache EnableClearType="True" />
         </Grid.CacheMode>
         <next:InkCanvasNext x:Name="CanvasNext"
-                            Background="#1E1E1E"
+                            Background="#000000"
                             CanRedoChanged="CanvasNextCanRedoChanged"
                             CanUndoChanged="CanvasNextCanUndoChanged"
                             SelectionChanged="CanvasNextSelectionChanged"
@@ -36,7 +36,6 @@
         <Border x:Name="LeftBorder"
                 HorizontalAlignment="Left" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
-                BorderThickness="0,1,1,0"
                 CornerRadius="0,10,0,0">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="LeftTransform" />
@@ -48,12 +47,10 @@
                 <Button x:Name="WindowMinimizeButton"
                         Style="{StaticResource ButtonStyle}"
                         Click="MinimizeWindowClick" Tag="&#xE921;" />
-                <ToggleButton x:Name="MoreButton"
-                              Width="32" Height="32"
-                              Margin="3">
-                    <TextBlock FontFamily="Segoe Fluent Icons" FontSize="24" FontWeight="Heavy"
-                               Text="&#xE700;" />
-                </ToggleButton>
+                <ToggleButton x:Name="MoreButton" Style="{StaticResource ToggleStyle}" Tag="&#xE700;" />
+                <Button x:Name="SwitchOutButton"
+                        Style="{StaticResource ButtonStyle}"
+                        Click="SwitchOutClick" Tag="&#xE8AB;" />
             </StackPanel>
         </Border>
         <Popup x:Name="MorePopup"
@@ -71,33 +68,33 @@
                     </Menu.ItemsPanel>
                     <MenuItem Header="关于" Style="{StaticResource MenuItemStyle}" Click="AboutClick">
                         <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextBlockStyle}" Text="&#xE946;" />
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE946;" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="打开" Style="{StaticResource MenuItemStyle}" Click="OpenFileClick">
                         <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextBlockStyle}" Text="&#xE8DA;" />
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE8DA;" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="保存" Style="{StaticResource MenuItemStyle}" Click="SaveFileClick">
                         <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextBlockStyle}" Text="&#xE74E;" />
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE74E;" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem x:Name="ExportImageMenu" Header="导出"
                               Style="{StaticResource MenuItemStyle}"
                               Click="ExportImageClick">
                         <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextBlockStyle}" Text="&#xEE71;" />
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEE71;" />
                         </MenuItem.Icon>
                     </MenuItem>
                 </Menu>
             </Border>
         </Popup>
         <Border x:Name="CenterBorder"
+                Height="43"
                 HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
-                BorderThickness="1,1,1,0"
                 CornerRadius="10,10,0,0">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="CenterTransform" />
@@ -136,43 +133,16 @@
                                  Style="{StaticResource ColorRadioStyle}"
                                  Background="#4EC9B0"
                                  GroupName="EditGroup" />
+                    <ToggleButton x:Name="HighLighterToggle"
+                                  Style="{StaticResource ToggleStyle}"
+                                  Click="HighLighterBoxClicked" Tag="&#xE7E6;" />
                     <Border Width="32" Visibility="Hidden" />
                     <RadioButton Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xED60;" />
-                    <RadioButton Checked="ToolRadioChecked"
-                                 Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xED61;" />
                     <Button Style="{StaticResource ButtonStyle}"
                             Foreground="#F25767"
                             Click="EraseAll" Tag="&#xED62;" />
-                    <RadioButton Checked="ToolRadioChecked"
-                                 Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xEF20;" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <Border Width="57" Visibility="Hidden" />
-                    <RadioButton MinWidth="3"
-                                 Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <RadioButton MinWidth="5"
-                                 IsChecked="True"
-                                 Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <RadioButton MinWidth="10"
-                                 Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <RadioButton MinWidth="28"
-                                 Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <ToggleButton x:Name="HighLighterToggle"
-                                  Width="32" Height="32"
-                                  Margin="3"
-                                  Click="HighLighterBoxClicked">
-                        <TextBlock FontFamily="Segoe Fluent Icons" FontSize="24" FontWeight="Heavy"
-                                   Text="&#xE7E6;" />
-                    </ToggleButton>
-                    <Border Width="90" Visibility="Hidden" />
                     <Button x:Name="UndoButton"
                             IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
@@ -181,14 +151,35 @@
                             IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
                             Click="RedoButtonClick" Tag="&#xE7A6;" />
+                    <ToggleButton x:Name="MoreToggle"
+                                  Style="{StaticResource ToggleStyle}"
+                                  Click="MoreToggleClick" Tag="&#xE712;" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="96" Visibility="Hidden" />
+                    <RadioButton MinWidth="1"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton MinWidth="3"
+                                 IsChecked="True"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton MinWidth="5"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton MinWidth="10"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <Border Width="127" Visibility="Hidden" />
+                    <RadioButton Checked="ToolRadioChecked"
+                                 Style="{StaticResource RadioStyle}"
+                                 GroupName="EditGroup" Tag="&#xED61;" />
+                    <RadioButton Checked="ToolRadioChecked"
+                                 Style="{StaticResource RadioStyle}"
+                                 GroupName="EditGroup" Tag="&#xEF20;" />
                     <ToggleButton x:Name="TransparentModeButton"
-                                  Width="32" Height="32"
-                                  Margin="3"
-                                  Click="TransparentModeClick">
-                        <TextBlock x:Name="TransparentModeText"
-                                   FontFamily="Segoe Fluent Icons" FontSize="24" FontWeight="Heavy"
-                                   Text="&#xE729;" />
-                    </ToggleButton>
+                                  Style="{StaticResource ToggleStyle}"
+                                  Click="TransparentModeClick" Tag="&#xE729;" />
                     <Button Style="{StaticResource ButtonStyle}" Click="PasteClick" Tag="&#xE77F;" />
                 </StackPanel>
             </StackPanel>
@@ -196,12 +187,35 @@
         <Border x:Name="RightBorder"
                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
-                BorderThickness="1,1,0,0"
                 CornerRadius="10,0,0,0">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="RightTransform" />
             </Border.RenderTransform>
-            <StackPanel>
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
+                    <ToggleButton x:Name="CollapseExpandButton"
+                                  Width="32" Height="32"
+                                  Margin="5,0,5,0"
+                                  Click="CollapseExpandClick">
+                        <TextBlock x:Name="CollapseExpandIcon"
+                                   FontFamily="Segoe Fluent Icons" FontSize="24" FontWeight="Heavy"
+                                   Text="&#xE70D;" />
+                    </ToggleButton>
+                    <Button x:Name="PrevPageButton"
+                            IsEnabled="False"
+                            Style="{StaticResource ButtonStyle}"
+                            Click="PrevPage" Tag="&#xE72B;" />
+                    <ToggleButton x:Name="AllPageToogle"
+                                  Width="60" Height="32"
+                                  Margin="3,0,3,0"
+                                  Click="AllPageToogleClick">
+                        <TextBlock FontSize="19" Text="1/1" />
+                    </ToggleButton>
+                    <Button x:Name="NewNextPageButton"
+                            Style="{StaticResource ButtonStyle}"
+                            Click="NewNextPage" Tag="&#xE710;" />
+                    <Border Width="32" Visibility="Hidden" />
+                </StackPanel>
                 <ListBox x:Name="PagePreviewsBox"
                          Visibility="Collapsed"
                          Background="{x:Null}"
@@ -234,30 +248,7 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
-                    <ToggleButton x:Name="CollapseExpandButton"
-                                  Width="32" Height="32"
-                                  Margin="5,0,5,0"
-                                  Click="CollapseExpandClick">
-                        <TextBlock x:Name="CollapseExpandIcon"
-                                   FontFamily="Segoe Fluent Icons" FontSize="24" FontWeight="Heavy"
-                                   Text="&#xE70D;" />
-                    </ToggleButton>
-                    <Button x:Name="PrevPageButton"
-                            IsEnabled="False"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="PrevPage" Tag="&#xE72B;" />
-                    <ToggleButton x:Name="AllPageToogle"
-                                  Width="60" Height="32"
-                                  Margin="3,0,3,0"
-                                  Click="AllPageToogleClick">
-                        <TextBlock FontSize="19" Text="1/1" />
-                    </ToggleButton>
-                    <Button x:Name="NewNextPageButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="NewNextPage" Tag="&#xE710;" />
-                </StackPanel>
-            </StackPanel>
+            </DockPanel>
         </Border>
         <TextBlock x:Name="TimeText"
                    Margin="0,20,25,0" HorizontalAlignment="Right" VerticalAlignment="Top"

@@ -6,6 +6,8 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
 
+using LightBoard.External;
+
 using Microsoft.Win32;
 
 using Ookii.Dialogs.Wpf;
@@ -64,19 +66,27 @@ public partial class MainWindow : Window
         {
             WindowTitle = "轻白板",
             MainInstruction = "有未保存的墨迹，是否保存？",
-            MainIcon = TaskDialogIcon.Warning,
+            MainIcon = TaskDialogIcon.Information,
             ButtonStyle = TaskDialogButtonStyle.CommandLinks
         };
 
-        var saveButton = new TaskDialogButton("保存");
+        var fastSaveButton = new TaskDialogButton("快速保存");
+        var saveButton = new TaskDialogButton("手动保存");
         var discardButton = new TaskDialogButton("放弃");
         var cancelButton = new TaskDialogButton("取消");
+        dialog.Buttons.Add(fastSaveButton);
         dialog.Buttons.Add(saveButton);
         dialog.Buttons.Add(discardButton);
         dialog.Buttons.Add(cancelButton);
         var result = dialog.ShowDialog( );
 
-        if (result == saveButton)
+        if(result == fastSaveButton)
+        {
+            BoardFile.Write(Path.Join(App.AppPath, "fastsave", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"), App.Pages);
+            dirty = false;
+            return false;
+        }
+        else if (result == saveButton)
         {
             return !SaveFile( );
         }
@@ -100,6 +110,11 @@ public partial class MainWindow : Window
 
     private void OpenFileClick(object o, RoutedEventArgs e)
     {
+        if (WhetherCloseFile( ))
+        {
+            return;
+        }
+
         OpenFileDialog dialog = new( ) { Filter = FileFilter };
         if (dialog.ShowDialog( ) != true)
         {
@@ -279,4 +294,8 @@ public partial class MainWindow : Window
         });
     }
 
+    private void SwitchOutClick(object o, RoutedEventArgs e)
+    {
+        NativeMethods.SwitchTo("msedge");
+    }
 }

@@ -114,6 +114,26 @@ public partial class App : Application, ISingleInstance
         dialog.ShowDialog( );
     }
 
+    public static void ShowDetailedInfo(string message, string content, string details)
+    {
+        using TaskDialog dialog = new( )
+        {
+            WindowTitle = "轻白板",
+            MainInstruction = message,
+            MainIcon = TaskDialogIcon.Warning,
+            Content = content,
+            ExpandedInformation = details,
+        };
+        var copyButton = new TaskDialogButton("复制信息");
+        dialog.Buttons.Add(copyButton);
+        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+        var result = dialog.ShowDialog( );
+        if (result == copyButton)
+        {
+            try { Clipboard.SetDataObject(details, true); } catch { }
+        }
+    }
+
     public void OnInstanceInvoked(string[] args)
     {
         Current.MainWindow.Show( );
@@ -128,7 +148,7 @@ public partial class App : Application, ISingleInstance
 
         ShowException(e.Exception, "程序即将关闭。错误日志已记录。墨迹已备份。");
 
-        Application.Current.Shutdown(1);
+        Current.Shutdown(1);
     }
 
     private void AppStartup(object o, StartupEventArgs e)

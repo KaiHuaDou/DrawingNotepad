@@ -5,10 +5,6 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Media;
 
-using Syncfusion.DocIO.DLS;
-using Syncfusion.DocIORenderer;
-using Syncfusion.PresentationRenderer;
-
 using static LightBoard.Raster.Image;
 
 namespace LightBoard.Raster;
@@ -30,13 +26,11 @@ public sealed class RasterService : IDisposable
     {
         // 未知扩展名（如 .wps）按 docx 尝试打开。Syncfusion 只能整篇渲染，
         // 故所有页在此一次性转成字节，后续的"按需"仅指按页解码。
-        var rendered = Path.GetExtension(path).ToUpperInvariant( ) switch
+        pages = Path.GetExtension(path).ToUpperInvariant( ) switch
         {
             ".PPTX" or ".PPT" => await RenderPptxAsync(path, progress),
             _ => await RenderDocxAsync(path, progress)
         };
-
-        pages = rendered;
     }
 
     public async Task<ImageSource?> GetOrRenderAsync(int pageIndex)
@@ -111,15 +105,17 @@ public sealed class RasterService : IDisposable
         return Task.Run(( ) =>
         {
             var ppt = Syncfusion.Presentation.Presentation.Open(path);
+            ppt.PresentationRenderer = new Syncfusion.PresentationRenderer.PresentationRenderer( );
+            ppt.FontSettings.InitializeFallbackFonts( );
+            ppt.FontSettings.SubstituteFont += (_, e) => e.AlternateFontName = "Microsoft YaHei UI";
+
             try
             {
-                ppt.PresentationRenderer = new PresentationRenderer( );
-
                 var result = new byte[ppt.Slides.Count][];
                 for (var i = 0; i < result.Length; i++)
                 {
-                    using var image = ppt.Slides[i].ConvertToImage(Syncfusion.Presentation.ExportImageFormat.Png);
-                    result[i] = Image.ToArray(image);
+                    using var image = ppt.Slides[i].ConvertToImage(Syncfusion.Presentation.ExportImageFormat.Jpeg);
+                    result[i] = ToArray(image);
                     progress?.Report((i + 1, result.Length));
                 }
 
@@ -136,9 +132,12 @@ public sealed class RasterService : IDisposable
     {
         return Task.Run(( ) =>
         {
-            using var sourceStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var document = new WordDocument(sourceStream, Syncfusion.DocIO.FormatType.Automatic);
-            using var renderer = new DocIORenderer( );
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var document = new Syncfusion.DocIO.DLS.WordDocument(stream, Syncfusion.DocIO.FormatType.Automatic);
+            // Alternative in future: convert to pdf then display
+            // using var renderer = new DocIORenderer( );
+            document.FontSettings.FallbackFonts.InitializeDefault( );
+
             var images = document.RenderAsImages( );
 
             try
@@ -154,9 +153,9 @@ public sealed class RasterService : IDisposable
             }
             finally
             {
-                foreach (var imageStream in images)
+                foreach (var image in images)
                 {
-                    imageStream?.Dispose( );
+                    image?.Dispose( );
                 }
             }
         });

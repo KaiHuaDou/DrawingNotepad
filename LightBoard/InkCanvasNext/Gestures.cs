@@ -11,18 +11,15 @@ public partial class InkCanvasNext
 {
     private readonly ScaleTransform canvasScaleTransform = new(1.0, 1.0);
 
-    private readonly double distanceThreshold;
     private readonly double distanceThreshold2;
-    private readonly double smoothingFactor = 0.3;
 
-    private Point prevMidpoint;
+    private Point panPoint0;
     private Point viewportOrigin;
 
-    private double initialDistance;
+    private double distance0;
 
     private double currentScale = 1.0;
     private double initialScale = 1.0;
-    private double smoothedScale;
 
     protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
     {
@@ -38,56 +35,53 @@ public partial class InkCanvasNext
             return;
         }
 
-        prevMidpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
-        initialDistance = second is null ? 0 : Distance(first!.Value, second.Value);
+        panPoint0 = first.Value;
+        distance0 = second is null ? 0 : Distance(first.Value, second.Value);
         initialScale = currentScale;
-        smoothedScale = currentScale;
     }
 
     private void PanZoom( )
     {
         (var first, var second) = GetMajorTouches( );
-        var midpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
         var distance = second is null ? 0 : Distance(first!.Value, second.Value);
-
-        var ratio = initialDistance > 0 && distance > 0
-            ? distance / initialDistance
+        var ratio = distance0 > 0 && distance > 0
+            ? distance / distance0
             : 1.0;
 
+        ratio = Smooth(ratio);
+
         var targetScale = Math.Clamp(initialScale * ratio, 0.1, 10.0);
-        smoothedScale = smoothingFactor * targetScale + (1 - smoothingFactor) * smoothedScale;
 
-        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = smoothedScale;
-        eraser.Scale = smoothedScale;
+        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = targetScale;
+        eraser.Scale = targetScale;
 
-        ratio = smoothedScale / currentScale;
+        var scale = targetScale / currentScale;
 
-        var newOffsetX = CanvasScroll.HorizontalOffset * ratio
-            + (prevMidpoint.X - viewportOrigin.X) * ratio
-            - (midpoint.X - viewportOrigin.X);
-        var newOffsetY = CanvasScroll.VerticalOffset * ratio
-            + (prevMidpoint.Y - viewportOrigin.Y) * ratio
-            - (midpoint.Y - viewportOrigin.Y);
+        var newOffsetX = CanvasScroll.HorizontalOffset * scale
+            + (panPoint0.X - viewportOrigin.X) * scale
+            - (first!.Value.X - viewportOrigin.X);
+        var newOffsetY = CanvasScroll.VerticalOffset * scale
+            + (panPoint0.Y - viewportOrigin.Y) * scale
+            - (first!.Value.Y - viewportOrigin.Y);
 
         CanvasScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, CanvasScroll.ScrollableWidth));
         CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
 
-        currentScale = smoothedScale;
-        prevMidpoint = midpoint;
+        currentScale = targetScale;
+        panPoint0 = first ?? default;
     }
 
     private void Pan( )
     {
-        (var first, var second) = GetMajorTouches( );
-        var midpoint = second is null ? first!.Value : Midpoint(first!.Value, second.Value);
+        (var first, _) = GetMajorTouches( );
 
-        var newOffsetX = CanvasScroll.HorizontalOffset + prevMidpoint.X - midpoint.X;
-        var newOffsetY = CanvasScroll.VerticalOffset + prevMidpoint.Y - midpoint.Y;
+        var newOffsetX = CanvasScroll.HorizontalOffset + panPoint0.X - first!.Value.X;
+        var newOffsetY = CanvasScroll.VerticalOffset + panPoint0.Y - first!.Value.Y;
 
         CanvasScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, CanvasScroll.ScrollableWidth));
         CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
 
-        prevMidpoint = midpoint;
+        panPoint0 = first!.Value;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -114,5 +108,44 @@ public partial class InkCanvasNext
         var second = enumerator.Current.Position;
 
         return (first, second);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private double Smooth(double x)
+    {
+        const double T = 0.2;
+        const double Q = 0.5;
+        const double S = 1;
+
+        var u = x - 1;
+        var d = Math.Abs(u);
+
+        if (d <= T)
+        {
+            return 1;
+        }
+
+        if (d >= Q)
+        {
+            return x;
+        }
+
+        var r = (d - T) / (Q - T);
+
+        return 1 + u * r switch
+        {
+            <= 0 => 0,
+            >= 1 => 1,
+            _ => SmoothStep(r, S)
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static double SmoothStep(double r, double s)
+    {
+        var rp = Math.Pow(r, s);
+        var np = Math.Pow(1.0 - r, s);
+
+        return rp / (rp + np);
     }
 }

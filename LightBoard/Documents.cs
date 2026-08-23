@@ -67,7 +67,7 @@ public partial class App
             Current.Dispatcher.Invoke(( ) =>
             {
                 LogException(ex);
-                ShowInfo("无法打开文档", ex.Message);
+                ShowDetailedInfo("无法打开文档", ex.Message, $"{ex.Message}\n{ex.StackTrace}");
             });
             return;
         }

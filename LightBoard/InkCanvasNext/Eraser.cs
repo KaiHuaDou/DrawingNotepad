@@ -47,9 +47,9 @@ public partial class InkCanvasNext
         if (state == TouchState.Eraser)
         {
             (var screenCenter, var radius) = Eraser.GetCircle(touches);
-            eraser.Diameter = radius * 2;
+            eraser.Diameter = radius * 2 + 8;
 
-            var canvasCenter = GetCanvasCenter(touches);
+            var canvasCenter = GetCanvasCenter(touches.ToDictionary( ));
             eraser.Show(screenCenter);
             eraser.Update(canvasCenter);
         }
@@ -99,7 +99,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
 
     public bool Active { get; private set; }
 
-    private double LogicalDiameter => Diameter / Scale;
+    private double LogicalDiameter => Math.Max(Diameter / Scale, 1.0);
 
     private IncrementalStrokeHitTester? hitTester;
 
@@ -158,14 +158,13 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
             return;
         }
 
-        var logical = LogicalDiameter;
-        if (Math.Abs(logical - hitTesterDiameter) < RebuildThreshold)
+        if (Math.Abs(LogicalDiameter - hitTesterDiameter) < RebuildThreshold)
         {
             return;
         }
 
         hitTester.StrokeHit -= OnStrokeHit;
-        hitTester.EndHitTesting();
+        hitTester.EndHitTesting( );
         hitTester = null;
         CreateHitTester(canvasPosition);
     }
@@ -190,10 +189,11 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
 
     private void CreateHitTester(Point position)
     {
-        var shape = new EllipseStylusShape(LogicalDiameter, LogicalDiameter);
+        var diameter = LogicalDiameter;
+        var shape = new EllipseStylusShape(diameter, diameter);
         hitTester = canvas.Strokes.GetIncrementalStrokeHitTester(shape);
         hitTester.StrokeHit += OnStrokeHit;
-        hitTesterDiameter = LogicalDiameter;
+        hitTesterDiameter = diameter;
         hitTester.AddPoint(position);
     }
 

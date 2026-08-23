@@ -82,7 +82,7 @@ public partial class InkCanvasNext : UserControl
         DefaultDrawingAttributes = Canvas.DefaultDrawingAttributes;
 
         prevMode = InkCanvasNextMode.Ink;
-        distanceThreshold = 0.6 * SystemParameters.WorkArea.Width;
+        var distanceThreshold = 0.9 * SystemParameters.WorkArea.Width;
         distanceThreshold2 = distanceThreshold * distanceThreshold;
 
         CanvasScroll.ScrollToHorizontalOffset(8192);
@@ -141,7 +141,6 @@ public partial class InkCanvasNext : UserControl
         set
         {
             currentScale = value;
-            smoothedScale = value;
             canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = value;
             eraser.Scale = value;
         }
