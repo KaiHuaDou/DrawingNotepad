@@ -4,10 +4,10 @@ using System.Runtime.InteropServices;
 
 namespace LightBoard.External;
 
-internal static class NativeMethods
+internal static partial class NativeMethods
 {
-    [DllImport("user32.dll")]
-    public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
+    [LibraryImport("user32.dll", EntryPoint = "SwitchToThisWindowA")]
+    public static partial void SwitchToThisWindow(IntPtr hWnd, [MarshalAs(UnmanagedType.Bool)] bool fAltTab);
 
     public static void SwitchTo(string processName)
     {

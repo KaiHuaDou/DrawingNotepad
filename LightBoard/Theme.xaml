@@ -3,45 +3,21 @@
     <DrawingBrush x:Key="MajorGridBrush"
                   TileMode="Tile" Viewport="0,0,100,100" ViewportUnits="Absolute">
         <DrawingBrush.Drawing>
-            <DrawingGroup>
+            <DrawingGroup RenderOptions.EdgeMode="Aliased">
                 <GeometryDrawing Brush="Black">
                     <GeometryDrawing.Geometry>
                         <RectangleGeometry Rect="0,0,100,100" />
                     </GeometryDrawing.Geometry>
                 </GeometryDrawing>
 
-                <GeometryDrawing Brush="#FF3A3A3A">
+                <GeometryDrawing>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#444444" Thickness="1" />
+                    </GeometryDrawing.Pen>
                     <GeometryDrawing.Geometry>
                         <GeometryGroup>
-                            <LineGeometry StartPoint="10,0" EndPoint="10,100" />
-                            <LineGeometry StartPoint="20,0" EndPoint="20,100" />
-                            <LineGeometry StartPoint="30,0" EndPoint="30,100" />
-                            <LineGeometry StartPoint="40,0" EndPoint="40,100" />
-                            <LineGeometry StartPoint="50,0" EndPoint="50,100" />
-                            <LineGeometry StartPoint="60,0" EndPoint="60,100" />
-                            <LineGeometry StartPoint="70,0" EndPoint="70,100" />
-                            <LineGeometry StartPoint="80,0" EndPoint="80,100" />
-                            <LineGeometry StartPoint="90,0" EndPoint="90,100" />
-                            <LineGeometry StartPoint="0,10" EndPoint="100,10" />
-                            <LineGeometry StartPoint="0,20" EndPoint="100,20" />
-                            <LineGeometry StartPoint="0,30" EndPoint="100,30" />
-                            <LineGeometry StartPoint="0,40" EndPoint="100,40" />
-                            <LineGeometry StartPoint="0,50" EndPoint="100,50" />
-                            <LineGeometry StartPoint="0,60" EndPoint="100,60" />
-                            <LineGeometry StartPoint="0,70" EndPoint="100,70" />
-                            <LineGeometry StartPoint="0,80" EndPoint="100,80" />
-                            <LineGeometry StartPoint="0,90" EndPoint="100,90" />
-                        </GeometryGroup>
-                    </GeometryDrawing.Geometry>
-                </GeometryDrawing>
-
-                <GeometryDrawing Brush="#FF666666">
-                    <GeometryDrawing.Geometry>
-                        <GeometryGroup>
-                            <LineGeometry StartPoint="0,0" EndPoint="100,0" />
                             <LineGeometry StartPoint="0,0" EndPoint="0,100" />
-                            <LineGeometry StartPoint="100,0" EndPoint="100,100" />
-                            <LineGeometry StartPoint="0,100" EndPoint="100,100" />
+                            <LineGeometry StartPoint="0,0" EndPoint="100,0" />
                         </GeometryGroup>
                     </GeometryDrawing.Geometry>
                 </GeometryDrawing>
@@ -68,8 +44,8 @@
         <Setter Property="FontWeight" Value="Heavy" />
     </Style>
     <Style x:Key="ColorRadioStyle" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="32" />
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="Template">
@@ -97,8 +73,8 @@
         </Setter>
     </Style>
     <Style x:Key="RadioStyle" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="32" />
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Template">
@@ -122,8 +98,8 @@
         </Setter>
     </Style>
     <Style x:Key="SelectiveRadioStyle" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="32" />
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Template">
@@ -145,8 +121,8 @@
         </Setter>
     </Style>
     <Style x:Key="ToggleStyle" BasedOn="{StaticResource {x:Type ToggleButton}}" TargetType="{x:Type ToggleButton}">
-        <Setter Property="Width" Value="32" />
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Template">
@@ -161,17 +137,14 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Border" Property="Background" Value="{StaticResource DarkBrush}" />
                         </Trigger>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource LightBrush}" />
-                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
     <Style x:Key="ButtonStyle" BasedOn="{StaticResource {x:Type Button}}" TargetType="{x:Type Button}">
-        <Setter Property="Width" Value="32" />
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="Template">
             <Setter.Value>
@@ -200,7 +173,7 @@
     </Style>
     <Style x:Key="ContainerStyle" TargetType="{x:Type Border}">
         <Setter Property="Padding" Value="3" />
-        <Setter Property="Panel.ZIndex" Value="32" />
+        <Setter Property="Panel.ZIndex" Value="36" />
         <Setter Property="Background">
             <Setter.Value>
                 <SolidColorBrush Opacity="0.8" Color="#25313D" />

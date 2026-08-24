@@ -22,7 +22,7 @@ jobs:
 
       - name: Build
         run: |
-          dotnet publish -p:PublishProfile=FolderProfile -c Release -f net9.0-windows
+          dotnet publish -p:PublishProfile=FolderProfile -c Release
 
       - name: Upload
         uses: actions/upload-artifact@v7
@@ -32,7 +32,7 @@ jobs:
 
       - name: Build with Runtime
         run: |
-          dotnet publish -p:PublishProfile=FolderProfile -c Release -f net9.0-windows --self-contained
+          dotnet publish -p:PublishProfile=FolderProfile -c Release --self-contained
 
       - name: Upload with Runtime
         uses: actions/upload-artifact@v7

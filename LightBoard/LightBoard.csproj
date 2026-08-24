@@ -33,6 +33,7 @@
         <PackageReference Include="NetOfficeFw.PowerPoint" Version="1.9.10" />
         <PackageReference Include="NetOfficeFw.Word" Version="1.9.10" />
         <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
+        <PackageReference Include="PDFiumCore" Version="153.0.7999" />
         <PackageReference Include="SingleInstanceCore" Version="2.2.2" />
     </ItemGroup>
 </Project>

@@ -10,6 +10,8 @@ public partial class InkCanvasNext
 {
     private readonly double touchDisplThreshold = 20.0;
 
+    private const double ScrollStep = 25;
+
     /// <summary>
     /// 升级需注意：此处依赖 .NET Core 3.1+ 内部实现细节：<br />
     /// 1. 未调用 Remove/TrimExcess 时迭代顺序等同于插入顺序。<br />
@@ -248,6 +250,14 @@ public partial class InkCanvasNext
         }
 
         EndEraserCycle( );
+        e.Handled = true;
+    }
+
+    private void CanvasPreviewMouseWheel(object o, MouseWheelEventArgs e)
+    {
+        var step = ScrollStep * currentScale;
+        var newOffset = CanvasScroll.VerticalOffset + (e.Delta > 0 ? -step : step);
+        CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffset, 0, CanvasScroll.ScrollableHeight));
         e.Handled = true;
     }
 

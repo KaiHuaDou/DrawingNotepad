@@ -2,8 +2,11 @@
 
 一个基于 WPF `InkCanvas` 的轻白板。
 
-- 经过实地课堂检验优化的功能设计
-- 超快启动速度、极低的书写/拖动/缩放延迟
+- **经过实地课堂检验，为实地课堂而优化的功能设计**
+- 目标：替换希沃白板/希沃轻白板
+- 超快的启动速度
+    - 6 代 i7 上热启动时间：<1 秒
+- 极低的书写/拖动/缩放延迟
 
 ## 功能
 
@@ -17,6 +20,8 @@
 - 打开 / 保存 `*.lbf` 轻白板文件（zip 容器：`manifest.json` + 每页独立 ISF，多页整体存档，可续课）
 - 打开 `*.isf` Windows 墨迹文件
 - 打开 `*.pptx / *.ppt / *.docx / *.doc` 演示文稿与 Word 文档（通过本机 Office 栅格化为页面，可继续书写批注）
+- 打开 `*.xps` XPS 文档
+- 打开 `*.pdf` PDF 文档（PDFium 渲染，无需 Office）
 - 导出画布为 `*.png`（支持 25% / 50% / 100% 缩放）
 - 自动备份当前墨迹（每分钟保存到 `recover/`），崩溃后下次启动可一键恢复
 - 支持单实例运行
@@ -34,15 +39,13 @@
 | ≥ 5（近距离）   | 橡皮擦      | 多指用作大面积橡皮擦                 |
 | ≥ 2（远距离）   | 多人绘制    | 多人在大屏两侧同时书写，每人独立笔迹 |
 
-> 近距离/远距离由窗口宽度的 60% 作为阈值判断。
->
-> 进入多人绘制状态时会为当前所有触摸点各自启动一条独立笔迹，新加入的触摸点也会被显式捕获并开启新笔迹，避免落笔丢失。
+> 近距离/远距离由窗口宽度的 10% 作为阈值判断。
 
 ## 下载
 
 前往 [Releases](https://github.com/KaiHuaDou/DrawingNotepad/releases/latest) 下载最新版本。
 
-前往 [Actions](https://github.com/KaiHuaDou/DrawingNotepad/action) 下载构建版本。
+前往 [Actions](https://github.com/KaiHuaDou/DrawingNotepad/actions) 下载构建版本。
 
 ## 系统要求
 
@@ -92,7 +95,7 @@ LightBoard/               # 主程序
 │  ├─ UndoRedo.cs         # 历史栈管理
 │  ├─ Geometry.cs         # 几何工具
 │  └─ RingBuffer.cs       # 定容环形缓冲（撤销栈）
-├─ Documents.cs           # PPT/DOCX 文档栅格化（Office COM → XPS）与缓存
+├─ Documents.cs           # 文档打开：Office COM → XPS、XPS/PDF 渲染源与缓存
 ├─ Paging.cs              # 多页面管理
 ├─ BoardFile.cs           # 多页整体存档（.lbf）与自动恢复
 ├─ MainWindow.xaml(.cs)   # 主窗口与工具栏

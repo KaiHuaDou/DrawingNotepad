@@ -17,7 +17,7 @@ namespace LightBoard;
 public partial class MainWindow : Window
 {
     private const string FileFilter =
-        "可打开的文件|*.lbf;*.isf;*.pptx;*.ppt;*.docx;*.doc|轻白板文件|*.lbf|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|所有文件|*.*";
+        "可打开的文件|*.lbf;*.isf;*.pptx;*.ppt;*.docx;*.doc;*.xps;*.pdf|轻白板文件|*.lbf|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|XPS 文档|*.xps|PDF 文档|*.pdf|所有文件|*.*";
 
     private bool dirty;
 
@@ -26,6 +26,12 @@ public partial class MainWindow : Window
     public MainWindow( )
     {
         InitializeComponent( );
+
+        if (Resources["MajorGridBrush"] is DrawingBrush gridBrush)
+        {
+            gridBrush.Freeze( );
+        }
+
         colorRadio ??= DefaultColorRadio;
         thicknessRadio ??= DefaultThicknessRadio;
         App.InitializePages( );

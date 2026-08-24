@@ -24,9 +24,6 @@
         <ResourceDictionary Source="/Theme.xaml" />
     </Window.Resources>
     <Grid>
-        <Grid.CacheMode>
-            <BitmapCache EnableClearType="True" />
-        </Grid.CacheMode>
         <next:InkCanvasNext x:Name="CanvasNext"
                             Background="{StaticResource MajorGridBrush}"
                             CanRedoChanged="CanvasNextCanRedoChanged"
@@ -92,7 +89,7 @@
             </Border>
         </Popup>
         <Border x:Name="CenterBorder"
-                Height="43"
+                Height="48"
                 HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
                 CornerRadius="10,10,0,0">
@@ -137,7 +134,7 @@
                     <ToggleButton x:Name="HighLighterToggle"
                                   Style="{StaticResource ToggleStyle}"
                                   Click="HighLighterBoxClicked" Tag="&#xE7E6;" />
-                    <Border Width="32" Visibility="Hidden" />
+                    <Border Width="36" Visibility="Hidden" />
                     <RadioButton Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xED60;" />
@@ -157,7 +154,7 @@
                                   Click="MoreToggleClick" Tag="&#xE712;" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Border Width="96" Visibility="Hidden" />
+                    <Border Width="106" Visibility="Hidden" />
                     <RadioButton MinWidth="1"
                                  Checked="ThicknessRadioClick"
                                  Style="{StaticResource SelectiveRadioStyle}"
@@ -175,16 +172,16 @@
                                  Checked="ThicknessRadioClick"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  GroupName="ThicknessGroup" />
-                    <Border Width="127" Visibility="Hidden" />
+                    <Border Width="140" Visibility="Hidden" />
                     <RadioButton Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xED61;" />
                     <RadioButton Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xEF20;" />
-                    <ToggleButton x:Name="TransparentModeButton"
-                                  Style="{StaticResource ToggleStyle}"
-                                  Click="TransparentModeClick" Tag="&#xE729;" />
+                    <Button x:Name="TransparentModeButton"
+                            Style="{StaticResource ButtonStyle}"
+                            Click="TransparentModeClick" Tag="&#xE729;" />
                     <Button Style="{StaticResource ButtonStyle}" Click="PasteClick" Tag="&#xE77F;" />
                 </StackPanel>
             </StackPanel>
@@ -199,19 +196,14 @@
             <DockPanel>
                 <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
                     <ToggleButton x:Name="CollapseExpandButton"
-                                  Width="32" Height="32"
-                                  Margin="5,0,5,0"
-                                  Click="CollapseExpandClick">
-                        <TextBlock x:Name="CollapseExpandIcon"
-                                   FontFamily="Segoe Fluent Icons" FontSize="24" FontWeight="Heavy"
-                                   Text="&#xE70D;" />
-                    </ToggleButton>
+                                  Style="{StaticResource ToggleStyle}"
+                                  Click="CollapseExpandClick" Tag="&#xE70D;" />
                     <Button x:Name="PrevPageButton"
                             IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
                             Click="PrevPage" Tag="&#xE72B;" />
                     <ToggleButton x:Name="AllPageToogle"
-                                  Width="60" Height="32"
+                                  Width="60" Height="36"
                                   Margin="3,0,3,0"
                                   Click="AllPageToogleClick">
                         <TextBlock FontSize="19" Text="1/1" />
@@ -219,7 +211,7 @@
                     <Button x:Name="NewNextPageButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="NewNextPage" Tag="&#xE710;" />
-                    <Border Width="32" Visibility="Hidden" />
+                    <Border Width="36" Visibility="Hidden" />
                 </StackPanel>
                 <ListBox x:Name="PagePreviewsBox"
                          Visibility="Collapsed"

@@ -102,7 +102,7 @@ public partial class MainWindow
     private void CollapseExpandClick(object o, RoutedEventArgs e)
     {
         var flag = CollapseExpandButton.IsChecked == true;
-        CollapseExpandIcon.Text = flag ? "\uE70E" : "\uE70D";
+        CollapseExpandButton.Tag = flag ? "\uE70E" : "\uE70D";
 
         var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
         var animationLeft = new DoubleAnimation
@@ -178,7 +178,7 @@ public partial class MainWindow
     private sealed record PenProfile(Color Color, double Width, bool IsHighlighter);
 
     private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false);
-    private static readonly PenProfile Highlighter = new(Colors.Yellow, 36, true);
+    private static readonly PenProfile highlighter = new(Colors.Yellow, 36, true);
     private RadioButton? colorRadio;
     private RadioButton? thicknessRadio;
     private RadioButton? toolRadio;
@@ -193,7 +193,7 @@ public partial class MainWindow
             colorRadio?.IsChecked = false;
             thicknessRadio?.IsChecked = false;
             toolRadio?.IsChecked = false;
-            ApplyPen(Highlighter);
+            ApplyPen(highlighter);
         }
         else
         {
@@ -216,10 +216,10 @@ public partial class MainWindow
 
     private void ApplyPen(PenProfile p)
     {
-        var da = CanvasNext.DefaultDrawingAttributes;
-        da.Color = p.Color;
-        da.Width = da.Height = p.Width;
-        da.IsHighlighter = p.IsHighlighter;
+        var drawingAttr = CanvasNext.DefaultDrawingAttributes;
+        drawingAttr.Color = p.Color;
+        drawingAttr.Width = drawingAttr.Height = p.Width;
+        drawingAttr.IsHighlighter = p.IsHighlighter;
         CanvasNext.Mode = InkCanvasNextMode.Ink;
     }
 
@@ -296,7 +296,7 @@ public partial class MainWindow
 
     private void TransparentModeClick(object o, RoutedEventArgs e)
     {
-        var mode = TransparentModeButton.IsChecked == true;
+        var mode = (TransparentModeButton.Tag as string) == "\uE729";
         var blackBrush = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
         var borderBrush = new SolidColorBrush(Color.FromArgb(128, 0x2E, 0x2E, 0x2E));
 
