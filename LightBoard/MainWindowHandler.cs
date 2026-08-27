@@ -43,7 +43,7 @@ public partial class MainWindow
         var heightAnimation = new DoubleAnimation
         {
             From = RightBorder.ActualHeight,
-            To = isChecked ? ActualHeight - 20 : 44,
+            To = isChecked ? ActualHeight - 32 : 48,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
         };
@@ -139,17 +139,20 @@ public partial class MainWindow
             return;
         }
 
+        if (mode == InkCanvasNextMode.Highlighter)
+        {
+            ExitHighlighter( );
+        }
+
+        // 点击颜色权当切换回 Pen（普通 Ink，不含 Line/Circle）
+        if (IsToolMode(mode))
+        {
+            mode = InkCanvasNextMode.Ink;
+        }
+
         colorRadio = radio;
         pen = pen with { Color = brush.Color };
-
-        if (inHighlighter)
-        {
-            ExitHighlighter(true);
-        }
-        else
-        {
-            ApplyPen(pen);
-        }
+        SyncToolState( );
     }
 
     private void CopyClick(object o, RoutedEventArgs e)
@@ -178,49 +181,101 @@ public partial class MainWindow
     private sealed record PenProfile(Color Color, double Width, bool IsHighlighter);
 
     private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false);
-    private static readonly PenProfile highlighter = new(Colors.Yellow, 36, true);
+    private static readonly PenProfile highlighterProfile = new(Colors.Yellow, 36, true);
+
+    // 显式状态机：Mode 是唯一真值来源
+    private InkCanvasNextMode mode = InkCanvasNextMode.Ink;
+
     private RadioButton? colorRadio;
     private RadioButton? thicknessRadio;
-    private RadioButton? toolRadio;
-    private bool inHighlighter;
+
+    // 进入 Highlighter 前保存的工具状态（pen 在高亮期间不变，无需保存）；退出时整体还原
+    private sealed record ToolSnapshot(InkCanvasNextMode Mode, RadioButton? ColorRadio, RadioButton? ThicknessRadio);
+    private ToolSnapshot? highlighterBackup;
+
+    private static bool IsToolMode(InkCanvasNextMode m)
+    {
+        return m switch
+        {
+            InkCanvasNextMode.EraseStroke or InkCanvasNextMode.EraseArea or InkCanvasNextMode.Select => true,
+            _ => false
+        };
+    }
 
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
     {
-        inHighlighter = HighLighterToggle.IsChecked == true;
-
-        if (inHighlighter)
+        if (HighLighterToggle.IsChecked == true)
         {
-            colorRadio?.IsChecked = false;
-            thicknessRadio?.IsChecked = false;
-            toolRadio?.IsChecked = false;
-            ApplyPen(highlighter);
+            EnterHighlighter( );
         }
         else
         {
-            ExitHighlighter(true);
+            ExitHighlighter( );
         }
     }
 
-    private void ExitHighlighter(bool backToPen)
+    private void EnterHighlighter( )
     {
-        inHighlighter = false;
-        HighLighterToggle.IsChecked = false;
-        if (backToPen)
+        highlighterBackup = new ToolSnapshot(mode, colorRadio, thicknessRadio);
+        mode = InkCanvasNextMode.Highlighter;
+        SyncToolState( );
+    }
+
+    private void ExitHighlighter( )
+    {
+        if (highlighterBackup is not null)
+        {
+            mode = highlighterBackup.Mode;
+            colorRadio = highlighterBackup.ColorRadio;
+            thicknessRadio = highlighterBackup.ThicknessRadio;
+        }
+
+        // Line/Circle 是 Pen 的附加，退出 Highlighter 时不恢复
+        if (mode is InkCanvasNextMode.Line or InkCanvasNextMode.Circle)
+        {
+            mode = InkCanvasNextMode.Ink;
+        }
+    }
+
+    // 状态机唯一出口：从 Mode 推导 UI 勾选与画布模式
+    private void SyncToolState( )
+    {
+        var hl = mode == InkCanvasNextMode.Highlighter;
+        HighLighterToggle?.IsChecked = hl;
+
+        if (hl)
+        {
+            // Highlighter 模式下除 Highlighter 本身外其余一律不选中
+            colorRadio?.IsChecked = false;
+            thicknessRadio?.IsChecked = false;
+            EraseAreaRadio?.IsChecked = false;
+            EraseStrokeRadio?.IsChecked = false;
+            SelectRadio?.IsChecked = false;
+            LineToggle?.IsChecked = false;
+            CircleToggle?.IsChecked = false;
+        }
+        else
         {
             colorRadio?.IsChecked = true;
+            thicknessRadio?.IsChecked = true;
+            EraseAreaRadio?.IsChecked = mode == InkCanvasNextMode.EraseArea;
+            EraseStrokeRadio?.IsChecked = mode == InkCanvasNextMode.EraseStroke;
+            SelectRadio?.IsChecked = mode == InkCanvasNextMode.Select;
+            LineToggle?.IsChecked = mode == InkCanvasNextMode.Line;
+            CircleToggle?.IsChecked = mode == InkCanvasNextMode.Circle;
         }
 
-        thicknessRadio?.IsChecked = true;
-        ApplyPen(pen);
+        CommitCanvas( );
     }
 
-    private void ApplyPen(PenProfile p)
+    private void CommitCanvas( )
     {
+        var p = mode == InkCanvasNextMode.Highlighter ? highlighterProfile : pen;
         var drawingAttr = CanvasNext.DefaultDrawingAttributes;
         drawingAttr.Color = p.Color;
         drawingAttr.Width = drawingAttr.Height = p.Width;
         drawingAttr.IsHighlighter = p.IsHighlighter;
-        CanvasNext.Mode = InkCanvasNextMode.Ink;
+        CanvasNext.Mode = mode == InkCanvasNextMode.Highlighter ? InkCanvasNextMode.Ink : mode;
     }
 
     private void MoreToggleClick(object o, RoutedEventArgs e)
@@ -259,39 +314,79 @@ public partial class MainWindow
             return;
         }
 
+        if (mode == InkCanvasNextMode.Highlighter)
+        {
+            ExitHighlighter( );
+        }
+
+        // 点击粗细权当切换回 Pen（普通 Ink，不含 Line/Circle）
+        if (IsToolMode(mode))
+        {
+            mode = InkCanvasNextMode.Ink;
+        }
+
         thicknessRadio = radio;
         pen = pen with { Width = thickness };
-
-        if (inHighlighter)
-        {
-            ExitHighlighter(true);
-        }
-        else
-        {
-            ApplyPen(pen);
-        }
+        SyncToolState( );
     }
 
     private void ToolRadioChecked(object o, RoutedEventArgs e)
     {
-        if (o is not RadioButton { Tag: string tag } radio)
+        if (o is not RadioButton radio)
         {
             return;
         }
 
-        toolRadio = radio;
-        if (inHighlighter)
+        if (mode == InkCanvasNextMode.Highlighter)
         {
-            ExitHighlighter(false);
+            ExitHighlighter( );
         }
 
-        CanvasNext.Mode = tag switch
+        // 切出 Pen：Line/Circle 作为 Pen 附加，此时已取消（Mode 直接落为工具模式）
+        mode = radio.Tag switch
         {
             "\uED60" => InkCanvasNextMode.EraseArea,
             "\uED61" => InkCanvasNextMode.EraseStroke,
             "\uEF20" => InkCanvasNextMode.Select,
-            _ => CanvasNext.Mode,
+            _ => InkCanvasNextMode.Ink
         };
+
+        SyncToolState( );
+    }
+
+    private void ShapeToggleClick(object o, RoutedEventArgs e)
+    {
+        if (o is not ToggleButton toggle)
+        {
+            return;
+        }
+
+        if (mode == InkCanvasNextMode.Highlighter)
+        {
+            ExitHighlighter( );
+        }
+
+        if (toggle.IsChecked == true)
+        {
+            // Line/Circle 是 Pen 的附加且互斥：启用即切到 Pen 对应子模式
+            if (ReferenceEquals(toggle, LineToggle))
+            {
+                mode = InkCanvasNextMode.Line;
+                CircleToggle.IsChecked = false;
+            }
+            else
+            {
+                mode = InkCanvasNextMode.Circle;
+                LineToggle.IsChecked = false;
+            }
+        }
+        else
+        {
+            // 关闭形状回到普通 Pen
+            mode = InkCanvasNextMode.Ink;
+        }
+
+        SyncToolState( );
     }
 
     private void TransparentModeClick(object o, RoutedEventArgs e)

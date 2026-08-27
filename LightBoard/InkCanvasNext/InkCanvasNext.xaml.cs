@@ -11,7 +11,10 @@ public enum InkCanvasNextMode
     Ink,
     EraseStroke,
     EraseArea,
-    Select
+    Select,
+    Line,
+    Circle,
+    Highlighter
 }
 
 public partial class InkCanvasNext : UserControl
@@ -88,6 +91,7 @@ public partial class InkCanvasNext : UserControl
         CanvasScroll.ScrollToVerticalOffset(8192);
 
         Canvas.Children.Add(multiTouchCanvas);
+        SetupShapePreview();
     }
 
     public event EventHandler<DependencyPropertyChangedEventArgs>? CanRedoChanged;
@@ -192,6 +196,10 @@ public partial class InkCanvasNext : UserControl
                 Canvas.EditingMode = InkCanvasEditingMode.EraseByStroke;
                 break;
             case InkCanvasNextMode.EraseArea:
+                Canvas.EditingMode = InkCanvasEditingMode.None;
+                break;
+            case InkCanvasNextMode.Line:
+            case InkCanvasNextMode.Circle:
                 Canvas.EditingMode = InkCanvasEditingMode.None;
                 break;
             case InkCanvasNextMode.Select:

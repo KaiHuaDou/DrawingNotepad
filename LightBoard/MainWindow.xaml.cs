@@ -44,6 +44,8 @@ public partial class MainWindow : Window
 
         OnPageChanged(this, EventArgs.Empty);
 
+        SyncToolState( );
+
         timeTimer = new(
             TimeSpan.FromSeconds(1),
             DispatcherPriority.Normal,

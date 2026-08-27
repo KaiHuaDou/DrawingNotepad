@@ -34,10 +34,11 @@ public partial class InkCanvasNext
                 Device.Capture(null);
             }
 
-            touches.Clear( );
-            touchStarts.Clear( );
-            SetState(TouchState.Idle);
-        }
+        touches.Clear( );
+        touchStarts.Clear( );
+        SetState(TouchState.Idle);
+        CancelShape( );
+    }
         finally
         {
             releasingCaptures = false;
@@ -64,6 +65,11 @@ public partial class InkCanvasNext
 
         if (state == TouchState.MultiDraw)
         {
+            if (shapeActive)
+            {
+                CancelShape( );
+            }
+
             e.TouchDevice.Capture(Canvas);
             if (!multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
             {
@@ -71,6 +77,13 @@ public partial class InkCanvasNext
                 StartMultiTouchStroke(e.TouchDevice.Id, canvasPos);
             }
 
+            e.Handled = true;
+        }
+        else if (IsShapeMode && state == TouchState.EvalDraw && !shapeActive)
+        {
+            var canvasPos = e.GetTouchPoint(Canvas).Position;
+            StartShape(canvasPos);
+            e.TouchDevice.Capture(Canvas);
             e.Handled = true;
         }
 
@@ -85,6 +98,19 @@ public partial class InkCanvasNext
         }
 
         touches[e.TouchDevice.Id] = (e.TouchDevice, e.GetTouchPoint(this).Position);
+
+        if (shapeActive)
+        {
+            var canvasPos = e.GetTouchPoint(Canvas).Position;
+            UpdateShape(canvasPos);
+            e.Handled = true;
+            if (state == TouchState.EvalDraw)
+            {
+                UpdateState( );
+            }
+
+            return;
+        }
 
         if (multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
         {
@@ -118,6 +144,14 @@ public partial class InkCanvasNext
         if (wasMultiTouch)
         {
             EndMultiTouchStroke(e.TouchDevice.Id);
+        }
+
+        if (shapeActive)
+        {
+            var canvasPos = e.GetTouchPoint(Canvas).Position;
+            UpdateShape(canvasPos);
+            CommitShape( );
+            e.Handled = true;
         }
 
         RemoveDevice(e.TouchDevice);
@@ -214,7 +248,19 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseDown(object o, MouseButtonEventArgs e)
     {
-        if (e.StylusDevice != null || Mode != InkCanvasNextMode.EraseArea)
+        if (e.StylusDevice != null)
+        {
+            return;
+        }
+
+        if (IsShapeMode && !shapeActive)
+        {
+            StartShape(e.GetPosition(Canvas));
+            e.Handled = true;
+            return;
+        }
+
+        if (Mode != InkCanvasNextMode.EraseArea)
         {
             return;
         }
@@ -230,7 +276,19 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseMove(object o, MouseEventArgs e)
     {
-        if (e.StylusDevice != null || !eraser.Active)
+        if (e.StylusDevice != null)
+        {
+            return;
+        }
+
+        if (shapeActive)
+        {
+            UpdateShape(e.GetPosition(Canvas));
+            e.Handled = true;
+            return;
+        }
+
+        if (!eraser.Active)
         {
             return;
         }
@@ -244,7 +302,20 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseUp(object o, MouseButtonEventArgs e)
     {
-        if (e.StylusDevice != null || !eraser.Active)
+        if (e.StylusDevice != null)
+        {
+            return;
+        }
+
+        if (shapeActive)
+        {
+            UpdateShape(e.GetPosition(Canvas));
+            CommitShape( );
+            e.Handled = true;
+            return;
+        }
+
+        if (!eraser.Active)
         {
             return;
         }

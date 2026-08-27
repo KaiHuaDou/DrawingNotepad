@@ -7,6 +7,7 @@ namespace LightBoard.External;
 internal static partial class NativeMethods
 {
     [LibraryImport("user32.dll", EntryPoint = "SwitchToThisWindowA")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     public static partial void SwitchToThisWindow(IntPtr hWnd, [MarshalAs(UnmanagedType.Bool)] bool fAltTab);
 
     public static void SwitchTo(string processName)

@@ -98,46 +98,39 @@
             </Border.RenderTransform>
             <StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <RadioButton Checked="ColorRadioChecked"
-                                 Style="{StaticResource ColorRadioStyle}"
+                    <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#1E1E1E"
-                                 GroupName="EditGroup" />
+                                 Click="ColorRadioChecked" GroupName="ColorGroup" />
                     <RadioButton x:Name="DefaultColorRadio"
-                                 Checked="ColorRadioChecked" IsChecked="True"
+                                 IsChecked="True"
                                  Style="{StaticResource ColorRadioStyle}"
                                  Background="#E6E6E6"
-                                 GroupName="EditGroup" />
-                    <RadioButton Checked="ColorRadioChecked"
-                                 Style="{StaticResource ColorRadioStyle}"
+                                 Click="ColorRadioChecked" GroupName="ColorGroup" />
+                    <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#FF4345"
-                                 GroupName="EditGroup" />
-                    <RadioButton Checked="ColorRadioChecked"
-                                 Style="{StaticResource ColorRadioStyle}"
+                                 Click="ColorRadioChecked" GroupName="ColorGroup" />
+                    <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#D7BA7D"
-                                 GroupName="EditGroup" />
-                    <RadioButton Checked="ColorRadioChecked"
-                                 Style="{StaticResource ColorRadioStyle}"
+                                 Click="ColorRadioChecked" GroupName="ColorGroup" />
+                    <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#ECD201"
-                                 GroupName="EditGroup" />
-                    <RadioButton Checked="ColorRadioChecked"
-                                 Style="{StaticResource ColorRadioStyle}"
+                                 Click="ColorRadioChecked" GroupName="ColorGroup" />
+                    <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#9184EE"
-                                 GroupName="EditGroup" />
-                    <RadioButton Checked="ColorRadioChecked"
-                                 Style="{StaticResource ColorRadioStyle}"
+                                 Click="ColorRadioChecked" GroupName="ColorGroup" />
+                    <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#569CD6"
-                                 GroupName="EditGroup" />
-                    <RadioButton Checked="ColorRadioChecked"
-                                 Style="{StaticResource ColorRadioStyle}"
+                                 Click="ColorRadioChecked" GroupName="ColorGroup" />
+                    <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#4EC9B0"
-                                 GroupName="EditGroup" />
+                                 Click="ColorRadioChecked" GroupName="ColorGroup" />
                     <ToggleButton x:Name="HighLighterToggle"
                                   Style="{StaticResource ToggleStyle}"
                                   Click="HighLighterBoxClicked" Tag="&#xE7E6;" />
                     <Border Width="36" Visibility="Hidden" />
-                    <RadioButton Checked="ToolRadioChecked"
+                    <RadioButton x:Name="EraseAreaRadio"
                                  Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xED60;" />
+                                 Click="ToolRadioChecked" GroupName="EditGroup" Tag="&#xED60;" />
                     <Button Style="{StaticResource ButtonStyle}"
                             Foreground="#F25767"
                             Click="EraseAll" Tag="&#xED62;" />
@@ -154,31 +147,35 @@
                                   Click="MoreToggleClick" Tag="&#xE712;" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Border Width="106" Visibility="Hidden" />
+                    <Border Width="43" Visibility="Hidden" />
                     <RadioButton MinWidth="1"
-                                 Checked="ThicknessRadioClick"
                                  Style="{StaticResource SelectiveRadioStyle}"
-                                 GroupName="ThicknessGroup" />
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <RadioButton x:Name="DefaultThicknessRadio"
                                  MinWidth="3"
                                  Checked="ThicknessRadioClick" IsChecked="True"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  GroupName="ThicknessGroup" />
                     <RadioButton MinWidth="5"
-                                 Checked="ThicknessRadioClick"
                                  Style="{StaticResource SelectiveRadioStyle}"
-                                 GroupName="ThicknessGroup" />
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <RadioButton MinWidth="10"
-                                 Checked="ThicknessRadioClick"
                                  Style="{StaticResource SelectiveRadioStyle}"
-                                 GroupName="ThicknessGroup" />
-                    <Border Width="140" Visibility="Hidden" />
-                    <RadioButton Checked="ToolRadioChecked"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <Border Width="43" Visibility="Hidden" />
+                    <ToggleButton x:Name="LineToggle"
+                                  Style="{StaticResource ToggleStyle}"
+                                  Click="ShapeToggleClick" Tag="&#xE73C;" />
+                    <ToggleButton x:Name="CircleToggle"
+                                  Style="{StaticResource ToggleStyle}"
+                                  Click="ShapeToggleClick" Tag="&#xEA3A;" />
+                    <Border Width="76" Visibility="Hidden" />
+                    <RadioButton x:Name="EraseStrokeRadio"
                                  Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xED61;" />
-                    <RadioButton Checked="ToolRadioChecked"
+                                 Click="ToolRadioChecked" GroupName="EditGroup" Tag="&#xED61;" />
+                    <RadioButton x:Name="SelectRadio"
                                  Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xEF20;" />
+                                 Click="ToolRadioChecked" GroupName="EditGroup" Tag="&#xEF20;" />
                     <Button x:Name="TransparentModeButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="TransparentModeClick" Tag="&#xE729;" />
@@ -203,8 +200,8 @@
                             Style="{StaticResource ButtonStyle}"
                             Click="PrevPage" Tag="&#xE72B;" />
                     <ToggleButton x:Name="AllPageToogle"
-                                  Width="60" Height="36"
-                                  Margin="3,0,3,0"
+                                  Height="36"
+                                  Margin="3,0,3,0" Padding="5,1,5,1"
                                   Click="AllPageToogleClick">
                         <TextBlock FontSize="19" Text="1/1" />
                     </ToggleButton>
