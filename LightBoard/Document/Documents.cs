@@ -3,21 +3,15 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Xps.Packaging;
 
 using NetOffice.OfficeApi.Enums;
 using NetOffice.PowerPointApi.Enums;
 using NetOffice.WordApi.Enums;
-
-using PDFiumCore;
 
 using PpApplication = NetOffice.PowerPointApi.Application;
 using WdApplication = NetOffice.WordApi.Application;
@@ -76,178 +70,6 @@ internal abstract class PageSource : IDisposable
     public abstract void Dispose( );
 }
 
-internal sealed class XpsSource : PageSource
-{
-    private readonly XpsDocument xps;
-    private readonly FixedDocumentSequence sequence;
-
-    public XpsSource(string path)
-    {
-        xps = new XpsDocument(path, FileAccess.Read);
-        try
-        {
-            sequence = xps.GetFixedDocumentSequence( );
-            PageCount = CountPages(sequence);
-        }
-        catch
-        {
-            xps.Close( );
-            throw;
-        }
-    }
-
-    public override int PageCount { get; }
-
-    public override ImageSource? GetPage(int index)
-    {
-        var i = 0;
-        foreach (var docRef in sequence.References)
-        {
-            var doc = docRef.GetDocument(false);
-            if (index < i + doc.Pages.Count)
-            {
-                var fixedPage = doc.Pages[index - i].GetPageRoot(false);
-                return RenderFixedPage(fixedPage);
-            }
-
-            i += doc.Pages.Count;
-        }
-
-        return null;
-    }
-
-    public override void Dispose( )
-    {
-        // 缓存文件留给下次打开复用，这里只释放 XPS 句柄。
-        xps.Close( );
-    }
-
-    private static int CountPages(FixedDocumentSequence sequence)
-    {
-        var count = 0;
-        foreach (var docRef in sequence.References)
-        {
-            count += docRef.GetDocument(false).Pages.Count;
-        }
-
-        return count;
-    }
-
-    private static RenderTargetBitmap RenderFixedPage(FixedPage fixedPage)
-    {
-        const double Dpi = 192; // 2x 渲染，放大查看时更清晰
-        fixedPage.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        var size = fixedPage.DesiredSize;
-        if (size.Width <= 0 || double.IsNaN(size.Width) || size.Height <= 0 || double.IsNaN(size.Height))
-        {
-            size = new Size(fixedPage.Width, fixedPage.Height);
-        }
-
-        fixedPage.Arrange(new Rect(size));
-        var pxW = (int) Math.Max(1, Math.Round(size.Width * Dpi / 96d));
-        var pxH = (int) Math.Max(1, Math.Round(size.Height * Dpi / 96d));
-        var bitmap = new RenderTargetBitmap(pxW, pxH, Dpi, Dpi, PixelFormats.Pbgra32);
-        bitmap.Render(fixedPage);
-        return bitmap;
-    }
-}
-
-internal sealed class PdfSource : PageSource
-{
-    // PDFium 是进程级库，首次使用前初始化一次；FPDF_DestroyLibrary 由进程退出回收。
-    static PdfSource( )
-    {
-        fpdfview.FPDF_InitLibrary( );
-    }
-
-    private const ulong FpdfErrPassword = 4; // FPDF_ERR_PASSWORD：文档已加密
-
-    private const double Dpi = 192;
-
-    private readonly FpdfDocumentT document;
-
-    private PdfSource(FpdfDocumentT document)
-    {
-        this.document = document;
-        PageCount = fpdfview.FPDF_GetPageCount(document);
-    }
-
-    public override int PageCount { get; }
-
-    public static PdfSource Open(string path)
-    {
-        var document = fpdfview.FPDF_LoadDocument(path, "");
-        if (document is null)
-        {
-            if (fpdfview.FPDF_GetLastError( ) == FpdfErrPassword)
-            {
-                throw new InvalidDataException("该 PDF 已加密，暂不支持打开");
-            }
-
-            throw new InvalidDataException("无法打开 PDF 文件（格式损坏或不受支持）");
-        }
-
-        return new PdfSource(document);
-    }
-
-    public override ImageSource? GetPage(int index)
-    {
-        if ((uint) index >= (uint) PageCount)
-        {
-            return null;
-        }
-
-        var page = fpdfview.FPDF_LoadPage(document, index);
-        if (page is null)
-        {
-            return null;
-        }
-
-        try
-        {
-            using var size = new FS_SIZEF_( );
-            fpdfview.FPDF_GetPageSizeByIndexF(document, index, size);
-            var pxW = Math.Max(1, (int) Math.Round(size.Width * Dpi / 72));
-            var pxH = Math.Max(1, (int) Math.Round(size.Height * Dpi / 72));
-
-            var bitmap = fpdfview.FPDFBitmapCreateEx(pxW, pxH, (int) FPDFBitmapFormat.BGRA, IntPtr.Zero, 0);
-            if (bitmap is null)
-            {
-                return null;
-            }
-
-            try
-            {
-                fpdfview.FPDFBitmapFillRect(bitmap, 0, 0, pxW, pxH, 0xFFFFFFFF);
-                const float Scale = (float) (Dpi / 72);
-                using var matrix = new FS_MATRIX_ { A = Scale, B = 0, C = 0, D = Scale, E = 0, F = 0 };
-                using var clip = new FS_RECTF_ { Left = 0, Right = pxW, Bottom = 0, Top = pxH };
-                fpdfview.FPDF_RenderPageBitmapWithMatrix(bitmap, page, matrix, clip, (int) RenderFlags.RenderAnnotations);
-
-                var bytes = new byte[fpdfview.FPDFBitmapGetStride(bitmap) * pxH];
-                Marshal.Copy(fpdfview.FPDFBitmapGetBuffer(bitmap), bytes, 0, bytes.Length);
-
-                var image = BitmapSource.Create(pxW, pxH, Dpi, Dpi, PixelFormats.Pbgra32, null, bytes, pxW * 4);
-                image.Freeze( );
-                return image;
-            }
-            finally
-            {
-                fpdfview.FPDFBitmapDestroy(bitmap);
-            }
-        }
-        finally
-        {
-            fpdfview.FPDF_ClosePage(page);
-        }
-    }
-
-    public override void Dispose( )
-    {
-        fpdfview.FPDF_CloseDocument(document);
-    }
-}
-
 public sealed class DocumentService : IDisposable
 {
     private const long CacheQuotaBytes = 512L * 1024 * 1024;
@@ -281,10 +103,10 @@ public sealed class DocumentService : IDisposable
             return await OpenPdfAsync(path);
         }
 
-        var cachePath = await Task.Run(( ) =>
+        var cachePath = await Task.Run(async ( ) =>
         {
             TrimCache( );
-            return GetCachePath(path);
+            return await GetCachePath(path);
         });
 
         // 命中缓存直接打开；缓存损坏直接删除（删除失败忽略），落到下方重新转换。
@@ -426,11 +248,11 @@ public sealed class DocumentService : IDisposable
         return outputPath;
     }
 
-    private static string GetCachePath(string path)
+    private static async Task<string> GetCachePath(string path)
     {
-        using var stream = File.OpenRead(path);
-        using var sha = SHA256.Create( );
-        return Path.Join(cacheDir, Convert.ToHexString(sha.ComputeHash(stream)) + ".xps");
+        await using var stream = File.OpenRead(path);
+        using var hash = SHA256.Create( );
+        return Path.Join(cacheDir, Convert.ToHexString(await hash.ComputeHashAsync(stream)) + ".xps");
     }
 
     private static Task<T> RunOnStaAsync<T>(Func<T> action)

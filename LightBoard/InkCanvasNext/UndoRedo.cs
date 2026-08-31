@@ -2,29 +2,75 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Ink;
+using System.Windows.Media;
 
 namespace InkCanvasNext;
 
-public sealed class StrokeChanges(StrokeCollection added, StrokeCollection removed)
+/// <summary>
+/// 历史记录项抽象：Apply 为重做方向，Revert 为撤销方向。
+/// 参数 owner 用于访问 InkCanvas 以执行增删（StrokeChanges）或纯变换（TransformChanges）。
+/// </summary>
+internal interface IHistoryChange
+{
+    void Apply(InkCanvasNext owner);
+    void Revert(InkCanvasNext owner);
+}
+
+internal sealed class StrokeChanges(StrokeCollection added, StrokeCollection removed) : IHistoryChange
 {
     public StrokeCollection Added { get; } = added;
     public StrokeCollection Removed { get; } = removed;
+
+    public void Apply(InkCanvasNext owner)
+    {
+        owner.Canvas.Strokes.Remove(Removed);
+        owner.Canvas.Strokes.Add(Added);
+    }
+
+    public void Revert(InkCanvasNext owner)
+    {
+        owner.Canvas.Strokes.Remove(Added);
+        owner.Canvas.Strokes.Add(Removed);
+    }
 }
 
-public sealed class HistorySnapshot(StrokeChanges[] changes, int position)
+/// <summary>一次手势（移动/缩放/旋转）的整段绝对变换，作为单个撤销单元。</summary>
+internal sealed class TransformChanges(StrokeCollection target, Matrix delta) : IHistoryChange
 {
-    public IReadOnlyList<StrokeChanges> Changes { get; } = changes;
-    public int Position { get; } = position;
+    public void Apply(InkCanvasNext owner)
+    {
+        target.Transform(delta, false);
+    }
+
+    public void Revert(InkCanvasNext owner)
+    {
+        var inverse = delta;
+        inverse.Invert( );
+        target.Transform(inverse, false);
+    }
+}
+
+public sealed class HistorySnapshot
+{
+    internal HistorySnapshot(IHistoryChange[] changes, int position)
+    {
+        Changes = changes;
+        Position = position;
+    }
+
+    internal IReadOnlyList<IHistoryChange> Changes { get; }
+
+    public int Position { get; }
 }
 
 public partial class InkCanvasNext
 {
     private const int MaxHistoryCount = 200;
-    private readonly RingBuffer<StrokeChanges> history = new(MaxHistoryCount);
+    private readonly RingBuffer<IHistoryChange> history = new(MaxHistoryCount);
     private int position;
     private bool applyingUndoRedo;
 
-    private void PushChange(StrokeChanges change)
+    private void PushChange(IHistoryChange change)
     {
         if (position < history.Count)
         {
@@ -40,17 +86,17 @@ public partial class InkCanvasNext
     {
         StrokesChanged?.Invoke(this, EventArgs.Empty);
 
+        if (e.Removed.Count > 0)
+        {
+            selection.Prune(Canvas.Strokes);
+        }
+
         if (applyingUndoRedo || eraser.Active || (e.Added.Count == 0 && e.Removed.Count == 0))
         {
             return;
         }
 
         PushChange(new StrokeChanges(e.Added, e.Removed));
-    }
-
-    private void OnSelectionChanged(object? sender, EventArgs e)
-    {
-        SelectionChanged?.Invoke(sender, e);
     }
 
     public void Undo( )
@@ -62,12 +108,13 @@ public partial class InkCanvasNext
 
         applyingUndoRedo = true;
         position--;
-        var change = history[position];
-        Canvas.Strokes.Remove(change.Added);
-        Canvas.Strokes.Add(change.Removed);
+        history[position].Revert(this);
         applyingUndoRedo = false;
 
+        selection.RecomputeBounds( );
+        selection.Invalidate( );
         UpdateCanUndoRedo( );
+        RaiseViewOrSelectionChanged( );
     }
 
     public void Redo( )
@@ -80,11 +127,13 @@ public partial class InkCanvasNext
         applyingUndoRedo = true;
         var change = history[position];
         position++;
-        Canvas.Strokes.Remove(change.Removed);
-        Canvas.Strokes.Add(change.Added);
+        change.Apply(this);
         applyingUndoRedo = false;
 
+        selection.RecomputeBounds( );
+        selection.Invalidate( );
         UpdateCanUndoRedo( );
+        RaiseViewOrSelectionChanged( );
     }
 
     private void ClearHistory( )

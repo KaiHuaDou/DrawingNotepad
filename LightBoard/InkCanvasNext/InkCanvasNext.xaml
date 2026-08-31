@@ -5,9 +5,9 @@
         <ScrollViewer x:Name="CanvasScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
             <Grid x:Name="CanvasGrid"
                   Background="{Binding Background, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                  RenderOptions.CachingHint="Cache"
+                  RenderOptions.CacheInvalidationThresholdMaximum="2.0"
                   RenderOptions.CacheInvalidationThresholdMinimum="0.5"
-                  RenderOptions.CacheInvalidationThresholdMaximum="2.0">
+                  RenderOptions.CachingHint="Cache">
                 <Border x:Name="DocumentHost"
                         HorizontalAlignment="Center" VerticalAlignment="Center"
                         Visibility="Collapsed" />
@@ -27,6 +27,7 @@
                                            Color="#E6E6E6" />
                     </InkCanvas.DefaultDrawingAttributes>
                 </InkCanvas>
+                <Canvas x:Name="SelectionLayer" Panel.ZIndex="37" IsHitTestVisible="False" />
             </Grid>
         </ScrollViewer>
 

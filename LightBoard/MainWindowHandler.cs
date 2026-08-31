@@ -75,7 +75,10 @@ public partial class MainWindow
         if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedStrokes.Count == 0)
         {
             SelectionBorder.Visibility = Visibility.Collapsed;
+            return;
         }
+
+        UpdateSelectionBorderPosition( );
     }
 
     private void CanvasNextSelectionChanged(object o, EventArgs e)
@@ -86,17 +89,109 @@ public partial class MainWindow
             return;
         }
 
-        if (SelectionBorder.Parent is UIElement parent)
+        SelectionBorder.Visibility = Visibility.Visible;
+        UpdateSelectionBorderPosition( );
+    }
+
+    /// <summary>把选区工具栏吸附到选区包围盒顶部居中；随拖动/平移/缩放/滚动实时更新。
+    /// 选区完全移出可视区时隐藏；位置双向夹紧到可视区。</summary>
+    private void UpdateSelectionBorderPosition( )
+    {
+        if (selectionBorderUpdating)
         {
-            SelectionBorder.Visibility = Visibility.Visible;
-            var position = Mouse.GetPosition(parent);
-            SelectionBorder.Margin = new Thickness(position.X, position.Y, 0, 0);
+            return;
         }
+
+        selectionBorderUpdating = true;
+        try
+        {
+            if (SelectionBorder.Parent is not UIElement parent)
+            {
+                return;
+            }
+
+            var bounds = CanvasNext.GetSelectionScreenBounds(parent);
+            var viewport = CanvasNext.GetCanvasViewportBounds(parent);
+            if (bounds is not Rect b || viewport is not Rect vp)
+            {
+                SelectionBorder.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            // 只保留选区在可视区内的部分；完全不可见则隐藏工具栏（避免贴边/残影）
+            var visible = b;
+            visible.Intersect(vp);
+            if (visible.IsEmpty)
+            {
+                SelectionBorder.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            SelectionBorder.Visibility = Visibility.Visible;
+
+            var size = selectionBorderSize ??= MeasureSelectionBorder( );
+            var w = size.Width;
+            var h = size.Height;
+
+            // 吸附到选区可见部分顶部居中；上方放不下则移到选区下方
+            var x = visible.Left + visible.Width / 2 - w / 2;
+            var y = visible.Top - h - 8;
+            if (y < vp.Top)
+            {
+                y = visible.Bottom + 8;
+            }
+
+            // 双向夹紧到可视区，保证工具栏完全可见
+            x = Math.Clamp(x, vp.Left, Math.Max(vp.Left, vp.Right - w));
+            y = Math.Clamp(y, vp.Top, Math.Max(vp.Top, vp.Bottom - h));
+
+            SelectionBorder.Margin = new Thickness(x, y, 0, 0);
+        }
+        finally
+        {
+            selectionBorderUpdating = false;
+        }
+    }
+
+    private bool selectionBorderUpdating;
+
+    private Size? selectionBorderSize;
+
+    private Size MeasureSelectionBorder( )
+    {
+        SelectionBorder.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        var size = SelectionBorder.DesiredSize;
+        if (size.Width <= 0)
+        {
+            size.Width = SelectionBorder.ActualWidth;
+        }
+
+        if (size.Height <= 0)
+        {
+            size.Height = SelectionBorder.ActualHeight;
+        }
+
+        return size;
     }
 
     private void CloneClick(object o, RoutedEventArgs e)
     {
-        CanvasNext.CloneSelected( );
+        if (CloneButton.IsChecked == true)
+        {
+            if (!CanvasNext.HasSelection)
+            {
+                // 无选区不允许克隆，回弹取消勾选
+                CloneButton.IsChecked = false;
+                return;
+            }
+
+            PasteButton.IsChecked = false;
+            CanvasNext.StampAction = StampAction.Clone;
+        }
+        else if (CanvasNext.StampAction == StampAction.Clone)
+        {
+            ExitStamp( );
+        }
     }
 
     private void CollapseExpandClick(object o, RoutedEventArgs e)
@@ -134,6 +229,8 @@ public partial class MainWindow
 
     private void ColorRadioChecked(object o, RoutedEventArgs e)
     {
+        ExitStamp( );
+
         if (o is not RadioButton { Background: SolidColorBrush brush } radio)
         {
             return;
@@ -162,18 +259,24 @@ public partial class MainWindow
 
     private void CutClick(object o, RoutedEventArgs e)
     {
+        ExitStamp( );
+
         CanvasNext.CutSelected( );
         SelectionBorder.Visibility = Visibility.Collapsed;
     }
 
     private void DeleteClick(object o, RoutedEventArgs e)
     {
+        ExitStamp( );
+
         CanvasNext.DeleteSelected( );
         SelectionBorder.Visibility = Visibility.Collapsed;
     }
 
     private void EraseAll(object o, RoutedEventArgs e)
     {
+        ExitStamp( );
+
         CanvasNext.ClearMultiTouchVisuals( );
         CanvasNext.Strokes.Clear( );
     }
@@ -204,6 +307,8 @@ public partial class MainWindow
 
     private void HighLighterBoxClicked(object o, RoutedEventArgs e)
     {
+        ExitStamp( );
+
         if (HighLighterToggle.IsChecked == true)
         {
             EnterHighlighter( );
@@ -294,7 +399,40 @@ public partial class MainWindow
 
     private void PasteClick(object o, RoutedEventArgs e)
     {
-        CanvasNext.Paste( );
+        if (PasteButton.IsChecked == true)
+        {
+            if (!CanvasNext.HasClipboardStrokes)
+            {
+                // 剪贴板无墨迹，回弹取消勾选
+                PasteButton.IsChecked = false;
+                return;
+            }
+
+            CloneButton.IsChecked = false;
+            CanvasNext.StampAction = StampAction.Paste;
+        }
+        else if (CanvasNext.StampAction == StampAction.Paste)
+        {
+            ExitStamp( );
+        }
+    }
+
+    /// <summary>退出盖章模式并复位两个 toggle（克隆/粘贴互斥）。</summary>
+    private void ExitStamp( )
+    {
+        CanvasNext.StampAction = StampAction.None;
+
+        // XAML 加载期可能先于按钮创建触发（DefaultThicknessRadio 的 Checked 事件），需判空
+        CloneButton?.IsChecked = false;
+        PasteButton?.IsChecked = false;
+    }
+
+    private void MainWindowKeyUp(object o, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            ExitStamp( );
+        }
     }
 
     private void RedoButtonClick(object o, RoutedEventArgs e)
@@ -309,6 +447,8 @@ public partial class MainWindow
 
     private void ThicknessRadioClick(object o, RoutedEventArgs e)
     {
+        ExitStamp( );
+
         if (o is not RadioButton { MinWidth: double thickness } radio)
         {
             return;
@@ -332,6 +472,8 @@ public partial class MainWindow
 
     private void ToolRadioChecked(object o, RoutedEventArgs e)
     {
+        ExitStamp( );
+
         if (o is not RadioButton radio)
         {
             return;
@@ -356,6 +498,8 @@ public partial class MainWindow
 
     private void ShapeToggleClick(object o, RoutedEventArgs e)
     {
+        ExitStamp( );
+
         if (o is not ToggleButton toggle)
         {
             return;

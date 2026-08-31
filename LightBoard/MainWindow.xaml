@@ -8,6 +8,7 @@
         Height="1080"
         Closing="WindowClosing"
         Deactivated="WindowDeactivated"
+        KeyUp="MainWindowKeyUp"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
@@ -179,7 +180,9 @@
                     <Button x:Name="TransparentModeButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="TransparentModeClick" Tag="&#xE729;" />
-                    <Button Style="{StaticResource ButtonStyle}" Click="PasteClick" Tag="&#xE77F;" />
+                    <ToggleButton x:Name="PasteButton"
+                                  Style="{StaticResource ToggleStyle}"
+                                  Click="PasteClick" Tag="&#xE77F;" />
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -278,7 +281,9 @@
                 <Button Style="{StaticResource ButtonStyle}" Click="CopyClick" Tag="&#xE8C8;" />
                 <Button Style="{StaticResource ButtonStyle}" Click="CutClick" Tag="&#xE8C6;" />
                 <Button Style="{StaticResource ButtonStyle}" Click="DeleteClick" Tag="&#xE74D;" />
-                <Button Style="{StaticResource ButtonStyle}" Click="CloneClick" Tag="&#xF413;" />
+                <ToggleButton x:Name="CloneButton"
+                              Style="{StaticResource ToggleStyle}"
+                              Click="CloneClick" Tag="&#xF413;" />
             </StackPanel>
         </Border>
     </Grid>

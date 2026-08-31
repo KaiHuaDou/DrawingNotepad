@@ -9,9 +9,9 @@ namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
-    public StrokeCollection SelectedStrokes => Canvas.GetSelectedStrokes( );
+    public StrokeCollection SelectedStrokes => new(selection.SelectedStrokes);
 
-    public bool HasSelection => Canvas.GetSelectedStrokes( ).Count > 0;
+    public bool HasSelection => selection.HasSelection;
 
     public void CopySelected( )
     {
@@ -46,11 +46,26 @@ public partial class InkCanvasNext
         }
 
         Canvas.Strokes.Remove(SelectedStrokes);
+        selection.Clear( );
     }
 
-    public void Paste( )
+    /// <summary>以点击点为副本包围盒中心，生成当前选区的一份克隆（可连续盖章，每次一个撤销单元）。</summary>
+    public void StampCloneAt(Point point)
     {
-        if (!Clipboard.ContainsData(StrokeCollection.InkSerializedFormat))
+        if (!HasSelection)
+        {
+            return;
+        }
+
+        var clone = SelectedStrokes.Clone( );
+        CenterAt(clone, point);
+        Canvas.Strokes.Add(clone);
+    }
+
+    /// <summary>以点击点为副本包围盒中心，粘贴剪贴板中的墨迹（可连续盖章，每次一个撤销单元）。</summary>
+    public void StampPasteAt(Point point)
+    {
+        if (!HasClipboardStrokes)
         {
             return;
         }
@@ -63,42 +78,25 @@ public partial class InkCanvasNext
 
         ms.Position = 0;
         var strokes = new StrokeCollection(ms);
-
-        var centerX = CanvasScroll.HorizontalOffset + CanvasScroll.ViewportWidth / 2;
-        var centerY = CanvasScroll.VerticalOffset + CanvasScroll.ViewportHeight / 2;
-
-        var bounds = strokes.GetBounds( );
-        if (!bounds.IsEmpty)
-        {
-            var offsetX = centerX - (bounds.Left + bounds.Width / 2);
-            var offsetY = centerY - (bounds.Top + bounds.Height / 2);
-            var matrix = new Matrix(1, 0, 0, 1, offsetX, offsetY);
-            foreach (var stroke in strokes)
-            {
-                stroke.Transform(matrix, false);
-            }
-        }
-
+        CenterAt(strokes, point);
         Canvas.Strokes.Add(strokes);
     }
 
-    public void CloneSelected( )
+    private static void CenterAt(StrokeCollection strokes, Point point)
     {
-        if (!HasSelection)
+        var bounds = strokes.GetBounds( );
+        if (bounds.IsEmpty)
         {
             return;
         }
 
-        var clone = SelectedStrokes.Clone( );
-
-        var matrix = new Matrix(1, 0, 0, 1, 100, 100);
-
-        foreach (var stroke in clone)
+        var offsetX = point.X - (bounds.Left + bounds.Width / 2);
+        var offsetY = point.Y - (bounds.Top + bounds.Height / 2);
+        var matrix = new Matrix(1, 0, 0, 1, offsetX, offsetY);
+        foreach (var stroke in strokes)
         {
             stroke.Transform(matrix, false);
         }
-
-        Canvas.Strokes.Add(clone);
     }
 }
 
