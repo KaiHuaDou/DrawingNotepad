@@ -176,7 +176,7 @@ public partial class App
 
     private static void SaveRecover( )
     {
-        if (!Pages.Any(p => p.Strokes.Count > 0))
+        if (IsBoardEmpty( ))
         {
             return;
         }
@@ -188,8 +188,15 @@ public partial class App
         catch { }
     }
 
+    public static bool IsBoardEmpty( )
+    {
+        return !Pages.Any(p => p.Strokes.Count > 0);
+    }
+
     public static void ExportAllImage(int scale, string directory, DpiScale dpi)
     {
+        Directory.CreateDirectory(directory);
+
         var exported = 0;
         foreach (var page in Pages)
         {
@@ -202,11 +209,6 @@ public partial class App
             var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.png");
             page.ExportStokes(fileName, dpi, scale);
             exported++;
-        }
-
-        if (exported == 0)
-        {
-            ShowInfo("没有可以导出的墨迹");
         }
     }
 }

@@ -17,7 +17,6 @@ public enum InkCanvasNextMode
     Highlighter
 }
 
-/// <summary>正交于工具模式的盖章开关（克隆/粘贴），与 Mode 无关。</summary>
 public enum StampAction
 {
     None,
@@ -25,6 +24,12 @@ public enum StampAction
     Paste
 }
 
+public enum MouseWheelAction
+{
+    Scroll,
+    Zoom,
+    None
+}
 public partial class InkCanvasNext : UserControl
 {
 #pragma warning disable IDE1006
@@ -70,6 +75,13 @@ public partial class InkCanvasNext : UserControl
             typeof(InkCanvasNext),
             new PropertyMetadata(50.0));
 
+    public static readonly DependencyProperty MouseWheelActionProperty =
+        DependencyProperty.Register(
+            nameof(MouseWheelAction),
+            typeof(MouseWheelAction),
+            typeof(InkCanvasNext),
+            new PropertyMetadata(MouseWheelAction.Scroll));
+
     public static readonly DependencyProperty StrokesProperty =
         DependencyProperty.Register(
             nameof(Strokes),
@@ -95,16 +107,23 @@ public partial class InkCanvasNext : UserControl
         DefaultDrawingAttributes = Canvas.DefaultDrawingAttributes;
 
         prevMode = InkCanvasNextMode.Ink;
-        var distanceThreshold = 0.9 * SystemParameters.WorkArea.Width;
+
+#if DEBUG
+        const double DistanceThresholdFactor = 0.9;
+#else
+        const double DistanceThresholdFactor = 0.1;
+#endif
+
+        var distanceThreshold = DistanceThresholdFactor * SystemParameters.WorkArea.Width;
         distanceThreshold2 = distanceThreshold * distanceThreshold;
 
         CanvasScroll.ScrollToHorizontalOffset(8192);
         CanvasScroll.ScrollToVerticalOffset(8192);
-
         CanvasScroll.ScrollChanged += (_, _) => RaiseViewOrSelectionChanged( );
         canvasScaleTransform.Changed += (_, _) => RaiseViewOrSelectionChanged( );
 
         Canvas.Children.Add(multiTouchCanvas);
+
         SetupShapePreview( );
     }
 
@@ -112,7 +131,7 @@ public partial class InkCanvasNext : UserControl
 
     public event EventHandler<DependencyPropertyChangedEventArgs>? CanUndoChanged;
 
-    public event EventHandler? StrokesChanged;
+    public event EventHandler<InkCanvasStrokesChangedEventArgs>? StrokesChanged;
 
     public event EventHandler? SelectionChanged;
 
@@ -149,20 +168,30 @@ public partial class InkCanvasNext : UserControl
         set => SetValue(EraserDiameterProperty, value);
     }
 
+    public MouseWheelAction MouseWheelAction
+    {
+        get => (MouseWheelAction) GetValue(MouseWheelActionProperty);
+        set => SetValue(MouseWheelActionProperty, value);
+    }
+
     public StrokeCollection Strokes
     {
         get => (StrokeCollection) GetValue(StrokesProperty);
         set => SetValue(StrokesProperty, value);
     }
 
+    private const double MinScale = 0.1;
+    private const double MaxScale = 10.0;
+
     public double CurrentScale
     {
         get => currentScale;
         set
         {
-            currentScale = value;
-            canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = value;
-            eraser.Scale = value;
+            var clamped = Math.Clamp(value, MinScale, MaxScale);
+            currentScale = clamped;
+            canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = clamped;
+            eraser.Scale = clamped;
         }
     }
 
@@ -229,17 +258,16 @@ public partial class InkCanvasNext : UserControl
         }
     }
 
-#pragma warning disable CA1030 // 事件触发辅助方法，供内部协作对象（SelectionController 等）回调，命名遵循 RaiseXxx 约定
-    public void RaiseSelectionChanged( )
+    /// <summary>供 internal 协作对象（SelectionController 等）回调，外部消费者请订阅对应事件。</summary>
+    internal void RaiseSelectionChanged( )
     {
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void RaiseViewOrSelectionChanged( )
+    internal void RaiseViewOrSelectionChanged( )
     {
         ViewOrSelectionChanged?.Invoke(this, EventArgs.Empty);
     }
-#pragma warning restore CA1030
 
     private static void OnDefaultDrawingAttributesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {

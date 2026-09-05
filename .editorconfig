@@ -11,6 +11,7 @@ insert_final_newline = true
 [*.{cs,vb}]
 
 tab_width = 4
+
 dotnet_diagnostic.CA1001.severity = none
 dotnet_diagnostic.CA1031.severity = none
 dotnet_diagnostic.CA1034.severity = none
@@ -23,6 +24,7 @@ dotnet_diagnostic.CA1515.severity = none
 dotnet_diagnostic.CA1724.severity = none
 dotnet_diagnostic.CA1862.severity = none
 dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.CA2008.severity = none
 dotnet_diagnostic.CA2227.severity = none
 dotnet_diagnostic.IDE0130.severity = none
 dotnet_diagnostic.NU1701.severity = none

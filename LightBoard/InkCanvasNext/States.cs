@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Windows.Controls;
 
 namespace InkCanvasNext;
@@ -39,7 +38,7 @@ public partial class InkCanvasNext
             {
                 0 => TouchState.Idle,
                 // 选区入口是高优先级候选：仅 count∈{1,2} 时评估（3+ 指不误入）
-                1 or 2 when SelectionTouchTarget( ) => TouchState.Selection,
+                1 or 2 when SelectionTouchCandidate( ) => TouchState.Selection,
                 1 => TouchState.EvalDraw,
                 2 when d2 <= l2 => TouchState.PanZoom,
                 3 or 4 when d2 <= l2 => TouchState.Pan,
@@ -106,23 +105,16 @@ public partial class InkCanvasNext
         SetState(newState);
     }
 
-    /// <summary>该状态全程接管原生输入（Down/Move/Up 均 Handled，InkCanvas 不再收笔）。
-    /// 与 IsAreaEraserActive 叠加构成事件的 Handled 判定。</summary>
     private static bool BlocksNativeInput(TouchState s)
     {
         return s is TouchState.PanZoom or TouchState.Pan or TouchState.MultiDraw or TouchState.Selection;
     }
 
-    /// <summary>进入时需把 EditingMode 置 None 的状态（即"手势接管"状态）。</summary>
     private static bool OverridesEditingMode(TouchState s)
     {
         return s is TouchState.PanZoom or TouchState.Pan or TouchState.MultiDraw or TouchState.Eraser;
     }
 
-    /// <summary>
-    /// 迁移副作用由"退出源 + 进入目标"组合得出（参考 TouchStates3.md §5），
-    /// 取代原先 26 个 (from, to) 元组特判。
-    /// </summary>
     private void SetState(TouchState newState)
     {
         if (state == newState)
@@ -132,7 +124,6 @@ public partial class InkCanvasNext
 
         var from = state;
 
-        // ---- 退出源清理 ----
         if (from == TouchState.MultiDraw)
         {
             EndMultiTouch( );
@@ -143,7 +134,6 @@ public partial class InkCanvasNext
             EndSelectionTouch( );
         }
 
-        // ---- 恢复模式：回 Idle，或离开"覆盖编辑模式"状态（MultiDraw→Draw 等须恢复 EditingMode）----
         if (newState == TouchState.Idle)
         {
             ReleaseAll( );
@@ -154,7 +144,6 @@ public partial class InkCanvasNext
             RestoreMode( );
         }
 
-        // ---- 进入目标 ----
         if (from == TouchState.Idle)
         {
             prevMode = Mode;
@@ -186,7 +175,6 @@ public partial class InkCanvasNext
 
             case TouchState.PanZoom:
             case TouchState.Pan:
-                // (PanZoom→Pan) 只校准基准（TrackTouchDown/Up 已通用化 InitGesture），不重做 Release/Capture
                 if (from != TouchState.PanZoom)
                 {
                     ReleaseAll( );
@@ -211,7 +199,6 @@ public partial class InkCanvasNext
                 break;
         }
 
-        // ---- 离开擦除叠加态即结算一次橡皮循环（通用钩子，原样保留）----
         if (IsAreaEraserActive(from) && !IsAreaEraserActive(newState))
         {
             EndEraserCycle( );
@@ -225,25 +212,10 @@ public partial class InkCanvasNext
         ApplyModeToEditing(prevMode);
     }
 
-    /// <summary>判断首指起点是否落在当前选区内，决定触屏进入选择操作而非绘制/平移。</summary>
-    private bool SelectionTouchTarget( )
+    /// <summary>选择工具（且未进入盖章）下的任意单/双指触摸由选区状态接管：有选区则命中手柄缩放/
+    /// 旋转、选区内移动、双指缩放；无选区或落点在空白处则进入触屏套索/点选。3+ 指不进入（调用方 count 臂限定）。</summary>
+    private bool SelectionTouchCandidate( )
     {
-        if (Mode != InkCanvasNextMode.Select || StampAction != StampAction.None || !selection.HasSelection)
-        {
-            return false;
-        }
-
-        if (touches.Count == 0)
-        {
-            return false;
-        }
-
-        var first = touches.First( );
-        if (!touchCanvasStarts.TryGetValue(first.Key, out var start))
-        {
-            return false;
-        }
-
-        return selection.Bounds.Contains(start);
+        return Mode == InkCanvasNextMode.Select && StampAction == StampAction.None;
     }
 }

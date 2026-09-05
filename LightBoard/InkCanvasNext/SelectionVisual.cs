@@ -7,10 +7,6 @@ using System.Windows.Media;
 
 namespace InkCanvasNext;
 
-/// <summary>
-/// 在 SelectionLayer（CanvasGrid 内、InkCanvas 之上，IsHitTestVisible=False）自绘：
-/// 选中 halo、选择框、8 缩放手柄 + 1 旋转手柄、套索轨迹。全部使用内容坐标，自动随画布缩放。
-/// </summary>
 internal sealed class SelectionVisual
 {
     private const double HandleRadius = 5;
@@ -109,7 +105,6 @@ internal sealed class SelectionVisual
         }
     }
 
-    /// <summary>承载自绘视觉的 FrameworkElement（SelectionLayer 的 Canvas 子级）。</summary>
     private sealed class SelectionVisualHost(Action<DrawingContext> render) : FrameworkElement
     {
         protected override void OnRender(DrawingContext drawingContext)

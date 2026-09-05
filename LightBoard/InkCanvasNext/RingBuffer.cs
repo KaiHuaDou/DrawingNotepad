@@ -44,6 +44,11 @@ internal sealed class RingBuffer<T>(int capacity)
             throw new ArgumentOutOfRangeException(nameof(newCount));
         }
 
+        for (var i = newCount; i < Count; i++)
+        {
+            buffer[(head + i) % capacity] = default!;
+        }
+
         Count = newCount;
     }
 

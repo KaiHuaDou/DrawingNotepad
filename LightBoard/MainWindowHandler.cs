@@ -68,11 +68,11 @@ public partial class MainWindow
 
 #pragma warning restore IDE0060
 
-    private void CanvasNextStrokesChanged(object o, EventArgs e)
+    private void CanvasNextStrokesChanged(object o, InkCanvasStrokesChangedEventArgs e)
     {
         dirty = true;
 
-        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedStrokes.Count == 0)
+        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
         {
             SelectionBorder.Visibility = Visibility.Collapsed;
             return;
@@ -83,7 +83,7 @@ public partial class MainWindow
 
     private void CanvasNextSelectionChanged(object o, EventArgs e)
     {
-        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedStrokes.Count == 0)
+        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
         {
             SelectionBorder.Visibility = Visibility.Collapsed;
             return;
@@ -93,8 +93,10 @@ public partial class MainWindow
         UpdateSelectionBorderPosition( );
     }
 
-    /// <summary>把选区工具栏吸附到选区包围盒顶部居中；随拖动/平移/缩放/滚动实时更新。
-    /// 选区完全移出可视区时隐藏；位置双向夹紧到可视区。</summary>
+    /// <summary>
+    /// 把选区工具栏吸附到选区包围盒顶部居中；随拖动/平移/缩放/滚动实时更新。
+    /// 选区完全移出可视区时隐藏；位置双向夹紧到可视区。
+    /// </summary>
     private void UpdateSelectionBorderPosition( )
     {
         if (selectionBorderUpdating)

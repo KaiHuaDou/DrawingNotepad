@@ -146,31 +146,22 @@ public partial class MainWindow : Window
             {
                 App.LoadBoard(fileName);
             }
-            else if (IsDocumentFile(fileName))
+            else if (IsInkFile(fileName))
+            {
+                App.CurrentPage.OpenStrokes(fileName);
+                OnPageChanged(this, EventArgs.Empty);
+            }
+            else
             {
                 LoadingBar.IsIndeterminate = true;
                 LoadingText.Text = "解析文档中...";
                 LoadingBorder.Visibility = Visibility.Visible;
+                CanvasNext.IsEnabled = false;
 
-                try
-                {
-                    await App.OpenDocument(fileName);
-                }
-                catch (Exception ex)
-                {
-                    App.LogException(ex);
-                    App.ShowDetailedInfo("无法打开文档", ex.Message, $"{ex.Message}\n{ex.StackTrace}");
-                    return;
-                }
-                finally
-                {
-                    LoadingBorder.Visibility = Visibility.Hidden;
-                }
-            }
-            else
-            {
-                App.CurrentPage.OpenStrokes(fileName);
-                OnPageChanged(this, EventArgs.Empty);
+                await App.OpenDocument(fileName)
+                    .ContinueWith(_ => Dispatcher.Invoke(( ) =>
+                        CanvasNext.IsEnabled = true
+                    ));
             }
 
             dirty = false;
@@ -178,13 +169,22 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             App.LogException(ex);
-            App.ShowException(ex, "错误日志已记录");
+            App.ShowDetailedInfo("无法打开文档", ex.Message, $"{ex.Message}\n{ex.StackTrace}");
+        }
+        finally
+        {
+            LoadingBorder.Visibility = Visibility.Hidden;
         }
     }
 
     private static bool IsBoardFile(string fileName)
     {
         return Path.GetExtension(fileName).Equals(BoardFile.Extension, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsInkFile(string fileName)
+    {
+        return Path.GetExtension(fileName).Equals(".isf", StringComparison.OrdinalIgnoreCase);
     }
 
     private void SaveFileClick(object o, RoutedEventArgs e)
@@ -230,6 +230,11 @@ public partial class MainWindow : Window
 
     private void ExportImageClick(object o, RoutedEventArgs e)
     {
+        if (App.IsBoardEmpty( ))
+        {
+            App.ShowInfo("没有可以导出的墨迹");
+        }
+
         using TaskDialog scaleDialog = new( )
         {
             WindowTitle = "轻白板",
@@ -278,11 +283,11 @@ public partial class MainWindow : Window
         }
 
         var directory = Path.Join(fileDialog.SelectedPath, DateTime.Now.Ticks.ToString( ));
-        Directory.CreateDirectory(directory);
-
         var dpi = VisualTreeHelper.GetDpi(CanvasNext);
 
         ExportImageMenu.IsEnabled = false;
+        CanvasNext.IsEnabled = false;
+
         Task.Run(( ) =>
         {
             try
@@ -297,7 +302,11 @@ public partial class MainWindow : Window
             }
             finally
             {
-                Dispatcher.Invoke(( ) => ExportImageMenu.IsEnabled = true);
+                Dispatcher.Invoke(( ) =>
+                {
+                    ExportImageMenu.IsEnabled = true;
+                    CanvasNext.IsEnabled = true;
+                });
             }
 
             App.ShowInfo("导出图片成功");
@@ -306,6 +315,13 @@ public partial class MainWindow : Window
 
     private void SwitchOutClick(object o, RoutedEventArgs e)
     {
-        NativeMethods.SwitchTo("msedge");
+
+#if DEBUG
+        const string ProcessName = "thorium";
+#else
+        const string ProcessName = "msedge";
+#endif
+
+        NativeMethods.SwitchTo(ProcessName);
     }
 }

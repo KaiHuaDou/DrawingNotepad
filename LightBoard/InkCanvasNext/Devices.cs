@@ -21,7 +21,6 @@ public partial class InkCanvasNext
     /// </summary>
     private readonly OrderedDictionary<int, (TouchDevice Device, Point Position)> touches = new(20);
     private readonly Dictionary<int, Point> touchStarts = [];
-    private readonly Dictionary<int, Point> touchCanvasStarts = [];
     private bool releasingCaptures;
 
     public void ResetTouchState( )
@@ -37,7 +36,6 @@ public partial class InkCanvasNext
 
             touches.Clear( );
             touchStarts.Clear( );
-            touchCanvasStarts.Clear( );
             SetState(TouchState.Idle);
             CancelSelectionGesture( );
             CancelShape( );
@@ -245,7 +243,6 @@ public partial class InkCanvasNext
     {
         touches[id] = (device, position);
         touchStarts[id] = position;
-        touchCanvasStarts[id] = device.GetTouchPoint(Canvas).Position;
 
         if (state is TouchState.Pan or TouchState.PanZoom)
         {
@@ -257,7 +254,6 @@ public partial class InkCanvasNext
     {
         touches.Remove(id);
         touchStarts.Remove(id);
-        touchCanvasStarts.Remove(id);
 
         if (state is TouchState.Pan or TouchState.PanZoom)
         {
@@ -378,10 +374,22 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseWheel(object o, MouseWheelEventArgs e)
     {
+        if (MouseWheelAction == MouseWheelAction.None)
+        {
+            return;
+        }
+
+        e.Handled = true;
+
+        if (MouseWheelAction == MouseWheelAction.Zoom || Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        {
+            ZoomAtCursor(e);
+            return;
+        }
+
         var step = ScrollStep * currentScale;
         var newOffset = CanvasScroll.VerticalOffset + (e.Delta > 0 ? -step : step);
         CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffset, 0, CanvasScroll.ScrollableHeight));
-        e.Handled = true;
     }
 
     private double GetMaxDistance2( )

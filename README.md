@@ -59,7 +59,7 @@
 - Microsoft Office（打开 Office 文档时需要）
     - 需要已激活版本。部分绿色版本需确认相关 COM 组件已注册
     - Office 2010 及更新版本
-    - Office 2007 需安装插件 Microsoft Save as PDF or XPS
+    - Office 2007 需安装插件 [Microsoft Save as PDF or XPS](https://legacyupdate.net/download-center/download/7/2007-microsoft-office-add-in-microsoft-save-as-pdf-or-xps)
 - [Segoe Fluent Icons 字体](https://learn.microsoft.com/zh-cn/windows/apps/design/style/segoe-fluent-icons-font)
 
 ## 开发与构建
@@ -68,7 +68,7 @@
     - 工作负载：C# 桌面开发
     - 预览功能：使用 .NET SDK 预览版
 
-- .NET **9.0** SDK 或更新版本（此时 C# `preview` 为 C# 14）
+- .NET **9.0** SDK 或更新版本（此时 C# `preview` >= 14）
 
 ```bash
 dotnet publish -p:PublishProfile=FolderProfile -c Release
@@ -121,8 +121,10 @@ WPF `InkCanvas` 现代封装
 ### 公开类型
 
 - `InkCanvasNext`: 主控件
-- `InkCanvasNextMode`: 编辑模式
-- `StrokeChanges`: 一次墨迹变更（新增/移除的笔触集合）
+- `InkCanvasNextMode`: 编辑模式（工具模式，不含高亮——荧光笔是笔触属性而非模式）
+- `StampAction`: 盖章开关（克隆/粘贴）
+- `InkCanvasStrokesChangedEventArgs`: `StrokesChanged` 事件的载荷（Added/Removed）
+- `MouseWheelAction`: 滚轮交互方式（Scroll/Zoom/None）
 - `HistorySnapshot`: 撤销/重做历史栈快照（`SwapHistory` 使用）
 
 ```csharp
@@ -131,7 +133,9 @@ public enum InkCanvasNextMode
     Ink,         // 墨迹书写
     EraseStroke, // 线擦
     EraseArea,   // 面积擦
-    Select       // 选择
+    Select,      // 选择（自绘选择层 + 套索）
+    Line,        // 直线（Pen 附加）
+    Circle       // 圆（Pen 附加）
 }
 ```
 
@@ -139,49 +143,55 @@ public enum InkCanvasNextMode
 
 #### 依赖属性
 
-| 属性                       | 类型                | 说明                               |
-| -------------------------- | ------------------- | ---------------------------------- |
-| `CanRedo`                  | `bool`              | 只读，是否可以重做                 |
-| `CanUndo`                  | `bool`              | 只读，是否可以撤销                 |
-| `DefaultDrawingAttributes` | `DrawingAttributes` | 默认笔触属性                       |
-| `Mode`                     | `InkCanvasNextMode` | 当前编辑模式                       |
-| `EraserDiameter`           | `double`            | 面积擦直径，默认 `50.0`            |
-| `Strokes`                  | `StrokeCollection`  | 墨迹集合，赋值会替换墨迹并清空历史 |
+| 属性                       | 类型                | 说明                                            |
+| -------------------------- | ------------------- | ----------------------------------------------- |
+| `CanRedo`                  | `bool`              | 只读，是否可以重做                              |
+| `CanUndo`                  | `bool`              | 只读，是否可以撤销                              |
+| `DefaultDrawingAttributes` | `DrawingAttributes` | 默认笔触属性（颜色/粗细/荧光笔均在此表达）      |
+| `Mode`                     | `InkCanvasNextMode` | 当前编辑模式                                    |
+| `EraserDiameter`           | `double`            | 面积擦直径默认 `50.0`  |
+| `MouseWheelAction`         | `MouseWheelAction`  | 滚轮交互：滚动 / 缩放 / 不接管，默认滚动        |
+| `Strokes`                  | `StrokeCollection`  | 墨迹集合，赋值会替换墨迹、清空选区/盖章态并清空历史 |
 
 #### 事件
 
-| 事件               | 说明                 |
-| ------------------ | -------------------- |
-| `CanRedoChanged`   | `CanRedo` 变化时触发 |
-| `CanUndoChanged`   | `CanUndo` 变化时触发 |
-| `StrokesChanged`   | 墨迹集合变化时触发   |
-| `SelectionChanged` | 选中内容变化时触发   |
+| 事件               | 类型                                            | 说明                         |
+| ------------------ | ----------------------------------------------- | ---------------------------- |
+| `CanRedoChanged`   | `EventHandler<DependencyPropertyChangedEventArgs>` | `CanRedo` 变化时触发      |
+| `CanUndoChanged`   | `EventHandler<DependencyPropertyChangedEventArgs>` | `CanUndo` 变化时触发      |
+| `StrokesChanged`   | `EventHandler<InkCanvasStrokesChangedEventArgs>` | 墨迹增删或选区整体变换时触发，载荷带 Added/Removed |
+| `SelectionChanged` | `EventHandler`                                  | 选中内容变化时触发           |
+| `ViewOrSelectionChanged` | `EventHandler`                              | 视口（滚动/缩放）或选区包围盒变化，供外部工具栏跟随 |
 
 #### 属性
 
-| 属性              | 类型               | 说明             |
-| ----------------- | ------------------ | ---------------- |
-| `SelectedStrokes` | `StrokeCollection` | 当前选中的墨迹   |
-| `HasSelection`    | `bool`             | 是否有选中的墨迹 |
-| `CurrentScale`    | `double`           | 当前画布缩放比例 |
-| `OffsetX`         | `double`           | 画布水平滚动偏移 |
-| `OffsetY`         | `double`           | 画布垂直滚动偏移 |
+| 属性               | 类型               | 说明                                  |
+| ------------------ | ------------------ | ------------------------------------- |
+| `SelectedStrokes`  | `StrokeCollection` | 当前选中墨迹的快照副本（访问即拷贝）  |
+| `SelectedCount`    | `int`              | 当前选中笔触数（轻量读法）            |
+| `HasSelection`     | `bool`             | 是否有选中的墨迹                      |
+| `CurrentScale`     | `double`           | 当前画布缩放比例（自动钳制 0.1–10）   |
+| `OffsetX`          | `double`           | 画布水平滚动偏移                      |
+| `OffsetY`          | `double`           | 画布垂直滚动偏移                      |
+| `MouseWheelAction` | `MouseWheelAction` | （依赖属性，见上）                    |
 
 #### 方法
 
-| 方法                            | 说明                                        |
-| ------------------------------- | ------------------------------------------- |
-| `Undo()`                        | 撤销上一步墨迹变更                          |
-| `Redo()`                        | 重做上一步墨迹变更                          |
-| `CopySelected()`                | 复制选中的墨迹到剪贴板                      |
-| `CutSelected()`                 | 剪切选中的墨迹到剪贴板                      |
-| `Paste()`                       | 从剪贴板粘贴墨迹到画布中心                  |
-| `DeleteSelected()`              | 删除选中的墨迹                              |
-| `CloneSelected()`               | 克隆选中的墨迹并偏移显示                    |
-| `ResetTouchState()`             | 重置当前触摸状态并释放所有触摸捕获          |
-| `SwapHistory(...)`              | 交换撤销/重做历史栈，旧栈经 `out` 参数返回  |
-| `SetDocumentPage(ImageSource?)` | 设置/清除文档页面背景图像（传 `null` 清除） |
-| `ClearMultiTouchVisuals()`      | 清空进行中的多指笔画视觉                    |
+| 方法                             | 说明                                        |
+| -------------------------------- | ------------------------------------------- |
+| `Undo()`                         | 撤销上一步墨迹变更                          |
+| `Redo()`                         | 重做上一步墨迹变更                          |
+| `CopySelected()`                 | 复制选中的墨迹到剪贴板                      |
+| `CutSelected()`                  | 剪切选中的墨迹到剪贴板                      |
+| `DeleteSelected()`               | 删除选中的墨迹                              |
+| `StampCloneAt(Point)`            | 以点击点为副本包围盒中心，克隆盖章当前选区  |
+| `StampPasteAt(Point)`            | 以点击点为副本包围盒中心，粘贴剪贴板墨迹    |
+| `GetSelectionScreenBounds(Visual)` | 选区包围盒在指定坐标系下的矩形（无选区返回 null） |
+| `GetCanvasViewportBounds(UIElement)` | 可见视口在指定坐标系下的矩形             |
+| `ResetTouchState()`              | 重置当前触摸状态并释放所有触摸捕获          |
+| `SwapHistory(...)`               | 交换撤销/重做历史栈，旧栈经 `out` 参数返回  |
+| `SetDocumentPage(ImageSource?)`  | 设置/清除文档页面背景图像（传 `null` 清除） |
+| `ClearMultiTouchVisuals()`       | 清空进行中的多指笔画（视觉与笔迹）          |
 
 ## 许可证
 

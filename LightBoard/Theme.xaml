@@ -4,7 +4,7 @@
                   TileMode="Tile" Viewport="0,0,100,100" ViewportUnits="Absolute">
         <DrawingBrush.Drawing>
             <DrawingGroup RenderOptions.EdgeMode="Aliased">
-                <GeometryDrawing Brush="Black">
+                <GeometryDrawing Brush="#000000">
                     <GeometryDrawing.Geometry>
                         <RectangleGeometry Rect="0,0,100,100" />
                     </GeometryDrawing.Geometry>
@@ -12,7 +12,7 @@
 
                 <GeometryDrawing>
                     <GeometryDrawing.Pen>
-                        <Pen Brush="#444444" Thickness="1" />
+                        <Pen Brush="#222222" Thickness="1" />
                     </GeometryDrawing.Pen>
                     <GeometryDrawing.Geometry>
                         <GeometryGroup>

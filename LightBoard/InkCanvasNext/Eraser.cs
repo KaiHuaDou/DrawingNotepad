@@ -49,7 +49,7 @@ public partial class InkCanvasNext
             (var screenCenter, var radius) = Eraser.GetCircle(touches);
             eraser.Diameter = radius * 2 + 8;
 
-            var canvasCenter = GetCanvasCenter(touches.ToDictionary( ));
+            var canvasCenter = GetCanvasCenter(touches);
             eraser.Show(screenCenter);
             eraser.Update(canvasCenter);
         }
@@ -70,7 +70,7 @@ public partial class InkCanvasNext
         }
     }
 
-    private Point GetCanvasCenter(Dictionary<int, (TouchDevice Device, Point Position)> touches)
+    private Point GetCanvasCenter(IReadOnlyDictionary<int, (TouchDevice Device, Point Position)> touches)
     {
         if (touches.Count == 0)
         {

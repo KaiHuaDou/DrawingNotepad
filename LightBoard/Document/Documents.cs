@@ -45,11 +45,6 @@ public partial class App
 
 public partial class MainWindow
 {
-    private static bool IsDocumentFile(string fileName)
-    {
-        return Path.GetExtension(fileName).ToUpperInvariant( ) is ".PPTX" or ".PPT" or ".DOCX" or ".DOC" or ".XPS" or ".PDF";
-    }
-
     private void CloseDocumentViewer( )
     {
         // 先清空页面视图再释放 XPS，否则已渲染的页面会失效。

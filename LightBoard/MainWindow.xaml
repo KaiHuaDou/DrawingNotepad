@@ -154,9 +154,9 @@
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <RadioButton x:Name="DefaultThicknessRadio"
                                  MinWidth="3"
-                                 Checked="ThicknessRadioClick" IsChecked="True"
+                                 IsChecked="True"
                                  Style="{StaticResource SelectiveRadioStyle}"
-                                 GroupName="ThicknessGroup" />
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <RadioButton MinWidth="5"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
@@ -172,11 +172,13 @@
                                   Click="ShapeToggleClick" Tag="&#xEA3A;" />
                     <Border Width="76" Visibility="Hidden" />
                     <RadioButton x:Name="EraseStrokeRadio"
+                                 Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"
-                                 Click="ToolRadioChecked" GroupName="EditGroup" Tag="&#xED61;" />
+                                 GroupName="EditGroup" Tag="&#xED61;" />
                     <RadioButton x:Name="SelectRadio"
+                                 Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"
-                                 Click="ToolRadioChecked" GroupName="EditGroup" Tag="&#xEF20;" />
+                                 GroupName="EditGroup" Tag="&#xEF20;" />
                     <Button x:Name="TransparentModeButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="TransparentModeClick" Tag="&#xE729;" />
@@ -218,6 +220,7 @@
                          Background="{x:Null}"
                          BorderThickness="0"
                          ItemsSource="{x:Static local:App.Pages}"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          SelectionChanged="PagePreviewsBoxSelectionChanged"
                          VirtualizingPanel.IsVirtualizing="True">
                     <ListBox.ItemContainerStyle>

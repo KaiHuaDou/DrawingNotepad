@@ -9,6 +9,8 @@ namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
+    public int SelectedCount => selection.SelectedStrokes.Count;
+
     public StrokeCollection SelectedStrokes => new(selection.SelectedStrokes);
 
     public bool HasSelection => selection.HasSelection;
@@ -49,7 +51,6 @@ public partial class InkCanvasNext
         selection.Clear( );
     }
 
-    /// <summary>以点击点为副本包围盒中心，生成当前选区的一份克隆（可连续盖章，每次一个撤销单元）。</summary>
     public void StampCloneAt(Point point)
     {
         if (!HasSelection)
@@ -62,7 +63,6 @@ public partial class InkCanvasNext
         Canvas.Strokes.Add(clone);
     }
 
-    /// <summary>以点击点为副本包围盒中心，粘贴剪贴板中的墨迹（可连续盖章，每次一个撤销单元）。</summary>
     public void StampPasteAt(Point point)
     {
         if (!HasClipboardStrokes)

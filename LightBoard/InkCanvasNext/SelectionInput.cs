@@ -87,13 +87,7 @@ public partial class InkCanvasNext
         }
 
         // 空白处按下：清空选型并开始套索
-        selection.Clear( );
-        selectionGesture = SelectionGesture.Lasso;
-        lassoPath.Add(p);
-        lassoDragged = false;
-        lassoTester = Canvas.Strokes.GetIncrementalLassoHitTester(50);
-        lassoTester.SelectionChanged += OnLassoSelectionChanged;
-        lassoTester.AddPoints([ToStylusPoint(p)]);
+        BeginLasso(p);
     }
 
     private void UpdateMouseSelection(Point p)
@@ -107,15 +101,7 @@ public partial class InkCanvasNext
                 break;
 
             case SelectionGesture.Lasso:
-                if (Geometry.Distance2(p, lassoPath[^1]) < LassoPointDistance2)
-                {
-                    break;
-                }
-
-                lassoDragged = true;
-                lassoPath.Add(p);
-                lassoTester?.AddPoints([ToStylusPoint(p)]);
-                selection.InvalidateLasso(lassoPath);
+                UpdateLassoTrack(p);
                 break;
         }
     }
@@ -147,18 +133,50 @@ public partial class InkCanvasNext
     private void BeginSelectionTouch( )
     {
         ResetSelectionGesture( );
-        if (!selection.HasSelection || touches.Count == 0)
+        if (touches.Count == 0)
         {
             return;
         }
 
-        var (Device, Position) = touches.First( ).Value;
-        var canvasPos = Device.GetTouchPoint(Canvas).Position;
+        var canvasPos = touches.First( ).Value.Device.GetTouchPoint(Canvas).Position;
         selectionStartPoint = canvasPos;
         selectionLastPoint = canvasPos;
+
+        if (!selection.HasSelection)
+        {
+            BeginLasso(canvasPos);
+            return;
+        }
+
         selectionTarget = new StrokeCollection(selection.SelectedStrokes);
-        selectionGesture = touches.Count >= 2 ? SelectionGesture.Pinch : SelectionGesture.Move;
-        pinchInit = false;
+
+        if (touches.Count >= 2)
+        {
+            // 双指：直接进入缩放/旋转（连同平移），无需命中判定
+            selectionGesture = SelectionGesture.Pinch;
+            pinchInit = false;
+            return;
+        }
+
+        // 单指：命中手柄 → 缩放/旋转；选区内 → 移动；空白 → 触屏套索/点选
+        var handle = HitTestHandle(canvasPos);
+        if (handle != SelectionHandle.None)
+        {
+            selectionHandle = handle;
+            selectionGesture = handle == SelectionHandle.Rotate ? SelectionGesture.Rotate : SelectionGesture.Scale;
+            var bounds = selection.Bounds;
+            selectionAnchor = GetAnchorFor(handle, bounds);
+            selectionCenter = new Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2);
+            return;
+        }
+
+        if (selection.Bounds.Contains(canvasPos))
+        {
+            selectionGesture = SelectionGesture.Move;
+            return;
+        }
+
+        BeginLasso(canvasPos);
     }
 
     private void UpdateSelectionTouch( )
@@ -185,10 +203,15 @@ public partial class InkCanvasNext
             return;
         }
 
-        if (selectionGesture == SelectionGesture.Move)
+        if (selectionGesture == SelectionGesture.Lasso)
         {
-            var (Device, Position) = touches.First( ).Value;
-            UpdateSelectionTransform(Device.GetTouchPoint(Canvas).Position);
+            UpdateLassoTrack(touches.First( ).Value.Device.GetTouchPoint(Canvas).Position);
+            return;
+        }
+
+        if (selectionGesture is SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate)
+        {
+            UpdateSelectionTransform(touches.First( ).Value.Device.GetTouchPoint(Canvas).Position);
         }
     }
 
@@ -287,7 +310,9 @@ public partial class InkCanvasNext
         ApplyTransformDelta(newAbs);
     }
 
-    /// <summary>以绝对矩阵为基准施加相对上一帧的增量变换，避免浮点漂移累积。</summary>
+    /// <summary>
+    /// 以绝对矩阵为基准施加相对上一帧的增量变换，避免浮点漂移累积。
+    /// </summary>
     private void ApplyTransformDelta(Matrix newAbs)
     {
         // 奇异矩阵不可逆（如双指完全重合导致缩放为 0）：跳过本帧，否则 Invert 抛异常。
@@ -319,8 +344,10 @@ public partial class InkCanvasNext
         if (selectionTarget is { Count: > 0 } && !IsNearIdentity(selectionAbs))
         {
             PushChange(new TransformChanges(selectionTarget, selectionAbs));
-            // 变换不触发 StrokesChanged，手动上报以更新外部脏标记
-            StrokesChanged?.Invoke(this, EventArgs.Empty);
+            // 变换不触发 StrokesChanged，手动上报以更新外部脏标记（无增删，仅 TransformOnly）
+            StrokesChanged?.Invoke(
+                this,
+                new InkCanvasStrokesChangedEventArgs([], [], transformOnly: true));
         }
     }
 
@@ -359,6 +386,32 @@ public partial class InkCanvasNext
     }
 
     // ---------- 套索 ----------
+
+    /// <summary>空白处按下（鼠标/触摸共用）：清空当前选型，以落点为起点开始增量套索测试。</summary>
+    private void BeginLasso(Point p)
+    {
+        selection.Clear( );
+        selectionGesture = SelectionGesture.Lasso;
+        lassoPath.Add(p);
+        lassoDragged = false;
+        lassoTester = Canvas.Strokes.GetIncrementalLassoHitTester(50);
+        lassoTester.SelectionChanged += OnLassoSelectionChanged;
+        lassoTester.AddPoints([ToStylusPoint(p)]);
+    }
+
+    /// <summary>套索轨迹追加（鼠标/触摸共用）：去抖后累积路径点并更新命中测试与套索视觉。</summary>
+    private void UpdateLassoTrack(Point p)
+    {
+        if (Geometry.Distance2(p, lassoPath[^1]) < LassoPointDistance2)
+        {
+            return;
+        }
+
+        lassoDragged = true;
+        lassoPath.Add(p);
+        lassoTester?.AddPoints([ToStylusPoint(p)]);
+        selection.InvalidateLasso(lassoPath);
+    }
 
     private void OnLassoSelectionChanged(object? sender, LassoSelectionChangedEventArgs e)
     {

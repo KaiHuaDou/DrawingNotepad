@@ -34,7 +34,9 @@ internal sealed class StrokeChanges(StrokeCollection added, StrokeCollection rem
     }
 }
 
-/// <summary>一次手势（移动/缩放/旋转）的整段绝对变换，作为单个撤销单元。</summary>
+/// <summary>
+/// 一次手势（移动/缩放/旋转）的整段绝对变换，作为单个撤销单元。
+/// </summary>
 internal sealed class TransformChanges(StrokeCollection target, Matrix delta) : IHistoryChange
 {
     public void Apply(InkCanvasNext owner)
@@ -48,6 +50,25 @@ internal sealed class TransformChanges(StrokeCollection target, Matrix delta) : 
         inverse.Invert( );
         target.Transform(inverse, false);
     }
+}
+
+/// <summary>
+/// 结构性变化携带 Added/Removed；选区整体变换（移动/缩放/旋转）无增删，
+/// </summary>
+public sealed class InkCanvasStrokesChangedEventArgs : EventArgs
+{
+    internal InkCanvasStrokesChangedEventArgs(StrokeCollection added, StrokeCollection removed, bool transformOnly)
+    {
+        Added = added;
+        Removed = removed;
+        TransformOnly = transformOnly;
+    }
+
+    public StrokeCollection Added { get; }
+
+    public StrokeCollection Removed { get; }
+
+    public bool TransformOnly { get; }
 }
 
 public sealed class HistorySnapshot
@@ -84,7 +105,9 @@ public partial class InkCanvasNext
 
     private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
     {
-        StrokesChanged?.Invoke(this, EventArgs.Empty);
+        StrokesChanged?.Invoke(
+            this,
+            new InkCanvasStrokesChangedEventArgs(e.Added, e.Removed, transformOnly: false));
 
         if (e.Removed.Count > 0)
         {
@@ -107,9 +130,16 @@ public partial class InkCanvasNext
         }
 
         applyingUndoRedo = true;
-        position--;
-        history[position].Revert(this);
-        applyingUndoRedo = false;
+        try
+        {
+            position--;
+            history[position].Revert(this);
+        }
+        finally
+        {
+            // 无论 Revert 成败都复位，否则后续变更会永远不再入栈（静默失去撤销能力）
+            applyingUndoRedo = false;
+        }
 
         selection.RecomputeBounds( );
         selection.Invalidate( );
@@ -125,10 +155,16 @@ public partial class InkCanvasNext
         }
 
         applyingUndoRedo = true;
-        var change = history[position];
-        position++;
-        change.Apply(this);
-        applyingUndoRedo = false;
+        try
+        {
+            var change = history[position];
+            position++;
+            change.Apply(this);
+        }
+        finally
+        {
+            applyingUndoRedo = false;
+        }
 
         selection.RecomputeBounds( );
         selection.Invalidate( );

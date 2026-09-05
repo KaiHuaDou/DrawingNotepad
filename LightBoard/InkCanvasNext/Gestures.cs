@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 
 using static InkCanvasNext.Geometry;
@@ -44,13 +45,13 @@ public partial class InkCanvasNext
     {
         (var first, var second) = GetMajorTouches( );
         var distance = second is null ? 0 : Distance(first!.Value, second.Value);
-        var ratio = distance0 > 0 && distance > 0
+        var k = distance0 > 0 && distance > 0
             ? distance / distance0
             : 1.0;
 
-        ratio = Smooth(ratio);
+        k = Smooth(k);
 
-        var targetScale = Math.Clamp(initialScale * ratio, 0.1, 10.0);
+        var targetScale = Math.Clamp(initialScale * k, MinScale, MaxScale);
 
         canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = targetScale;
         eraser.Scale = targetScale;
@@ -82,6 +83,30 @@ public partial class InkCanvasNext
         CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
 
         panPoint0 = first!.Value;
+    }
+
+    private void ZoomAtCursor(MouseWheelEventArgs e)
+    {
+        var factor = e.Delta > 0 ? 1.1 : 1.0 / 1.1;
+        var target = Math.Clamp(currentScale * factor, MinScale, MaxScale);
+        var k = target / currentScale;
+        if (Math.Abs(k - 1.0) < 1e-9)
+        {
+            return;
+        }
+
+        var cursor = e.GetPosition(this);
+        var newOffsetX = CanvasScroll.HorizontalOffset * k
+            + (cursor.X - viewportOrigin.X) * (k - 1);
+        var newOffsetY = CanvasScroll.VerticalOffset * k
+            + (cursor.Y - viewportOrigin.Y) * (k - 1);
+
+        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = target;
+        eraser.Scale = target;
+        currentScale = target;
+
+        CanvasScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, CanvasScroll.ScrollableWidth));
+        CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

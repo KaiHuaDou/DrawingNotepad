@@ -62,7 +62,6 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         Bounds = result;
     }
 
-    /// <summary>从画布移除的笔画需从选型中剔除（删除/撤销/切页等）。</summary>
     public void Prune(StrokeCollection canvasStrokes)
     {
         if (selectedStrokes.Count == 0)
@@ -83,7 +82,6 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         owner.RaiseSelectionChanged( );
     }
 
-    /// <summary>刷新选择视觉；halo 仅在选择确定（无进行中手势）时绘制，手势期间传 false 逐帧跳过克隆开销。</summary>
     public void Invalidate(bool halo = true)
     {
         visual.Invalidate(Bounds, selectedStrokes, null, halo);

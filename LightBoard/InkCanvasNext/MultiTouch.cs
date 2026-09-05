@@ -82,6 +82,8 @@ public partial class InkCanvasNext
         {
             strokeVisual.Cleanup( );
         }
+
+        multiTouchStrokes.Clear( );
     }
 }
 
