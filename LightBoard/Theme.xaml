@@ -172,11 +172,16 @@
         </Setter>
     </Style>
     <Style x:Key="ContainerStyle" TargetType="{x:Type Border}">
-        <Setter Property="Padding" Value="3" />
+        <Setter Property="Padding" Value="5" />
         <Setter Property="Panel.ZIndex" Value="36" />
         <Setter Property="Background">
             <Setter.Value>
-                <SolidColorBrush Opacity="0.8" Color="#25313D" />
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <LinearGradientBrush.GradientStops>
+                        <GradientStop Offset="0" Color="#33C5EBFF" />
+                        <GradientStop Offset="1" Color="#3381D8FF" />
+                    </LinearGradientBrush.GradientStops>
+                </LinearGradientBrush>
             </Setter.Value>
         </Setter>
     </Style>

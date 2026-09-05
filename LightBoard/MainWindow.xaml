@@ -32,9 +32,9 @@
                             SelectionChanged="CanvasNextSelectionChanged"
                             StrokesChanged="CanvasNextStrokesChanged" />
         <Border x:Name="LeftBorder"
-                HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                Margin="5,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
-                CornerRadius="0,10,0,0">
+                CornerRadius="10,10,10,10">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="LeftTransform" />
             </Border.RenderTransform>
@@ -90,15 +90,58 @@
             </Border>
         </Popup>
         <Border x:Name="CenterBorder"
-                Height="48"
-                HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Height="53"
+                Margin="0,0,0,5" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
-                CornerRadius="10,10,0,0">
+                CornerRadius="10,10,10,10">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="CenterTransform" />
             </Border.RenderTransform>
-            <StackPanel>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <StackPanel Orientation="Horizontal">
+                    <Border Width="43" Visibility="Hidden" />
+                    <RadioButton MinWidth="1"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton x:Name="DefaultThicknessRadio"
+                                 MinWidth="3"
+                                 IsChecked="True"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton MinWidth="5"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton MinWidth="10"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <Border Width="43" Visibility="Hidden" />
+                    <ToggleButton x:Name="LineToggle"
+                                  Style="{StaticResource ToggleStyle}"
+                                  Click="ShapeToggleClick" Tag="&#xE73C;" />
+                    <ToggleButton x:Name="CircleToggle"
+                                  Style="{StaticResource ToggleStyle}"
+                                  Click="ShapeToggleClick" Tag="&#xEA3A;" />
+                    <Border Width="76" Visibility="Hidden" />
+                    <RadioButton x:Name="EraseStrokeRadio"
+                                 Checked="ToolRadioChecked"
+                                 Style="{StaticResource RadioStyle}"
+                                 GroupName="EditGroup" Tag="&#xED61;" />
+                    <RadioButton x:Name="SelectRadio"
+                                 Checked="ToolRadioChecked"
+                                 Style="{StaticResource RadioStyle}"
+                                 GroupName="EditGroup" Tag="&#xEF20;" />
+                    <Button x:Name="TransparentModeButton"
+                            Style="{StaticResource ButtonStyle}"
+                            Click="TransparentModeClick" Tag="&#xE729;" />
+                    <ToggleButton x:Name="PasteButton"
+                                  Style="{StaticResource ToggleStyle}"
+                                  Click="PasteClick" Tag="&#xE77F;" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#1E1E1E"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
@@ -147,51 +190,12 @@
                                   Style="{StaticResource ToggleStyle}"
                                   Click="MoreToggleClick" Tag="&#xE712;" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <Border Width="43" Visibility="Hidden" />
-                    <RadioButton MinWidth="1"
-                                 Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <RadioButton x:Name="DefaultThicknessRadio"
-                                 MinWidth="3"
-                                 IsChecked="True"
-                                 Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <RadioButton MinWidth="5"
-                                 Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <RadioButton MinWidth="10"
-                                 Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <Border Width="43" Visibility="Hidden" />
-                    <ToggleButton x:Name="LineToggle"
-                                  Style="{StaticResource ToggleStyle}"
-                                  Click="ShapeToggleClick" Tag="&#xE73C;" />
-                    <ToggleButton x:Name="CircleToggle"
-                                  Style="{StaticResource ToggleStyle}"
-                                  Click="ShapeToggleClick" Tag="&#xEA3A;" />
-                    <Border Width="76" Visibility="Hidden" />
-                    <RadioButton x:Name="EraseStrokeRadio"
-                                 Checked="ToolRadioChecked"
-                                 Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xED61;" />
-                    <RadioButton x:Name="SelectRadio"
-                                 Checked="ToolRadioChecked"
-                                 Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xEF20;" />
-                    <Button x:Name="TransparentModeButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="TransparentModeClick" Tag="&#xE729;" />
-                    <ToggleButton x:Name="PasteButton"
-                                  Style="{StaticResource ToggleStyle}"
-                                  Click="PasteClick" Tag="&#xE77F;" />
-                </StackPanel>
-            </StackPanel>
+            </Grid>
         </Border>
         <Border x:Name="RightBorder"
-                HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Margin="0,0,5,5" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
-                CornerRadius="10,0,0,0">
+                CornerRadius="10,10,10,10">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="RightTransform" />
             </Border.RenderTransform>

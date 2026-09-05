@@ -8,7 +8,15 @@ internal static partial class NativeMethods
 {
     [LibraryImport("user32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    public static partial void SetForegroundWindow(IntPtr hWnd);
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool SetForegroundWindow(IntPtr hWnd);
+
+    private const int SW_RESTORE = 9;
 
     public static void SwitchTo(string processName)
     {
@@ -23,6 +31,7 @@ internal static partial class NativeMethods
 
         if (hWnd != IntPtr.Zero)
         {
+            ShowWindow(hWnd, SW_RESTORE);
             SetForegroundWindow(hWnd);
         }
     }
