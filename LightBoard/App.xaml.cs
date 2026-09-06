@@ -23,7 +23,7 @@ public partial class App : Application, ISingleInstance
     public static int PageIndex
     {
 
-        get => field;
+        get;
         private set
         {
             field = value;

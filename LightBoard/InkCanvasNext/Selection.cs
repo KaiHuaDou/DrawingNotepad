@@ -14,13 +14,13 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
     private readonly SelectionVisual visual = visual;
     private readonly HashSet<Stroke> selectedStrokes = [];
 
-    public IReadOnlyCollection<Stroke> SelectedStrokes => selectedStrokes;
+    internal IReadOnlyCollection<Stroke> SelectedStrokes => selectedStrokes;
 
-    public bool HasSelection => selectedStrokes.Count > 0;
+    internal bool HasSelection => selectedStrokes.Count > 0;
 
-    public Rect Bounds { get; private set; } = Rect.Empty;
+    internal Rect Bounds { get; private set; } = Rect.Empty;
 
-    public void SetStrokes(IEnumerable<Stroke> strokes)
+    internal void SetStrokes(IEnumerable<Stroke> strokes)
     {
         selectedStrokes.Clear( );
         foreach (var s in strokes)
@@ -36,7 +36,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         owner.RaiseSelectionChanged( );
     }
 
-    public void Clear( )
+    internal void Clear( )
     {
         if (selectedStrokes.Count == 0)
         {
@@ -49,7 +49,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         owner.RaiseSelectionChanged( );
     }
 
-    public void RecomputeBounds( )
+    internal void RecomputeBounds( )
     {
         // Rect 是结构体：经由属性调用实例方法 Union 只会修改 getter 返回的临时副本（静默丢弃），
         // 必须用局部变量累计后一次性赋回属性，否则 Bounds 恒为 Rect.Empty、选择框/手柄永不渲染
@@ -62,7 +62,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         Bounds = result;
     }
 
-    public void Prune(StrokeCollection canvasStrokes)
+    internal void Prune(StrokeCollection canvasStrokes)
     {
         if (selectedStrokes.Count == 0)
         {
@@ -82,12 +82,12 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         owner.RaiseSelectionChanged( );
     }
 
-    public void Invalidate(bool halo = true)
+    internal void Invalidate(bool halo = true)
     {
         visual.Invalidate(Bounds, selectedStrokes, null, halo);
     }
 
-    public void InvalidateLasso(IReadOnlyList<Point>? lasso)
+    internal void InvalidateLasso(IReadOnlyList<Point>? lasso)
     {
         // 套索进行中：选择尚未确定，不绘制 halo
         visual.Invalidate(Bounds, selectedStrokes, lasso, halo: false);

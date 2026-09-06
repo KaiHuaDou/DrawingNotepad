@@ -6,34 +6,83 @@ using System.Windows.Media;
 
 namespace InkCanvasNext;
 
+/// <summary>
+/// 画布编辑工具模式。
+/// </summary>
 public enum InkCanvasNextMode
 {
+    /// <summary>
+    /// 使用默认笔触绘制墨迹。
+    /// </summary>
     Ink,
+    /// <summary>
+    /// 按笔画擦除墨迹。
+    /// </summary>
     EraseStroke,
+    /// <summary>
+    /// 按区域擦除墨迹。
+    /// </summary>
     EraseArea,
+    /// <summary>
+    /// 选择墨迹笔画。
+    /// </summary>
     Select,
+    /// <summary>
+    /// 绘制直线。
+    /// </summary>
     Line,
+    /// <summary>
+    /// 绘制圆形。
+    /// </summary>
     Circle,
+    /// <summary>
+    /// 使用高亮笔触绘制墨迹。
+    /// </summary>
     Highlighter
 }
 
+/// <summary>
+/// 盖章动作（克隆选区或粘贴剪贴板墨迹）。
+/// </summary>
 public enum StampAction
 {
+    /// <summary>
+    /// 无盖章动作。
+    /// </summary>
     None,
+    /// <summary>
+    /// 克隆选区墨迹。
+    /// </summary>
     Clone,
+    /// <summary>
+    /// 粘贴剪贴板中的墨迹。
+    /// </summary>
     Paste
 }
 
+/// <summary>
+/// 鼠标滚轮动作模式。
+/// </summary>
 public enum MouseWheelAction
 {
+    /// <summary>
+    /// 滚动画布。
+    /// </summary>
     Scroll,
+    /// <summary>
+    /// 缩放画布。
+    /// </summary>
     Zoom,
+    /// <summary>
+    /// 忽略鼠标滚轮。
+    /// </summary>
     None
 }
+/// <summary>
+/// 支持绘制、擦除、选择、直线、圆形、高亮等模式的墨迹画布控件。
+/// </summary>
 public partial class InkCanvasNext : UserControl
 {
-#pragma warning disable IDE1006
-
     private static readonly DependencyPropertyKey CanRedoPropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(CanRedo),
@@ -47,13 +96,19 @@ public partial class InkCanvasNext : UserControl
             typeof(bool),
             typeof(InkCanvasNext),
             new PropertyMetadata(false));
-
-#pragma warning restore IDE1006
-
+    /// <summary>
+    /// 标识 CanRedo 依赖项属性。
+    /// </summary>
     public static readonly DependencyProperty CanRedoProperty = CanRedoPropertyKey.DependencyProperty;
 
+    /// <summary>
+    /// 标识 CanUndo 依赖项属性。
+    /// </summary>
     public static readonly DependencyProperty CanUndoProperty = CanUndoPropertyKey.DependencyProperty;
 
+    /// <summary>
+    /// 标识 DefaultDrawingAttributes 依赖项属性。
+    /// </summary>
     public static readonly DependencyProperty DefaultDrawingAttributesProperty =
         DependencyProperty.Register(
             nameof(DefaultDrawingAttributes),
@@ -61,6 +116,9 @@ public partial class InkCanvasNext : UserControl
             typeof(InkCanvasNext),
             new PropertyMetadata(OnDefaultDrawingAttributesChanged));
 
+    /// <summary>
+    /// 标识 Mode 依赖项属性。
+    /// </summary>
     public static readonly DependencyProperty ModeProperty =
         DependencyProperty.Register(
             nameof(Mode),
@@ -68,6 +126,9 @@ public partial class InkCanvasNext : UserControl
             typeof(InkCanvasNext),
             new PropertyMetadata(InkCanvasNextMode.Ink, OnModeChanged));
 
+    /// <summary>
+    /// 标识 EraserDiameter 依赖项属性。
+    /// </summary>
     public static readonly DependencyProperty EraserDiameterProperty =
         DependencyProperty.Register(
             nameof(EraserDiameter),
@@ -75,6 +136,9 @@ public partial class InkCanvasNext : UserControl
             typeof(InkCanvasNext),
             new PropertyMetadata(50.0));
 
+    /// <summary>
+    /// 标识 MouseWheelAction 依赖项属性。
+    /// </summary>
     public static readonly DependencyProperty MouseWheelActionProperty =
         DependencyProperty.Register(
             nameof(MouseWheelAction),
@@ -91,6 +155,9 @@ public partial class InkCanvasNext : UserControl
 
     private readonly SelectionController selection;
 
+    /// <summary>
+    /// 初始化 InkCanvasNext 控件并装配内部画布与选择控制器。
+    /// </summary>
     public InkCanvasNext( )
     {
         InitializeComponent( );
@@ -127,53 +194,88 @@ public partial class InkCanvasNext : UserControl
         SetupShapePreview( );
     }
 
+    /// <summary>
+    /// CanRedo 值发生变化时触发。
+    /// </summary>
     public event EventHandler<DependencyPropertyChangedEventArgs>? CanRedoChanged;
 
+    /// <summary>
+    /// CanUndo 值发生变化时触发。
+    /// </summary>
     public event EventHandler<DependencyPropertyChangedEventArgs>? CanUndoChanged;
 
+    /// <summary>
+    /// 画布上的墨迹笔画集合发生变化时触发。
+    /// </summary>
     public event EventHandler<InkCanvasStrokesChangedEventArgs>? StrokesChanged;
 
+    /// <summary>
+    /// 当前选区发生变化时触发。
+    /// </summary>
     public event EventHandler? SelectionChanged;
 
-    /// <summary>视口（滚动/缩放）或选区包围盒变化，用于外部工具栏跟随。</summary>
+    /// <summary>
+    /// 视口（滚动/缩放）或选区包围盒变化，用于外部工具栏跟随。
+    /// </summary>
     public event EventHandler? ViewOrSelectionChanged;
 
+    /// <summary>
+    /// 获取是否存在可重做的操作。
+    /// </summary>
     public bool CanRedo
     {
         get => (bool) GetValue(CanRedoProperty);
         private set => SetValue(CanRedoPropertyKey, value);
     }
 
+    /// <summary>
+    /// 获取是否存在可撤销的操作。
+    /// </summary>
     public bool CanUndo
     {
         get => (bool) GetValue(CanUndoProperty);
         private set => SetValue(CanUndoPropertyKey, value);
     }
 
+    /// <summary>
+    /// 获取或设置默认的墨迹绘制属性。
+    /// </summary>
     public DrawingAttributes DefaultDrawingAttributes
     {
         get => (DrawingAttributes) GetValue(DefaultDrawingAttributesProperty);
         set => SetValue(DefaultDrawingAttributesProperty, value);
     }
 
+    /// <summary>
+    /// 获取或设置当前编辑工具模式。
+    /// </summary>
     public InkCanvasNextMode Mode
     {
         get => (InkCanvasNextMode) GetValue(ModeProperty);
         set => SetValue(ModeProperty, value);
     }
 
+    /// <summary>
+    /// 获取或设置橡皮擦的直径（像素）。
+    /// </summary>
     public double EraserDiameter
     {
         get => (double) GetValue(EraserDiameterProperty);
         set => SetValue(EraserDiameterProperty, value);
     }
 
+    /// <summary>
+    /// 获取或设置鼠标滚轮的响应方式。
+    /// </summary>
     public MouseWheelAction MouseWheelAction
     {
         get => (MouseWheelAction) GetValue(MouseWheelActionProperty);
         set => SetValue(MouseWheelActionProperty, value);
     }
 
+    /// <summary>
+    /// 获取或设置画布上的墨迹笔画集合。
+    /// </summary>
     public StrokeCollection Strokes
     {
         get => (StrokeCollection) GetValue(StrokesProperty);
@@ -183,6 +285,9 @@ public partial class InkCanvasNext : UserControl
     private const double MinScale = 0.1;
     private const double MaxScale = 10.0;
 
+    /// <summary>
+    /// 获取或设置画布缩放比例，范围 0.1 ~ 10。
+    /// </summary>
     public double CurrentScale
     {
         get => currentScale;
@@ -195,25 +300,28 @@ public partial class InkCanvasNext : UserControl
         }
     }
 
+    /// <summary>
+    /// 获取或设置画布的水平滚动偏移量。
+    /// </summary>
     public double OffsetX
     {
         get => CanvasScroll.HorizontalOffset;
         set => CanvasScroll.ScrollToHorizontalOffset(value);
     }
 
+    /// <summary>
+    /// 获取或设置画布的垂直滚动偏移量。
+    /// </summary>
     public double OffsetY
     {
         get => CanvasScroll.VerticalOffset;
         set => CanvasScroll.ScrollToVerticalOffset(value);
     }
 
-    /// <summary>当前盖章模式（克隆/粘贴）；由外部按钮 toggle，本控件只读消费。</summary>
+    /// <summary>
+    /// 当前盖章模式（克隆/粘贴）。
+    /// </summary>
     public StampAction StampAction { get; set; } = StampAction.None;
-
-#pragma warning disable CA1822 // 无实例依赖，但类名与命名空间同名，静态访问在外部会与命名空间冲突，保持实例属性
-    /// <summary>当前剪贴板是否含可粘贴的墨迹数据。</summary>
-    public bool HasClipboardStrokes => Clipboard.ContainsData(StrokeCollection.InkSerializedFormat);
-#pragma warning restore CA1822
 
     /// <summary>
     /// 把选区包围盒（内容坐标）变换到 <paramref name="relativeTo"/> 坐标系返回；无选区或不可用返回 null。
@@ -258,7 +366,9 @@ public partial class InkCanvasNext : UserControl
         }
     }
 
-    /// <summary>供 internal 协作对象（SelectionController 等）回调，外部消费者请订阅对应事件。</summary>
+    /// <summary>
+    /// 供 internal 协作对象（SelectionController 等）回调，外部消费者请订阅对应事件。
+    /// </summary>
     internal void RaiseSelectionChanged( )
     {
         SelectionChanged?.Invoke(this, EventArgs.Empty);
@@ -298,8 +408,10 @@ public partial class InkCanvasNext : UserControl
         ApplyModeToEditing(mode);
     }
 
-    /// <summary>当前工具是否需要在 EvalDraw/Draw 期间抢先捕获触点（区域擦除需要，Ink 走原生不需要）。
-    /// 手势层（SetState）经由这一唯一接缝感知工具差异，勿在状态机内直接引用具体模式。</summary>
+    /// <summary>
+    /// 当前工具是否需要在 EvalDraw/Draw 期间抢先捕获触点（区域擦除需要，Ink 走原生不需要）。
+    /// 手势层（SetState）经由这一唯一接缝感知工具差异，勿在状态机内直接引用具体模式。
+    /// </summary>
     private bool WantsPreemptiveDrawCapture( )
     {
         return Mode == InkCanvasNextMode.EraseArea;
@@ -325,14 +437,12 @@ public partial class InkCanvasNext : UserControl
                 ConfigureSelectMode(false);
                 break;
             case InkCanvasNextMode.Select:
-                // 关键：关闭 WPF 内置选择，改用自绘选择层
                 Canvas.EditingMode = InkCanvasEditingMode.None;
                 ConfigureSelectMode(true);
                 break;
         }
     }
 
-    /// <summary>切换选择视觉的激活状态；离开 Select 时清空选型并取消进行中的手势。</summary>
     private void ConfigureSelectMode(bool inSelect)
     {
         if (inSelect)
@@ -362,6 +472,9 @@ public partial class InkCanvasNext : UserControl
         ClearHistory( );
     }
 
+    /// <summary>
+    /// 设置文档背景页面；传入 null 时移除页面。
+    /// </summary>
     public void SetDocumentPage(ImageSource? page)
     {
         DocumentHost.Child = page is null ? null : new Image { Source = page };

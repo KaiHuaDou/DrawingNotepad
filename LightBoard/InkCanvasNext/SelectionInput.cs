@@ -74,14 +74,14 @@ public partial class InkCanvasNext
                 var b = selection.Bounds;
                 selectionAnchor = GetAnchorFor(handle, b);
                 selectionCenter = new Point(b.Left + b.Width / 2, b.Top + b.Height / 2);
-                selectionTarget = new StrokeCollection(selection.SelectedStrokes);
+                selectionTarget = [with(selection.SelectedStrokes)];
                 return;
             }
 
             if (selection.Bounds.Contains(p))
             {
                 selectionGesture = SelectionGesture.Move;
-                selectionTarget = new StrokeCollection(selection.SelectedStrokes);
+                selectionTarget = [with(selection.SelectedStrokes)];
                 return;
             }
         }
@@ -148,7 +148,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        selectionTarget = new StrokeCollection(selection.SelectedStrokes);
+        selectionTarget = [with(selection.SelectedStrokes)];
 
         if (touches.Count >= 2)
         {
@@ -193,7 +193,7 @@ public partial class InkCanvasNext
             selectionGesture = SelectionGesture.Pinch;
             pinchInit = false;
             selectionAbs = Matrix.Identity;
-            selectionTarget = new StrokeCollection(selection.SelectedStrokes);
+            selectionTarget = [with(selection.SelectedStrokes)];
             return;
         }
 
@@ -432,11 +432,8 @@ public partial class InkCanvasNext
     private void EndLasso( )
     {
         lassoTester?.EndHitTesting( );
-        if (lassoTester is not null)
-        {
-            lassoTester.SelectionChanged -= OnLassoSelectionChanged;
-            lassoTester = null;
-        }
+        lassoTester?.SelectionChanged -= OnLassoSelectionChanged;
+        lassoTester = null;
 
         lassoPath.Clear( );
         selection.InvalidateLasso(null);

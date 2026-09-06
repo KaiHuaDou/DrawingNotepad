@@ -19,10 +19,13 @@ public partial class InkCanvasNext
     /// 3. 实际情况：防止跳变即可，因此允许 Hack。<br />
     /// 4. 变通方案：OrderedDictionary、手动维护前两根手指。
     /// </summary>
-    private readonly OrderedDictionary<int, (TouchDevice Device, Point Position)> touches = new(20);
+    private readonly OrderedDictionary<int, (TouchDevice Device, Point Position)> touches = [with(20)];
     private readonly Dictionary<int, Point> touchStarts = [];
     private bool releasingCaptures;
 
+    /// <summary>
+    /// 重置触摸输入状态：释放全部触摸捕获、清空触点并取消进行中的手势。
+    /// </summary>
     public void ResetTouchState( )
     {
         releasingCaptures = true;

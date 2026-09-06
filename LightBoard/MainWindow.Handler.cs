@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -55,8 +56,6 @@ public partial class MainWindow
         RightBorder.BeginAnimation(HeightProperty, heightAnimation);
     }
 
-#pragma warning disable IDE0060
-
     private void CanvasNextCanRedoChanged(object o, DependencyPropertyChangedEventArgs e)
     {
         RedoButton.IsEnabled = CanvasNext.CanRedo;
@@ -66,8 +65,6 @@ public partial class MainWindow
     {
         UndoButton.IsEnabled = CanvasNext.CanUndo;
     }
-
-#pragma warning restore IDE0060
 
     private void CanvasNextSelectionChanged(object o, EventArgs e)
     {
@@ -226,7 +223,7 @@ public partial class MainWindow
     {
         if (PasteButton.IsChecked == true)
         {
-            if (!CanvasNext.HasClipboardStrokes)
+            if (!Clipboard.ContainsData(StrokeCollection.InkSerializedFormat))
             {
                 PasteButton.IsChecked = false;
                 return;

@@ -18,16 +18,16 @@ internal interface IHistoryChange
 
 internal sealed class StrokeChanges(StrokeCollection added, StrokeCollection removed) : IHistoryChange
 {
-    public StrokeCollection Added { get; } = added;
-    public StrokeCollection Removed { get; } = removed;
+    internal StrokeCollection Added { get; } = added;
+    internal StrokeCollection Removed { get; } = removed;
 
-    public void Apply(InkCanvasNext owner)
+    void IHistoryChange.Apply(InkCanvasNext owner)
     {
         owner.Canvas.Strokes.Remove(Removed);
         owner.Canvas.Strokes.Add(Added);
     }
 
-    public void Revert(InkCanvasNext owner)
+    void IHistoryChange.Revert(InkCanvasNext owner)
     {
         owner.Canvas.Strokes.Remove(Added);
         owner.Canvas.Strokes.Add(Removed);
@@ -39,12 +39,12 @@ internal sealed class StrokeChanges(StrokeCollection added, StrokeCollection rem
 /// </summary>
 internal sealed class TransformChanges(StrokeCollection target, Matrix delta) : IHistoryChange
 {
-    public void Apply(InkCanvasNext owner)
+    void IHistoryChange.Apply(InkCanvasNext owner)
     {
         target.Transform(delta, false);
     }
 
-    public void Revert(InkCanvasNext owner)
+    void IHistoryChange.Revert(InkCanvasNext owner)
     {
         var inverse = delta;
         inverse.Invert( );
@@ -122,6 +122,9 @@ public partial class InkCanvasNext
         PushChange(new StrokeChanges(e.Added, e.Removed));
     }
 
+    /// <summary>
+    /// 撤销上一步操作。
+    /// </summary>
     public void Undo( )
     {
         if (position == 0)
@@ -141,12 +144,12 @@ public partial class InkCanvasNext
             applyingUndoRedo = false;
         }
 
-        selection.RecomputeBounds( );
-        selection.Invalidate( );
-        UpdateCanUndoRedo( );
-        RaiseViewOrSelectionChanged( );
+        UndoRedoRefresh( );
     }
 
+    /// <summary>
+    /// 重做已撤销的操作。
+    /// </summary>
     public void Redo( )
     {
         if (position >= history.Count)
@@ -166,6 +169,10 @@ public partial class InkCanvasNext
             applyingUndoRedo = false;
         }
 
+        UndoRedoRefresh( );
+    }
+    private void UndoRedoRefresh( )
+    {
         selection.RecomputeBounds( );
         selection.Invalidate( );
         UpdateCanUndoRedo( );
@@ -197,6 +204,9 @@ public partial class InkCanvasNext
         }
     }
 
+    /// <summary>
+    /// 导出当前历史快照到 <paramref name="old"/>，并用 <paramref name="new"/> 替换现有历史。
+    /// </summary>
     public void SwapHistory(out HistorySnapshot? old, HistorySnapshot? @new)
     {
         old = history.Count > 0 ? new HistorySnapshot(history.ToArray( ), position) : null;

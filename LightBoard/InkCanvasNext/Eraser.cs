@@ -91,13 +91,13 @@ public partial class InkCanvasNext
 
 internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
 {
-    public StrokeChanges StrokeChanges { get; } = new([], []);
+    internal StrokeChanges StrokeChanges { get; } = new([], []);
 
-    public double Diameter { get; set; } = 50.0;
+    internal double Diameter { get; set; } = 50.0;
 
-    public double Scale { get; set; } = 1.0;
+    internal double Scale { get; set; } = 1.0;
 
-    public bool Active { get; private set; }
+    internal bool Active { get; private set; }
 
     private double LogicalDiameter => Math.Max(Diameter / Scale, 1.0);
 
@@ -106,7 +106,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
     private double hitTesterDiameter;
     private const double RebuildThreshold = 0.5;
 
-    public void Show(Point screenPosition)
+    internal void Show(Point screenPosition)
     {
         feedback.Width = Diameter;
         feedback.Height = Diameter;
@@ -115,7 +115,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
         feedback.Visibility = Visibility.Visible;
     }
 
-    public void Start(Point canvasPosition)
+    internal void Start(Point canvasPosition)
     {
         if (Active)
         {
@@ -128,7 +128,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
         CreateHitTester(canvasPosition);
     }
 
-    public void Move(Point canvasPosition)
+    internal void Move(Point canvasPosition)
     {
         if (!Active)
         {
@@ -138,7 +138,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
         hitTester?.AddPoint(canvasPosition);
     }
 
-    public void Update(Point canvasPosition)
+    internal void Update(Point canvasPosition)
     {
         if (!Active)
         {
@@ -169,7 +169,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
         CreateHitTester(canvasPosition);
     }
 
-    public StrokeChanges End( )
+    internal StrokeChanges End( )
     {
         if (!Active)
         {
@@ -232,7 +232,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
         }
     }
 
-    public static (Point center, double radius) GetCircle(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches)
+    internal static (Point center, double radius) GetCircle(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches)
     {
         var count = touches.Count;
         if (count == 0)

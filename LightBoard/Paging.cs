@@ -35,7 +35,7 @@ public class Page : INotifyPropertyChanged
     public void OpenStrokes(string fileName)
     {
         using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-        Strokes = new StrokeCollection(stream);
+        Strokes = [with(stream)];
         Scale = 1.0;
         OffsetX = 8192;
         OffsetY = 8192;

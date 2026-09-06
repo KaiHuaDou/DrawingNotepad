@@ -9,12 +9,24 @@ namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
+    /// <summary>
+    /// 获取当前选中的笔画数量。
+    /// </summary>
     public int SelectedCount => selection.SelectedStrokes.Count;
 
-    public StrokeCollection SelectedStrokes => new(selection.SelectedStrokes);
+    /// <summary>
+    /// 获取当前选中的笔画集合副本。
+    /// </summary>
+    public StrokeCollection SelectedStrokes => [with(selection.SelectedStrokes)];
 
+    /// <summary>
+    /// 获取是否存在选中笔画。
+    /// </summary>
     public bool HasSelection => selection.HasSelection;
 
+    /// <summary>
+    /// 复制选中笔画到剪贴板。
+    /// </summary>
     public void CopySelected( )
     {
         if (!HasSelection)
@@ -29,6 +41,9 @@ public partial class InkCanvasNext
         Clipboard.SetDataObject(data, true);
     }
 
+    /// <summary>
+    /// 剪切选中笔画到剪贴板并从画布删除。
+    /// </summary>
     public void CutSelected( )
     {
         if (!HasSelection)
@@ -40,6 +55,9 @@ public partial class InkCanvasNext
         DeleteSelected( );
     }
 
+    /// <summary>
+    /// 删除选中的笔画。
+    /// </summary>
     public void DeleteSelected( )
     {
         if (!HasSelection)
@@ -51,6 +69,9 @@ public partial class InkCanvasNext
         selection.Clear( );
     }
 
+    /// <summary>
+    /// 在指定位置克隆一份选区笔画。
+    /// </summary>
     public void StampCloneAt(Point point)
     {
         if (!HasSelection)
@@ -63,9 +84,12 @@ public partial class InkCanvasNext
         Canvas.Strokes.Add(clone);
     }
 
+    /// <summary>
+    /// 在指定位置粘贴剪贴板中的墨迹笔画。
+    /// </summary>
     public void StampPasteAt(Point point)
     {
-        if (!HasClipboardStrokes)
+        if (!Clipboard.ContainsData(StrokeCollection.InkSerializedFormat))
         {
             return;
         }
@@ -111,7 +135,7 @@ internal static class StrokeCollectionExtension
         Background.Freeze( );
     }
 
-    public static RenderTargetBitmap Render(
+    internal static RenderTargetBitmap Render(
         this StrokeCollection strokes,
         DpiScale dpi,
         int scale = 100)
@@ -141,7 +165,7 @@ internal static class StrokeCollectionExtension
         return image;
     }
 
-    public static RenderTargetBitmap PreviewEmpty( )
+    internal static RenderTargetBitmap PreviewEmpty( )
     {
         var visual = new DrawingVisual( );
         using (var context = visual.RenderOpen( ))
@@ -155,7 +179,7 @@ internal static class StrokeCollectionExtension
         return bitmap;
     }
 
-    public static RenderTargetBitmap Preview(this StrokeCollection strokes)
+    internal static RenderTargetBitmap Preview(this StrokeCollection strokes)
     {
         var bounds = strokes.GetBounds( );
         var matrix = Matrix.Identity;

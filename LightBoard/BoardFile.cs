@@ -109,7 +109,7 @@ internal static class BoardFile
     private static StrokeCollection ReadStrokes(ZipArchiveEntry entry)
     {
         using var stream = entry.Open( );
-        return new StrokeCollection(stream);
+        return [with(stream)];
     }
 }
 

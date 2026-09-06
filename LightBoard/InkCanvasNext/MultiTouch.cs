@@ -91,20 +91,20 @@ internal sealed class VisualCanvas : FrameworkElement
 {
     private readonly List<DrawingVisual> visuals = [];
 
-    public VisualCanvas( )
+    internal VisualCanvas( )
     {
         CacheMode = new BitmapCache( );
         RenderOptions.SetEdgeMode(this, EdgeMode.Aliased);
         RenderOptions.SetCachingHint(this, CachingHint.Cache);
     }
 
-    public void AddVisual(DrawingVisual visual)
+    internal void AddVisual(DrawingVisual visual)
     {
         visuals.Add(visual);
         AddVisualChild(visual);
     }
 
-    public void RemoveVisual(DrawingVisual visual)
+    internal void RemoveVisual(DrawingVisual visual)
     {
         visuals.Remove(visual);
         RemoveVisualChild(visual);
@@ -124,19 +124,19 @@ internal sealed class StrokeVisual(DrawingAttributes drawingAttributes, StylusPo
     private VisualCanvas? visualCanvas;
     private DrawingVisual? activeVisual;
 
-    public Stroke Stroke { get; } = new Stroke([initialPoint], drawingAttributes);
+    internal Stroke Stroke { get; } = new Stroke([initialPoint], drawingAttributes);
 
-    public void SetVisualCanvas(VisualCanvas visualCanvas)
+    internal void SetVisualCanvas(VisualCanvas visualCanvas)
     {
         this.visualCanvas = visualCanvas;
     }
 
-    public void Add(StylusPoint point)
+    internal void Add(StylusPoint point)
     {
         Stroke.StylusPoints.Add(point);
     }
 
-    public void Redraw( )
+    internal void Redraw( )
     {
         if (visualCanvas == null || Stroke.StylusPoints.Count == 0)
         {
@@ -150,12 +150,12 @@ internal sealed class StrokeVisual(DrawingAttributes drawingAttributes, StylusPo
         context.DrawGeometry(CreateBrush( ), null, geometry);
     }
 
-    public Stroke? BuildStroke( )
+    internal Stroke? BuildStroke( )
     {
         return Stroke.StylusPoints.Count > 0 ? Stroke : null;
     }
 
-    public void Cleanup( )
+    internal void Cleanup( )
     {
         if (activeVisual is null || visualCanvas is null)
         {

@@ -20,7 +20,7 @@ internal sealed class SelectionVisual
     private IReadOnlyList<Point>? lasso;
     private bool drawHalo;
 
-    public SelectionVisual(Canvas layer)
+    internal SelectionVisual(Canvas layer)
     {
         host = new SelectionVisualHost(Draw)
         {
@@ -30,7 +30,7 @@ internal sealed class SelectionVisual
         layer.Children.Add(host);
     }
 
-    public void Invalidate(Rect bounds, IReadOnlyCollection<Stroke> selected, IReadOnlyList<Point>? lasso, bool halo)
+    internal void Invalidate(Rect bounds, IReadOnlyCollection<Stroke> selected, IReadOnlyList<Point>? lasso, bool halo)
     {
         this.bounds = bounds;
         this.selected = selected;

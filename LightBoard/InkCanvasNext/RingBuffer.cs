@@ -8,9 +8,9 @@ internal sealed class RingBuffer<T>(int capacity)
     private readonly int capacity = capacity;
     private int head;
 
-    public int Count { get; private set; }
+    internal int Count { get; private set; }
 
-    public T this[int index]
+    internal T this[int index]
     {
         get
         {
@@ -23,7 +23,7 @@ internal sealed class RingBuffer<T>(int capacity)
         }
     }
 
-    public void Enqueue(T item)
+    internal void Enqueue(T item)
     {
         if (Count == capacity)
         {
@@ -37,7 +37,7 @@ internal sealed class RingBuffer<T>(int capacity)
         }
     }
 
-    public void Truncate(int newCount)
+    internal void Truncate(int newCount)
     {
         if (newCount < 0 || newCount > Count)
         {
@@ -52,14 +52,14 @@ internal sealed class RingBuffer<T>(int capacity)
         Count = newCount;
     }
 
-    public void Clear( )
+    internal void Clear( )
     {
         Array.Clear(buffer, 0, capacity);
         head = 0;
         Count = 0;
     }
 
-    public T[] ToArray( )
+    internal T[] ToArray( )
     {
         var arr = new T[Count];
         for (var i = 0; i < Count; i++)
