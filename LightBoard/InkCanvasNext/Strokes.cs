@@ -104,11 +104,11 @@ internal static class StrokeCollectionExtension
 {
     private const int PreviewWidth = 170;
     private const int PreviewHeight = PreviewWidth / 16 * 9;
-    private static readonly SolidColorBrush background = new(Color.FromRgb(0x1E, 0x1E, 0x1E));
+    private static readonly SolidColorBrush Background = new(Color.FromRgb(0x1E, 0x1E, 0x1E));
 
     static StrokeCollectionExtension( )
     {
-        background.Freeze( );
+        Background.Freeze( );
     }
 
     public static RenderTargetBitmap Render(
@@ -124,7 +124,7 @@ internal static class StrokeCollectionExtension
             -bounds.X * ratio,
             -bounds.Y * ratio);
         var visual = strokes.CreateVisual(
-            background,
+            Background,
             new Rect(0, 0, bounds.Width * ratio, bounds.Height * ratio),
             matrix);
 
@@ -146,7 +146,7 @@ internal static class StrokeCollectionExtension
         var visual = new DrawingVisual( );
         using (var context = visual.RenderOpen( ))
         {
-            context.DrawRectangle(background, null, new Rect(0, 0, PreviewWidth, PreviewHeight));
+            context.DrawRectangle(Background, null, new Rect(0, 0, PreviewWidth, PreviewHeight));
         }
 
         var bitmap = new RenderTargetBitmap(PreviewWidth, PreviewHeight, 96, 96, PixelFormats.Pbgra32);
@@ -174,7 +174,7 @@ internal static class StrokeCollectionExtension
         }
 
         var visual = strokes.CreateVisual(
-            background, new Rect(0, 0, PreviewWidth, PreviewHeight), matrix);
+            Background, new Rect(0, 0, PreviewWidth, PreviewHeight), matrix);
 
         var render = new RenderTargetBitmap(PreviewWidth, PreviewHeight, 96, 96, PixelFormats.Pbgra32);
         render.Render(visual);

@@ -11,7 +11,7 @@ internal sealed class SelectionVisual
 {
     private const double HandleRadius = 5;
 
-    private static readonly Color accentColor = Color.FromRgb(0x4C, 0x8B, 0xF5);
+    private static readonly Color AccentColor = Color.FromRgb(0x4C, 0x8B, 0xF5);
 
     private readonly SelectionVisualHost host;
 
@@ -46,7 +46,7 @@ internal sealed class SelectionVisual
         //    且拖动/缩放中笔画本身就在移动，选择框 + 手柄已足够指示。
         if (drawHalo)
         {
-            var haloBrush = new SolidColorBrush(Color.FromArgb(120, accentColor.R, accentColor.G, accentColor.B));
+            var haloBrush = new SolidColorBrush(Color.FromArgb(120, AccentColor.R, AccentColor.G, AccentColor.B));
             foreach (var s in selected)
             {
                 var halo = s.Clone( );
@@ -62,7 +62,7 @@ internal sealed class SelectionVisual
         // 2) 选择框 + 手柄
         if (!bounds.IsEmpty)
         {
-            var accentBrush = new SolidColorBrush(Color.FromArgb(235, accentColor.R, accentColor.G, accentColor.B));
+            var accentBrush = new SolidColorBrush(Color.FromArgb(235, AccentColor.R, AccentColor.G, AccentColor.B));
             var pen = new Pen(accentBrush, 2.0);
             dc.DrawRectangle(null, pen, bounds);
             DrawHandles(dc, bounds, pen);
@@ -71,7 +71,7 @@ internal sealed class SelectionVisual
         // 3) 套索轨迹（accent 虚线）
         if (lasso is { Count: >= 2 })
         {
-            var lassoPen = new Pen(new SolidColorBrush(accentColor), 2.0)
+            var lassoPen = new Pen(new SolidColorBrush(AccentColor), 2.0)
             {
                 DashStyle = new DashStyle([4, 3], 0)
             };

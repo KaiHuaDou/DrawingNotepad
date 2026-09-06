@@ -17,7 +17,7 @@ namespace LightBoard;
 public partial class MainWindow : Window
 {
     private const string FileFilter =
-        "可打开的文件|*.lbf;*.isf;*.pptx;*.ppt;*.docx;*.doc;*.xps;*.pdf|轻白板文件|*.lbf|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|XPS 文档|*.xps|PDF 文档|*.pdf|所有文件|*.*";
+        "可打开的文件|*.lbf;*.isf;*.pptx;*.ppt;*.docx;*.doc;*.xps;*.pdf;*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|轻白板文件|*.lbf|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|XPS 文档|*.xps|PDF 文档|*.pdf|图片|*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|所有文件|*.*";
 
     private bool dirty;
 
@@ -233,6 +233,7 @@ public partial class MainWindow : Window
         if (App.IsBoardEmpty( ))
         {
             App.ShowInfo("没有可以导出的墨迹");
+            return;
         }
 
         using TaskDialog scaleDialog = new( )

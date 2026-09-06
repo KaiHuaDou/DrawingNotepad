@@ -71,8 +71,15 @@ public sealed class DocumentService : IDisposable
 
     private const long TrimWatermarkBytes = 400L * 1024 * 1024;
 
-    private static readonly string cacheDir = Path.Join(App.AppPath, "XpsCache");
-    private static readonly ConcurrentDictionary<string, Lazy<Task<(string Path, string? Temp)>>> converting = new( );
+    private static readonly string[] ImageExtensions = [".bmp", ".gif", ".ico", ".jpg", ".jpeg", ".png", ".tiff"];
+
+    private static bool IsImageExtension(string ext)
+    {
+        return ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static readonly string CacheDir = Path.Join(App.AppPath, "XpsCache");
+    private static readonly ConcurrentDictionary<string, Lazy<Task<(string Path, string? Temp)>>> Converting = new( );
     private readonly PageSource source;
     private readonly string? tempPath;
 
@@ -87,6 +94,12 @@ public sealed class DocumentService : IDisposable
     public static async Task<DocumentService> OpenAsync(string path)
     {
         var ext = Path.GetExtension(path);
+
+        if (IsImageExtension(ext))
+        {
+            return await Task.Run(( ) => new DocumentService(ImagePageSource.Open(path), null));
+        }
+
         // XPS 即内部渲染格式，直接打开源文件；PDF 无需转换，走独立渲染源。
         if (ext.Equals(".xps", StringComparison.OrdinalIgnoreCase))
         {
@@ -119,7 +132,7 @@ public sealed class DocumentService : IDisposable
         }
 
         // 同一源文件并发打开时只转换一次。
-        var lazy = converting.GetOrAdd(cachePath, key => new Lazy<Task<(string Path, string? Temp)>>(
+        var lazy = Converting.GetOrAdd(cachePath, key => new Lazy<Task<(string Path, string? Temp)>>(
             ( ) => ConvertAndCacheAsync(key, path), LazyThreadSafetyMode.ExecutionAndPublication));
         try
         {
@@ -128,7 +141,7 @@ public sealed class DocumentService : IDisposable
         }
         finally
         {
-            converting.TryRemove(new KeyValuePair<string, Lazy<Task<(string Path, string? Temp)>>>(cachePath, lazy));
+            Converting.TryRemove(new KeyValuePair<string, Lazy<Task<(string Path, string? Temp)>>>(cachePath, lazy));
         }
     }
 
@@ -247,7 +260,7 @@ public sealed class DocumentService : IDisposable
     {
         await using var stream = File.OpenRead(path);
         using var hash = SHA256.Create( );
-        return Path.Join(cacheDir, Convert.ToHexString(await hash.ComputeHashAsync(stream)) + ".xps");
+        return Path.Join(CacheDir, Convert.ToHexString(await hash.ComputeHashAsync(stream)) + ".xps");
     }
 
     private static Task<T> RunOnStaAsync<T>(Func<T> action)
@@ -281,7 +294,7 @@ public sealed class DocumentService : IDisposable
     {
         try
         {
-            var dir = new DirectoryInfo(cacheDir);
+            var dir = new DirectoryInfo(CacheDir);
             if (!dir.Exists)
             {
                 return;

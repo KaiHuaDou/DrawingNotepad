@@ -11,7 +11,8 @@ public partial class MainWindow
 {
     private sealed record PenProfile(Color Color, double Width, bool IsHighlighter);
 
-    private static readonly PenProfile highlighterProfile = new(Colors.Yellow, 36, true);
+    private static readonly PenProfile HighlighterProfile = new(Colors.Yellow, 36, true);
+
     private RadioButton? colorRadio;
     private ToolSnapshot? highlighterBackup;
     // 显式状态机：Mode 是唯一真值来源
@@ -36,7 +37,7 @@ public partial class MainWindow
 
     private void CommitCanvas( )
     {
-        var p = mode == InkCanvasNextMode.Highlighter ? highlighterProfile : pen;
+        var p = mode == InkCanvasNextMode.Highlighter ? HighlighterProfile : pen;
         var drawingAttr = CanvasNext.DefaultDrawingAttributes;
         drawingAttr.Color = p.Color;
         drawingAttr.Width = drawingAttr.Height = p.Width;

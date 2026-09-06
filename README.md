@@ -5,7 +5,7 @@
 - **经过实地课堂检验，为实地课堂而优化的功能设计**
 - 用于替换希沃白板/希沃轻白板
 - 超快的启动速度
-    - 6 代 i7 上热启动时间：< 1 秒
+    - 6 代 i7 上热启动时间：< 0.5 秒
 - 极低的书写/拖动/缩放延迟
 
 ## 功能
@@ -26,6 +26,7 @@
     - 打开 PowerPoint 演示文稿与 Word 文档（使用本机 Office 栅格化）
     - XPS 文档
     - PDF 文档（PDFium 渲染）
+    - 图片（BMP / GIF / ICO / JPEG / PNG / TIFF，作为单页背景）
 - 支持单实例运行
 - 多人同时书写（大屏两侧各人独立绘制，互不干扰）
 - 标题栏实时时间显示
@@ -95,13 +96,19 @@ LightBoard/               # 主程序
 │  ├─ Eraser.cs           # 橡皮擦反馈与增量命中
 │  ├─ Strokes.cs          # 墨迹集合、剪贴板与预览/导出
 │  ├─ UndoRedo.cs         # 历史栈管理
+│  ├─ Selection.cs        # 自绘选择控制器（选区集合与包围盒）
+│  ├─ SelectionInput.cs   # 选择手势（移动/缩放/旋转/套索/双指捏合）
+│  ├─ SelectionVisual.cs  # 选择视觉（高亮/边框/手柄/套索轨迹）
+│  ├─ Shapes.cs           # 直线/圆形形状绘制
 │  ├─ Geometry.cs         # 几何工具
 │  └─ RingBuffer.cs       # 定容环形缓冲（撤销栈）
-├─ Documents.cs           # 文档打开：Office COM → XPS、XPS/PDF 渲染源与缓存
+├─ Document/              # 渲染源：XpsSource / PdfSource / ImagePageSource
+├─ Documents.cs           # 文档/图片打开：Office COM → XPS、XPS/PDF/图片渲染源与缓存
 ├─ Paging.cs              # 多页面管理
 ├─ BoardFile.cs           # 多页整体存档（.lbf）与自动恢复
 ├─ MainWindow.xaml(.cs)   # 主窗口与工具栏
-├─ MainWindowHandler.cs   # 工具栏交互、菜单与动画
+├─ MainWindow.Handler.cs  # 工具栏交互、菜单与动画
+├─ MainWindow.Toolbar.cs  # 工具栏状态（模式/笔迹配置）与选区工具栏吸附
 ├─ Theme.xaml             # 主题样式（图标/按钮/颜色选择器）
 ├─ External/NativeMethods.cs  # Win32 互操作（窗口切换）
 └─ App.xaml(.cs)          # 应用入口、单实例与崩溃恢复
@@ -121,7 +128,7 @@ WPF `InkCanvas` 现代封装
 ### 公开类型
 
 - `InkCanvasNext`: 主控件
-- `InkCanvasNextMode`: 编辑模式（工具模式，不含高亮——荧光笔是笔触属性而非模式）
+- `InkCanvasNextMode`: 编辑模式（`Line`/`Circle` 为笔迹上的附加形状模式，`Highlighter` 为荧光笔模式）
 - `StampAction`: 盖章开关（克隆/粘贴）
 - `InkCanvasStrokesChangedEventArgs`: `StrokesChanged` 事件的载荷（Added/Removed）
 - `MouseWheelAction`: 滚轮交互方式（Scroll/Zoom/None）
@@ -135,7 +142,8 @@ public enum InkCanvasNextMode
     EraseArea,   // 面积擦
     Select,      // 选择（自绘选择层 + 套索）
     Line,        // 直线（Pen 附加）
-    Circle       // 圆（Pen 附加）
+    Circle,      // 圆（Pen 附加）
+    Highlighter  // 荧光笔（独立模式，黄色高亮笔迹）
 }
 ```
 

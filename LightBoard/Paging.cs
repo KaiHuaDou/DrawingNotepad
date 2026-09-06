@@ -43,7 +43,7 @@ public class Page : INotifyPropertyChanged
         Preview = Strokes.Count > 0 ? Strokes.Preview( ) : StrokeCollectionExtension.PreviewEmpty( );
     }
 
-    public void ExportStokes(string fileName, DpiScale dpi, int scale)
+    public void ExportStrokes(string fileName, DpiScale dpi, int scale)
     {
         var image = Strokes.Render(dpi, scale);
         var encoder = new PngBitmapEncoder( );
@@ -207,7 +207,7 @@ public partial class App
 
             var pad = (int) (Math.Log10(Pages.Count) + 1);
             var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.png");
-            page.ExportStokes(fileName, dpi, scale);
+            page.ExportStrokes(fileName, dpi, scale);
             exported++;
         }
     }

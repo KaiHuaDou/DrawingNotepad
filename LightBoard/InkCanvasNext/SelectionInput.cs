@@ -284,15 +284,18 @@ public partial class InkCanvasNext
                 break;
 
             case SelectionGesture.Scale:
-            {
                 var scaleX = selectionHandle is not (SelectionHandle.T or SelectionHandle.B);
                 var scaleY = selectionHandle is not (SelectionHandle.L or SelectionHandle.R);
-                var sx = scaleX ? (p.X - selectionAnchor.X) / (selectionStartPoint.X - selectionAnchor.X) : 1.0;
-                var sy = scaleY ? (p.Y - selectionAnchor.Y) / (selectionStartPoint.Y - selectionAnchor.Y) : 1.0;
+
+                var dx = selectionStartPoint.X - selectionAnchor.X;
+                var sx = (scaleX && Math.Abs(dx) > 1e-9) ? (p.X - selectionAnchor.X) / dx : 1.0;
+
+                var dy = selectionStartPoint.Y - selectionAnchor.Y;
+                var sy = (scaleY && Math.Abs(dy) > 1e-9) ? (p.Y - selectionAnchor.Y) / dy : 1.0;
+
                 newAbs = Matrix.Identity;
                 newAbs.ScaleAt(sx, sy, selectionAnchor.X, selectionAnchor.Y);
                 break;
-            }
 
             case SelectionGesture.Rotate:
                 newAbs = Matrix.Identity;

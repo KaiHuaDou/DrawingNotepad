@@ -70,7 +70,7 @@ public partial class InkCanvasNext
         }
     }
 
-    private Point GetCanvasCenter(IReadOnlyDictionary<int, (TouchDevice Device, Point Position)> touches)
+    private Point GetCanvasCenter(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches)
     {
         if (touches.Count == 0)
         {
@@ -232,7 +232,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
         }
     }
 
-    public static (Point center, double radius) GetCircle(IReadOnlyDictionary<int, (TouchDevice Device, Point Position)> touches)
+    public static (Point center, double radius) GetCircle(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches)
     {
         var count = touches.Count;
         if (count == 0)
