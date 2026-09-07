@@ -82,13 +82,16 @@ public partial class InkCanvasNext
         // 由状态元数据判定是否接管（原 UpdateState 返回值 + 区域擦除/选区三条件并联）
         e.Handled = BlocksNativeInput(state) || IsAreaEraserActive(state);
 
-        if (state == TouchState.MultiDraw)
+        if (state == TouchState.Selection && selectionGesture == SelectionGesture.Move && touches.Count >= 2)
         {
-            if (shapeActive)
-            {
-                CancelShape( );
-            }
-
+            // 选区移动中第二指落下：立即结束移动段并切入双指缩放/旋转（基线取落下瞬间，消除死区滞后）
+            PromoteMoveToPinch( );
+            e.TouchDevice.Capture(Canvas);
+            e.Handled = true;
+        }
+        else if (state == TouchState.MultiDraw)
+        {
+            // 形状已由 SetState 钩子取消（离开 EvalDraw/Draw 进入手势接管态），此处无需重复处理
             e.TouchDevice.Capture(Canvas);
             if (!multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
             {
@@ -118,19 +121,6 @@ public partial class InkCanvasNext
 
         touches[e.TouchDevice.Id] = (e.TouchDevice, e.GetTouchPoint(this).Position);
 
-        if (shapeActive)
-        {
-            var canvasPos = e.GetTouchPoint(Canvas).Position;
-            UpdateShape(canvasPos);
-            e.Handled = true;
-            if (state == TouchState.EvalDraw)
-            {
-                UpdateState( );
-            }
-
-            return;
-        }
-
         if (multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
         {
             var canvasPos = e.GetTouchPoint(Canvas).Position;
@@ -139,9 +129,20 @@ public partial class InkCanvasNext
             return;
         }
 
+        // 路由只由状态机决定：形状在途时仅当状态仍在单指绘制上下文（EvalDraw/Draw）才更新预览，
+        // 一旦状态机迁入手势接管态（PanZoom/Pan/MultiDraw/Eraser/Selection），形状已被 SetState 取消，
+        // Move 事件不会再被 shapeActive 抢占。
         switch (state)
         {
-            case TouchState.EvalDraw: UpdateState( ); break;
+            case TouchState.EvalDraw:
+                UpdateShapeIfActive(e);
+                UpdateState( );
+                break;
+
+            case TouchState.Draw:
+                UpdateShapeIfActive(e);
+                break;
+
             case TouchState.PanZoom: PanZoom( ); break;
             case TouchState.Pan: Pan( ); break;
             case TouchState.Selection: UpdateSelectionTouch( ); break;
@@ -157,6 +158,19 @@ public partial class InkCanvasNext
         TouchEpilogue( );
     }
 
+    /// <summary>形状模式下的 EvalDraw/Draw 路由：形状在途时用当前触点更新预览并拦截事件；
+    /// 形状已被状态机取消（手势接管）或非形状模式时为空操作，让原生 InkCanvas 收笔。</summary>
+    private void UpdateShapeIfActive(TouchEventArgs e)
+    {
+        if (!shapeActive)
+        {
+            return;
+        }
+
+        UpdateShape(e.GetTouchPoint(Canvas).Position);
+        e.Handled = true;
+    }
+
     private void CanvasPreviewTouchUp(object o, TouchEventArgs e)
     {
         var wasHandled = state is TouchState.PanZoom or TouchState.Pan;
@@ -169,7 +183,9 @@ public partial class InkCanvasNext
             EndMultiTouchStroke(e.TouchDevice.Id);
         }
 
-        if (shapeActive)
+        // 形状只允许在单指绘制上下文（EvalDraw/Draw）存活：仅当手势未被状态机接管
+        // （未迁入平移/缩放/多指等）时才提交，否则由 SetState 已取消、此处直接跳过
+        if (shapeActive && state is TouchState.EvalDraw or TouchState.Draw)
         {
             var canvasPos = e.GetTouchPoint(Canvas).Position;
             UpdateShape(canvasPos);
@@ -178,7 +194,7 @@ public partial class InkCanvasNext
         }
 
         RemoveDevice(e.TouchDevice);
-        e.Handled = wasHandled || wasAreaEraser || wasMultiTouch || wasManipulating;
+        e.Handled |= wasHandled || wasAreaEraser || wasMultiTouch || wasManipulating;
         TouchEpilogue( );
     }
 

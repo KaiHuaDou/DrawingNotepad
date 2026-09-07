@@ -190,7 +190,7 @@ public partial class App
 
     public static bool IsBoardEmpty( )
     {
-        return !Pages.Any(p => p.Strokes.Count > 0);
+        return Pages.All(p => p.Strokes.Count == 0);
     }
 
     public static void ExportAllImage(int scale, string directory, DpiScale dpi)

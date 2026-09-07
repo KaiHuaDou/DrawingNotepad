@@ -402,6 +402,8 @@ public partial class InkCanvasNext : UserControl
         prevMode = mode;
         if (state != TouchState.Idle)
         {
+            // 手势接管期间切换工具：放弃进行中的形状，避免抬手时把过时形状提交
+            CancelShape( );
             return;
         }
 
@@ -419,6 +421,9 @@ public partial class InkCanvasNext : UserControl
 
     private void ApplyModeToEditing(InkCanvasNextMode mode)
     {
+        // 切换工具即中断形状绘制（鼠标路径 state 恒为 Idle，形状取消依赖此处）
+        CancelShape( );
+
         switch (mode)
         {
             case InkCanvasNextMode.Ink:

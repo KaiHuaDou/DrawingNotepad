@@ -45,7 +45,7 @@ public partial class MainWindow
         var heightAnimation = new DoubleAnimation
         {
             From = RightBorder.ActualHeight,
-            To = isChecked ? ActualHeight - 32 : 48,
+            To = isChecked ? ActualHeight - 32 : 52,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
         };
@@ -80,7 +80,7 @@ public partial class MainWindow
 
     private void CanvasNextStrokesChanged(object o, InkCanvasStrokesChangedEventArgs e)
     {
-        dirty = true;
+        Dirty = true;
 
         if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
         {

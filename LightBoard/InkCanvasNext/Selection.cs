@@ -84,12 +84,12 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
 
     internal void Invalidate(bool halo = true)
     {
-        visual.Invalidate(Bounds, selectedStrokes, null, halo);
+        visual.Invalidate(Bounds, selectedStrokes, null, halo, owner.CurrentScale, owner.LiveRotateHandle);
     }
 
     internal void InvalidateLasso(IReadOnlyList<Point>? lasso)
     {
         // 套索进行中：选择尚未确定，不绘制 halo
-        visual.Invalidate(Bounds, selectedStrokes, lasso, halo: false);
+        visual.Invalidate(Bounds, selectedStrokes, lasso, halo: false, owner.CurrentScale, owner.LiveRotateHandle);
     }
 }

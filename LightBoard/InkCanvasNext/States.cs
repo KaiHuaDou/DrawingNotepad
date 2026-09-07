@@ -97,7 +97,14 @@ public partial class InkCanvasNext
                 _ => state,
             },
 
-            TouchState.Selection => count == 0 ? TouchState.Idle : TouchState.Selection,
+            TouchState.Selection => count switch
+            {
+                0 => TouchState.Idle,
+                // 选区手势中附加手指：3/4 指并拢平移画布、5 指及以上切换为掌心擦除（与 Idle 入口优先级一致）
+                3 or 4 when d2 <= l2 => TouchState.Pan,
+                >= 5 when d2 <= l2 => TouchState.Eraser,
+                _ => TouchState.Selection,
+            },
 
             _ => state,
         };
@@ -147,6 +154,14 @@ public partial class InkCanvasNext
         if (from == TouchState.Idle)
         {
             prevMode = Mode;
+        }
+
+        // 形状只允许在单指绘制上下文（EvalDraw/Draw）存活：
+        // 一旦迁出手势接管态（平移/缩放/多指/擦除/选区/回 Idle），放弃未提交的形状预览，
+        // 避免 shapeActive 在事件处理器中抢占手势路由（如形状绘制中落第二指导致平移缩放失效）。
+        if (shapeActive && from is TouchState.EvalDraw or TouchState.Draw && newState is not (TouchState.EvalDraw or TouchState.Draw))
+        {
+            CancelShape( );
         }
 
         switch (newState)

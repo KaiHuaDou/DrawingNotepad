@@ -224,7 +224,8 @@
                          Background="{x:Null}"
                          BorderThickness="0"
                          ItemsSource="{x:Static local:App.Pages}"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.PanningMode="VerticalOnly"
+                         ScrollViewer.VerticalScrollBarVisibility="Hidden"
                          SelectionChanged="PagePreviewsBoxSelectionChanged"
                          VirtualizingPanel.IsVirtualizing="True">
                     <ListBox.ItemContainerStyle>

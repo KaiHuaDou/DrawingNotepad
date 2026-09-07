@@ -37,6 +37,9 @@ public partial class InkCanvasNext
     private const double HandleHitRadius = 16;
     private const double LassoPointDistance2 = 16;
 
+    /// <summary>旋转手柄命中半径（屏幕像素，÷zoom 折算为内容坐标）：独立于缩放恒定可点按。</summary>
+    private const double RotateHitRadius = 24;
+
     private SelectionGesture selectionGesture = SelectionGesture.None;
     private SelectionHandle selectionHandle = SelectionHandle.None;
     private Point selectionStartPoint;
@@ -45,6 +48,12 @@ public partial class InkCanvasNext
     private Point selectionCenter;
     private Matrix selectionAbs = Matrix.Identity;
     private StrokeCollection? selectionTarget;
+
+    /// <summary>旋转手势中手柄的轨道位置（内容坐标，绕选区中心等半径跟随鼠标角度）；空闲为 null。</summary>
+    private Point? rotateHandleLive;
+
+    /// <summary>供视觉层绘制：旋转手势进行中返回手柄轨道位置，否则 null（视觉层回落默认顶中位置）。</summary>
+    internal Point? LiveRotateHandle => rotateHandleLive;
 
     private readonly List<Point> lassoPath = [];
     private readonly HashSet<Stroke> lassoSelected = [];
@@ -123,6 +132,7 @@ public partial class InkCanvasNext
 
         selectionGesture = SelectionGesture.None;
         selectionTarget = null;
+        rotateHandleLive = null;
         Canvas.ReleaseMouseCapture( );
         selection.Invalidate( );
         RaiseViewOrSelectionChanged( );
@@ -138,6 +148,7 @@ public partial class InkCanvasNext
             return;
         }
 
+        // touches 保插入序：手势起始指在存活期间恒为 First()，抬起后由剩余手指自然接替
         var canvasPos = touches.First( ).Value.Device.GetTouchPoint(Canvas).Position;
         selectionStartPoint = canvasPos;
         selectionLastPoint = canvasPos;
@@ -152,9 +163,9 @@ public partial class InkCanvasNext
 
         if (touches.Count >= 2)
         {
-            // 双指：直接进入缩放/旋转（连同平移），无需命中判定
+            // 双指：直接进入缩放/旋转（连同平移），无需命中判定；基线取当前两指几何
             selectionGesture = SelectionGesture.Pinch;
-            pinchInit = false;
+            ResetPinchBaseline( );
             return;
         }
 
@@ -188,12 +199,8 @@ public partial class InkCanvasNext
 
         if (selectionGesture == SelectionGesture.Move && touches.Count >= 2)
         {
-            // 第二指落下：先记录此前的移动段，再切换为双指缩放/旋转
-            CommitTransform( );
-            selectionGesture = SelectionGesture.Pinch;
-            pinchInit = false;
-            selectionAbs = Matrix.Identity;
-            selectionTarget = [with(selection.SelectedStrokes)];
+            // 第二指落下：正常已由 TouchDown 处理器切入（基线取落下瞬间），此处兜底
+            PromoteMoveToPinch( );
             return;
         }
 
@@ -228,6 +235,7 @@ public partial class InkCanvasNext
 
         selectionGesture = SelectionGesture.None;
         selectionTarget = null;
+        rotateHandleLive = null;
         selection.Invalidate( );
     }
 
@@ -238,33 +246,69 @@ public partial class InkCanvasNext
             return;
         }
 
-        using var enumerator = touches.Values.GetEnumerator( );
-        enumerator.MoveNext( );
-        var (Device, Position) = enumerator.Current;
-        enumerator.MoveNext( );
-        var t2 = enumerator.Current;
-
-        var c1 = Device.GetTouchPoint(Canvas).Position;
-        var c2 = t2.Device.GetTouchPoint(Canvas).Position;
+        (var c1, var c2) = GetPinchPoints( );
         var center = new Point((c1.X + c2.X) / 2, (c1.Y + c2.Y) / 2);
         var dist = Math.Sqrt(Geometry.Distance2(c1, c2));
         var angle = Math.Atan2(c2.Y - c1.Y, c2.X - c1.X);
 
         if (!pinchInit)
         {
-            pinchInit = true;
-            pinchStartCenter = center;
-            pinchStartDist = Math.Max(dist, 1e-6);
-            pinchStartAngle = angle;
+            InitPinchBaseline(center, dist, angle);
             return;
         }
 
         var m = new Matrix( );
         m.Translate(center.X - pinchStartCenter.X, center.Y - pinchStartCenter.Y);
-        m.RotateAt(angle - pinchStartAngle, pinchStartCenter.X, pinchStartCenter.Y);
+        // angle 为弧度，RotateAt 要求角度：需乘 RadToDeg
+        m.RotateAt((angle - pinchStartAngle) * RadToDeg, pinchStartCenter.X, pinchStartCenter.Y);
         m.ScaleAt(dist / pinchStartDist, dist / pinchStartDist, pinchStartCenter.X, pinchStartCenter.Y);
 
         ApplyTransformDelta(m);
+    }
+
+    // ---------- 手势切换与主指 ----------
+
+    /// <summary>移动中的选区在第二指落下时切入双指缩放/旋转：提交移动段、重置变换基线并即时采集捏合基线。</summary>
+    private void PromoteMoveToPinch( )
+    {
+        CommitTransform( );
+        selectionGesture = SelectionGesture.Pinch;
+        selectionAbs = Matrix.Identity;
+        selectionTarget = [with(selection.SelectedStrokes)];
+        ResetPinchBaseline( );
+    }
+
+    /// <summary>以当前两指几何重置捏合基线（第二指落下瞬间调用，消除基线滞后导致的死区）。</summary>
+    private void ResetPinchBaseline( )
+    {
+        if (touches.Count < 2)
+        {
+            pinchInit = false;
+            return;
+        }
+
+        (var c1, var c2) = GetPinchPoints( );
+        var center = new Point((c1.X + c2.X) / 2, (c1.Y + c2.Y) / 2);
+        var dist = Math.Sqrt(Geometry.Distance2(c1, c2));
+        InitPinchBaseline(center, dist, Math.Atan2(c2.Y - c1.Y, c2.X - c1.X));
+    }
+
+    private void InitPinchBaseline(Point center, double dist, double angle)
+    {
+        pinchInit = true;
+        pinchStartCenter = center;
+        pinchStartDist = Math.Max(dist, 1e-6);
+        pinchStartAngle = angle;
+    }
+
+    private (Point C1, Point C2) GetPinchPoints( )
+    {
+        using var enumerator = touches.Values.GetEnumerator( );
+        enumerator.MoveNext( );
+        var first = enumerator.Current;
+        enumerator.MoveNext( );
+        var second = enumerator.Current;
+        return (first.Device.GetTouchPoint(Canvas).Position, second.Device.GetTouchPoint(Canvas).Position);
     }
 
     // ---------- 变换 ----------
@@ -299,10 +343,24 @@ public partial class InkCanvasNext
 
             case SelectionGesture.Rotate:
                 newAbs = Matrix.Identity;
+                // AngleFrom 返回弧度，RotateAt 要求角度：需乘 RadToDeg，否则旋转角度缩小约 57.3 倍
                 newAbs.RotateAt(
-                    AngleFrom(selectionCenter, p) - AngleFrom(selectionCenter, selectionStartPoint),
+                    (AngleFrom(selectionCenter, p) - AngleFrom(selectionCenter, selectionStartPoint)) * RadToDeg,
                     selectionCenter.X,
                     selectionCenter.Y);
+
+                // 手柄沿鼠标角度绕选区中心做圆周运动，到旋转中心距离保持手势起始值（距离不变）
+                var vx = p.X - selectionCenter.X;
+                var vy = p.Y - selectionCenter.Y;
+                var len = Math.Sqrt(vx * vx + vy * vy);
+                if (len > 1e-9)
+                {
+                    var r0 = Geometry.Distance(selectionCenter, selectionStartPoint);
+                    rotateHandleLive = new Point(
+                        selectionCenter.X + vx / len * r0,
+                        selectionCenter.Y + vy / len * r0);
+                }
+
                 break;
 
             default:
@@ -366,6 +424,7 @@ public partial class InkCanvasNext
         lassoSelected.Clear( );
         lassoDragged = false;
         pinchInit = false;
+        rotateHandleLive = null;
 
         if (lassoTester is not null)
         {
@@ -472,6 +531,13 @@ public partial class InkCanvasNext
             return SelectionHandle.None;
         }
 
+        // 旋转手柄（选区正上方，与 SelectionVisual.RotateHandleCenter 同一几何）优先级最高：
+        // 避免与顶部缩放手柄（T）的命中区重叠时被抢占；命中半径按屏幕恒定（÷zoom），任意缩放下都易触发
+        if (Near(p, SelectionVisual.RotateHandleCenter(b, currentScale), RotateHitRadius / Math.Max(currentScale, 1e-6)))
+        {
+            return SelectionHandle.Rotate;
+        }
+
         if (Near(p, b.TopLeft, HandleHitRadius))
         {
             return SelectionHandle.TL;
@@ -537,6 +603,9 @@ public partial class InkCanvasNext
     {
         return Geometry.Distance2(a, b) <= radius * radius;
     }
+
+    /// <summary>弧度→角度换算：Math.Atan2 返回弧度，Matrix.RotateAt 要求角度。</summary>
+    private const double RadToDeg = 180.0 / Math.PI;
 
     private static double AngleFrom(Point center, Point p)
     {

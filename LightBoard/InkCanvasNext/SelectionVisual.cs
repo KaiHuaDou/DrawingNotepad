@@ -11,6 +11,11 @@ internal sealed class SelectionVisual
 {
     private const double HandleRadius = 5;
 
+    // 旋转手柄几何（屏幕像素；除以 zoom 折算为内容坐标，使手柄以恒定屏幕间距浮于选区正上方）：
+    private const double RotateScreenRadius = 8;        // 手柄视觉半径
+    private const double RotateGapAboveSelection = 10;  // 手柄与选区上沿的屏幕间距
+    internal const double ToolbarGapFromSelection = 8;  // 工具栏与选区包围盒的屏幕间距（MainWindow.Toolbar 同值）
+
     private static readonly Color AccentColor = Color.FromRgb(0x4C, 0x8B, 0xF5);
 
     private readonly SelectionVisualHost host;
@@ -19,6 +24,8 @@ internal sealed class SelectionVisual
     private IReadOnlyCollection<Stroke> selected = [];
     private IReadOnlyList<Point>? lasso;
     private bool drawHalo;
+    private double zoom = 1.0;
+    private Point? rotateHandlePosition;
 
     internal SelectionVisual(Canvas layer)
     {
@@ -30,13 +37,24 @@ internal sealed class SelectionVisual
         layer.Children.Add(host);
     }
 
-    internal void Invalidate(Rect bounds, IReadOnlyCollection<Stroke> selected, IReadOnlyList<Point>? lasso, bool halo)
+    internal void Invalidate(Rect bounds, IReadOnlyCollection<Stroke> selected, IReadOnlyList<Point>? lasso, bool halo, double zoom, Point? rotateHandlePosition)
     {
         this.bounds = bounds;
         this.selected = selected;
         this.lasso = lasso;
         drawHalo = halo;
+        this.zoom = Math.Max(zoom, 1e-6);
+        this.rotateHandlePosition = rotateHandlePosition;
         host.InvalidateVisual( );
+    }
+
+    /// <summary>旋转手柄中心（内容坐标）：浮于选区正上方（顶部居中），拖拽绕选区中心旋转。</summary>
+    internal static Point RotateHandleCenter(Rect b, double zoom)
+    {
+        var z = Math.Max(zoom, 1e-6);
+        return new Point(
+            b.Left + b.Width / 2,
+            b.Top - (RotateGapAboveSelection + RotateScreenRadius) / z);
     }
 
     private void Draw(DrawingContext dc)
@@ -65,7 +83,7 @@ internal sealed class SelectionVisual
             var accentBrush = new SolidColorBrush(Color.FromArgb(235, AccentColor.R, AccentColor.G, AccentColor.B));
             var pen = new Pen(accentBrush, 2.0);
             dc.DrawRectangle(null, pen, bounds);
-            DrawHandles(dc, bounds, pen);
+            DrawHandles(dc, bounds, pen, zoom, rotateHandlePosition);
         }
 
         // 3) 套索轨迹（accent 虚线）
@@ -87,7 +105,7 @@ internal sealed class SelectionVisual
         }
     }
 
-    private static void DrawHandles(DrawingContext dc, Rect b, Pen pen)
+    private static void DrawHandles(DrawingContext dc, Rect b, Pen pen, double zoom, Point? rotateHandlePosition)
     {
         var white = Brushes.White;
         var pts = new[]
@@ -103,6 +121,51 @@ internal sealed class SelectionVisual
         {
             dc.DrawRectangle(white, pen, new Rect(p.X - HandleRadius, p.Y - HandleRadius, HandleRadius * 2, HandleRadius * 2));
         }
+
+        // 旋转手柄：默认浮于选区正上方；旋转手势中沿鼠标角度绕选区中心等半径跟随（rotateHandlePosition）
+        var rotateCenter = rotateHandlePosition ?? RotateHandleCenter(b, zoom);
+        var rr = RotateScreenRadius / zoom;
+        dc.DrawEllipse(Brushes.White, pen, rotateCenter, rr, rr);
+        var glyph = CreateRotateGlyph(rotateCenter, rr * 0.62);
+        var glyphPen = new Pen(new SolidColorBrush(AccentColor), Math.Max(1.5 / zoom, 1.0));
+        dc.DrawGeometry(new SolidColorBrush(AccentColor), glyphPen, glyph);
+    }
+
+    private static System.Windows.Media.Geometry CreateRotateGlyph(Point center, double radius)
+    {
+        const double Deg = Math.PI / 180;
+        // 屏幕坐标（y 向下）：顺时针环形箭头，起点左上（135°）顺时针扫 270° 至右下（45°），底部留 90° 缺口
+        var start = PointOnCircle(center, radius, 135.0);
+        var end = PointOnCircle(center, radius, 45.0);
+
+        var figure = new PathFigure { StartPoint = start, IsFilled = false };
+        figure.Segments.Add(new ArcSegment(end, new Size(radius, radius), 0, true, SweepDirection.Clockwise, true));
+
+        // 箭头翼：tip 处沿顺时针切向反向张开
+        var tipDir = new Vector(-Math.Sin(45.0 * Deg), Math.Cos(45.0 * Deg));
+        var arrowLen = radius * 0.5;
+        figure.Segments.Add(new LineSegment(end + Rotate(tipDir, 155) * arrowLen, true));
+        figure.Segments.Add(new LineSegment(end, true));
+        figure.Segments.Add(new LineSegment(end + Rotate(tipDir, -155) * arrowLen, true));
+
+        var geometry = new PathGeometry( );
+        geometry.Figures.Add(figure);
+        return geometry;
+    }
+
+    private static Point PointOnCircle(Point c, double r, double deg)
+    {
+        const double Deg = Math.PI / 180;
+        return new Point(c.X + r * Math.Cos(deg * Deg), c.Y + r * Math.Sin(deg * Deg));
+    }
+
+    private static Vector Rotate(Vector v, double deg)
+    {
+        const double Deg = Math.PI / 180;
+        var rad = deg * Deg;
+        var c = Math.Cos(rad);
+        var s = Math.Sin(rad);
+        return new Vector(v.X * c - v.Y * s, v.X * s + v.Y * c);
     }
 
     private sealed class SelectionVisualHost(Action<DrawingContext> render) : FrameworkElement

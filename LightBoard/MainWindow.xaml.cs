@@ -19,7 +19,11 @@ public partial class MainWindow : Window
     private const string FileFilter =
         "可打开的文件|*.lbf;*.isf;*.pptx;*.ppt;*.docx;*.doc;*.xps;*.pdf;*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|轻白板文件|*.lbf|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|XPS 文档|*.xps|PDF 文档|*.pdf|图片|*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|所有文件|*.*";
 
-    private bool dirty;
+    private bool Dirty
+    {
+        get => field && !App.IsBoardEmpty( );
+        set;
+    }
 
     private readonly DispatcherTimer timeTimer;
 
@@ -69,7 +73,7 @@ public partial class MainWindow : Window
 
     private bool WhetherCloseFile( )
     {
-        if (!dirty)
+        if (!Dirty)
         {
             return false;
         }
@@ -95,7 +99,7 @@ public partial class MainWindow : Window
         if (result == fastSaveButton)
         {
             BoardFile.Write(Path.Join(App.AppPath, "fastsave", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"), App.Pages);
-            dirty = false;
+            Dirty = false;
             return false;
         }
         else if (result == saveButton)
@@ -164,7 +168,7 @@ public partial class MainWindow : Window
                     ));
             }
 
-            dirty = false;
+            Dirty = false;
         }
         catch (Exception ex)
         {
@@ -215,7 +219,7 @@ public partial class MainWindow : Window
         try
         {
             BoardFile.Write(dialog.FileName, App.Pages);
-            dirty = false;
+            Dirty = false;
         }
         catch (Exception ex)
         {
