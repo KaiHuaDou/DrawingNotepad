@@ -43,9 +43,9 @@ public class Page : INotifyPropertyChanged
         Preview = Strokes.Count > 0 ? Strokes.Preview( ) : StrokeCollectionExtension.PreviewEmpty( );
     }
 
-    public void ExportStrokes(string fileName, DpiScale dpi, int scale)
+    public void ExportStrokes(string fileName, DpiScale dpi, int scale, ImageSource? background = null)
     {
-        var image = Strokes.Render(dpi, scale);
+        var image = Strokes.Render(dpi, scale, background);
         var encoder = new PngBitmapEncoder( );
         encoder.Frames.Add(BitmapFrame.Create(image));
 
@@ -84,7 +84,7 @@ public partial class MainWindow
         page.Scale = CanvasNext.CurrentScale;
         page.OffsetX = CanvasNext.OffsetX;
         page.OffsetY = CanvasNext.OffsetY;
-        page.Preview = page.Strokes.Preview( );
+        page.Preview = page.Strokes.Preview(CanvasNext.DocumentPage);
     }
 
     private void PrevPage(object o, RoutedEventArgs e)
@@ -207,7 +207,15 @@ public partial class App
 
             var pad = (int) (Math.Log10(Pages.Count) + 1);
             var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.png");
-            page.ExportStrokes(fileName, dpi, scale);
+
+            // XPS 页树具有线程亲和性，背景统一派发到 UI 线程渲染（结果已冻结），再回后台线程合成。
+            ImageSource? background = null;
+            if (Document is not null)
+            {
+                background = Current.Dispatcher.Invoke(( ) => Document.GetPage(page.Number - 1));
+            }
+
+            page.ExportStrokes(fileName, dpi, scale, background);
             exported++;
         }
     }

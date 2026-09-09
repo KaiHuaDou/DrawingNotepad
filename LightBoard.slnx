@@ -11,6 +11,7 @@
     <File Path=".gitattributes" />
     <File Path=".github/workflows/build.yml" />
     <File Path=".gitignore" />
+    <File Path="global.json" />
     <File Path="Settings.XamlStyler" />
   </Folder>
   <Project Path="LightBoard.Tests/LightBoard.Tests.csproj" />

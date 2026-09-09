@@ -1,14 +1,11 @@
 using System;
 using System.ComponentModel;
 using System.IO;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
 
 using LightBoard.External;
-
-using Microsoft.Win32;
 
 using Ookii.Dialogs.Wpf;
 
@@ -18,12 +15,6 @@ public partial class MainWindow : Window
 {
     private const string FileFilter =
         "可打开的文件|*.lbf;*.isf;*.pptx;*.ppt;*.docx;*.doc;*.xps;*.pdf;*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|轻白板文件|*.lbf|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|XPS 文档|*.xps|PDF 文档|*.pdf|图片|*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|所有文件|*.*";
-
-    private bool Dirty
-    {
-        get => field && !App.IsBoardEmpty( );
-        set;
-    }
 
     private readonly DispatcherTimer timeTimer;
 
@@ -61,14 +52,32 @@ public partial class MainWindow : Window
         timeTimer.Start( );
     }
 
-    private void WindowDeactivated(object o, EventArgs e)
+    private bool Dirty
     {
-        CanvasNext.ResetTouchState( );
+        get => field && !App.IsBoardEmpty( );
+        set;
     }
 
     private void CloseWindowClick(object o, RoutedEventArgs e)
     {
         Close( );
+    }
+
+    private void MinimizeWindowClick(object o, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void SwitchOutClick(object o, RoutedEventArgs e)
+    {
+
+#if DEBUG
+        const string ProcessName = "thorium";
+#else
+        const string ProcessName = "msedge";
+#endif
+
+        NativeMethods.SwitchTo(ProcessName);
     }
 
     private bool WhetherCloseFile( )
@@ -119,214 +128,8 @@ public partial class MainWindow : Window
         e.Cancel = WhetherCloseFile( );
     }
 
-    private void MinimizeWindowClick(object o, RoutedEventArgs e)
+    private void WindowDeactivated(object o, EventArgs e)
     {
-        WindowState = WindowState.Minimized;
-    }
-
-    private void OpenFileClick(object o, RoutedEventArgs e)
-    {
-        if (WhetherCloseFile( ))
-        {
-            return;
-        }
-
-        OpenFileDialog dialog = new( ) { Filter = FileFilter };
-        if (dialog.ShowDialog( ) != true)
-        {
-            return;
-        }
-
-        OpenFile(dialog.FileName);
-    }
-
-    private async void OpenFile(string fileName)
-    {
-        try
-        {
-            CloseDocumentViewer( );
-
-            if (IsBoardFile(fileName))
-            {
-                App.LoadBoard(fileName);
-            }
-            else if (IsInkFile(fileName))
-            {
-                App.CurrentPage.OpenStrokes(fileName);
-                OnPageChanged(this, EventArgs.Empty);
-            }
-            else
-            {
-                LoadingBar.IsIndeterminate = true;
-                LoadingText.Text = "解析文档中...";
-                LoadingBorder.Visibility = Visibility.Visible;
-                CanvasNext.IsEnabled = false;
-
-                await App.OpenDocument(fileName)
-                    .ContinueWith(_ => Dispatcher.Invoke(( ) =>
-                        CanvasNext.IsEnabled = true
-                    ));
-            }
-
-            Dirty = false;
-        }
-        catch (Exception ex)
-        {
-            App.LogException(ex);
-            App.ShowDetailedInfo("无法打开文档", ex.Message, $"{ex.Message}\n{ex.StackTrace}");
-        }
-        finally
-        {
-            LoadingBorder.Visibility = Visibility.Hidden;
-        }
-    }
-
-    private static bool IsBoardFile(string fileName)
-    {
-        return Path.GetExtension(fileName).Equals(BoardFile.Extension, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsInkFile(string fileName)
-    {
-        return Path.GetExtension(fileName).Equals(".isf", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private void SaveFileClick(object o, RoutedEventArgs e)
-    {
-        SaveFile( );
-    }
-
-    private bool SaveFile( )
-    {
-        var current = App.CurrentPage;
-        current.Scale = CanvasNext.CurrentScale;
-        current.OffsetX = CanvasNext.OffsetX;
-        current.OffsetY = CanvasNext.OffsetY;
-
-        var dialog = new VistaSaveFileDialog( )
-        {
-            Filter = "轻白板文件 (*.lbf)|*.lbf",
-            DefaultExt = ".lbf",
-            AddExtension = true,
-            OverwritePrompt = true,
-            FileName = $"{DateTime.Now:yyyyMMdd-HHmmss}",
-        };
-        if (dialog.ShowDialog( ) != true)
-        {
-            return false;
-        }
-
-        try
-        {
-            BoardFile.Write(dialog.FileName, App.Pages);
-            Dirty = false;
-        }
-        catch (Exception ex)
-        {
-            App.LogException(ex);
-            App.ShowException(ex, "保存失败。错误日志已记录。");
-            return false;
-        }
-
-        App.ShowInfo("墨迹已保存");
-        return true;
-    }
-
-    private void ExportImageClick(object o, RoutedEventArgs e)
-    {
-        if (App.IsBoardEmpty( ))
-        {
-            App.ShowInfo("没有可以导出的墨迹");
-            return;
-        }
-
-        using TaskDialog scaleDialog = new( )
-        {
-            WindowTitle = "轻白板",
-            MainInstruction = "请选择缩放比例",
-            MainIcon = TaskDialogIcon.Information,
-            ButtonStyle = TaskDialogButtonStyle.CommandLinks
-        };
-
-        var zoom25 = new TaskDialogButton("25%");
-        var zoom50 = new TaskDialogButton("50%");
-        var zoom100 = new TaskDialogButton("100%");
-        var cancelButton = new TaskDialogButton(ButtonType.Cancel);
-        scaleDialog.Buttons.Add(zoom25);
-        scaleDialog.Buttons.Add(zoom50);
-        scaleDialog.Buttons.Add(zoom100);
-        scaleDialog.Buttons.Add(cancelButton);
-        var result = scaleDialog.ShowDialog( );
-
-        var scale = 100;
-        if (result == cancelButton)
-        {
-            return;
-        }
-        else if (result == zoom25)
-        {
-            scale = 25;
-        }
-        else if (result == zoom50)
-        {
-            scale = 50;
-        }
-        else if (result == zoom100)
-        {
-            scale = 100;
-        }
-
-        var fileDialog = new VistaFolderBrowserDialog( )
-        {
-            RootFolder = Environment.SpecialFolder.MyComputer,
-            Multiselect = false,
-            ShowNewFolderButton = true
-        };
-        if (fileDialog.ShowDialog( ) != true)
-        {
-            return;
-        }
-
-        var directory = Path.Join(fileDialog.SelectedPath, DateTime.Now.Ticks.ToString( ));
-        var dpi = VisualTreeHelper.GetDpi(CanvasNext);
-
-        ExportImageMenu.IsEnabled = false;
-        CanvasNext.IsEnabled = false;
-
-        Task.Run(( ) =>
-        {
-            try
-            {
-                App.ExportAllImage(scale, directory, dpi);
-            }
-            catch (Exception ex)
-            {
-                App.LogException(ex);
-                App.ShowException(ex, "导出失败。错误日志已记录。");
-                return;
-            }
-            finally
-            {
-                Dispatcher.Invoke(( ) =>
-                {
-                    ExportImageMenu.IsEnabled = true;
-                    CanvasNext.IsEnabled = true;
-                });
-            }
-
-            App.ShowInfo("导出图片成功");
-        });
-    }
-
-    private void SwitchOutClick(object o, RoutedEventArgs e)
-    {
-
-#if DEBUG
-        const string ProcessName = "thorium";
-#else
-        const string ProcessName = "msedge";
-#endif
-
-        NativeMethods.SwitchTo(ProcessName);
+        CanvasNext.ResetTouchState( );
     }
 }

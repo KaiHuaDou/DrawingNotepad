@@ -80,6 +80,8 @@ internal sealed class XpsSource : PageSource
         var pxH = (int) Math.Max(1, Math.Round(size.Height * Dpi / 96d));
         var bitmap = new RenderTargetBitmap(pxW, pxH, Dpi, Dpi, PixelFormats.Pbgra32);
         bitmap.Render(fixedPage);
+        bitmap.Freeze( );
+
         return bitmap;
     }
 }

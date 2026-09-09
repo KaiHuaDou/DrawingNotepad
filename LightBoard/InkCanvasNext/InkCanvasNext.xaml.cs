@@ -480,6 +480,11 @@ public partial class InkCanvasNext : UserControl
     }
 
     /// <summary>
+    /// 当前文档背景页；DocumentHost 中无 Image 时为 null。
+    /// </summary>
+    public ImageSource? DocumentPage => DocumentHost.Child is Image image ? image.Source : null;
+
+    /// <summary>
     /// 设置文档背景页面；传入 null 时移除页面。
     /// </summary>
     public void SetDocumentPage(ImageSource? page)

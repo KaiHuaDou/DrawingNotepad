@@ -117,20 +117,19 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="PART_Border" Background="#1E1E1E" CornerRadius="5">
+                    <Border x:Name="PART_Border" Background="#F0F0F0" CornerRadius="5">
                         <Ellipse x:Name="PART_Ellipse"
                                  Width="{TemplateBinding MinWidth}"
                                  Height="{TemplateBinding MinWidth}"
-                                 Fill="#F0F0F0" />
+                                 Fill="#1E1E1E" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PART_Ellipse" Property="Fill" Value="{StaticResource LightBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource LightBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="PART_Ellipse" Property="Fill" Value="{StaticResource DarkBrush}" />
-                            <Setter TargetName="PART_Border" Property="Width" Value="28" />
-                            <Setter TargetName="PART_Border" Property="Height" Value="28" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
+                            <Setter TargetName="PART_Border" Property="CornerRadius" Value="18" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

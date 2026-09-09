@@ -138,10 +138,16 @@ internal static class StrokeCollectionExtension
     internal static RenderTargetBitmap Render(
         this StrokeCollection strokes,
         DpiScale dpi,
-        int scale = 100)
+        int scale = 100,
+        ImageSource? background = null)
     {
         var ratio = scale / 100.0;
         var bounds = strokes.GetBounds( );
+        if (background is not null)
+        {
+            bounds.Union(BackgroundRect(background));
+        }
+
         bounds.Inflate(64, 64);
 
         var matrix = new Matrix(ratio, 0, 0, ratio,
@@ -150,7 +156,8 @@ internal static class StrokeCollectionExtension
         var visual = strokes.CreateVisual(
             Background,
             new Rect(0, 0, bounds.Width * ratio, bounds.Height * ratio),
-            matrix);
+            matrix,
+            background);
 
         var pixelWidth = Math.Max(1, (int) Math.Ceiling(bounds.Width * ratio * dpi.DpiScaleX));
         var pixelHeight = Math.Max(1, (int) Math.Ceiling(bounds.Height * ratio * dpi.DpiScaleY));
@@ -179,9 +186,16 @@ internal static class StrokeCollectionExtension
         return bitmap;
     }
 
-    internal static RenderTargetBitmap Preview(this StrokeCollection strokes)
+    internal static RenderTargetBitmap Preview(
+        this StrokeCollection strokes,
+        ImageSource? background = null)
     {
         var bounds = strokes.GetBounds( );
+        if (background is not null)
+        {
+            bounds.Union(BackgroundRect(background));
+        }
+
         var matrix = Matrix.Identity;
 
         if (!bounds.IsEmpty)
@@ -198,7 +212,7 @@ internal static class StrokeCollectionExtension
         }
 
         var visual = strokes.CreateVisual(
-            Background, new Rect(0, 0, PreviewWidth, PreviewHeight), matrix);
+            Background, new Rect(0, 0, PreviewWidth, PreviewHeight), matrix, background);
 
         var render = new RenderTargetBitmap(PreviewWidth, PreviewHeight, 96, 96, PixelFormats.Pbgra32);
         render.Render(visual);
@@ -210,12 +224,27 @@ internal static class StrokeCollectionExtension
         this StrokeCollection strokes,
         Brush background,
         Rect bounds,
-        Matrix transform)
+        Matrix transform,
+        ImageSource? image = null)
     {
         var visual = new DrawingVisual( );
         using (var context = visual.RenderOpen( ))
         {
             context.DrawRectangle(background, null, bounds);
+            if (image is not null)
+            {
+                // 背景按世界坐标矩形绘制，与墨迹共用同一变换，保证叠加位置一致。
+                context.PushTransform(new MatrixTransform(transform));
+                try
+                {
+                    context.DrawImage(image, BackgroundRect(image));
+                }
+                finally
+                {
+                    context.Pop( );
+                }
+            }
+
             foreach (var stroke in strokes)
             {
                 var copy = stroke.Clone( );
@@ -225,5 +254,15 @@ internal static class StrokeCollectionExtension
         }
 
         return visual;
+    }
+
+    // 文档背景在世界坐标中的矩形：DocumentHost 将背景页居中于 32768×16384 画布，
+    // 显示尺寸按图像自身 DPI 折算为 DIP。
+    private static Rect BackgroundRect(ImageSource image)
+    {
+        var bitmap = (BitmapSource) image;
+        var width = bitmap.PixelWidth * 96.0 / bitmap.DpiX;
+        var height = bitmap.PixelHeight * 96.0 / bitmap.DpiY;
+        return new Rect(16384 - width / 2, 8192 - height / 2, width, height);
     }
 }

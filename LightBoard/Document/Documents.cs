@@ -13,6 +13,8 @@ using NetOffice.OfficeApi.Enums;
 using NetOffice.PowerPointApi.Enums;
 using NetOffice.WordApi.Enums;
 
+using InkCanvasNext;
+
 using PpApplication = NetOffice.PowerPointApi.Application;
 using WdApplication = NetOffice.WordApi.Application;
 
@@ -41,6 +43,25 @@ public partial class App
 
         Document = document;
         PageIndex = 0;
+    }
+
+    // 文档加载后全部页尚无缩略图；后台逐页合成（XPS 页树有线程亲和性，背景渲染必须留在 UI 线程），仅结果回投 UI 线程。
+    public static Task RefreshDocumentPreviewsAsync( )
+    {
+        return Document is null ? Task.CompletedTask : Task.Run(( ) =>
+        {
+            foreach (var page in Pages)
+            {
+                var background = Current.Dispatcher.Invoke(( ) => Document.GetPage(page.Number - 1));
+                if (background is null)
+                {
+                    continue;
+                }
+
+                var preview = page.Strokes.Preview(background);
+                Current.Dispatcher.Invoke(( ) => page.Preview = preview);
+            }
+        });
     }
 }
 
