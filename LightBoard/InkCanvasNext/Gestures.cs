@@ -110,32 +110,6 @@ public partial class InkCanvasNext
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private (Point? First, Point? Second) GetMajorTouches( )
-    {
-        var values = touches.Values;
-        var count = values.Count;
-
-        if (count == 0)
-        {
-            return (null, null);
-        }
-
-        using var enumerator = values.GetEnumerator( );
-        enumerator.MoveNext( );
-        var first = enumerator.Current.Position;
-
-        if (count == 1)
-        {
-            return (first, null);
-        }
-
-        enumerator.MoveNext( );
-        var second = enumerator.Current.Position;
-
-        return (first, second);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static double Smooth(double x)
     {
         const double T = 0.2;

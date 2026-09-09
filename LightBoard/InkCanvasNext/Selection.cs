@@ -25,7 +25,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         selectedStrokes.Clear( );
         foreach (var s in strokes)
         {
-            if (owner.Canvas.Strokes.Contains(s))
+            if (owner.InnerCanvas.Strokes.Contains(s))
             {
                 selectedStrokes.Add(s);
             }

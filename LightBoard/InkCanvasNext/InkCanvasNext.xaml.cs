@@ -78,6 +78,7 @@ public enum MouseWheelAction
     /// </summary>
     None
 }
+
 /// <summary>
 /// 支持绘制、擦除、选择、直线、圆形、高亮等模式的墨迹画布控件。
 /// </summary>
@@ -96,6 +97,7 @@ public partial class InkCanvasNext : UserControl
             typeof(bool),
             typeof(InkCanvasNext),
             new PropertyMetadata(false));
+
     /// <summary>
     /// 标识 CanRedo 依赖项属性。
     /// </summary>
@@ -162,16 +164,16 @@ public partial class InkCanvasNext : UserControl
     {
         InitializeComponent( );
 
-        eraser = new Eraser(Canvas, EraserFeedback);
+        eraser = new Eraser(InnerCanvas, EraserFeedback);
 
         CanvasGrid.LayoutTransform = canvasScaleTransform;
 
         selection = new SelectionController(this, new SelectionVisual(SelectionLayer));
 
-        Canvas.Strokes.StrokesChanged += OnStrokesChanged;
+        InnerCanvas.Strokes.StrokesChanged += OnStrokesChanged;
 
-        Strokes = Canvas.Strokes;
-        DefaultDrawingAttributes = Canvas.DefaultDrawingAttributes;
+        Strokes = InnerCanvas.Strokes;
+        DefaultDrawingAttributes = InnerCanvas.DefaultDrawingAttributes;
 
         prevMode = InkCanvasNextMode.Ink;
 
@@ -189,7 +191,7 @@ public partial class InkCanvasNext : UserControl
         CanvasScroll.ScrollChanged += (_, _) => RaiseViewOrSelectionChanged( );
         canvasScaleTransform.Changed += (_, _) => RaiseViewOrSelectionChanged( );
 
-        Canvas.Children.Add(multiTouchCanvas);
+        InnerCanvas.Children.Add(multiTouchCanvas);
 
         SetupShapePreview( );
     }
@@ -337,7 +339,7 @@ public partial class InkCanvasNext : UserControl
 
         try
         {
-            var transform = Canvas.TransformToVisual(relativeTo);
+            var transform = InnerCanvas.TransformToVisual(relativeTo);
             return new Rect(transform.Transform(bounds.TopLeft), transform.Transform(bounds.BottomRight));
         }
         catch (InvalidOperationException)
@@ -383,7 +385,7 @@ public partial class InkCanvasNext : UserControl
     {
         if (e.NewValue is DrawingAttributes attributes)
         {
-            (d as InkCanvasNext)?.Canvas.DefaultDrawingAttributes = attributes;
+            (d as InkCanvasNext)?.InnerCanvas.DefaultDrawingAttributes = attributes;
         }
     }
 
@@ -400,7 +402,7 @@ public partial class InkCanvasNext : UserControl
     private void ApplyEditingMode(InkCanvasNextMode mode)
     {
         prevMode = mode;
-        if (state != TouchState.Idle)
+        if (State != TouchState.Idle)
         {
             // 手势接管期间切换工具：放弃进行中的形状，避免抬手时把过时形状提交
             CancelShape( );
@@ -428,21 +430,21 @@ public partial class InkCanvasNext : UserControl
         {
             case InkCanvasNextMode.Ink:
             case InkCanvasNextMode.Highlighter:
-                Canvas.EditingMode = InkCanvasEditingMode.Ink;
+                InnerCanvas.EditingMode = InkCanvasEditingMode.Ink;
                 ConfigureSelectMode(false);
                 break;
             case InkCanvasNextMode.EraseStroke:
-                Canvas.EditingMode = InkCanvasEditingMode.EraseByStroke;
+                InnerCanvas.EditingMode = InkCanvasEditingMode.EraseByStroke;
                 ConfigureSelectMode(false);
                 break;
             case InkCanvasNextMode.EraseArea:
             case InkCanvasNextMode.Line:
             case InkCanvasNextMode.Circle:
-                Canvas.EditingMode = InkCanvasEditingMode.None;
+                InnerCanvas.EditingMode = InkCanvasEditingMode.None;
                 ConfigureSelectMode(false);
                 break;
             case InkCanvasNextMode.Select:
-                Canvas.EditingMode = InkCanvasEditingMode.None;
+                InnerCanvas.EditingMode = InkCanvasEditingMode.None;
                 ConfigureSelectMode(true);
                 break;
         }
@@ -465,9 +467,9 @@ public partial class InkCanvasNext : UserControl
     {
         var newStrokes = strokes ?? [];
 
-        Canvas.Strokes.StrokesChanged -= OnStrokesChanged;
-        Canvas.Strokes = newStrokes;
-        Canvas.Strokes.StrokesChanged += OnStrokesChanged;
+        InnerCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
+        InnerCanvas.Strokes = newStrokes;
+        InnerCanvas.Strokes.StrokesChanged += OnStrokesChanged;
 
         Strokes = newStrokes;
 

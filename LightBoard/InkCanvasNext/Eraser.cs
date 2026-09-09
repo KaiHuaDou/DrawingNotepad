@@ -36,7 +36,7 @@ public partial class InkCanvasNext
 
     private void UpdateAreaEraser( )
     {
-        if (!IsAreaEraserActive(state))
+        if (!IsAreaEraserActive(State))
         {
             EndEraserCycle( );
             return;
@@ -44,7 +44,7 @@ public partial class InkCanvasNext
 
         eraser.Scale = currentScale;
 
-        if (state == TouchState.Eraser)
+        if (State == TouchState.Eraser)
         {
             (var screenCenter, var radius) = Eraser.GetCircle(touches);
             eraser.Diameter = radius * 2 + 8;
@@ -59,11 +59,11 @@ public partial class InkCanvasNext
 
             (var Device, var Position) = touches.First( ).Value;
             var screenPosition = Position;
-            var canvasPosition = Device.GetTouchPoint(Canvas).Position;
+            var canvasPosition = Device.GetTouchPoint(InnerCanvas).Position;
 
             eraser.Show(screenPosition);
 
-            if (state != TouchState.EvalDraw)
+            if (State != TouchState.EvalDraw)
             {
                 eraser.Update(canvasPosition);
             }
@@ -80,7 +80,7 @@ public partial class InkCanvasNext
         double sumX = 0, sumY = 0;
         foreach (var kv in touches)
         {
-            var pos = kv.Value.Device.GetTouchPoint(Canvas).Position;
+            var pos = kv.Value.Device.GetTouchPoint(InnerCanvas).Position;
             sumX += pos.X;
             sumY += pos.Y;
         }

@@ -21,9 +21,6 @@
             <ContentPresenter ClipToBounds="True" />
         </ControlTemplate>
     </Window.Template>
-    <Window.Resources>
-        <ResourceDictionary Source="/Theme.xaml" />
-    </Window.Resources>
     <Grid>
         <next:InkCanvasNext x:Name="CanvasNext"
                             Background="{StaticResource MajorGridBrush}"

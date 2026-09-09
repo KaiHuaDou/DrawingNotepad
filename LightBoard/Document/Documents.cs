@@ -27,6 +27,7 @@ public partial class App
         var document = await DocumentService.OpenAsync(path);
 
         Pages.Clear( );
+
         for (var i = 0; i < document.PageCount; i++)
         {
             Pages.Add(new Page
@@ -73,29 +74,25 @@ public sealed class DocumentService : IDisposable
 
     private static readonly string[] ImageExtensions = [".bmp", ".gif", ".ico", ".jpg", ".jpeg", ".png", ".tiff"];
 
-    private static bool IsImageExtension(string ext)
-    {
-        return ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase);
-    }
-
     private static readonly string CacheDir = Path.Join(App.AppPath, "XpsCache");
     private static readonly ConcurrentDictionary<string, Lazy<Task<(string Path, string? Temp)>>> Converting = new( );
-    private readonly PageSource source;
     private readonly string? tempPath;
 
     private DocumentService(PageSource source, string? tempPath)
     {
-        this.source = source;
+        Source = source;
         this.tempPath = tempPath;
     }
 
-    public int PageCount => source.PageCount;
+    internal PageSource Source { get; }
+
+    public int PageCount => Source.PageCount;
 
     public static async Task<DocumentService> OpenAsync(string path)
     {
         var ext = Path.GetExtension(path);
 
-        if (IsImageExtension(ext))
+        if (ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
         {
             return await Task.Run(( ) => new DocumentService(ImagePageSource.Open(path), null));
         }
@@ -122,7 +119,8 @@ public sealed class DocumentService : IDisposable
         {
             try
             {
-                Touch(cachePath);
+                try { File.SetLastAccessTime(cachePath, DateTime.Now); } catch { }
+
                 return new DocumentService(new XpsSource(cachePath), null);
             }
             catch
@@ -153,13 +151,13 @@ public sealed class DocumentService : IDisposable
 
     public ImageSource? GetPage(int index)
     {
-        return source.GetPage(index);
+        return Source.GetPage(index);
     }
 
     public void Dispose( )
     {
         // 缓存文件留给下次打开复用，这里只释放 XPS 句柄；临时产物（缓存写入失败时）删除，失败忽略。
-        source.Dispose( );
+        Source.Dispose( );
         if (tempPath != null)
         {
             try { File.Delete(tempPath); } catch { }
@@ -281,12 +279,6 @@ public sealed class DocumentService : IDisposable
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start( );
         return tcs.Task;
-    }
-
-    // 更新最近使用时间，供 LRU 清理排序。
-    private static void Touch(string cachePath)
-    {
-        try { File.SetLastAccessTime(cachePath, DateTime.Now); } catch { }
     }
 
     // 超出配额按最近使用时间从旧到新清理；正在被打开的缓存文件删除会失败，跳过即可。

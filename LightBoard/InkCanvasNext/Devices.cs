@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace InkCanvasNext;
@@ -22,6 +22,9 @@ public partial class InkCanvasNext
     private readonly OrderedDictionary<int, (TouchDevice Device, Point Position)> touches = [with(20)];
     private readonly Dictionary<int, Point> touchStarts = [];
     private bool releasingCaptures;
+
+    /// <summary>测试接缝：暴露内部墨迹画布（触摸事件处理目标，供 InkCanvasNext.Tests 上报触摸）。</summary>
+    internal InkCanvas InnerCanvasElement => InnerCanvas;
 
     /// <summary>
     /// 重置触摸输入状态：释放全部触摸捕获、清空触点并取消进行中的手势。
@@ -69,7 +72,7 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewTouchDown(object o, TouchEventArgs e)
     {
-        if (TryStamp(e.GetTouchPoint(Canvas).Position))
+        if (TryStamp(e.GetTouchPoint(InnerCanvas).Position))
         {
             e.Handled = true;
             return;
@@ -80,32 +83,32 @@ public partial class InkCanvasNext
         SubscribeDeactivated(e.TouchDevice);
         UpdateState( );
         // 由状态元数据判定是否接管（原 UpdateState 返回值 + 区域擦除/选区三条件并联）
-        e.Handled = BlocksNativeInput(state) || IsAreaEraserActive(state);
+        e.Handled = BlocksNativeInput(State) || IsAreaEraserActive(State);
 
-        if (state == TouchState.Selection && selectionGesture == SelectionGesture.Move && touches.Count >= 2)
+        if (State == TouchState.Selection && selectionGesture == SelectionGesture.Move && touches.Count >= 2)
         {
             // 选区移动中第二指落下：立即结束移动段并切入双指缩放/旋转（基线取落下瞬间，消除死区滞后）
             PromoteMoveToPinch( );
-            e.TouchDevice.Capture(Canvas);
+            e.TouchDevice.Capture(InnerCanvas);
             e.Handled = true;
         }
-        else if (state == TouchState.MultiDraw)
+        else if (State == TouchState.MultiDraw)
         {
             // 形状已由 SetState 钩子取消（离开 EvalDraw/Draw 进入手势接管态），此处无需重复处理
-            e.TouchDevice.Capture(Canvas);
+            e.TouchDevice.Capture(InnerCanvas);
             if (!multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
             {
-                var canvasPos = e.GetTouchPoint(Canvas).Position;
+                var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
                 StartMultiTouchStroke(e.TouchDevice.Id, canvasPos);
             }
 
             e.Handled = true;
         }
-        else if (IsShapeMode && state == TouchState.EvalDraw && !shapeActive)
+        else if (IsShapeMode && State == TouchState.EvalDraw && !shapeActive)
         {
-            var canvasPos = e.GetTouchPoint(Canvas).Position;
+            var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
             StartShape(canvasPos);
-            e.TouchDevice.Capture(Canvas);
+            e.TouchDevice.Capture(InnerCanvas);
             e.Handled = true;
         }
 
@@ -123,7 +126,7 @@ public partial class InkCanvasNext
 
         if (multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
         {
-            var canvasPos = e.GetTouchPoint(Canvas).Position;
+            var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
             ContinueMultiTouchStroke(e.TouchDevice.Id, canvasPos);
             e.Handled = true;
             return;
@@ -132,7 +135,7 @@ public partial class InkCanvasNext
         // 路由只由状态机决定：形状在途时仅当状态仍在单指绘制上下文（EvalDraw/Draw）才更新预览，
         // 一旦状态机迁入手势接管态（PanZoom/Pan/MultiDraw/Eraser/Selection），形状已被 SetState 取消，
         // Move 事件不会再被 shapeActive 抢占。
-        switch (state)
+        switch (State)
         {
             case TouchState.EvalDraw:
                 UpdateShapeIfActive(e);
@@ -150,7 +153,7 @@ public partial class InkCanvasNext
 
         // EvalDraw/Draw 保留未拦截（InkCanvas 原生收笔）；平移/缩放/选区由状态元数据接管；
         // MultiDraw 的 Move 已在上面多画笔画分支接管
-        if (BlocksNativeInput(state) || IsAreaEraserActive(state))
+        if (BlocksNativeInput(State) || IsAreaEraserActive(State))
         {
             e.Handled = true;
         }
@@ -167,16 +170,16 @@ public partial class InkCanvasNext
             return;
         }
 
-        UpdateShape(e.GetTouchPoint(Canvas).Position);
+        UpdateShape(e.GetTouchPoint(InnerCanvas).Position);
         e.Handled = true;
     }
 
     private void CanvasPreviewTouchUp(object o, TouchEventArgs e)
     {
-        var wasHandled = state is TouchState.PanZoom or TouchState.Pan;
-        var wasAreaEraser = IsAreaEraserActive(state);
+        var wasHandled = State is TouchState.PanZoom or TouchState.Pan;
+        var wasAreaEraser = IsAreaEraserActive(State);
         var wasMultiTouch = multiTouchStrokes.ContainsKey(e.TouchDevice.Id);
-        var wasManipulating = state == TouchState.Selection;
+        var wasManipulating = State == TouchState.Selection;
 
         if (wasMultiTouch)
         {
@@ -185,9 +188,9 @@ public partial class InkCanvasNext
 
         // 形状只允许在单指绘制上下文（EvalDraw/Draw）存活：仅当手势未被状态机接管
         // （未迁入平移/缩放/多指等）时才提交，否则由 SetState 已取消、此处直接跳过
-        if (shapeActive && state is TouchState.EvalDraw or TouchState.Draw)
+        if (shapeActive && State is TouchState.EvalDraw or TouchState.Draw)
         {
-            var canvasPos = e.GetTouchPoint(Canvas).Position;
+            var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
             UpdateShape(canvasPos);
             CommitShape( );
             e.Handled = true;
@@ -200,7 +203,7 @@ public partial class InkCanvasNext
 
     private void CanvasTouchLeave(object o, TouchEventArgs e)
     {
-        if (e.TouchDevice.Captured == Canvas)
+        if (releasingCaptures || e.TouchDevice.Captured == InnerCanvas)
         {
             return;
         }
@@ -213,7 +216,7 @@ public partial class InkCanvasNext
     {
         foreach ((var Device, _) in touches.Values)
         {
-            Device.Capture(Canvas);
+            Device.Capture(InnerCanvas);
         }
     }
 
@@ -263,7 +266,7 @@ public partial class InkCanvasNext
         touches[id] = (device, position);
         touchStarts[id] = position;
 
-        if (state is TouchState.Pan or TouchState.PanZoom)
+        if (State is TouchState.Pan or TouchState.PanZoom)
         {
             InitGesture( );
         }
@@ -274,7 +277,7 @@ public partial class InkCanvasNext
         touches.Remove(id);
         touchStarts.Remove(id);
 
-        if (state is TouchState.Pan or TouchState.PanZoom)
+        if (State is TouchState.Pan or TouchState.PanZoom)
         {
             InitGesture( );
         }
@@ -292,7 +295,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        if (TryStamp(e.GetPosition(Canvas)))
+        if (TryStamp(e.GetPosition(InnerCanvas)))
         {
             e.Handled = true;
             return;
@@ -300,15 +303,15 @@ public partial class InkCanvasNext
 
         if (IsShapeMode && !shapeActive)
         {
-            StartShape(e.GetPosition(Canvas));
+            StartShape(e.GetPosition(InnerCanvas));
             e.Handled = true;
             return;
         }
 
         if (Mode == InkCanvasNextMode.Select)
         {
-            BeginMouseSelection(e.GetPosition(Canvas));
-            Canvas.CaptureMouse( );
+            BeginMouseSelection(e.GetPosition(InnerCanvas));
+            InnerCanvas.CaptureMouse( );
             e.Handled = true;
             return;
         }
@@ -319,7 +322,7 @@ public partial class InkCanvasNext
         }
 
         var screenPosition = e.GetPosition(this);
-        var canvasPosition = e.GetPosition(Canvas);
+        var canvasPosition = e.GetPosition(InnerCanvas);
         eraser.Diameter = EraserDiameter;
         eraser.Scale = currentScale;
         eraser.Show(screenPosition);
@@ -336,14 +339,14 @@ public partial class InkCanvasNext
 
         if (shapeActive)
         {
-            UpdateShape(e.GetPosition(Canvas));
+            UpdateShape(e.GetPosition(InnerCanvas));
             e.Handled = true;
             return;
         }
 
         if (Mode == InkCanvasNextMode.Select && selectionGesture != SelectionGesture.None)
         {
-            UpdateMouseSelection(e.GetPosition(Canvas));
+            UpdateMouseSelection(e.GetPosition(InnerCanvas));
             e.Handled = true;
             return;
         }
@@ -354,7 +357,7 @@ public partial class InkCanvasNext
         }
 
         var screenPosition = e.GetPosition(this);
-        var canvasPosition = e.GetPosition(Canvas);
+        var canvasPosition = e.GetPosition(InnerCanvas);
         eraser.Show(screenPosition);
         eraser.Move(canvasPosition);
         e.Handled = true;
@@ -369,7 +372,7 @@ public partial class InkCanvasNext
 
         if (shapeActive)
         {
-            UpdateShape(e.GetPosition(Canvas));
+            UpdateShape(e.GetPosition(InnerCanvas));
             CommitShape( );
             e.Handled = true;
             return;
@@ -409,54 +412,6 @@ public partial class InkCanvasNext
         var step = ScrollStep * currentScale;
         var newOffset = CanvasScroll.VerticalOffset + (e.Delta > 0 ? -step : step);
         CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffset, 0, CanvasScroll.ScrollableHeight));
-    }
-
-    private double GetMaxDistance2( )
-    {
-        var count = touches.Count;
-        if (count < 2)
-        {
-            return 0;
-        }
-
-        Span<Point> positions = stackalloc Point[count];
-        var index = 0;
-        foreach (var kv in touches)
-        {
-            positions[index++] = kv.Value.Position;
-        }
-
-        double max = 0;
-        for (var i = 0; i < count - 1; i++)
-        {
-            for (var j = i + 1; j < count; j++)
-            {
-                var d2 = Geometry.Distance2(positions[i], positions[j]);
-                if (d2 > max)
-                {
-                    max = d2;
-                }
-            }
-        }
-
-        return max;
-    }
-
-    private double Get1stFingerDispl2( )
-    {
-        if (touches.Count == 0)
-        {
-            return 0;
-        }
-
-        var first = touches.First( );
-        if (!touchStarts.TryGetValue(first.Key, out var start))
-        {
-            return 0;
-        }
-
-        var current = first.Value.Position;
-        return Geometry.Distance2(current, start);
     }
 
     /// <summary>盖章模式拦截：命中则盖章并返回 true（调用方据此 Handled 并短路后续路由）。</summary>

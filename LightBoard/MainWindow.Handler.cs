@@ -326,17 +326,19 @@ public partial class MainWindow
         SyncToolState( );
     }
 
+    private static readonly LinearGradientBrush ContainerBrush = (Application.Current.FindResource("ContainerBrush") as LinearGradientBrush)!;
+    private static readonly LinearGradientBrush ContainerBrushSolid = (Application.Current.FindResource("ContainerBrushSolid") as LinearGradientBrush)!;
+    private static readonly DrawingBrush MajorGridBrush = (Application.Current.FindResource("MajorGridBrush") as DrawingBrush)!;
+
     private void TransparentModeClick(object o, RoutedEventArgs e)
     {
         var mode = (TransparentModeButton.Tag as string) == "\uE729";
-        var blackBrush = new SolidColorBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
-        var borderBrush = new SolidColorBrush(Color.FromArgb(128, 0x2E, 0x2E, 0x2E));
 
-        CanvasNext.Background = mode ? Brushes.Transparent : blackBrush;
+        CanvasNext.Background = mode ? Brushes.Transparent : MajorGridBrush;
         TimeText.Visibility = mode || AllPageToogle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
-        LeftBorder.Background = mode ? blackBrush : borderBrush;
-        CenterBorder.Background = mode ? blackBrush : borderBrush;
-        RightBorder.Background = mode ? blackBrush : borderBrush;
+        LeftBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
+        CenterBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
+        RightBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
         TransparentModeButton.Tag = mode ? "\uE7C3" : "\uE729";
     }
 

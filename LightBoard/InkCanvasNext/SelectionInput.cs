@@ -3,36 +3,38 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Ink;
-using System.Windows.Input;
 using System.Windows.Media;
+
+using static InkCanvasNext.Geometry;
 
 namespace InkCanvasNext;
 
+internal enum SelectionHandle
+{
+    None,
+    TL,
+    TR,
+    BL,
+    BR,
+    T,
+    B,
+    L,
+    R,
+    Rotate
+}
+
+internal enum SelectionGesture
+{
+    None,
+    Move,
+    Scale,
+    Rotate,
+    Lasso,
+    Pinch
+}
+
 public partial class InkCanvasNext
 {
-    private enum SelectionHandle
-    {
-        None,
-        TL,
-        TR,
-        BL,
-        BR,
-        T,
-        B,
-        L,
-        R,
-        Rotate
-    }
-
-    private enum SelectionGesture
-    {
-        None,
-        Move,
-        Scale,
-        Rotate,
-        Lasso,
-        Pinch
-    }
 
     private const double HandleHitRadius = 16;
     private const double LassoPointDistance2 = 16;
@@ -133,7 +135,7 @@ public partial class InkCanvasNext
         selectionGesture = SelectionGesture.None;
         selectionTarget = null;
         rotateHandleLive = null;
-        Canvas.ReleaseMouseCapture( );
+        InnerCanvas.ReleaseMouseCapture( );
         selection.Invalidate( );
         RaiseViewOrSelectionChanged( );
     }
@@ -149,7 +151,7 @@ public partial class InkCanvasNext
         }
 
         // touches 保插入序：手势起始指在存活期间恒为 First()，抬起后由剩余手指自然接替
-        var canvasPos = touches.First( ).Value.Device.GetTouchPoint(Canvas).Position;
+        var canvasPos = touches.First( ).Value.Device.GetTouchPoint(InnerCanvas).Position;
         selectionStartPoint = canvasPos;
         selectionLastPoint = canvasPos;
 
@@ -212,13 +214,13 @@ public partial class InkCanvasNext
 
         if (selectionGesture == SelectionGesture.Lasso)
         {
-            UpdateLassoTrack(touches.First( ).Value.Device.GetTouchPoint(Canvas).Position);
+            UpdateLassoTrack(touches.First( ).Value.Device.GetTouchPoint(InnerCanvas).Position);
             return;
         }
 
         if (selectionGesture is SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate)
         {
-            UpdateSelectionTransform(touches.First( ).Value.Device.GetTouchPoint(Canvas).Position);
+            UpdateSelectionTransform(touches.First( ).Value.Device.GetTouchPoint(InnerCanvas).Position);
         }
     }
 
@@ -301,16 +303,6 @@ public partial class InkCanvasNext
         pinchStartAngle = angle;
     }
 
-    private (Point C1, Point C2) GetPinchPoints( )
-    {
-        using var enumerator = touches.Values.GetEnumerator( );
-        enumerator.MoveNext( );
-        var first = enumerator.Current;
-        enumerator.MoveNext( );
-        var second = enumerator.Current;
-        return (first.Device.GetTouchPoint(Canvas).Position, second.Device.GetTouchPoint(Canvas).Position);
-    }
-
     // ---------- 变换 ----------
 
     private void UpdateSelectionTransform(Point p)
@@ -355,7 +347,7 @@ public partial class InkCanvasNext
                 var len = Math.Sqrt(vx * vx + vy * vy);
                 if (len > 1e-9)
                 {
-                    var r0 = Geometry.Distance(selectionCenter, selectionStartPoint);
+                    var r0 = Distance(selectionCenter, selectionStartPoint);
                     rotateHandleLive = new Point(
                         selectionCenter.X + vx / len * r0,
                         selectionCenter.Y + vy / len * r0);
@@ -443,7 +435,7 @@ public partial class InkCanvasNext
         }
 
         ResetSelectionGesture( );
-        Canvas.ReleaseMouseCapture( );
+        InnerCanvas.ReleaseMouseCapture( );
         selection.Invalidate( );
     }
 
@@ -456,7 +448,7 @@ public partial class InkCanvasNext
         selectionGesture = SelectionGesture.Lasso;
         lassoPath.Add(p);
         lassoDragged = false;
-        lassoTester = Canvas.Strokes.GetIncrementalLassoHitTester(50);
+        lassoTester = InnerCanvas.Strokes.GetIncrementalLassoHitTester(50);
         lassoTester.SelectionChanged += OnLassoSelectionChanged;
         lassoTester.AddPoints([ToStylusPoint(p)]);
     }
@@ -464,7 +456,7 @@ public partial class InkCanvasNext
     /// <summary>套索轨迹追加（鼠标/触摸共用）：去抖后累积路径点并更新命中测试与套索视觉。</summary>
     private void UpdateLassoTrack(Point p)
     {
-        if (Geometry.Distance2(p, lassoPath[^1]) < LassoPointDistance2)
+        if (Distance2(p, lassoPath[^1]) < LassoPointDistance2)
         {
             return;
         }
@@ -510,7 +502,7 @@ public partial class InkCanvasNext
 
     private void HandlePointSelect(Point p)
     {
-        var hit = Canvas.Strokes.HitTest(p);
+        var hit = InnerCanvas.Strokes.HitTest(p);
         if (hit.Count > 0)
         {
             selection.SetStrokes(hit);
@@ -521,8 +513,6 @@ public partial class InkCanvasNext
         }
     }
 
-    // ---------- 命中与几何 ----------
-
     private SelectionHandle HitTestHandle(Point p)
     {
         var b = selection.Bounds;
@@ -531,54 +521,46 @@ public partial class InkCanvasNext
             return SelectionHandle.None;
         }
 
-        // 旋转手柄（选区正上方，与 SelectionVisual.RotateHandleCenter 同一几何）优先级最高：
-        // 避免与顶部缩放手柄（T）的命中区重叠时被抢占；命中半径按屏幕恒定（÷zoom），任意缩放下都易触发
         if (Near(p, SelectionVisual.RotateHandleCenter(b, currentScale), RotateHitRadius / Math.Max(currentScale, 1e-6)))
         {
             return SelectionHandle.Rotate;
         }
-
-        if (Near(p, b.TopLeft, HandleHitRadius))
+        else if (Near(p, b.TopLeft, HandleHitRadius))
         {
             return SelectionHandle.TL;
         }
-
-        if (Near(p, b.TopRight, HandleHitRadius))
+        else if (Near(p, b.TopRight, HandleHitRadius))
         {
             return SelectionHandle.TR;
         }
-
-        if (Near(p, b.BottomLeft, HandleHitRadius))
+        else if (Near(p, b.BottomLeft, HandleHitRadius))
         {
             return SelectionHandle.BL;
         }
-
-        if (Near(p, b.BottomRight, HandleHitRadius))
+        else if (Near(p, b.BottomRight, HandleHitRadius))
         {
             return SelectionHandle.BR;
         }
-
-        if (Near(p, new Point(b.Left + b.Width / 2, b.Top), HandleHitRadius))
+        else if (Near(p, new Point(b.Left + b.Width / 2, b.Top), HandleHitRadius))
         {
             return SelectionHandle.T;
         }
-
-        if (Near(p, new Point(b.Left + b.Width / 2, b.Bottom), HandleHitRadius))
+        else if (Near(p, new Point(b.Left + b.Width / 2, b.Bottom), HandleHitRadius))
         {
             return SelectionHandle.B;
         }
-
-        if (Near(p, new Point(b.Left, b.Top + b.Height / 2), HandleHitRadius))
+        else if (Near(p, new Point(b.Left, b.Top + b.Height / 2), HandleHitRadius))
         {
             return SelectionHandle.L;
         }
-
-        if (Near(p, new Point(b.Right, b.Top + b.Height / 2), HandleHitRadius))
+        else if (Near(p, new Point(b.Right, b.Top + b.Height / 2), HandleHitRadius))
         {
             return SelectionHandle.R;
         }
-
-        return SelectionHandle.None;
+        else
+        {
+            return SelectionHandle.None;
+        }
     }
 
     private static Point GetAnchorFor(SelectionHandle handle, Rect b)
@@ -597,33 +579,5 @@ public partial class InkCanvasNext
             SelectionHandle.R => new Point(b.Left, cy),
             _ => new Point(cx, cy)
         };
-    }
-
-    private static bool Near(Point a, Point b, double radius)
-    {
-        return Geometry.Distance2(a, b) <= radius * radius;
-    }
-
-    /// <summary>弧度→角度换算：Math.Atan2 返回弧度，Matrix.RotateAt 要求角度。</summary>
-    private const double RadToDeg = 180.0 / Math.PI;
-
-    private static double AngleFrom(Point center, Point p)
-    {
-        return Math.Atan2(p.Y - center.Y, p.X - center.X);
-    }
-
-    private static bool IsNearIdentity(Matrix m)
-    {
-        return Math.Abs(m.M11 - 1) < 1e-6
-            && Math.Abs(m.M22 - 1) < 1e-6
-            && Math.Abs(m.M12) < 1e-6
-            && Math.Abs(m.M21) < 1e-6
-            && Math.Abs(m.OffsetX) < 1e-6
-            && Math.Abs(m.OffsetY) < 1e-6;
-    }
-
-    private static StylusPoint ToStylusPoint(Point p)
-    {
-        return new StylusPoint(p.X, p.Y);
     }
 }

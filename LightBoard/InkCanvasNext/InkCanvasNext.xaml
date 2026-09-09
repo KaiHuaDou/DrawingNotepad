@@ -11,7 +11,7 @@
                 <Border x:Name="DocumentHost"
                         HorizontalAlignment="Center" VerticalAlignment="Center"
                         Visibility="Collapsed" />
-                <InkCanvas x:Name="Canvas"
+                <InkCanvas x:Name="InnerCanvas"
                            Width="32768" Height="16384"
                            Panel.ZIndex="36"
                            Background="Transparent"

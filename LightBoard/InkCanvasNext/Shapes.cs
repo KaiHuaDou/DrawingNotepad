@@ -30,7 +30,7 @@ public partial class InkCanvasNext
         shapePreviewEllipse.Fill = Brushes.Transparent;
         shapePreviewLayer.Children.Add(shapePreviewLine);
         shapePreviewLayer.Children.Add(shapePreviewEllipse);
-        Canvas.Children.Add(shapePreviewLayer);
+        InnerCanvas.Children.Add(shapePreviewLayer);
     }
 
     private void StartShape(Point point)
@@ -128,7 +128,7 @@ public partial class InkCanvasNext
         var stroke = BuildShapeStroke( );
         if (stroke is not null)
         {
-            Canvas.Strokes.Add(stroke);
+            InnerCanvas.Strokes.Add(stroke);
         }
     }
 

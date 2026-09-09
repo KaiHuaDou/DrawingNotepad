@@ -17,7 +17,8 @@ internal enum TouchState
 public partial class InkCanvasNext
 {
     private InkCanvasNextMode prevMode = InkCanvasNextMode.Ink;
-    private TouchState state = TouchState.Idle;
+
+    internal TouchState State { get; private set; } = TouchState.Idle;
 
     /// <summary>
     /// 触点数变化（Down/Up），或 EvalDraw 状态下 Move 时重评迁移。
@@ -32,7 +33,7 @@ public partial class InkCanvasNext
         var x2 = Get1stFingerDispl2( );
         var c2 = touchDisplThreshold * touchDisplThreshold;
 
-        var newState = state switch
+        var newState = State switch
         {
             TouchState.Idle => count switch
             {
@@ -45,7 +46,7 @@ public partial class InkCanvasNext
                 >= 5 when d2 <= l2 => TouchState.Eraser,
                 // d > l 视为多人两侧同时落笔，优先于平移
                 >= 2 when d2 > l2 => TouchState.MultiDraw,
-                _ => state,
+                _ => State,
             },
 
             TouchState.EvalDraw => count switch
@@ -56,30 +57,29 @@ public partial class InkCanvasNext
                 3 or 4 when d2 <= l2 => TouchState.Pan,
                 >= 5 when d2 <= l2 => TouchState.Eraser,
                 >= 2 when d2 > l2 => TouchState.MultiDraw,
-                _ => state,
+                _ => State,
             },
 
             TouchState.Draw => count switch
             {
                 0 => TouchState.Idle,
                 >= 2 when d2 > l2 => TouchState.MultiDraw,
-                _ => state,
+                _ => State,
             },
 
             TouchState.MultiDraw => count switch
             {
                 0 => TouchState.Idle,
                 1 => TouchState.Draw,
-                _ => state,
+                _ => State,
             },
 
             TouchState.PanZoom => count switch
             {
                 0 => TouchState.Idle,
-                3 or 4 when d2 <= l2 => TouchState.Pan,
-                >= 5 when d2 <= l2 => TouchState.Eraser,
+                1 or >= 3 when d2 <= l2 => TouchState.Pan,
                 > 2 when d2 > l2 => TouchState.MultiDraw,
-                _ => state,
+                _ => State,
             },
 
             TouchState.Pan => count switch
@@ -87,14 +87,14 @@ public partial class InkCanvasNext
                 0 => TouchState.Idle,
                 >= 5 when d2 <= l2 => TouchState.Eraser,
                 > 3 when d2 > l2 => TouchState.MultiDraw,
-                _ => state,
+                _ => State,
             },
 
             TouchState.Eraser => count switch
             {
                 0 => TouchState.Idle,
                 > 5 when d2 > l2 => TouchState.MultiDraw,
-                _ => state,
+                _ => State,
             },
 
             TouchState.Selection => count switch
@@ -106,7 +106,7 @@ public partial class InkCanvasNext
                 _ => TouchState.Selection,
             },
 
-            _ => state,
+            _ => State,
         };
 
         SetState(newState);
@@ -124,12 +124,12 @@ public partial class InkCanvasNext
 
     private void SetState(TouchState newState)
     {
-        if (state == newState)
+        if (State == newState)
         {
             return;
         }
 
-        var from = state;
+        var from = State;
 
         if (from == TouchState.MultiDraw)
         {
@@ -193,7 +193,7 @@ public partial class InkCanvasNext
                 if (from != TouchState.PanZoom)
                 {
                     ReleaseAll( );
-                    Canvas.EditingMode = InkCanvasEditingMode.None;
+                    InnerCanvas.EditingMode = InkCanvasEditingMode.None;
                     CaptureAll( );
                 }
 
@@ -202,13 +202,13 @@ public partial class InkCanvasNext
 
             case TouchState.Eraser:
                 ReleaseAll( );
-                Canvas.EditingMode = InkCanvasEditingMode.None;
+                InnerCanvas.EditingMode = InkCanvasEditingMode.None;
                 CaptureAll( );
                 break;
 
             case TouchState.MultiDraw:
                 ReleaseAll( );
-                Canvas.EditingMode = InkCanvasEditingMode.None;
+                InnerCanvas.EditingMode = InkCanvasEditingMode.None;
                 CaptureAll( );
                 StartMultiTouch( );
                 break;
@@ -219,7 +219,7 @@ public partial class InkCanvasNext
             EndEraserCycle( );
         }
 
-        state = newState;
+        State = newState;
     }
 
     private void RestoreMode( )

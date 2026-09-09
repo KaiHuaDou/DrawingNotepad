@@ -65,7 +65,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        Canvas.Strokes.Remove(SelectedStrokes);
+        InnerCanvas.Strokes.Remove(SelectedStrokes);
         selection.Clear( );
     }
 
@@ -81,7 +81,7 @@ public partial class InkCanvasNext
 
         var clone = SelectedStrokes.Clone( );
         CenterAt(clone, point);
-        Canvas.Strokes.Add(clone);
+        InnerCanvas.Strokes.Add(clone);
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public partial class InkCanvasNext
         ms.Position = 0;
         var strokes = new StrokeCollection(ms);
         CenterAt(strokes, point);
-        Canvas.Strokes.Add(strokes);
+        InnerCanvas.Strokes.Add(strokes);
     }
 
     private static void CenterAt(StrokeCollection strokes, Point point)

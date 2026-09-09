@@ -36,6 +36,18 @@
             <GradientStop Offset="1" Color="#9BDDFB" />
         </LinearGradientBrush.GradientStops>
     </LinearGradientBrush>
+    <LinearGradientBrush x:Key="ContainerBrush" StartPoint="0,0" EndPoint="0,1">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Offset="0" Color="#44C5EBFF" />
+            <GradientStop Offset="1" Color="#4481D8FF" />
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="ContainerBrushSolid" StartPoint="0,0" EndPoint="0,1">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Offset="0" Color="#99C5EBFF" />
+            <GradientStop Offset="1" Color="#9981D8FF" />
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
     <Style x:Key="IconTextStyle" TargetType="TextBlock">
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalAlignment" Value="Center" />
@@ -51,7 +63,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Border"
+                    <Border x:Name="PART_Border"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="0"
@@ -60,12 +72,12 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="BorderBrush" Value="#A9AEB1" />
-                            <Setter TargetName="Border" Property="BorderThickness" Value="1" />
+                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="#A9AEB1" />
+                            <Setter TargetName="PART_Border" Property="BorderThickness" Value="1" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Border" Property="BorderBrush" Value="#FAFAFA" />
-                            <Setter TargetName="Border" Property="BorderThickness" Value="2" />
+                            <Setter TargetName="PART_Border" Property="Width" Value="28" />
+                            <Setter TargetName="PART_Border" Property="Height" Value="28" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -80,17 +92,17 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Border" Background="#F0F0F0" CornerRadius="5">
+                    <Border x:Name="PART_Border" Background="#F0F0F0" CornerRadius="5">
                         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Style="{StaticResource IconTextStyle}"
                                    Text="{TemplateBinding Tag}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource DarkBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource LightBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource LightBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -105,15 +117,20 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Border" Background="#F0F0F0" CornerRadius="5">
-                        <Ellipse Width="{TemplateBinding MinWidth}" Height="{TemplateBinding MinWidth}" Fill="#1E1E1E" />
+                    <Border x:Name="PART_Border" Background="#1E1E1E" CornerRadius="5">
+                        <Ellipse x:Name="PART_Ellipse"
+                                 Width="{TemplateBinding MinWidth}"
+                                 Height="{TemplateBinding MinWidth}"
+                                 Fill="#F0F0F0" />
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource DarkBrush}" />
-                        </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource LightBrush}" />
+                            <Setter TargetName="PART_Ellipse" Property="Fill" Value="{StaticResource LightBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="PART_Ellipse" Property="Fill" Value="{StaticResource DarkBrush}" />
+                            <Setter TargetName="PART_Border" Property="Width" Value="28" />
+                            <Setter TargetName="PART_Border" Property="Height" Value="28" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -128,14 +145,14 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ToggleButton}">
-                    <Border x:Name="Border" Background="#F0F0F0" CornerRadius="5">
+                    <Border x:Name="PART_Border" Background="#F0F0F0" CornerRadius="5">
                         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Style="{StaticResource IconTextStyle}"
                                    Text="{TemplateBinding Tag}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource DarkBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -149,22 +166,22 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Button}">
-                    <Border x:Name="Border" Background="#F0F0F0" CornerRadius="5">
-                        <TextBlock x:Name="IconText"
+                    <Border x:Name="PART_Border" Background="#F0F0F0" CornerRadius="5">
+                        <TextBlock x:Name="PART_IconText"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Style="{StaticResource IconTextStyle}"
                                    Text="{TemplateBinding Tag}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource DarkBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{StaticResource LightBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource LightBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Border" Property="Opacity" Value="0.5" />
-                            <Setter TargetName="IconText" Property="Foreground" Value="#A0A0A0" />
+                            <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
+                            <Setter TargetName="PART_IconText" Property="Foreground" Value="#A0A0A0" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -174,16 +191,7 @@
     <Style x:Key="ContainerStyle" TargetType="{x:Type Border}">
         <Setter Property="Padding" Value="5" />
         <Setter Property="Panel.ZIndex" Value="36" />
-        <Setter Property="Background">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <LinearGradientBrush.GradientStops>
-                        <GradientStop Offset="0" Color="#33C5EBFF" />
-                        <GradientStop Offset="1" Color="#3381D8FF" />
-                    </LinearGradientBrush.GradientStops>
-                </LinearGradientBrush>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Background" Value="{StaticResource ContainerBrush}" />
     </Style>
     <Style x:Key="MenuItemStyle" BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="{x:Type MenuItem}">
         <Setter Property="HeaderTemplate">

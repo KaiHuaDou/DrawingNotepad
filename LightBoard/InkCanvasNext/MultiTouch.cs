@@ -14,7 +14,7 @@ public partial class InkCanvasNext
 
     private void StartMultiTouchStroke(int touchId, Point canvasPoint)
     {
-        var attributes = Canvas.DefaultDrawingAttributes.Clone( );
+        var attributes = InnerCanvas.DefaultDrawingAttributes.Clone( );
         var initialPoint = new StylusPoint(canvasPoint.X, canvasPoint.Y, 0.5f);
         var strokeVisual = new StrokeVisual(attributes, initialPoint);
         strokeVisual.SetVisualCanvas(multiTouchCanvas);
@@ -32,7 +32,7 @@ public partial class InkCanvasNext
                 continue;
             }
 
-            StartMultiTouchStroke(id, device.GetTouchPoint(Canvas).Position);
+            StartMultiTouchStroke(id, device.GetTouchPoint(InnerCanvas).Position);
         }
     }
 
@@ -57,7 +57,7 @@ public partial class InkCanvasNext
         var stroke = strokeVisual.BuildStroke( );
         if (stroke is not null)
         {
-            Canvas.Strokes.Add(stroke);
+            InnerCanvas.Strokes.Add(stroke);
         }
 
         strokeVisual.Cleanup( );

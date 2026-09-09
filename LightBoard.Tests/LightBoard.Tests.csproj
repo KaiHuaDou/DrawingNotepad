@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <OutputType>Exe</OutputType>
+        <UseWPF>true</UseWPF>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\LightBoard\LightBoard.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.0" />
+    </ItemGroup>
+
+</Project>

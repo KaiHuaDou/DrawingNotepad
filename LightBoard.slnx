@@ -13,5 +13,6 @@
     <File Path=".gitignore" />
     <File Path="Settings.XamlStyler" />
   </Folder>
+  <Project Path="LightBoard.Tests/LightBoard.Tests.csproj" />
   <Project Path="LightBoard/LightBoard.csproj" />
 </Solution>

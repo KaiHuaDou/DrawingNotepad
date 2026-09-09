@@ -23,14 +23,14 @@ internal sealed class StrokeChanges(StrokeCollection added, StrokeCollection rem
 
     void IHistoryChange.Apply(InkCanvasNext owner)
     {
-        owner.Canvas.Strokes.Remove(Removed);
-        owner.Canvas.Strokes.Add(Added);
+        owner.InnerCanvas.Strokes.Remove(Removed);
+        owner.InnerCanvas.Strokes.Add(Added);
     }
 
     void IHistoryChange.Revert(InkCanvasNext owner)
     {
-        owner.Canvas.Strokes.Remove(Added);
-        owner.Canvas.Strokes.Add(Removed);
+        owner.InnerCanvas.Strokes.Remove(Added);
+        owner.InnerCanvas.Strokes.Add(Removed);
     }
 }
 
@@ -111,7 +111,7 @@ public partial class InkCanvasNext
 
         if (e.Removed.Count > 0)
         {
-            selection.Prune(Canvas.Strokes);
+            selection.Prune(InnerCanvas.Strokes);
         }
 
         if (applyingUndoRedo || eraser.Active || (e.Added.Count == 0 && e.Removed.Count == 0))

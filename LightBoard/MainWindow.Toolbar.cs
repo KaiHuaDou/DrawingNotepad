@@ -15,6 +15,7 @@ public partial class MainWindow
 
     private RadioButton? colorRadio;
     private ToolSnapshot? highlighterBackup;
+
     // 显式状态机：Mode 是唯一真值来源
     private InkCanvasNextMode mode = InkCanvasNextMode.Ink;
 
@@ -125,8 +126,9 @@ public partial class MainWindow
         }
         else
         {
-            colorRadio?.IsChecked = true;
-            thicknessRadio?.IsChecked = true;
+            var toolMode = IsToolMode(mode);
+            colorRadio?.IsChecked = !toolMode;
+            thicknessRadio?.IsChecked = !toolMode;
             EraseAreaRadio?.IsChecked = mode == InkCanvasNextMode.EraseArea;
             EraseStrokeRadio?.IsChecked = mode == InkCanvasNextMode.EraseStroke;
             SelectRadio?.IsChecked = mode == InkCanvasNextMode.Select;
@@ -136,6 +138,7 @@ public partial class MainWindow
 
         CommitCanvas( );
     }
+
     /// <summary>
     /// 把选区工具栏吸附到选区包围盒左下角（旋转手柄绘于选区正上方）；下方放不下则移到选区上方。
     /// 随拖动/平移/缩放/滚动实时更新。选区完全移出可视区时隐藏；位置双向夹紧到可视区。
