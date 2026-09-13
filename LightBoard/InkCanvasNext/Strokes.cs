@@ -126,8 +126,11 @@ public partial class InkCanvasNext
 
 internal static class StrokeCollectionExtension
 {
-    private const int PreviewWidth = 170;
+    private const int PreviewWidth = 225;
     private const int PreviewHeight = PreviewWidth / 16 * 9;
+
+    private const double FallbackCanvasWidth = 1920;
+    private const double FallbackCanvasHeight = 1080;
     private static readonly SolidColorBrush Background = new(Color.FromRgb(0x1E, 0x1E, 0x1E));
 
     static StrokeCollectionExtension( )
@@ -139,7 +142,8 @@ internal static class StrokeCollectionExtension
         this StrokeCollection strokes,
         DpiScale dpi,
         int scale = 100,
-        ImageSource? background = null)
+        ImageSource? background = null,
+        Brush? canvas = null)
     {
         var ratio = scale / 100.0;
         var bounds = strokes.GetBounds( );
@@ -148,13 +152,18 @@ internal static class StrokeCollectionExtension
             bounds.Union(BackgroundRect(background));
         }
 
+        if (bounds.IsEmpty)
+        {
+            bounds = new Rect(0, 0, FallbackCanvasWidth, FallbackCanvasHeight);
+        }
+
         bounds.Inflate(64, 64);
 
         var matrix = new Matrix(ratio, 0, 0, ratio,
             -bounds.X * ratio,
             -bounds.Y * ratio);
         var visual = strokes.CreateVisual(
-            Background,
+            canvas ?? Background,
             new Rect(0, 0, bounds.Width * ratio, bounds.Height * ratio),
             matrix,
             background);

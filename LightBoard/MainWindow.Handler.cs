@@ -45,15 +45,44 @@ public partial class MainWindow
         var heightAnimation = new DoubleAnimation
         {
             From = RightBorder.ActualHeight,
-            To = isChecked ? ActualHeight - 32 : 52,
+            To = isChecked ? ActualHeight - 10 : 55,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
+        };
+
+        var widthAnimation = new DoubleAnimation
+        {
+            From = RightBorder.ActualWidth,
+            To = isChecked ? RightBorder.ActualWidth + 64 : RightBorder.ActualWidth - 64,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
         };
 
         TimeText.Visibility = isChecked ? Visibility.Collapsed : Visibility.Visible;
-        heightAnimation.Completed += (_, _) => PagePreviewsBox.Visibility = isChecked ? Visibility.Visible : Visibility.Collapsed;
+
+        if (isChecked)
+        {
+            RightBorder.Style = Application.Current.FindResource("ContainerSolidStyle") as Style;
+        }
+        else
+        {
+            PagePreviewsBox.Visibility = Visibility.Collapsed;
+        }
+
+        heightAnimation.Completed += (_, _) =>
+        {
+            if (isChecked)
+            {
+                PagePreviewsBox.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                RightBorder.Style = Application.Current.FindResource("ContainerStyle") as Style;
+            }
+        };
 
         RightBorder.BeginAnimation(HeightProperty, heightAnimation);
+        RightBorder.BeginAnimation(WidthProperty, widthAnimation);
     }
 
     private void CanvasNextCanRedoChanged(object o, DependencyPropertyChangedEventArgs e)
@@ -339,7 +368,9 @@ public partial class MainWindow
         LeftBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
         CenterBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
         RightBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
+        PassThroughBorder.Visibility = mode ? Visibility.Visible : Visibility.Collapsed;
         TransparentModeButton.Tag = mode ? "\uE7C3" : "\uE729";
+        Topmost = mode;
     }
 
     private void UndoButtonClick(object o, RoutedEventArgs e)

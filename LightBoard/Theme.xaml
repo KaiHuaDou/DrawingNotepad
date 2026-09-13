@@ -38,8 +38,8 @@
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="ContainerBrush" StartPoint="0,0" EndPoint="0,1">
         <LinearGradientBrush.GradientStops>
-            <GradientStop Offset="0" Color="#44C5EBFF" />
-            <GradientStop Offset="1" Color="#4481D8FF" />
+            <GradientStop Offset="0" Color="#66C5DBFF" />
+            <GradientStop Offset="1" Color="#6681B8FF" />
         </LinearGradientBrush.GradientStops>
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="ContainerBrushSolid" StartPoint="0,0" EndPoint="0,1">
@@ -76,8 +76,9 @@
                             <Setter TargetName="PART_Border" Property="BorderThickness" Value="1" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="PART_Border" Property="Width" Value="28" />
-                            <Setter TargetName="PART_Border" Property="Height" Value="28" />
+                            <Setter TargetName="PART_Border" Property="Width" Value="30" />
+                            <Setter TargetName="PART_Border" Property="Height" Value="30" />
+                            <Setter TargetName="PART_Border" Property="CornerRadius" Value="8" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -129,7 +130,7 @@
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
-                            <Setter TargetName="PART_Border" Property="CornerRadius" Value="18" />
+                            <Setter TargetName="PART_Border" Property="CornerRadius" Value="8" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -190,7 +191,16 @@
     <Style x:Key="ContainerStyle" TargetType="{x:Type Border}">
         <Setter Property="Padding" Value="5" />
         <Setter Property="Panel.ZIndex" Value="36" />
+        <Setter Property="BorderBrush" Value="#1E1E1E" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Background" Value="{StaticResource ContainerBrush}" />
+    </Style>
+    <Style x:Key="ContainerSolidStyle" TargetType="{x:Type Border}">
+        <Setter Property="Padding" Value="5" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="#1E1E1E" />
+        <Setter Property="Panel.ZIndex" Value="36" />
+        <Setter Property="Background" Value="#AA444444" />
     </Style>
     <Style x:Key="MenuItemStyle" BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="{x:Type MenuItem}">
         <Setter Property="HeaderTemplate">

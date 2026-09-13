@@ -31,13 +31,13 @@
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="LightBoard.Tests" />
-        <InternalsVisibleTo Include="InkCanvasNext.Tests"/>
+        <InternalsVisibleTo Include="InkCanvasNext.Tests" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NetOfficeFw.PowerPoint" Version="1.9.11" />
         <PackageReference Include="NetOfficeFw.Word" Version="1.9.11" />
         <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
-        <PackageReference Include="PDFiumCore" Version="154.0.8035" />
+        <PackageReference Include="PDFiumCore" Version="155.0.8044" />
         <PackageReference Include="SingleInstanceCore" Version="2.2.2" />
     </ItemGroup>
 </Project>

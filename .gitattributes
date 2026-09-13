@@ -1,7 +1,7 @@
 # Common settings that generally should always be used with your language specific settings
 
 # Auto detect text files and perform LF normalization
-*          text=auto
+*          text=auto eol=lf
 
 #
 # The above will handle all files NOT found below
@@ -40,11 +40,7 @@
 *.tif      binary
 *.tiff     binary
 *.ico      binary
-# SVG treated as text by default.
 *.svg      text
-# If you want to treat it as binary,
-# use the following line instead.
-# *.svg    binary
 *.eps      binary
 
 # Scripts
@@ -57,6 +53,10 @@
 *.bat      text eol=crlf
 *.cmd      text eol=crlf
 *.ps1      text eol=crlf
+
+# XAML
+*.xaml     text eol=crlf
+*.axaml    text eol=crlf
 
 # Serialisation
 *.json     text

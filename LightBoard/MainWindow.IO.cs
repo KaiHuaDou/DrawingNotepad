@@ -130,40 +130,10 @@ public partial class MainWindow
             return;
         }
 
-        using TaskDialog scaleDialog = new( )
-        {
-            WindowTitle = "轻白板",
-            MainInstruction = "请选择缩放比例",
-            MainIcon = TaskDialogIcon.Information,
-            ButtonStyle = TaskDialogButtonStyle.CommandLinks
-        };
-
-        var zoom25 = new TaskDialogButton("25%");
-        var zoom50 = new TaskDialogButton("50%");
-        var zoom100 = new TaskDialogButton("100%");
-        var cancelButton = new TaskDialogButton(ButtonType.Cancel);
-        scaleDialog.Buttons.Add(zoom25);
-        scaleDialog.Buttons.Add(zoom50);
-        scaleDialog.Buttons.Add(zoom100);
-        scaleDialog.Buttons.Add(cancelButton);
-        var result = scaleDialog.ShowDialog( );
-
-        var scale = 100;
-        if (result == cancelButton)
+        var scale = PickScale( );
+        if (scale is not int percent)
         {
             return;
-        }
-        else if (result == zoom25)
-        {
-            scale = 25;
-        }
-        else if (result == zoom50)
-        {
-            scale = 50;
-        }
-        else if (result == zoom100)
-        {
-            scale = 100;
         }
 
         var fileDialog = new VistaFolderBrowserDialog( )
@@ -187,7 +157,7 @@ public partial class MainWindow
         {
             try
             {
-                App.ExportAllImage(scale, directory, dpi);
+                App.ExportAllImage(percent, directory, dpi);
             }
             catch (Exception ex)
             {
@@ -206,5 +176,98 @@ public partial class MainWindow
 
             App.ShowInfo("导出图片成功");
         });
+    }
+
+    private void ExportPdfClick(object o, RoutedEventArgs e)
+    {
+        if (App.IsBoardEmpty( ) && App.Document is null)
+        {
+            App.ShowInfo("没有可以导出的内容");
+            return;
+        }
+
+        var scale = PickScale( );
+        if (scale is not int percent)
+        {
+            return;
+        }
+
+        var dialog = new VistaSaveFileDialog( )
+        {
+            Filter = "PDF 文档 (*.pdf)|*.pdf",
+            DefaultExt = ".pdf",
+            AddExtension = true,
+            OverwritePrompt = true,
+            FileName = $"{DateTime.Now:yyyyMMdd-HHmmss}",
+        };
+        if (dialog.ShowDialog( ) != true)
+        {
+            return;
+        }
+
+        var dpi = VisualTreeHelper.GetDpi(CanvasNext);
+        var loadingTip = LoadingText.Text;
+
+        ExportPdfButton.IsEnabled = false;
+
+        Task.Run(( ) =>
+        {
+            try
+            {
+                App.ExportAllPdf(dialog.FileName, dpi, percent);
+            }
+            catch (Exception ex)
+            {
+                App.LogException(ex);
+                App.ShowException(ex, "导出失败。错误日志已记录。");
+                return;
+            }
+            finally
+            {
+                Dispatcher.Invoke(( ) => ExportPdfButton.IsEnabled = true);
+            }
+
+            App.ShowInfo("导出 PDF 成功");
+        });
+    }
+
+    private static int? PickScale( )
+    {
+        using TaskDialog scaleDialog = new( )
+        {
+            WindowTitle = "轻白板",
+            MainInstruction = "请选择缩放比例",
+            MainIcon = TaskDialogIcon.Information,
+            ButtonStyle = TaskDialogButtonStyle.CommandLinks
+        };
+
+        var zoom25 = new TaskDialogButton("25%");
+        var zoom50 = new TaskDialogButton("50%");
+        var zoom100 = new TaskDialogButton("100%");
+        var cancelButton = new TaskDialogButton(ButtonType.Cancel);
+        scaleDialog.Buttons.Add(zoom25);
+        scaleDialog.Buttons.Add(zoom50);
+        scaleDialog.Buttons.Add(zoom100);
+        scaleDialog.Buttons.Add(cancelButton);
+        var result = scaleDialog.ShowDialog( );
+
+        if (result == cancelButton)
+        {
+            return null;
+        }
+        else if (result == zoom25)
+        {
+            return 25;
+        }
+        else if (result == zoom50)
+        {
+            return 50;
+        }
+        else if (result == zoom100)
+        {
+            return 100;
+        }
+
+        return null;
     }
 }

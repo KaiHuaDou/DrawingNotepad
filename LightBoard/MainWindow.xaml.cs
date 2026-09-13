@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -131,5 +132,39 @@ public partial class MainWindow : Window
     private void WindowDeactivated(object o, EventArgs e)
     {
         CanvasNext.ResetTouchState( );
+    }
+
+    private void WindowSourceInitialized(object sender, EventArgs e)
+    {
+
+        PassThroughBorder.LayoutUpdated += (_, _) => UpdateWindowRegion( );
+        LocationChanged += (_, _) => UpdateWindowRegion( );
+        SizeChanged += (_, _) => UpdateWindowRegion( );
+        Loaded += (_, _) => UpdateWindowRegion( );
+    }
+
+    private void UpdateWindowRegion( )
+    {
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var hWnd = new WindowInteropHelper(this).Handle;
+
+        if (hWnd == IntPtr.Zero
+            || PassThroughBorder == null)
+        {
+            return;
+        }
+
+        if (PassThroughBorder.ActualHeight <= 0
+          || PassThroughBorder.ActualWidth <= 0
+          || PassThroughBorder.Visibility != Visibility.Visible)
+        {
+            NativeMethods.ClearWindowRegion(hWnd);
+        }
+
+        var transform = PassThroughBorder.TransformToAncestor(this);
+        var borderRect = transform.TransformBounds(new Rect(PassThroughBorder.RenderSize));
+        borderRect.Inflate(-5, -5);
+
+        NativeMethods.SetWindowRegion(hWnd, ActualWidth, ActualHeight, dpi, borderRect);
     }
 }

@@ -10,6 +10,7 @@
         Deactivated="WindowDeactivated"
         KeyUp="MainWindowKeyUp"
         ResizeMode="NoResize"
+        SourceInitialized="WindowSourceInitialized"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         WindowStyle="None">
@@ -83,11 +84,18 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEE71;" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <MenuItem x:Name="ExportPdfButton" Header="导出 PDF"
+                              Style="{StaticResource MenuItemStyle}"
+                              Click="ExportPdfClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE8A5;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                 </Menu>
             </Border>
         </Popup>
         <Border x:Name="CenterBorder"
-                Height="53"
+                Height="54"
                 Margin="0,0,0,5" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
                 CornerRadius="10,10,10,10">
@@ -127,16 +135,18 @@
                                  Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xED61;" />
+                    <Border Width="21" Visibility="Hidden" />
                     <RadioButton x:Name="SelectRadio"
                                  Checked="ToolRadioChecked"
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xEF20;" />
-                    <Button x:Name="TransparentModeButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="TransparentModeClick" Tag="&#xE729;" />
                     <ToggleButton x:Name="PasteButton"
                                   Style="{StaticResource ToggleStyle}"
                                   Click="PasteClick" Tag="&#xE77F;" />
+                    <Border Width="21" Visibility="Hidden" />
+                    <Button x:Name="TransparentModeButton"
+                            Style="{StaticResource ButtonStyle}"
+                            Click="TransparentModeClick" Tag="&#xE729;" />
                 </StackPanel>
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
@@ -197,7 +207,7 @@
                 <TranslateTransform x:Name="RightTransform" />
             </Border.RenderTransform>
             <DockPanel>
-                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
+                <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Right" Orientation="Horizontal">
                     <ToggleButton x:Name="CollapseExpandButton"
                                   Style="{StaticResource ToggleStyle}"
                                   Click="CollapseExpandClick" Tag="&#xE70D;" />
@@ -216,40 +226,56 @@
                             Click="NewNextPage" Tag="&#xE710;" />
                     <Border Width="36" Visibility="Hidden" />
                 </StackPanel>
-                <ListBox x:Name="PagePreviewsBox"
-                         Visibility="Collapsed"
-                         Background="{x:Null}"
-                         BorderThickness="0"
-                         ItemsSource="{x:Static local:App.Pages}"
-                         ScrollViewer.PanningMode="VerticalOnly"
-                         ScrollViewer.VerticalScrollBarVisibility="Hidden"
-                         SelectionChanged="PagePreviewsBoxSelectionChanged"
-                         VirtualizingPanel.IsVirtualizing="True">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
+                <ListView x:Name="PagePreviewsBox"
+                          Visibility="Collapsed"
+                          Background="{x:Null}"
+                          BorderThickness="0"
+                          ItemsSource="{x:Static local:App.Pages}"
+                          ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                          ScrollViewer.PanningMode="VerticalOnly"
+                          ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                          SelectionChanged="PagePreviewsBoxSelectionChanged"
+                          VirtualizingPanel.IsVirtualizing="True">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="BorderBrush" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="2" />
                             <Style.Resources>
-                                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="DodgerBlue" />
-                                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="CornflowerBlue" />
+                                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
+                                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Transparent" />
                             </Style.Resources>
                             <Style.Triggers>
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter Property="FontWeight" Value="Bold" />
+                                    <Setter Property="BorderBrush" Value="DodgerBlue" />
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate DataType="local:Page">
-                            <StackPanel Margin="0,5,0,5" HorizontalAlignment="Stretch" Orientation="Horizontal">
-                                <TextBlock Margin="5,0,10,0" VerticalAlignment="Center"
-                                           Foreground="#E6E6E6"
-                                           FontSize="19"
-                                           Text="{Binding Number}" />
-                                <Image HorizontalAlignment="Stretch" Source="{Binding Preview}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </ListView.ItemContainerStyle>
+                    <ListView.View>
+                        <GridView>
+                            <GridView.ColumnHeaderContainerStyle>
+                                <Style TargetType="GridViewColumnHeader">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </Style>
+                            </GridView.ColumnHeaderContainerStyle>
+                            <GridViewColumn>
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate DataType="local:Page">
+                                        <StackPanel Margin="0,6" HorizontalAlignment="Center" Orientation="Horizontal">
+                                            <TextBlock Margin="5,0,10,0" VerticalAlignment="Center" Panel.ZIndex="16"
+                                                       Foreground="#E6E6E6"
+                                                       FontSize="19"
+                                                       Text="{Binding Number}"
+                                                       TextAlignment="Center" />
+                                            <Image Source="{Binding Preview}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
             </DockPanel>
         </Border>
         <TextBlock x:Name="TimeText"
@@ -291,5 +317,10 @@
                               Click="CloneClick" Tag="&#xF413;" />
             </StackPanel>
         </Border>
+        <Border x:Name="PassThroughBorder"
+                Width="48" Height="480"
+                Margin="48,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                Visibility="Collapsed"
+                Background="Transparent" BorderBrush="#EEEEEE" BorderThickness="1" />
     </Grid>
 </Window>

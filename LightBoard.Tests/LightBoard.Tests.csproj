@@ -6,6 +6,7 @@
         <UseWPF>true</UseWPF>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     </PropertyGroup>
 
