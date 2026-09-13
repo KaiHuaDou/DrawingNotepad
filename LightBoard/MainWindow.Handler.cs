@@ -358,12 +358,13 @@ public partial class MainWindow
     private static readonly LinearGradientBrush ContainerBrush = (Application.Current.FindResource("ContainerBrush") as LinearGradientBrush)!;
     private static readonly LinearGradientBrush ContainerBrushSolid = (Application.Current.FindResource("ContainerBrushSolid") as LinearGradientBrush)!;
     private static readonly DrawingBrush MajorGridBrush = (Application.Current.FindResource("MajorGridBrush") as DrawingBrush)!;
+    private static Brush CanvasNextBackgroundBrush = MajorGridBrush;
 
     private void TransparentModeClick(object o, RoutedEventArgs e)
     {
         var mode = (TransparentModeButton.Tag as string) == "\uE729";
 
-        CanvasNext.Background = mode ? Brushes.Transparent : MajorGridBrush;
+        CanvasNext.Background = mode ? Brushes.Transparent : CanvasNextBackgroundBrush;
         TimeText.Visibility = mode || AllPageToogle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
         LeftBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
         CenterBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;

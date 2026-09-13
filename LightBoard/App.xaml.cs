@@ -74,7 +74,7 @@ public partial class App : Application, ISingleInstance
         var result = dialog.ShowDialog( );
         if (result == copyButton)
         {
-            try { Clipboard.SetDataObject(details, true); } catch { }
+            SetClipboard(details);
         }
     }
 
@@ -107,8 +107,21 @@ public partial class App : Application, ISingleInstance
         var result = dialog.ShowDialog( );
         if (result == copyButton)
         {
-            try { Clipboard.SetDataObject(details, true); } catch { }
+            SetClipboard(details);
         }
+    }
+
+    private static void SetClipboard(string details)
+    {
+        Current.Dispatcher.Invoke(( ) =>
+        {
+            try
+            {
+                Clipboard.Clear( );
+                Clipboard.SetDataObject(details, true);
+            }
+            catch { }
+        });
     }
 
     public void OnInstanceInvoked(string[] args)

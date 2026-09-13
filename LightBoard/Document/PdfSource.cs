@@ -35,12 +35,13 @@ internal sealed class PdfSource : PageSource
         var document = fpdfview.FPDF_LoadDocument(path, "");
         if (document is null)
         {
-            if (fpdfview.FPDF_GetLastError( ) == FpdfErrPassword)
+            var errorCode = fpdfview.FPDF_GetLastError( );
+            if (errorCode == FpdfErrPassword)
             {
                 throw new InvalidDataException("该 PDF 已加密，暂不支持打开");
             }
 
-            throw new InvalidDataException("无法打开 PDF 文件（格式损坏或不受支持）");
+            throw new InvalidDataException($"无法打开 PDF 文件：{errorCode:X}");
         }
 
         return new PdfSource(document);

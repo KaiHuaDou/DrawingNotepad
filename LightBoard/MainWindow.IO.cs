@@ -48,12 +48,15 @@ public partial class MainWindow
                 CanvasNext.IsEnabled = false;
                 LoadingBorder.Visibility = Visibility.Visible;
 
-                await App.OpenDocument(fileName)
-                    .ContinueWith(_ => Dispatcher.Invoke(( ) =>
-                    {
-                        CanvasNext.IsEnabled = true;
-                        LoadingBorder.Visibility = Visibility.Hidden;
-                    }));
+                try
+                {
+                    await App.OpenDocument(fileName);
+                }
+                finally
+                {
+                    CanvasNext.IsEnabled = true;
+                    LoadingBorder.Visibility = Visibility.Hidden;
+                }
 
                 await App.RefreshDocumentPreviewsAsync( );
             }

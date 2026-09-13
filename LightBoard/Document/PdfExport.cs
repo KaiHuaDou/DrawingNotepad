@@ -1,6 +1,9 @@
+#pragma warning disable CA1508
+
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
@@ -31,12 +34,25 @@ internal static class PdfWriter
         var pdf = fpdf_edit.FPDF_CreateNewDocument( ) ?? throw new InvalidDataException("无法创建 PDF 文档");
         try
         {
-            for (var i = 0; i < pages.Count; i++)
+            var bitmaps = new List<FpdfBitmapT>( );
+            try
             {
-                AddPage(pdf, i, pages[i], FetchBackground(document, i), dpi, scale);
-            }
+                for (var i = 0; i < pages.Count; i++)
+                {
+                    var bitmap = AddPage(pdf, i, pages[i], FetchBackground(document, i), dpi, scale);
+                    bitmaps.Add(bitmap);
+                }
 
-            Save(pdf, path);
+                Save(pdf, path);
+            }
+            finally
+            {
+                // 页面位图必须存活到保存结束：PDFium 在写文档时才读取图像像素，过早销毁会写出损坏的图像流。
+                foreach (var bitmap in bitmaps)
+                {
+                    fpdfview.FPDFBitmapDestroy(bitmap);
+                }
+            }
         }
         finally
         {
@@ -44,7 +60,7 @@ internal static class PdfWriter
         }
     }
 
-    private static void AddPage(FpdfDocumentT pdf, int index, Page page, ImageSource? background, DpiScale dpi, int scale)
+    private static FpdfBitmapT AddPage(FpdfDocumentT pdf, int index, Page page, ImageSource? background, DpiScale dpi, int scale)
     {
         var content = page.Strokes.Render(dpi, scale, background, Brushes.White);
         var ptW = content.PixelWidth * 72d / dpi.PixelsPerInchX;
@@ -57,21 +73,16 @@ internal static class PdfWriter
 
             // 画布底色不透明，预乘色与直通色一致，Pbgra32 像素可直接整块拷入 BGRA 位图。
             var bitmap = fpdfview.FPDFBitmapCreateEx(content.PixelWidth, content.PixelHeight, (int) FPDFBitmapFormat.BGRA, IntPtr.Zero, 0)
-                ?? throw new InvalidDataException("创建页位图失败");
-            try
-            {
-                var pixels = new byte[content.PixelWidth * content.PixelHeight * 4];
-                content.CopyPixels(pixels, content.PixelWidth * 4, 0);
-                Marshal.Copy(pixels, 0, fpdfview.FPDFBitmapGetBuffer(bitmap), pixels.Length);
+                ?? throw new InvalidDataException($"创建页位图失败：{fpdfview.FPDF_GetLastError( ):X}");
 
-                if (fpdf_edit.FPDFImageObjSetBitmap(pdfPage, 1, image, bitmap) == 0)
-                {
-                    throw new InvalidDataException("内嵌页面图像失败");
-                }
-            }
-            finally
+            var pixels = new byte[content.PixelWidth * content.PixelHeight * 4];
+            content.CopyPixels(pixels, content.PixelWidth * 4, 0);
+            Marshal.Copy(pixels, 0, fpdfview.FPDFBitmapGetBuffer(bitmap), pixels.Length);
+
+            if (fpdf_edit.FPDFImageObjSetBitmap(pdfPage, 1, image, bitmap) == 0)
             {
-                fpdfview.FPDFBitmapDestroy(bitmap);
+                var errorCode = fpdfview.FPDF_GetLastError( );
+                throw new InvalidDataException($"内嵌页面图像失败：{errorCode:X}");
             }
 
             // 位图按 72/PPI 折算为 PDF 页面点尺寸，保证导出物理尺寸与显示一致（所见即所得）。
@@ -79,13 +90,17 @@ internal static class PdfWriter
             fpdf_edit.FPDFPageObjSetMatrix(image, matrix);
             if (fpdf_edit.FPDFPageInsertObject(pdfPage, image) == 0)
             {
-                throw new InvalidDataException("页面图像插入失败");
+                var errorCode = fpdfview.FPDF_GetLastError( );
+                throw new InvalidDataException($"页面图像插入失败：{errorCode:X}");
             }
 
             if (fpdf_edit.FPDFPageGenerateContent(pdfPage) == 0)
             {
-                throw new InvalidDataException("生成页面内容失败");
+                var errorCode = fpdfview.FPDF_GetLastError( );
+                throw new InvalidDataException($"生成页面内容失败：{errorCode:X}");
             }
+
+            return bitmap;
         }
         finally
         {
@@ -99,25 +114,44 @@ internal static class PdfWriter
         using var stream = new FileStream(path, FileMode.Create, FileAccess.Write);
         byte[] buffer = [];
 
+        Exception? error = null;
+
         using var writer = new FPDF_FILEWRITE_
         {
             Version = 1,
             WriteBlock = (_, data, size) =>
             {
-                var count = checked((int) size);
-                if (count > buffer.Length)
+                try
                 {
-                    buffer = new byte[count];
-                }
+                    var count = checked((int) size);
+                    if (count > buffer.Length)
+                    {
+                        buffer = new byte[count];
+                    }
 
-                Marshal.Copy(data, buffer, 0, count);
-                stream.Write(buffer, 0, count);
-                return 0;
+                    Marshal.Copy(data, buffer, 0, count);
+                    stream.Write(buffer, 0, count);
+
+                    // WriteBlock 约定：非 0 表示成功、0 表示错误（见 fpdf_save.h）。
+                    return 1;
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                    return 0;
+                }
             },
         };
-        if (fpdf_save.FPDF_SaveAsCopy(pdf, writer, 0) == 0)
+
+        var saved = fpdf_save.FPDF_SaveAsCopy(pdf, writer, 0) == 0;
+        if (error is not null)
         {
-            throw new InvalidDataException("PDF 保存失败");
+            ExceptionDispatchInfo.Capture(error).Throw( );
+        }
+
+        if (saved)
+        {
+            throw new InvalidDataException($"PDF 保存失败，FPDF 错误码：{fpdfview.FPDF_GetLastError( )}");
         }
     }
 

@@ -115,7 +115,7 @@ public sealed class DocumentService : IDisposable
 
         if (ImageExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
         {
-            return await Task.Run(( ) => new DocumentService(ImagePageSource.Open(path), null));
+            return new DocumentService(ImagePageSource.Open(path), null);
         }
 
         // XPS 即内部渲染格式，直接打开源文件；PDF 无需转换，走独立渲染源。
@@ -126,7 +126,7 @@ public sealed class DocumentService : IDisposable
 
         if (ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
         {
-            return await OpenPdfAsync(path);
+            return new DocumentService(PdfSource.Open(path), null);
         }
 
         var cachePath = await Task.Run(async ( ) =>
@@ -162,12 +162,6 @@ public sealed class DocumentService : IDisposable
         {
             Converting.TryRemove(new KeyValuePair<string, Lazy<Task<(string Path, string? Temp)>>>(cachePath, lazy));
         }
-    }
-
-    private static async Task<DocumentService> OpenPdfAsync(string path)
-    {
-        // PDFium 解析在后台线程进行，避免大文件卡住 UI。
-        return new DocumentService(await Task.Run(( ) => PdfSource.Open(path)), null);
     }
 
     public ImageSource? GetPage(int index)
