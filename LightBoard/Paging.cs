@@ -56,7 +56,8 @@ public class Page : INotifyPropertyChanged
 
 public partial class MainWindow
 {
-    private void OnPageChanged(object? sender, EventArgs e)
+    // 供测试宿主退订静态 PageChanged 事件，避免跨用例持有窗口引用
+    internal void OnPageChanged(object? sender, EventArgs e)
     {
         var target = App.PageIndex;
 

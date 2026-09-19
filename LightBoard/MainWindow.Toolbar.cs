@@ -17,7 +17,7 @@ public partial class MainWindow
     private ToolSnapshot? highlighterBackup;
 
     // 显式状态机：Mode 是唯一真值来源
-    private InkCanvasNextMode mode = InkCanvasNextMode.Ink;
+    internal InkCanvasNextMode Mode { get; private set; } = InkCanvasNextMode.Ink;
 
     private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false);
     private Size? selectionBorderSize;
@@ -38,18 +38,18 @@ public partial class MainWindow
 
     private void CommitCanvas( )
     {
-        var p = mode == InkCanvasNextMode.Highlighter ? HighlighterProfile : pen;
+        var p = Mode == InkCanvasNextMode.Highlighter ? HighlighterProfile : pen;
         var drawingAttr = CanvasNext.DefaultDrawingAttributes;
         drawingAttr.Color = p.Color;
         drawingAttr.Width = drawingAttr.Height = p.Width;
         drawingAttr.IsHighlighter = p.IsHighlighter;
-        CanvasNext.Mode = mode == InkCanvasNextMode.Highlighter ? InkCanvasNextMode.Ink : mode;
+        CanvasNext.Mode = Mode == InkCanvasNextMode.Highlighter ? InkCanvasNextMode.Ink : Mode;
     }
 
     private void EnterHighlighter( )
     {
-        highlighterBackup = new ToolSnapshot(mode, colorRadio, thicknessRadio);
-        mode = InkCanvasNextMode.Highlighter;
+        highlighterBackup = new ToolSnapshot(Mode, colorRadio, thicknessRadio);
+        Mode = InkCanvasNextMode.Highlighter;
         SyncToolState( );
     }
 
@@ -57,15 +57,15 @@ public partial class MainWindow
     {
         if (highlighterBackup is not null)
         {
-            mode = highlighterBackup.Mode;
+            Mode = highlighterBackup.Mode;
             colorRadio = highlighterBackup.ColorRadio;
             thicknessRadio = highlighterBackup.ThicknessRadio;
         }
 
         // Line/Circle 是 Pen 的附加，退出 Highlighter 时不恢复
-        if (mode is InkCanvasNextMode.Line or InkCanvasNextMode.Circle)
+        if (Mode is InkCanvasNextMode.Line or InkCanvasNextMode.Circle)
         {
-            mode = InkCanvasNextMode.Ink;
+            Mode = InkCanvasNextMode.Ink;
         }
     }
 
@@ -89,6 +89,7 @@ public partial class MainWindow
         else
         {
             ExitHighlighter( );
+            SyncToolState( );
         }
     }
     private Size MeasureSelectionBorder( )
@@ -111,7 +112,7 @@ public partial class MainWindow
     // 状态机唯一出口：从 Mode 推导 UI 勾选与画布模式
     private void SyncToolState( )
     {
-        var hightlighter = mode == InkCanvasNextMode.Highlighter;
+        var hightlighter = Mode == InkCanvasNextMode.Highlighter;
         HighLighterToggle?.IsChecked = hightlighter;
 
         if (hightlighter)
@@ -121,19 +122,19 @@ public partial class MainWindow
             EraseAreaRadio?.IsChecked = false;
             EraseStrokeRadio?.IsChecked = false;
             SelectRadio?.IsChecked = false;
-            LineToggle?.IsChecked = false;
-            CircleToggle?.IsChecked = false;
+            LineRadio?.IsChecked = false;
+            CircleRadio?.IsChecked = false;
         }
         else
         {
-            var toolMode = IsToolMode(mode);
+            var toolMode = IsToolMode(Mode);
             colorRadio?.IsChecked = !toolMode;
             thicknessRadio?.IsChecked = !toolMode;
-            EraseAreaRadio?.IsChecked = mode == InkCanvasNextMode.EraseArea;
-            EraseStrokeRadio?.IsChecked = mode == InkCanvasNextMode.EraseStroke;
-            SelectRadio?.IsChecked = mode == InkCanvasNextMode.Select;
-            LineToggle?.IsChecked = mode == InkCanvasNextMode.Line;
-            CircleToggle?.IsChecked = mode == InkCanvasNextMode.Circle;
+            EraseAreaRadio?.IsChecked = Mode == InkCanvasNextMode.EraseArea;
+            EraseStrokeRadio?.IsChecked = Mode == InkCanvasNextMode.EraseStroke;
+            SelectRadio?.IsChecked = Mode == InkCanvasNextMode.Select;
+            LineRadio?.IsChecked = Mode == InkCanvasNextMode.Line;
+            CircleRadio?.IsChecked = Mode == InkCanvasNextMode.Circle;
         }
 
         CommitCanvas( );

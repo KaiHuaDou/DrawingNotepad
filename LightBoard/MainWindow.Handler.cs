@@ -181,14 +181,14 @@ public partial class MainWindow
             return;
         }
 
-        if (mode == InkCanvasNextMode.Highlighter)
+        if (Mode == InkCanvasNextMode.Highlighter)
         {
             ExitHighlighter( );
         }
 
-        if (IsToolMode(mode))
+        if (IsToolMode(Mode))
         {
-            mode = InkCanvasNextMode.Ink;
+            Mode = InkCanvasNextMode.Ink;
         }
 
         colorRadio = radio;
@@ -259,6 +259,15 @@ public partial class MainWindow
             }
 
             CloneButton.IsChecked = false;
+
+            // 激活粘贴印章时退出其他模式回画笔；剪贴板为空时粘贴未生效，不扰动当前模式
+            if (Mode == InkCanvasNextMode.Highlighter)
+            {
+                ExitHighlighter( );
+            }
+
+            Mode = InkCanvasNextMode.Ink;
+            SyncToolState( );
             CanvasNext.StampAction = StampAction.Paste;
         }
         else if (CanvasNext.StampAction == StampAction.Paste)
@@ -271,38 +280,37 @@ public partial class MainWindow
         CanvasNext.Redo( );
     }
 
-    private void ShapeToggleClick(object o, RoutedEventArgs e)
+    // 工具（擦除/选择）与形状（线/圆）是同一排他单选组（EditGroup）：
+    // 点选即激活；再点当前已激活的选项回退到画笔
+    private void ModeRadioChecked(object o, RoutedEventArgs e)
     {
-        ExitStamp( );
-
-        if (o is not ToggleButton toggle)
+        if (o is not RadioButton radio)
         {
             return;
         }
 
-        if (mode == InkCanvasNextMode.Highlighter)
+        ExitStamp( );
+
+        // 记录点击前的模式：用于识别"再点当前已激活的模式"（回退到画笔）。
+        // 不能在退出高亮后再判断：从高亮态点模式 radio 属于新勾选，radio 也会被选中。
+        var wasMode = Mode;
+
+        if (wasMode == InkCanvasNextMode.Highlighter)
         {
             ExitHighlighter( );
         }
 
-        if (toggle.IsChecked == true)
+        var mode = radio.Tag switch
         {
-            if (ReferenceEquals(toggle, LineToggle))
-            {
-                mode = InkCanvasNextMode.Line;
-                CircleToggle.IsChecked = false;
-            }
-            else
-            {
-                mode = InkCanvasNextMode.Circle;
-                LineToggle.IsChecked = false;
-            }
-        }
-        else
-        {
-            mode = InkCanvasNextMode.Ink;
-        }
+            "\uE73C" => InkCanvasNextMode.Line,
+            "\uEA3A" => InkCanvasNextMode.Circle,
+            "\uED60" => InkCanvasNextMode.EraseArea,
+            "\uED61" => InkCanvasNextMode.EraseStroke,
+            "\uEF20" => InkCanvasNextMode.Select,
+            _ => InkCanvasNextMode.Ink
+        };
 
+        Mode = wasMode == mode ? InkCanvasNextMode.Ink : mode;
         SyncToolState( );
     }
 
@@ -315,14 +323,14 @@ public partial class MainWindow
             return;
         }
 
-        if (mode == InkCanvasNextMode.Highlighter)
+        if (Mode == InkCanvasNextMode.Highlighter)
         {
             ExitHighlighter( );
         }
 
-        if (IsToolMode(mode))
+        if (IsToolMode(Mode))
         {
-            mode = InkCanvasNextMode.Ink;
+            Mode = InkCanvasNextMode.Ink;
         }
 
         thicknessRadio = radio;
@@ -330,35 +338,10 @@ public partial class MainWindow
         SyncToolState( );
     }
 
-    private void ToolRadioChecked(object o, RoutedEventArgs e)
-    {
-        ExitStamp( );
-
-        if (o is not RadioButton radio)
-        {
-            return;
-        }
-
-        if (mode == InkCanvasNextMode.Highlighter)
-        {
-            ExitHighlighter( );
-        }
-
-        mode = radio.Tag switch
-        {
-            "\uED60" => InkCanvasNextMode.EraseArea,
-            "\uED61" => InkCanvasNextMode.EraseStroke,
-            "\uEF20" => InkCanvasNextMode.Select,
-            _ => InkCanvasNextMode.Ink
-        };
-
-        SyncToolState( );
-    }
-
     private static readonly LinearGradientBrush ContainerBrush = (Application.Current.FindResource("ContainerBrush") as LinearGradientBrush)!;
     private static readonly LinearGradientBrush ContainerBrushSolid = (Application.Current.FindResource("ContainerBrushSolid") as LinearGradientBrush)!;
     private static readonly DrawingBrush MajorGridBrush = (Application.Current.FindResource("MajorGridBrush") as DrawingBrush)!;
-    private static Brush CanvasNextBackgroundBrush = MajorGridBrush;
+    private static readonly Brush CanvasNextBackgroundBrush = MajorGridBrush;
 
     private void TransparentModeClick(object o, RoutedEventArgs e)
     {

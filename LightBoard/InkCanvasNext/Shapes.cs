@@ -6,6 +6,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
+using static InkCanvasNext.Geometry;
+
 namespace InkCanvasNext;
 
 public partial class InkCanvasNext
@@ -41,8 +43,8 @@ public partial class InkCanvasNext
 
         if (IsCircle)
         {
-            System.Windows.Controls.Canvas.SetLeft(shapePreviewEllipse, point.X);
-            System.Windows.Controls.Canvas.SetTop(shapePreviewEllipse, point.Y);
+            Canvas.SetLeft(shapePreviewEllipse, point.X);
+            Canvas.SetTop(shapePreviewEllipse, point.Y);
             shapePreviewEllipse.Width = 0;
             shapePreviewEllipse.Height = 0;
             shapePreviewEllipse.Visibility = Visibility.Visible;
@@ -80,9 +82,9 @@ public partial class InkCanvasNext
 
         if (IsCircle)
         {
-            var r = Geometry.Distance(shapeStart, end);
-            System.Windows.Controls.Canvas.SetLeft(shapePreviewEllipse, shapeStart.X - r);
-            System.Windows.Controls.Canvas.SetTop(shapePreviewEllipse, shapeStart.Y - r);
+            var r = Distance(shapeStart, end);
+            Canvas.SetLeft(shapePreviewEllipse, shapeStart.X - r);
+            Canvas.SetTop(shapePreviewEllipse, shapeStart.Y - r);
             shapePreviewEllipse.Width = 2 * r;
             shapePreviewEllipse.Height = 2 * r;
             shapePreviewEllipse.Stroke = brush;
@@ -120,7 +122,7 @@ public partial class InkCanvasNext
         shapePreviewLine.Visibility = Visibility.Collapsed;
         shapePreviewEllipse.Visibility = Visibility.Collapsed;
 
-        if (Geometry.Distance(shapeStart, shapeEnd) < 4)
+        if (Distance(shapeStart, shapeEnd) < 4)
         {
             return;
         }
@@ -149,7 +151,7 @@ public partial class InkCanvasNext
         {
             var cx = shapeStart.X;
             var cy = shapeStart.Y;
-            var r = Geometry.Distance(shapeStart, shapeEnd);
+            var r = Distance(shapeStart, shapeEnd);
 
             if (r < 1)
             {

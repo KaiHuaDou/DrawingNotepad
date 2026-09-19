@@ -14,8 +14,13 @@ public partial class InkCanvasNext
 
     private readonly double distanceThreshold2;
 
+    private const double PanZoomDisplaceThreshold2 = 30.0 * 30.0;
+    private const double PinchMinDistance2 = 24.0 * 24.0;
+
     private Point panPoint0;
     private Point viewportOrigin;
+    private Point panZoomAnchor;
+    private bool zoomLocked;
 
     private double distance0;
 
@@ -39,19 +44,37 @@ public partial class InkCanvasNext
         panPoint0 = first.Value;
         distance0 = second is null ? 0 : Distance(first.Value, second.Value);
         initialScale = currentScale;
+        panZoomAnchor = second is null ? first.Value : MidPoint(first.Value, second.Value);
+        zoomLocked = false;
     }
 
     private void PanZoom( )
     {
         (var first, var second) = GetMajorTouches( );
-        var distance = second is null ? 0 : Distance(first!.Value, second.Value);
-        var k = distance0 > 0 && distance > 0
-            ? distance / distance0
-            : 1.0;
+        var firstPoint = first!.Value;
 
-        k = Smooth(k);
+        var span2 = second is null ? 0.0 : Distance2(firstPoint, second.Value);
+        var displ2 = second is null ? 0.0 : Distance2(MidPoint(firstPoint, second.Value), panZoomAnchor);
 
-        var targetScale = Math.Clamp(initialScale * k, MinScale, MaxScale);
+        if (!zoomLocked && (displ2 > PanZoomDisplaceThreshold2 || span2 < PinchMinDistance2))
+        {
+            zoomLocked = true;
+        }
+
+        double targetScale;
+        if (zoomLocked)
+        {
+            targetScale = currentScale;
+        }
+        else
+        {
+            var distance = Math.Sqrt(span2);
+            var k = distance0 > 0 && distance > 0
+                ? Smooth(distance / distance0)
+                : 1.0;
+
+            targetScale = Math.Clamp(initialScale * k, MinScale, MaxScale);
+        }
 
         canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = targetScale;
         eraser.Scale = targetScale;
@@ -60,16 +83,16 @@ public partial class InkCanvasNext
 
         var newOffsetX = CanvasScroll.HorizontalOffset * scale
             + (panPoint0.X - viewportOrigin.X) * scale
-            - (first!.Value.X - viewportOrigin.X);
+            - (firstPoint.X - viewportOrigin.X);
         var newOffsetY = CanvasScroll.VerticalOffset * scale
             + (panPoint0.Y - viewportOrigin.Y) * scale
-            - (first!.Value.Y - viewportOrigin.Y);
+            - (firstPoint.Y - viewportOrigin.Y);
 
         CanvasScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, CanvasScroll.ScrollableWidth));
         CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
 
         currentScale = targetScale;
-        panPoint0 = first ?? default;
+        panPoint0 = firstPoint;
     }
 
     private void Pan( )

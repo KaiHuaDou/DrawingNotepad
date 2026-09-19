@@ -124,20 +124,20 @@
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <Border Width="43" Visibility="Hidden" />
-                    <ToggleButton x:Name="LineToggle"
-                                  Style="{StaticResource ToggleStyle}"
-                                  Click="ShapeToggleClick" Tag="&#xE73C;" />
-                    <ToggleButton x:Name="CircleToggle"
-                                  Style="{StaticResource ToggleStyle}"
-                                  Click="ShapeToggleClick" Tag="&#xEA3A;" />
+                    <RadioButton x:Name="LineRadio"
+                                  Style="{StaticResource RadioStyle}"
+                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xE73C;" />
+                    <RadioButton x:Name="CircleRadio"
+                                  Style="{StaticResource RadioStyle}"
+                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEA3A;" />
                     <Border Width="76" Visibility="Hidden" />
                     <RadioButton x:Name="EraseStrokeRadio"
-                                 Checked="ToolRadioChecked"
+                                 Click="ModeRadioChecked"
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xED61;" />
                     <Border Width="21" Visibility="Hidden" />
                     <RadioButton x:Name="SelectRadio"
-                                 Checked="ToolRadioChecked"
+                                 Click="ModeRadioChecked"
                                  Style="{StaticResource RadioStyle}"
                                  GroupName="EditGroup" Tag="&#xEF20;" />
                     <ToggleButton x:Name="PasteButton"
@@ -181,7 +181,7 @@
                     <Border Width="36" Visibility="Hidden" />
                     <RadioButton x:Name="EraseAreaRadio"
                                  Style="{StaticResource RadioStyle}"
-                                 Click="ToolRadioChecked" GroupName="EditGroup" Tag="&#xED60;" />
+                                 Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED60;" />
                     <Button Style="{StaticResource ButtonStyle}"
                             Foreground="#F25767"
                             Click="EraseAll" Tag="&#xED62;" />

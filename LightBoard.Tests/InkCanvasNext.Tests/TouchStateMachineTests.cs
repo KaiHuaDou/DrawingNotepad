@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Interop;
 
 namespace InkCanvasNext.Tests;
 

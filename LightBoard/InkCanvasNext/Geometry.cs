@@ -30,7 +30,7 @@ internal static class Geometry
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Near(Point a, Point b, double radius)
     {
-        return Geometry.Distance2(a, b) <= radius * radius;
+        return Distance2(a, b) <= radius * radius;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -51,5 +51,11 @@ internal static class Geometry
         var dx = a.X - b.X;
         var dy = a.Y - b.Y;
         return dx * dx + dy * dy;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Point MidPoint(Point a, Point b)
+    {
+        return new Point((a.X + b.X) / 2.0, (a.Y + b.Y) / 2.0);
     }
 }

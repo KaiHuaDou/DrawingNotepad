@@ -11,7 +11,7 @@ public class PdfExportTests
 {
     // 直接调用 PdfWriter，避免与 AppPagesTests 并行修改共享的 App.Pages 造成竞态。
     [Fact]
-    public void ExportAllPdf_ReopenContainsAllPagesIncludingInk()
+    public void ExportAllPdf_ReopenContainsAllPagesIncludingInk( )
     {
         var pages = new List<Page>
         {

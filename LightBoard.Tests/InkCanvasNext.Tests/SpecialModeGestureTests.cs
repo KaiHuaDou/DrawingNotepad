@@ -270,7 +270,7 @@ public class SpecialModeGestureTests
     // ---------- PanZoom 手势可用性 ----------
 
     [Fact]
-    public void PanZoom_TwoFingers_MoveZoomsCanvas( )
+    public void PanZoom_TwoFingers_SymmetricPinchChangesScale( )
     {
         StaTest.Run(( ) =>
         {
@@ -278,14 +278,69 @@ public class SpecialModeGestureTests
 
             var a = host.Device( );
             var b = host.Device( );
-            a.Down(host.Target, P1);
-            b.Down(host.Target, Close2);
+            a.Down(host.Target, P1);           // (100, 100)
+            b.Down(host.Target, Close2);       // (180, 140)，两指中点 (140, 120)
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
             Assert.Equal(1.0, host.Canvas.CurrentScale);
 
-            a.Move(host.Target, new Point(200, 200));
+            // 两指围绕初始中点对称张开，中点位移为 0，不触发位移锁死
+            a.Move(host.Target, new Point(80, 80));
+            b.Move(host.Target, new Point(200, 160));
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
+            Assert.True(host.Canvas.CurrentScale > 1.0, "对称张开应放大画布");
+        });
+    }
+
+    [Fact]
+    public void PanZoom_TranslateBeyondThreshold_LocksZoom( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+
+            var a = host.Device( );
+            var b = host.Device( );
+            a.Down(host.Target, new Point(100, 100));
+            b.Down(host.Target, new Point(200, 100)); // 两指中点 (150, 100)，间距 100
+            Assert.Equal(1.0, host.Canvas.CurrentScale);
+
+            // 两指同向上移 40px：中点位移 40 > 30，视为纯平移，缩放锁死
+            a.Move(host.Target, new Point(100, 60));
+            b.Move(host.Target, new Point(200, 60));
+            Assert.Equal(1.0, host.Canvas.CurrentScale);
+
+            // 大幅张开（间距 300，未锁定时缩放 3 倍）仍不更新缩放
+            a.Move(host.Target, new Point(0, 60));
+            b.Move(host.Target, new Point(300, 60));
+            Assert.Equal(1.0, host.Canvas.CurrentScale);
+        });
+    }
+
+    [Fact]
+    public void PanZoom_FingersBelowMinDistance_LocksZoom( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+
+            var a = host.Device( );
+            var b = host.Device( );
+            a.Down(host.Target, new Point(100, 100));
+            b.Down(host.Target, new Point(200, 100)); // 两指中点 (150, 100)，间距 100
+            Assert.Equal(1.0, host.Canvas.CurrentScale);
+
+            // 收拢一帧（中点位移 22.5，间距 55，未触发锁死）：先产生缩放
+            a.Move(host.Target, new Point(145, 100));
             Assert.NotEqual(1.0, host.Canvas.CurrentScale);
+
+            // 间距 10 < 24 → 距离锁死
+            b.Move(host.Target, new Point(155, 100));
+            var frozen = host.Canvas.CurrentScale;
+
+            // 大范围张开（间距 300）仍不更新缩放
+            a.Move(host.Target, new Point(0, 100));
+            b.Move(host.Target, new Point(300, 100));
+            Assert.Equal(frozen, host.Canvas.CurrentScale);
         });
     }
 
