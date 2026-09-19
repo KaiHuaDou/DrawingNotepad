@@ -32,7 +32,7 @@
         <Border x:Name="LeftBorder"
                 Margin="5,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
-                CornerRadius="10,10,10,10">
+                CornerRadius="12,12,12,12">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="LeftTransform" />
             </Border.RenderTransform>
@@ -55,7 +55,14 @@
                Placement="Top"
                PlacementTarget="{Binding ElementName=MoreButton}"
                StaysOpen="False">
-            <Border Padding="5" Background="#F0F0F0" CornerRadius="10">
+            <Border Margin="0,0,0,8" Padding="6"
+                    Background="#FB2B2C31" BorderBrush="#33FFFFFF" BorderThickness="1"
+                    CornerRadius="12">
+                <Border.Effect>
+                    <DropShadowEffect Opacity="0.5"
+                                      BlurRadius="16" Direction="270" ShadowDepth="5"
+                                      Color="#000000" />
+                </Border.Effect>
                 <Menu Background="Transparent">
                     <Menu.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -98,7 +105,7 @@
                 Height="54"
                 Margin="0,0,0,5" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
-                CornerRadius="10,10,10,10">
+                CornerRadius="8">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="CenterTransform" />
             </Border.RenderTransform>
@@ -108,7 +115,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <StackPanel Orientation="Horizontal">
-                    <Border Width="43" Visibility="Hidden" />
+                    <Border Width="39" Visibility="Hidden" />
                     <RadioButton MinWidth="1"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
@@ -123,27 +130,25 @@
                     <RadioButton MinWidth="10"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <Border Width="43" Visibility="Hidden" />
+                    <Border Width="39" Visibility="Hidden" />
                     <RadioButton x:Name="LineRadio"
-                                  Style="{StaticResource RadioStyle}"
-                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xE73C;" />
+                                 Style="{StaticResource RadioStyle}"
+                                 Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xE73C;" />
                     <RadioButton x:Name="CircleRadio"
-                                  Style="{StaticResource RadioStyle}"
-                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEA3A;" />
-                    <Border Width="76" Visibility="Hidden" />
+                                 Style="{StaticResource RadioStyle}"
+                                 Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEA3A;" />
+                    <Border Width="75" Visibility="Hidden" />
                     <RadioButton x:Name="EraseStrokeRadio"
-                                 Click="ModeRadioChecked"
                                  Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xED61;" />
-                    <Border Width="21" Visibility="Hidden" />
+                                 Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED61;" />
+                    <Border Width="20" Visibility="Hidden" />
                     <RadioButton x:Name="SelectRadio"
-                                 Click="ModeRadioChecked"
                                  Style="{StaticResource RadioStyle}"
-                                 GroupName="EditGroup" Tag="&#xEF20;" />
+                                 Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEF20;" />
                     <ToggleButton x:Name="PasteButton"
                                   Style="{StaticResource ToggleStyle}"
                                   Click="PasteClick" Tag="&#xE77F;" />
-                    <Border Width="21" Visibility="Hidden" />
+                    <Border Width="23" Visibility="Hidden" />
                     <Button x:Name="TransparentModeButton"
                             Style="{StaticResource ButtonStyle}"
                             Click="TransparentModeClick" Tag="&#xE729;" />
@@ -202,7 +207,7 @@
         <Border x:Name="RightBorder"
                 Margin="0,0,5,5" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
-                CornerRadius="10,10,10,10">
+                CornerRadius="12,12,12,12">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="RightTransform" />
             </Border.RenderTransform>
@@ -218,6 +223,7 @@
                     <ToggleButton x:Name="AllPageToogle"
                                   Height="36"
                                   Margin="3,0,3,0" Padding="5,1,5,1"
+                                  Style="{StaticResource PageTabStyle}"
                                   Click="AllPageToogleClick">
                         <TextBlock FontSize="19" Text="1/1" />
                     </ToggleButton>
@@ -247,7 +253,7 @@
                             <Style.Triggers>
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter Property="FontWeight" Value="Bold" />
-                                    <Setter Property="BorderBrush" Value="DodgerBlue" />
+                                    <Setter Property="BorderBrush" Value="#4CC2FF" />
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
@@ -281,14 +287,14 @@
         <TextBlock x:Name="TimeText"
                    Margin="0,20,25,0" HorizontalAlignment="Right" VerticalAlignment="Top"
                    Panel.ZIndex="16"
-                   Foreground="Gray"
+                   Foreground="#66FFFFFF"
                    FontSize="48" />
         <Border x:Name="LoadingBorder"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Visibility="Collapsed"
                 Style="{StaticResource ContainerStyle}"
                 BorderThickness="1"
-                CornerRadius="10">
+                CornerRadius="12">
             <StackPanel Margin="24,20">
                 <TextBlock x:Name="LoadingText"
                            HorizontalAlignment="Center"
@@ -307,7 +313,7 @@
                 Visibility="Collapsed"
                 Style="{StaticResource ContainerStyle}"
                 BorderThickness="1"
-                CornerRadius="5">
+                CornerRadius="8">
             <StackPanel Orientation="Horizontal">
                 <Button Style="{StaticResource ButtonStyle}" Click="CopyClick" Tag="&#xE8C8;" />
                 <Button Style="{StaticResource ButtonStyle}" Click="CutClick" Tag="&#xE8C6;" />
@@ -321,6 +327,6 @@
                 Width="48" Height="480"
                 Margin="48,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
                 Visibility="Collapsed"
-                Background="Transparent" BorderBrush="#EEEEEE" BorderThickness="1" />
+                Background="Transparent" BorderBrush="#33FFFFFF" BorderThickness="1" />
     </Grid>
 </Window>

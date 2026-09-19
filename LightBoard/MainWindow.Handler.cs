@@ -62,7 +62,7 @@ public partial class MainWindow
 
         if (isChecked)
         {
-            RightBorder.Style = Application.Current.FindResource("ContainerSolidStyle") as Style;
+            // RightBorder.Background = Application.Current.FindResource("ContainerBrushSolid") as Brush;
         }
         else
         {
@@ -77,7 +77,7 @@ public partial class MainWindow
             }
             else
             {
-                RightBorder.Style = Application.Current.FindResource("ContainerStyle") as Style;
+               // RightBorder.Background = Application.Current.FindResource("ContainerBrush") as Brush;
             }
         };
 
@@ -338,9 +338,9 @@ public partial class MainWindow
         SyncToolState( );
     }
 
-    private static readonly LinearGradientBrush ContainerBrush = (Application.Current.FindResource("ContainerBrush") as LinearGradientBrush)!;
-    private static readonly LinearGradientBrush ContainerBrushSolid = (Application.Current.FindResource("ContainerBrushSolid") as LinearGradientBrush)!;
-    private static readonly DrawingBrush MajorGridBrush = (Application.Current.FindResource("MajorGridBrush") as DrawingBrush)!;
+    private static readonly Brush ContainerBrush = (Application.Current.FindResource("ContainerBrush") as Brush)!;
+    private static readonly Brush ContainerBrushSolid = (Application.Current.FindResource("ContainerBrushSolid") as Brush)!;
+    private static readonly Brush MajorGridBrush = (Application.Current.FindResource("MajorGridBrush") as Brush)!;
     private static readonly Brush CanvasNextBackgroundBrush = MajorGridBrush;
 
     private void TransparentModeClick(object o, RoutedEventArgs e)
