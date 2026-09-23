@@ -34,6 +34,11 @@ public partial class MainWindow
         };
     }
 
+    private static bool IsShapeMode(InkCanvasNextMode m)
+    {
+        return m is InkCanvasNextMode.Line or InkCanvasNextMode.Circle;
+    }
+
     private void CommitCanvas( )
     {
         var p = Mode == InkCanvasNextMode.Highlighter ? HighlighterProfile : pen;
@@ -61,7 +66,7 @@ public partial class MainWindow
         }
 
         // Line/Circle 是 Pen 的附加，退出 Highlighter 时不恢复
-        if (Mode is InkCanvasNextMode.Line or InkCanvasNextMode.Circle)
+        if (IsShapeMode(Mode))
         {
             Mode = InkCanvasNextMode.Ink;
         }

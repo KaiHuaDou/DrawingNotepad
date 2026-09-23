@@ -138,9 +138,9 @@ public partial class App : Application, ISingleInstance
         {
             Current.MainWindow.Show( );
             Current.MainWindow.Activate( );
-            if (args?.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
+            if (args?.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
             {
-                (Current.MainWindow as MainWindow)!.RequestOpenFile(args[0]);
+                (Current.MainWindow as MainWindow)!.RequestOpenFile(args[1]);
             }
         });
     }

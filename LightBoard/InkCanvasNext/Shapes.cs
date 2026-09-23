@@ -35,6 +35,15 @@ public partial class InkCanvasNext
         InnerCanvas.Children.Add(shapePreviewLayer);
     }
 
+    /// <summary>形状终点触点（InnerCanvas 坐标系）：恒取插入序第一指（形状归属指），
+    /// 其余手指的移动与抬起均不参与。</summary>
+    private Point GetShapeEndPoint( )
+    {
+        using var enumerator = touches.Values.GetEnumerator( );
+        enumerator.MoveNext( );
+        return enumerator.Current.Device.GetTouchPoint(InnerCanvas).Position;
+    }
+
     private void StartShape(Point point)
     {
         shapeStart = point;

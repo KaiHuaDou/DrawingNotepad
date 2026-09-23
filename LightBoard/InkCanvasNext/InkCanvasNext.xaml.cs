@@ -321,6 +321,11 @@ public partial class InkCanvasNext : UserControl
     }
 
     /// <summary>
+    /// 获取当前视口尺寸（DIP）。
+    /// </summary>
+    public Size ViewportSize => new(CanvasScroll.ViewportWidth, CanvasScroll.ViewportHeight);
+
+    /// <summary>
     /// 当前盖章模式（克隆/粘贴）。
     /// </summary>
     public StampAction StampAction { get; set; } = StampAction.None;

@@ -30,19 +30,31 @@ public partial class App
 
         Pages.Clear( );
 
+        var viewport = CanvasViewport( );
+
         for (var i = 0; i < document.PageCount; i++)
         {
             Pages.Add(new Page
             {
                 Number = i + 1,
                 Scale = 1.0,
-                OffsetX = CanvasSize.Width / 2 - SystemParameters.WorkArea.Width / 2,
-                OffsetY = CanvasSize.Height / 2 - SystemParameters.WorkArea.Height / 2,
+                OffsetX = CanvasSize.Width / 2 - viewport.Width / 2,
+                OffsetY = CanvasSize.Height / 2 - viewport.Height / 2,
             });
         }
 
         Document = document;
         PageIndex = 0;
+    }
+
+    private static Size CanvasViewport( )
+    {
+        var viewport = (Current.MainWindow as MainWindow)?.CanvasNext.ViewportSize;
+
+        // 窗口尚未完成布局（如带参数启动即打开文档）时视口尺寸未知；无边框最大化窗口的视口即整块主屏，以此估算。
+        return viewport is { Width: > 0, Height: > 0 }
+            ? viewport.Value
+            : new Size(SystemParameters.PrimaryScreenWidth, SystemParameters.PrimaryScreenHeight);
     }
 
     // 文档加载后全部页尚无缩略图；后台逐页合成（XPS 页树有线程亲和性，背景渲染必须留在 UI 线程），仅结果回投 UI 线程。

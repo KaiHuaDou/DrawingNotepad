@@ -67,6 +67,13 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE946;" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <MenuItem Header="调试"
+                              Style="{StaticResource MenuItemStyle}"
+                              Click="DebugLayerClick" IsCheckable="True">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEBE8;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="打开" Style="{StaticResource MenuItemStyle}" Click="OpenFileClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE8DA;" />
@@ -108,13 +115,19 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <StackPanel Orientation="Horizontal">
-                    <Border Width="39" Visibility="Hidden" />
+                    <Border Width="0" Visibility="Hidden" />
                     <RadioButton MinWidth="1"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton MinWidth="2"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <RadioButton x:Name="DefaultThicknessRadio"
                                  MinWidth="3"
                                  IsChecked="True"
+                                 Style="{StaticResource SelectiveRadioStyle}"
+                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
+                    <RadioButton MinWidth="4"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <RadioButton MinWidth="5"
@@ -123,14 +136,14 @@
                     <RadioButton MinWidth="10"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <Border Width="39" Visibility="Hidden" />
+                    <Border Width="35" Visibility="Hidden" />
                     <RadioButton x:Name="LineRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xE73C;" />
                     <RadioButton x:Name="CircleRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEA3A;" />
-                    <Border Width="75" Visibility="Hidden" />
+                    <Border Width="35" Visibility="Hidden" />
                     <RadioButton x:Name="EraseStrokeRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED61;" />

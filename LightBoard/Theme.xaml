@@ -60,7 +60,7 @@
                 <ControlTemplate TargetType="RadioButton">
                     <Border x:Name="PART_Border"
                             Background="{TemplateBinding Background}"
-                            BorderBrush="#AAEEEEEE" BorderThickness="0"
+                            BorderBrush="#EEEEEEEE" BorderThickness="1"
                             CornerRadius="5">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
@@ -265,7 +265,7 @@
                 <ControlTemplate TargetType="MenuItem">
                     <Border x:Name="PART_Border"
                             Margin="2" Padding="10,6"
-                            Background="Transparent"
+                            Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
                             CornerRadius="7">
                         <DockPanel>
                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" ContentSource="Icon" />
@@ -275,6 +275,10 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
+                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

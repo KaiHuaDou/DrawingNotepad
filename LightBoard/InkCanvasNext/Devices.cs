@@ -161,7 +161,7 @@ public partial class InkCanvasNext
         TouchEpilogue( );
     }
 
-    /// <summary>形状模式下的 EvalDraw/Draw 路由：形状在途时用当前触点更新预览并拦截事件；
+    /// <summary>形状模式下的 EvalDraw/Draw 路由：形状在途时用终点触点更新预览并拦截事件；
     /// 形状已被状态机取消（手势接管）或非形状模式时为空操作，让原生 InkCanvas 收笔。</summary>
     private void UpdateShapeIfActive(TouchEventArgs e)
     {
@@ -170,7 +170,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        UpdateShape(e.GetTouchPoint(InnerCanvas).Position);
+        UpdateShape(GetShapeEndPoint( ));
         e.Handled = true;
     }
 
@@ -187,11 +187,11 @@ public partial class InkCanvasNext
         }
 
         // 形状只允许在单指绘制上下文（EvalDraw/Draw）存活：仅当手势未被状态机接管
-        // （未迁入平移/缩放/多指等）时才提交，否则由 SetState 已取消、此处直接跳过
-        if (shapeActive && State is TouchState.EvalDraw or TouchState.Draw)
+        // （未迁入平移/缩放/多指等）时才提交，否则由 SetState 已取消、此处直接跳过。
+        // 形状只由插入序第一指驱动：其余手指的移动与抬起均忽略，第一指抬起时按其触点提交
+        if (shapeActive && State is TouchState.EvalDraw or TouchState.Draw && IsFirstTouch(e.TouchDevice.Id))
         {
-            var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
-            UpdateShape(canvasPos);
+            UpdateShape(e.GetTouchPoint(InnerCanvas).Position);
             CommitShape( );
             e.Handled = true;
         }

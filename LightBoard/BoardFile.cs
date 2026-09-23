@@ -79,20 +79,26 @@ internal static class BoardFile
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
-            using var zip = ZipFile.Open(tempPath, ZipArchiveMode.Create);
-            var manifest = new BoardManifest(
-                CurrentVersion,
-                [.. pages.Select(p => new BoardPageInfo(p.Scale, p.OffsetX, p.OffsetY))]);
-
-            var manifestEntry = zip.CreateEntry(Manifest);
-            using var manifestStream = manifestEntry.Open( );
-            JsonSerializer.Serialize(manifestStream, manifest, BoardSerializerContext.Default.BoardManifest);
-
-            for (var i = 0; i < pages.Count; i++)
+            // 归档必须在 File.Move 之前关闭，否则临时文件句柄仍被占用
+            using (var zip = ZipFile.Open(tempPath, ZipArchiveMode.Create))
             {
-                var entry = zip.CreateEntry($"{PagePrefix}{i + 1:D3}.isf");
-                using var stream = entry.Open( );
-                pages[i].Strokes.Save(stream, true);
+                var manifest = new BoardManifest(
+                    CurrentVersion,
+                    [.. pages.Select(p => new BoardPageInfo(p.Scale, p.OffsetX, p.OffsetY))]);
+
+                var manifestEntry = zip.CreateEntry(Manifest);
+                // 流必须在后续 CreateEntry 之前关闭，ZipArchive 不允许多个条目同时处于打开状态
+                using (var manifestStream = manifestEntry.Open( ))
+                {
+                    JsonSerializer.Serialize(manifestStream, manifest, BoardSerializerContext.Default.BoardManifest);
+                }
+
+                for (var i = 0; i < pages.Count; i++)
+                {
+                    var entry = zip.CreateEntry($"{PagePrefix}{i + 1:D3}.isf");
+                    using var stream = entry.Open( );
+                    pages[i].Strokes.Save(stream, true);
+                }
             }
 
             File.Move(tempPath, path, overwrite: true);

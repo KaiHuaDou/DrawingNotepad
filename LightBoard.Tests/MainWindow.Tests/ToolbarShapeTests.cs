@@ -1,3 +1,5 @@
+using System.Windows.Media;
+
 using InkCanvasNext;
 
 namespace LightBoard.Tests.Toolbar;
@@ -89,6 +91,52 @@ public class ToolbarShapeTests
             ToolDriver.ClickRadio(host, radio);
             Assert.Equal(shape, host.Window.Mode);
             Assert.Equal(shape, host.Canvas.Mode);
+            ToolbarAssertions.AssertConsistent(host);
+        });
+    }
+
+    // 形状模式下点当前已选中的颜色/粗细即取消形状；点其他选项保持形状（由
+    // Shape_ClickColor/Thickness_KeepsShapeAndUpdatesPen 防护，其目标相对默认当前项为非当前）。
+    [Theory]
+    [InlineData(InkCanvasNextMode.Line)]
+    [InlineData(InkCanvasNextMode.Circle)]
+    public void Shape_ReclickCurrentColor_ReturnsToInk(InkCanvasNextMode shape)
+    {
+        UiThread.Run(( ) =>
+        {
+            using var host = new MainWindowHost( );
+            var purple = Color.FromRgb(0x91, 0x84, 0xEE);
+
+            // 先点紫色建立"当前颜色"，再进形状模式
+            ToolDriver.ClickRadio(host, host.FindColor(purple));
+            ToolEntry.Enter(host, shape);
+            Assert.Equal(shape, host.Window.Mode);
+
+            ToolDriver.ClickRadio(host, host.FindColor(purple));
+            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
+            Assert.Equal(purple, host.Canvas.DefaultDrawingAttributes.Color);
+            ToolbarAssertions.AssertConsistent(host);
+        });
+    }
+
+    [Theory]
+    [InlineData(InkCanvasNextMode.Line)]
+    [InlineData(InkCanvasNextMode.Circle)]
+    public void Shape_ReclickCurrentThickness_ReturnsToInk(InkCanvasNextMode shape)
+    {
+        UiThread.Run(( ) =>
+        {
+            using var host = new MainWindowHost( );
+
+            ToolDriver.ClickRadio(host, host.FindThickness(5));
+            ToolEntry.Enter(host, shape);
+            Assert.Equal(shape, host.Window.Mode);
+
+            ToolDriver.ClickRadio(host, host.FindThickness(5));
+            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
+            Assert.Equal(5, host.Canvas.DefaultDrawingAttributes.Width);
             ToolbarAssertions.AssertConsistent(host);
         });
     }

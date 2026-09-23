@@ -24,7 +24,7 @@
 - `d > l` 若无新手指落下则不会发生：
     - 状态机面向足够大的屏幕设计；
     - `d > l` 进入 `MultiDraw`，供两人在大屏两侧各落一指同时书写。
-- 选区入口仅在 `count ∈ {1, 2}` 且 `SelectionTouchCandidate` 成立（`Mode == Select && StampAction == None`）时考虑；3+ 指不进入选区。
+- 选区入口仅在 `count ∈ {1, 2}` 且 `Mode == Select && StampAction == None` 时考虑；3+ 指不进入选区。
 - 优先级（自上而下，即 switch 臂顺序）：**选区 > MultiDraw > 单指（EvalDraw/Draw）> 平移（PanZoom/Pan）> 橡皮（Eraser）**。
     - 例：`Idle` 下 `count == 1` 且选区候选成立 → `Selection`（而非 `EvalDraw`）；`count == 2` 同理压过 `PanZoom`。
 - `Selection` 内部不做 `d`/`l` 分析（`count ∈ {1,2}` 时维持选区手势）；`count == 0` 回 `Idle`。附加手指触发画布级手势：`count ∈ {3,4}` 且 `d <= l` → `Pan`（Select 模式下 3/4 指平移画布，退出时 `EndSelectionTouch` 提交当前变换）；`count >= 5` 且 `d <= l` → `Eraser`（掌心擦除）。
@@ -35,7 +35,7 @@
 - 离开 `Idle`：保存 `prevMode = Mode`（供 `RestoreMode` 还原）。
 - 离开 `MultiDraw`：`EndMultiTouch`。
 - 离开 `Selection`：`EndSelectionTouch`。
-- 离开 `EvalDraw`/`Draw` 进入手势接管态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`/`Selection`，或异常回 `Idle`）：若形状在途（`shapeActive`）→ `CancelShape`。形状只允许在单指绘制上下文（`EvalDraw`/`Draw`）存活；形状绘制中落第二指即放弃预览并切换为平移/缩放。
+- 离开 `EvalDraw`/`Draw` 进入手势接管态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`/`Selection`，或异常回 `Idle`）：若形状在途（`shapeActive`）→ `CancelShape`。形状只允许在单指绘制上下文（`EvalDraw`/`Draw`）存活；`EvalDraw` 中落第二指即迁入 `PanZoom`/`MultiDraw` 并放弃预览（捏合缩放优先）。`Draw` 中落第二指（`d <= l` 停留 `Draw`）时形状仍只由插入序第一指驱动，其余手指的移动与抬起均忽略；第一指抬起时按其触点提交。
 - 离开"覆盖编辑模式"的状态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`）进入非覆盖状态 → `RestoreMode`（如 `MultiDraw --> Draw` 需恢复 `EditingMode`）。
 - 进入 `EvalDraw`，或 `EvalDraw --> Draw`：若 `WantsPreemptiveDrawCapture` → `CaptureAll`。
 - 进入 `Selection`：`CaptureAll` + `BeginSelectionTouch`。

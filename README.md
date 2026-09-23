@@ -1,37 +1,53 @@
 # 轻白板 / LightBoard
 
-一个基于 WPF `InkCanvas` 的轻白板。
+基于 WPF 的全屏白板，为真实课堂使用而设计。
 
-- **经过实地课堂检验，为实地课堂而优化的功能设计**
+- **经过实地课堂检验**，为实地课堂而优化的功能设计
 - 用于替换希沃白板/希沃轻白板
-- 超快的启动速度
-    - 6 代 i7 上热启动时间：< 0.5 秒
-- 极低的书写/拖动/缩放延迟
+
+## 为什么选择轻白板
+
+- **快**
+    - 6 代 i7 上热启动时间 < 0.5 秒
+    - 书写、拖动、缩放延迟极低
+- **简洁**
+    - 无主页、无向导、无弹窗层级，全部工具单击直达
+    - 离线可用，无账号、无广告
+- **符合课堂逻辑**
+    - 触摸交互建立在显式状态机之上：误触规则明确，掌压（≥ 5 指）即整掌擦除
+    - 多人同时书写：大屏两侧学生各写各的，笔迹互不干扰
+    - 课件即开即批注：PowerPoint / Word / PDF / XPS / 图片打开后直接书写，逐页生成可切换的白板页
+- **经过实地课堂检验**
+    - 功能取舍来自真实课堂反馈：荧光笔、克隆盖章、透明模式、时间显示、一键收起工具栏等均来自课堂场景
+    - 超过 140 个自动化测试持续守护触摸状态机与工具栏交互，重构不改行为
 
 ## 功能
 
-- 快速更换笔触颜色与粗细（8 种颜色 × 4 档粗细）
+- 快速更换笔触颜色与粗细（8 种颜色 × 6 档粗细）
 - 荧光笔模式
-- 线擦 / 面积擦 / 选择
+- 直线 / 圆形状工具（画笔附加模式；再点当前颜色/粗细或当前形状按钮即回画笔）
+- 线擦 / 面积擦 / 选择（移动、缩放、旋转、套索圈选）
 - 撤销 / 重做（上限 200 步）
 - 多页面管理，支持页面切换、缩略图预览，每页独立保存视图状态（缩放/偏移/撤销历史）
-- 工具栏收起/展开
+- 文档与图片
+    - 打开 PowerPoint 演示文稿与 Word 文档（使用本机 Office 栅格化，逐页生成背景）
+    - 打开 XPS、PDF（PDFium 渲染）与图片（BMP / GIF / ICO / JPEG / PNG / TIFF，作为单页背景）
+    - 文档页自动生成缩略图预览
 - 墨迹管理
     - 复制 / 粘贴 / 克隆 / 删除选中墨迹（可跨应用粘贴）
-    - `*.lbf` 轻白板文件（zip 容器，可解压获得单页 ISF）
+    - `*.lbf` 轻白板文件（zip 容器，可解压获得单页 ISF；带版本校验与完整性检查）
     - `*.isf` Windows 墨迹文件
     - 自动备份当前墨迹（每分钟保存到 `recover/`），崩溃后下次启动可一键恢复
-    - 导出画布为 `*.png`（支持 25% / 50% / 100% 缩放）
-- 打开
-    - 打开 PowerPoint 演示文稿与 Word 文档（使用本机 Office 栅格化）
-    - XPS 文档
-    - PDF 文档（PDFium 渲染）
-    - 图片（BMP / GIF / ICO / JPEG / PNG / TIFF，作为单页背景）
-- 支持单实例运行
+    - 快速保存：一键写入 `fastsave/` 目录，无需文件对话框
+- 导出
+    - 画布导出为 `*.png`（支持 25% / 50% / 100% 缩放，可导出全部页面）
+    - 整板导出为 `*.pdf`
+- 画布按主屏分辨率派生（宽 4 屏 × 高 16 屏），平移/缩放结束视口贴近右/下边缘时自动扩展一屏
+- 支持单实例运行：再次启动自动唤起已运行实例，并可加载传入的文件
 - 多人同时书写（大屏两侧各人独立绘制，互不干扰）
 - 标题栏实时时间显示
 - 网格背景
-- 透明背景模式
+- 透明背景模式（白板悬浮于桌面与其他应用之上，用于投影讲评）
 
 ## 触摸手势
 
@@ -54,8 +70,8 @@
 ## 系统要求
 
 - Windows 7 SP1 或更新版本
-    - **已测试：Windows 7 SP1 上可以正常安装 .NET 9.0 Desktop Runtime，并能成功无错误运行本程序**
-- .NET 9.0 Desktop Runtime（x64）或更新版本
+    - **已测试：Windows 7 SP1 上可以正常安装 .NET 10.0 Desktop Runtime，并能成功无错误运行本程序**
+- .NET 10.0 Desktop Runtime（x64）或更新版本
     - 使用 `with-runtime` 版本可以免安装运行时
 - Microsoft Office（打开 Office 文档时需要）
     - 需要已激活版本。部分绿色版本需确认相关 COM 组件已注册
@@ -65,11 +81,11 @@
 
 ## 开发与构建
 
-- IDE：Visual Studio Community 2022 或更新版本
+- IDE：Visual Studio Community 2026 或更新版本
     - 工作负载：C# 桌面开发
     - 预览功能：使用 .NET SDK 预览版
 
-- .NET **9.0** SDK 或更新版本（此时 C# `preview` >= 14）
+- .NET **10.0** SDK 或更新版本（此时 C# `preview` >= 14）
 
 ```bash
 dotnet publish -p:PublishProfile=FolderProfile -c Release
@@ -83,6 +99,12 @@ dotnet publish -p:PublishProfile=FolderProfile -c Release
 dotnet publish -p:PublishProfile=FolderProfile -c Release --self-contained
 ```
 
+运行测试（STA 测试宿主，含触摸状态机、工具栏交互与文件读写用例）：
+
+```bash
+dotnet test
+```
+
 ## 项目结构
 
 ```
@@ -90,9 +112,11 @@ LightBoard/               # 主程序
 ├─ InkCanvasNext/         # WPF InkCanvas 现代封装（可独立复用）
 │  ├─ InkCanvasNext.xaml(.cs) # 主控件：依赖属性、模式切换与文档页背景
 │  ├─ Devices.cs          # 触摸/鼠标设备事件处理与捕获
+│  ├─ Touches.cs          # 触摸事件的转发与坐标处理
 │  ├─ States.cs           # 触摸状态机
-│  ├─ Gestures.cs         # 平移/缩放手势（带平滑）
+│  ├─ Gestures.cs         # 平移/缩放手势（带平滑）与画布边缘扩展
 │  ├─ MultiTouch.cs       # 多人同时绘制与增量渲染
+│  ├─ Parameters.cs       # 控件参数常量
 │  ├─ Eraser.cs           # 橡皮擦反馈与增量命中
 │  ├─ Strokes.cs          # 墨迹集合、剪贴板与预览/导出
 │  ├─ UndoRedo.cs         # 历史栈管理
@@ -102,13 +126,14 @@ LightBoard/               # 主程序
 │  ├─ Shapes.cs           # 直线/圆形形状绘制
 │  ├─ Geometry.cs         # 几何工具
 │  └─ RingBuffer.cs       # 定容环形缓冲（撤销栈）
-├─ Document/              # 渲染源：XpsSource / PdfSource / ImagePageSource
+├─ Document/              # 渲染源：XpsSource / PdfSource / ImagePageSource / PdfExport
 ├─ Documents.cs           # 文档/图片打开：Office COM → XPS、XPS/PDF/图片渲染源与缓存
-├─ Paging.cs              # 多页面管理
+├─ Page.cs                # 多页面管理
 ├─ BoardFile.cs           # 多页整体存档（.lbf）与自动恢复
 ├─ MainWindow.xaml(.cs)   # 主窗口与工具栏
 ├─ MainWindow.Handler.cs  # 工具栏交互、菜单与动画
 ├─ MainWindow.Toolbar.cs  # 工具栏状态（模式/笔迹配置）与选区工具栏吸附
+├─ MainWindow.IO.cs       # 打开/保存/导出流程
 ├─ Theme.xaml             # 主题样式（图标/按钮/颜色选择器）
 ├─ External/NativeMethods.cs  # Win32 互操作（窗口切换）
 └─ App.xaml(.cs)          # 应用入口、单实例与崩溃恢复
@@ -149,6 +174,17 @@ public enum InkCanvasNextMode
 
 ### `InkCanvasNext`
 
+#### 构造函数
+
+```csharp
+public InkCanvasNext(Size canvasSize, Point initialOffset)
+```
+
+| 参数            | 说明                                       |
+| --------------- | ------------------------------------------ |
+| `canvasSize`    | 内层墨迹画布尺寸，文档背景页在此画布内居中 |
+| `initialOffset` | 初始视口左上角在画布内容坐标中的位置       |
+
 #### 依赖属性
 
 | 属性                       | 类型                | 说明                                            |
@@ -181,6 +217,7 @@ public enum InkCanvasNextMode
 | `CurrentScale`     | `double`           | 当前画布缩放比例（自动钳制 0.1–10）   |
 | `OffsetX`          | `double`           | 画布水平滚动偏移                      |
 | `OffsetY`          | `double`           | 画布垂直滚动偏移                      |
+| `DocumentPage`     | `ImageSource?`     | 当前文档背景页图像（无则为 `null`）   |
 | `MouseWheelAction` | `MouseWheelAction` | （依赖属性，见上）                    |
 
 #### 方法

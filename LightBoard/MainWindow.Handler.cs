@@ -21,7 +21,7 @@ public partial class MainWindow
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
-            MainInstruction = "轻白板 / LightBoard v1.0.0 RC",
+            MainInstruction = "轻白板 / LightBoard v1.0.0",
             MainIcon = TaskDialogIcon.Information,
             Content =
             """
@@ -181,6 +181,14 @@ public partial class MainWindow
             return;
         }
 
+        // 形状模式下点当前已选中的颜色即取消形状回画笔；点其他颜色仅换笔保持形状
+        if (IsShapeMode(Mode) && ReferenceEquals(radio, colorRadio))
+        {
+            Mode = InkCanvasNextMode.Ink;
+            SyncToolState( );
+            return;
+        }
+
         if (Mode == InkCanvasNextMode.Highlighter)
         {
             ExitHighlighter( );
@@ -320,6 +328,14 @@ public partial class MainWindow
 
         if (o is not RadioButton { MinWidth: double thickness } radio)
         {
+            return;
+        }
+
+        // 形状模式下点当前已选中的粗细即取消形状回画笔；点其他粗细仅换笔保持形状
+        if (IsShapeMode(Mode) && ReferenceEquals(radio, thicknessRadio))
+        {
+            Mode = InkCanvasNextMode.Ink;
+            SyncToolState( );
             return;
         }
 

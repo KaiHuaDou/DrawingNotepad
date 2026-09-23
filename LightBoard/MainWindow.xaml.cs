@@ -187,4 +187,9 @@ public partial class MainWindow : Window
 
         NativeMethods.SetWindowRegion(hWnd, ActualWidth, ActualHeight, dpi, borderRect);
     }
+
+    private void DebugLayerClick(object o, RoutedEventArgs e)
+    {
+
+    }
 }
