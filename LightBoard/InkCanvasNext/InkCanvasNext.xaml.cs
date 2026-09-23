@@ -136,7 +136,7 @@ public partial class InkCanvasNext : UserControl
             nameof(EraserDiameter),
             typeof(double),
             typeof(InkCanvasNext),
-            new PropertyMetadata(50.0));
+            new PropertyMetadata(Eraser.EraserDefaultDiameter));
 
     /// <summary>
     /// 标识 MouseWheelAction 依赖项属性。
@@ -156,19 +156,28 @@ public partial class InkCanvasNext : UserControl
             new PropertyMetadata(OnStrokesPropertyChanged));
 
     private readonly SelectionController selection;
+    private readonly SelectionVisual selectionVisual;
 
     /// <summary>
     /// 初始化 InkCanvasNext 控件并装配内部画布与选择控制器。
     /// </summary>
-    public InkCanvasNext( )
+    /// <param name="canvasSize">内层墨迹画布尺寸，默认 5760x3240。</param>
+    /// <param name="initialOffset">初始视口左上角在画布内容坐标中的位置，默认画布中心。</param>
+    public InkCanvasNext(Size canvasSize, Point initialOffset)
     {
         InitializeComponent( );
+
+        InnerCanvas.Width = canvasSize.Width;
+        InnerCanvas.Height = canvasSize.Height;
+        DocumentHostGrid.Width = canvasSize.Width;
+        DocumentHostGrid.Height = canvasSize.Height;
 
         eraser = new Eraser(InnerCanvas, EraserFeedback);
 
         CanvasGrid.LayoutTransform = canvasScaleTransform;
 
-        selection = new SelectionController(this, new SelectionVisual(SelectionLayer));
+        selectionVisual = new SelectionVisual(SelectionLayer, canvasSize);
+        selection = new SelectionController(this, selectionVisual);
 
         InnerCanvas.Strokes.StrokesChanged += OnStrokesChanged;
 
@@ -177,17 +186,11 @@ public partial class InkCanvasNext : UserControl
 
         prevMode = InkCanvasNextMode.Ink;
 
-#if DEBUG
-        const double DistanceThresholdFactor = 0.9;
-#else
-        const double DistanceThresholdFactor = 0.1;
-#endif
-
         var distanceThreshold = DistanceThresholdFactor * SystemParameters.WorkArea.Width;
         distanceThreshold2 = distanceThreshold * distanceThreshold;
 
-        CanvasScroll.ScrollToHorizontalOffset(8192);
-        CanvasScroll.ScrollToVerticalOffset(8192);
+        CanvasScroll.ScrollToHorizontalOffset(initialOffset.X);
+        CanvasScroll.ScrollToVerticalOffset(initialOffset.Y);
         CanvasScroll.ScrollChanged += (_, _) => RaiseViewOrSelectionChanged( );
         canvasScaleTransform.Changed += (_, _) => RaiseViewOrSelectionChanged( );
 
@@ -283,9 +286,6 @@ public partial class InkCanvasNext : UserControl
         get => (StrokeCollection) GetValue(StrokesProperty);
         set => SetValue(StrokesProperty, value);
     }
-
-    private const double MinScale = 0.1;
-    private const double MaxScale = 10.0;
 
     /// <summary>
     /// 获取或设置画布缩放比例，范围 0.1 ~ 10。

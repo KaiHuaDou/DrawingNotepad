@@ -19,6 +19,8 @@ public partial class MainWindow : Window
 
     private readonly DispatcherTimer timeTimer;
 
+    internal readonly InkCanvasNext.InkCanvasNext CanvasNext;
+
     public MainWindow( )
     {
         InitializeComponent( );
@@ -27,6 +29,16 @@ public partial class MainWindow : Window
         {
             gridBrush.Freeze( );
         }
+
+        CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset)
+        {
+            Background = MajorGridBrush
+        };
+        CanvasNext.CanRedoChanged += CanvasNextCanRedoChanged;
+        CanvasNext.CanUndoChanged += CanvasNextCanUndoChanged;
+        CanvasNext.SelectionChanged += CanvasNextSelectionChanged;
+        CanvasNext.StrokesChanged += CanvasNextStrokesChanged;
+        MainGrid.Children.Insert(0, CanvasNext);
 
         colorRadio ??= DefaultColorRadio;
         thicknessRadio ??= DefaultThicknessRadio;
@@ -108,9 +120,17 @@ public partial class MainWindow : Window
 
         if (result == fastSaveButton)
         {
-            BoardFile.Write(Path.Join(App.AppPath, "fastsave", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"), App.Pages);
-            Dirty = false;
-            return false;
+            try
+            {
+                BoardFile.Write(Path.Join(App.AppPath, "fastsave", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"), App.Pages);
+                Dirty = false;
+                return false;
+            }
+            catch (Exception ex)
+            {
+                App.ShowException(ex, "无法保存文件，请尝试手动保存");
+                return true;
+            }
         }
         else if (result == saveButton)
         {
@@ -163,7 +183,7 @@ public partial class MainWindow : Window
 
         var transform = PassThroughBorder.TransformToAncestor(this);
         var borderRect = transform.TransformBounds(new Rect(PassThroughBorder.RenderSize));
-        borderRect.Inflate(-5, -5);
+        borderRect.Inflate(-2, -2);
 
         NativeMethods.SetWindowRegion(hWnd, ActualWidth, ActualHeight, dpi, borderRect);
     }

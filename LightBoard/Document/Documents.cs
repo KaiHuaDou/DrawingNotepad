@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
+using InkCanvasNext;
+
 using NetOffice.OfficeApi.Enums;
 using NetOffice.PowerPointApi.Enums;
 using NetOffice.WordApi.Enums;
-
-using InkCanvasNext;
 
 using PpApplication = NetOffice.PowerPointApi.Application;
 using WdApplication = NetOffice.WordApi.Application;
@@ -36,8 +36,8 @@ public partial class App
             {
                 Number = i + 1,
                 Scale = 1.0,
-                OffsetX = 16384 - SystemParameters.WorkArea.Width / 2,
-                OffsetY = 8192 - SystemParameters.WorkArea.Height / 2,
+                OffsetX = CanvasSize.Width / 2 - SystemParameters.WorkArea.Width / 2,
+                OffsetY = CanvasSize.Height / 2 - SystemParameters.WorkArea.Height / 2,
             });
         }
 
@@ -58,7 +58,7 @@ public partial class App
                     continue;
                 }
 
-                var preview = page.Strokes.Preview(background);
+                var preview = page.Strokes.Preview(CanvasSize, background);
                 Current.Dispatcher.Invoke(( ) => page.Preview = preview);
             }
         });

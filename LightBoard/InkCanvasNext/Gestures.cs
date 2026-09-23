@@ -12,17 +12,13 @@ public partial class InkCanvasNext
 {
     private readonly ScaleTransform canvasScaleTransform = new(1.0, 1.0);
 
-    private readonly double distanceThreshold2;
-
-    private const double PanZoomDisplaceThreshold2 = 30.0 * 30.0;
-    private const double PinchMinDistance2 = 24.0 * 24.0;
+    private Point viewportOrigin;
 
     private Point panPoint0;
-    private Point viewportOrigin;
+    private double distance0;
+
     private Point panZoomAnchor;
     private bool zoomLocked;
-
-    private double distance0;
 
     private double currentScale = 1.0;
     private double initialScale = 1.0;
@@ -108,6 +104,29 @@ public partial class InkCanvasNext
         panPoint0 = first!.Value;
     }
 
+    /// <summary>
+    /// 平移/缩放手势结束时保证视口右/下方至少留有一屏余量：
+    /// 距右/下边缘不足一屏（视口单位）则把画布扩展一屏（换算为内容坐标）。
+    /// </summary>
+    private void EnsureEdgeMargin( )
+    {
+        var extendWidth = CanvasScroll.ScrollableWidth - CanvasScroll.HorizontalOffset < CanvasScroll.ViewportWidth
+            ? CanvasScroll.ViewportWidth / currentScale
+            : 0;
+        var extendHeight = CanvasScroll.ScrollableHeight - CanvasScroll.VerticalOffset < CanvasScroll.ViewportHeight
+            ? CanvasScroll.ViewportHeight / currentScale
+            : 0;
+
+        if (extendWidth == 0 && extendHeight == 0)
+        {
+            return;
+        }
+
+        InnerCanvas.Width += extendWidth;
+        InnerCanvas.Height += extendHeight;
+        selectionVisual.Resize(new Size(InnerCanvas.Width, InnerCanvas.Height));
+    }
+
     private void ZoomAtCursor(MouseWheelEventArgs e)
     {
         var factor = e.Delta > 0 ? 1.1 : 1.0 / 1.1;
@@ -135,10 +154,6 @@ public partial class InkCanvasNext
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static double Smooth(double x)
     {
-        const double T = 0.2;
-        const double Q = 0.5;
-        const double S = 1;
-
         var u = x - 1;
         var d = Math.Abs(u);
 

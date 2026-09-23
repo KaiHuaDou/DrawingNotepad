@@ -9,7 +9,12 @@ using System.Windows.Ink;
 
 namespace LightBoard;
 
-internal sealed record BoardPage(StrokeCollection Strokes, double Scale, double OffsetX, double OffsetY);
+internal sealed record BoardPage(
+    StrokeCollection Strokes,
+    double Scale,
+    double OffsetX,
+    double OffsetY
+);
 
 internal sealed record BoardContent(int Version, IReadOnlyList<BoardPage> Pages);
 
@@ -28,9 +33,9 @@ internal sealed class BoardPageInfo(double scale, double offsetX, double offsetY
 
 internal static class BoardFile
 {
-    public const string Extension = ".lbf";
+    public const string Ext = ".lbf";
 
-    private const string ManifestName = "manifest.json";
+    private const string Manifest = "manifest.json";
 
     private const string PagePrefix = "pages/";
 
@@ -40,17 +45,27 @@ internal static class BoardFile
     {
         using var zip = ZipFile.OpenRead(path);
 
-        var manifestEntry = zip.GetEntry(ManifestName)
+        var manifestEntry = zip.GetEntry(Manifest)
             ?? throw new InvalidDataException("文件缺少 manifest.json");
-        var manifest = DeserializeManifest(manifestEntry);
+
+        using var manifestStream = manifestEntry.Open( );
+        var manifest = JsonSerializer.Deserialize(manifestStream, BoardSerializerContext.Default.BoardManifest)
+            ?? throw new InvalidDataException("manifest.json 解析失败");
+
+        if (manifest.Version > CurrentVersion)
+        {
+            throw new InvalidDataException($"文件版本 {manifest.Version} 高于当前支持的版本 {CurrentVersion}");
+        }
 
         var pages = new List<BoardPage>(manifest.Pages.Count);
         for (var i = 0; i < manifest.Pages.Count; i++)
         {
-            var entry = zip.GetEntry($"{PagePrefix}{i + 1:D3}.isf");
-            var strokes = entry is null ? [] : ReadStrokes(entry);
+            var entry = zip.GetEntry($"{PagePrefix}{i + 1:D3}.isf")
+                ?? throw new InvalidDataException($"文件缺少第 {i + 1} 页数据");
+
             var info = manifest.Pages[i];
-            pages.Add(new BoardPage(strokes, info.Scale, info.OffsetX, info.OffsetY));
+            using var pageStream = entry.Open( );
+            pages.Add(new BoardPage([with(pageStream)], info.Scale, info.OffsetX, info.OffsetY));
         }
 
         return new BoardContent(manifest.Version, pages);
@@ -58,13 +73,20 @@ internal static class BoardFile
 
     public static void Write(string path, IReadOnlyList<Page> pages)
     {
-        WriteAtomic(path, zip =>
+        var tempPath = $"{path}.tmp";
+
+        try
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+            using var zip = ZipFile.Open(tempPath, ZipArchiveMode.Create);
             var manifest = new BoardManifest(
                 CurrentVersion,
                 [.. pages.Select(p => new BoardPageInfo(p.Scale, p.OffsetX, p.OffsetY))]);
 
-            WriteManifest(zip, manifest);
+            var manifestEntry = zip.CreateEntry(Manifest);
+            using var manifestStream = manifestEntry.Open( );
+            JsonSerializer.Serialize(manifestStream, manifest, BoardSerializerContext.Default.BoardManifest);
 
             for (var i = 0; i < pages.Count; i++)
             {
@@ -72,44 +94,15 @@ internal static class BoardFile
                 using var stream = entry.Open( );
                 pages[i].Strokes.Save(stream, true);
             }
-        });
-    }
 
-    private static void WriteAtomic(string path, Action<ZipArchive> write)
-    {
-        var directory = Path.GetDirectoryName(path);
-        if (!string.IsNullOrEmpty(directory))
-        {
-            Directory.CreateDirectory(directory);
+            File.Move(tempPath, path, overwrite: true);
         }
-
-        var temp = $"{path}.tmp";
-        using (var zip = ZipFile.Open(temp, ZipArchiveMode.Create))
+        catch
         {
-            write(zip);
+            try { File.Delete(tempPath); } catch { }
+
+            throw;
         }
-
-        File.Move(temp, path, true);
-    }
-
-    private static BoardManifest DeserializeManifest(ZipArchiveEntry entry)
-    {
-        using var stream = entry.Open( );
-        return JsonSerializer.Deserialize(stream, BoardSerializerContext.Default.BoardManifest)
-            ?? throw new InvalidDataException("manifest.json 解析失败");
-    }
-
-    private static void WriteManifest(ZipArchive zip, BoardManifest manifest)
-    {
-        var entry = zip.CreateEntry(ManifestName);
-        using var stream = entry.Open( );
-        JsonSerializer.Serialize(stream, manifest, BoardSerializerContext.Default.BoardManifest);
-    }
-
-    private static StrokeCollection ReadStrokes(ZipArchiveEntry entry)
-    {
-        using var stream = entry.Open( );
-        return [with(stream)];
     }
 }
 

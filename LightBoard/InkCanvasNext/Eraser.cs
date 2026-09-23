@@ -89,11 +89,11 @@ public partial class InkCanvasNext
     }
 }
 
-internal sealed class Eraser(InkCanvas canvas, Ellipse feedback)
+internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
 {
     internal StrokeChanges StrokeChanges { get; } = new([], []);
 
-    internal double Diameter { get; set; } = 50.0;
+    internal double Diameter { get; set; } = EraserDefaultDiameter;
 
     internal double Scale { get; set; } = 1.0;
 

@@ -7,17 +7,8 @@ using System.Windows.Media;
 
 namespace InkCanvasNext;
 
-internal sealed class SelectionVisual
+internal sealed partial class SelectionVisual
 {
-    private const double HandleRadius = 5;
-
-    // 旋转手柄几何（屏幕像素；除以 zoom 折算为内容坐标，使手柄以恒定屏幕间距浮于选区正上方）：
-    private const double RotateScreenRadius = 8;        // 手柄视觉半径
-    private const double RotateGapAboveSelection = 32;  // 手柄与选区上沿的屏幕间距
-    internal const double ToolbarGapFromSelection = 8;  // 工具栏与选区包围盒的屏幕间距
-
-    private static readonly Color AccentColor = Color.FromRgb(0x4C, 0x8B, 0xF5);
-
     private readonly SelectionVisualHost host;
 
     private Rect bounds = Rect.Empty;
@@ -27,14 +18,24 @@ internal sealed class SelectionVisual
     private double zoom = 1.0;
     private Point? rotateHandlePosition;
 
-    internal SelectionVisual(Canvas layer)
+    internal SelectionVisual(Canvas layer, Size canvasSize)
     {
+        // 覆盖层必须盖住整个墨迹画布，否则画布边缘的选区会被裁掉。
         host = new SelectionVisualHost(Draw)
         {
-            Width = 32768,
-            Height = 16384
+            Width = canvasSize.Width,
+            Height = canvasSize.Height
         };
         layer.Children.Add(host);
+    }
+
+    /// <summary>
+    /// 画布扩展后同步覆盖层尺寸，维持覆盖整个墨迹画布。
+    /// </summary>
+    internal void Resize(Size canvasSize)
+    {
+        host.Width = canvasSize.Width;
+        host.Height = canvasSize.Height;
     }
 
     internal void Invalidate(Rect bounds, IReadOnlyCollection<Stroke> selected, IReadOnlyList<Point>? lasso, bool halo, double zoom, Point? rotateHandlePosition)
@@ -59,9 +60,6 @@ internal sealed class SelectionVisual
 
     private void Draw(DrawingContext dc)
     {
-        // 1) 选中高亮：accent 半透明加粗描边 halo（替代 WPF hollow）。
-        //    仅在选择确定（无进行中手势）时绘制：手势期间逐帧克隆选中笔画开销大，
-        //    且拖动/缩放中笔画本身就在移动，选择框 + 手柄已足够指示。
         if (drawHalo)
         {
             var haloBrush = new SolidColorBrush(Color.FromArgb(120, AccentColor.R, AccentColor.G, AccentColor.B));
@@ -77,7 +75,6 @@ internal sealed class SelectionVisual
             }
         }
 
-        // 2) 选择框 + 手柄
         if (!bounds.IsEmpty)
         {
             var accentBrush = new SolidColorBrush(Color.FromArgb(235, AccentColor.R, AccentColor.G, AccentColor.B));
@@ -86,7 +83,6 @@ internal sealed class SelectionVisual
             DrawHandles(dc, bounds, pen, zoom, rotateHandlePosition);
         }
 
-        // 3) 套索轨迹（accent 虚线）
         if (lasso is { Count: >= 2 })
         {
             var lassoPen = new Pen(new SolidColorBrush(AccentColor), 2.0)
@@ -127,12 +123,12 @@ internal sealed class SelectionVisual
         var rr = RotateScreenRadius / zoom;
         dc.DrawEllipse(Brushes.White, pen, rotateCenter, rr, rr);
     }
+}
 
-    private sealed class SelectionVisualHost(Action<DrawingContext> render) : FrameworkElement
+internal sealed class SelectionVisualHost(Action<DrawingContext> render) : FrameworkElement
+{
+    protected override void OnRender(DrawingContext drawingContext)
     {
-        protected override void OnRender(DrawingContext drawingContext)
-        {
-            render(drawingContext);
-        }
+        render(drawingContext);
     }
 }

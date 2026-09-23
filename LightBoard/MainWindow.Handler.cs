@@ -62,7 +62,7 @@ public partial class MainWindow
 
         if (isChecked)
         {
-            // RightBorder.Background = Application.Current.FindResource("ContainerBrushSolid") as Brush;
+            RightBorder.Background = Application.Current.FindResource("ContainerBrushSolid") as Brush;
         }
         else
         {
@@ -77,7 +77,7 @@ public partial class MainWindow
             }
             else
             {
-               // RightBorder.Background = Application.Current.FindResource("ContainerBrush") as Brush;
+                RightBorder.Background = Application.Current.FindResource("ContainerBrush") as Brush;
             }
         };
 
@@ -85,17 +85,17 @@ public partial class MainWindow
         RightBorder.BeginAnimation(WidthProperty, widthAnimation);
     }
 
-    private void CanvasNextCanRedoChanged(object o, DependencyPropertyChangedEventArgs e)
+    private void CanvasNextCanRedoChanged(object? o, DependencyPropertyChangedEventArgs e)
     {
         RedoButton.IsEnabled = CanvasNext.CanRedo;
     }
 
-    private void CanvasNextCanUndoChanged(object o, DependencyPropertyChangedEventArgs e)
+    private void CanvasNextCanUndoChanged(object? o, DependencyPropertyChangedEventArgs e)
     {
         UndoButton.IsEnabled = CanvasNext.CanUndo;
     }
 
-    private void CanvasNextSelectionChanged(object o, EventArgs e)
+    private void CanvasNextSelectionChanged(object? o, EventArgs e)
     {
         if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
         {
@@ -107,7 +107,7 @@ public partial class MainWindow
         UpdateSelectionBorderPosition( );
     }
 
-    private void CanvasNextStrokesChanged(object o, InkCanvasStrokesChangedEventArgs e)
+    private void CanvasNextStrokesChanged(object? o, InkCanvasStrokesChangedEventArgs e)
     {
         Dirty = true;
 

@@ -39,7 +39,7 @@ public partial class InkCanvasNext
             {
                 0 => TouchState.Idle,
                 // 选区入口是高优先级候选：仅 count∈{1,2} 时评估（3+ 指不误入）
-                1 or 2 when SelectionTouchCandidate( ) => TouchState.Selection,
+                1 or 2 when Mode == InkCanvasNextMode.Select && StampAction == StampAction.None => TouchState.Selection,
                 1 => TouchState.EvalDraw,
                 2 when d2 <= l2 => TouchState.PanZoom,
                 3 or 4 when d2 <= l2 => TouchState.Pan,
@@ -141,6 +141,12 @@ public partial class InkCanvasNext
             EndSelectionTouch( );
         }
 
+        // 迁出平移/缩放手势族（含回 Idle 或转擦除/多指）即视为手势结束，补足右/下边距
+        if (from is TouchState.Pan or TouchState.PanZoom && newState is not (TouchState.Pan or TouchState.PanZoom))
+        {
+            EnsureEdgeMargin( );
+        }
+
         if (newState == TouchState.Idle)
         {
             ReleaseAll( );
@@ -225,12 +231,5 @@ public partial class InkCanvasNext
     private void RestoreMode( )
     {
         ApplyModeToEditing(prevMode);
-    }
-
-    /// <summary>选择工具（且未进入盖章）下的任意单/双指触摸由选区状态接管：有选区则命中手柄缩放/
-    /// 旋转、选区内移动、双指缩放；无选区或落点在空白处则进入触屏套索/点选。3+ 指不进入（调用方 count 臂限定）。</summary>
-    private bool SelectionTouchCandidate( )
-    {
-        return Mode == InkCanvasNextMode.Select && StampAction == StampAction.None;
     }
 }

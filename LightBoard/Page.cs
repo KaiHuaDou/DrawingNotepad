@@ -17,8 +17,8 @@ public class Page : INotifyPropertyChanged
     public int Number { get; set; }
     public StrokeCollection Strokes { get; set; } = [];
     public double Scale { get; set; } = 1.0;
-    public double OffsetX { get; set; } = 8192;
-    public double OffsetY { get; set; } = 8192;
+    public double OffsetX { get; set; } = App.InitialOffset.X;
+    public double OffsetY { get; set; } = App.InitialOffset.Y;
     public HistorySnapshot? History { get; set; }
 
     public ImageSource Preview
@@ -37,15 +37,15 @@ public class Page : INotifyPropertyChanged
         using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
         Strokes = [with(stream)];
         Scale = 1.0;
-        OffsetX = 8192;
-        OffsetY = 8192;
+        OffsetX = App.InitialOffset.X;
+        OffsetY = App.InitialOffset.Y;
         History = null;
         Preview = Strokes.Count > 0 ? Strokes.Preview( ) : StrokeCollectionExtension.PreviewEmpty( );
     }
 
     public void ExportStrokes(string fileName, DpiScale dpi, int scale, ImageSource? background = null)
     {
-        var image = Strokes.Render(dpi, scale, background);
+        var image = Strokes.Render(dpi, scale, canvasSize: App.CanvasSize, background: background);
         var encoder = new PngBitmapEncoder( );
         encoder.Frames.Add(BitmapFrame.Create(image));
 
@@ -85,7 +85,7 @@ public partial class MainWindow
         page.Scale = CanvasNext.CurrentScale;
         page.OffsetX = CanvasNext.OffsetX;
         page.OffsetY = CanvasNext.OffsetY;
-        page.Preview = page.Strokes.Preview(CanvasNext.DocumentPage);
+        page.Preview = page.Strokes.Preview(App.CanvasSize, CanvasNext.DocumentPage);
     }
 
     private void PrevPage(object o, RoutedEventArgs e)
@@ -132,7 +132,7 @@ public partial class App
 {
     public static void InitializePages( )
     {
-        Pages.Add(new Page { Number = 1, Scale = 1.0, OffsetX = 8192, OffsetY = 8192 });
+        Pages.Add(new Page { Number = 1, Scale = 1.0, OffsetX = InitialOffset.X, OffsetY = InitialOffset.Y });
         PageIndex = 0;
     }
 
@@ -149,7 +149,7 @@ public partial class App
 
     public static void NewPage( )
     {
-        Pages.Add(new Page { Number = Pages.Count + 1, Scale = 1.0, OffsetX = 8192, OffsetY = 8192 });
+        Pages.Add(new Page { Number = Pages.Count + 1, Scale = 1.0, OffsetX = InitialOffset.X, OffsetY = InitialOffset.Y });
         PageIndex = Pages.Count - 1;
     }
 

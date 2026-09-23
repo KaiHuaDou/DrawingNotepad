@@ -8,11 +8,12 @@
                   RenderOptions.CacheInvalidationThresholdMaximum="2.0"
                   RenderOptions.CacheInvalidationThresholdMinimum="0.5"
                   RenderOptions.CachingHint="Cache">
-                <Border x:Name="DocumentHost"
-                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                        Visibility="Collapsed" />
+                <Grid x:Name="DocumentHostGrid" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <Border x:Name="DocumentHost"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Visibility="Collapsed" />
+                </Grid>
                 <InkCanvas x:Name="InnerCanvas"
-                           Width="32768" Height="16384"
                            Panel.ZIndex="36"
                            Background="Transparent"
                            LostTouchCapture="CanvasLostTouchCapture"

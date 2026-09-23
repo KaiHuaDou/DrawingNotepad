@@ -28,6 +28,16 @@ public partial class MainWindow
         OpenFile(dialog.FileName);
     }
 
+    public void RequestOpenFile(string filename)
+    {
+        if (WhetherCloseFile( ))
+        {
+            return;
+        }
+
+        OpenFile(filename);
+    }
+
     private async void OpenFile(string fileName)
     {
         try
@@ -76,7 +86,7 @@ public partial class MainWindow
 
     private static bool IsBoardFile(string fileName)
     {
-        return Path.GetExtension(fileName).Equals(BoardFile.Extension, StringComparison.OrdinalIgnoreCase);
+        return Path.GetExtension(fileName).Equals(BoardFile.Ext, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsInkFile(string fileName)

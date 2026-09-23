@@ -1,10 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Media;
 
+using static System.Math;
 using static InkCanvasNext.Geometry;
 
 namespace InkCanvasNext;
@@ -35,13 +35,6 @@ internal enum SelectionGesture
 
 public partial class InkCanvasNext
 {
-
-    private const double HandleHitRadius = 16;
-    private const double LassoPointDistance2 = 16;
-
-    /// <summary>旋转手柄命中半径（屏幕像素，÷zoom 折算为内容坐标）：独立于缩放恒定可点按。</summary>
-    private const double RotateHitRadius = 24;
-
     private SelectionGesture selectionGesture = SelectionGesture.None;
     private SelectionHandle selectionHandle = SelectionHandle.None;
     private Point selectionStartPoint;
@@ -51,11 +44,10 @@ public partial class InkCanvasNext
     private Matrix selectionAbs = Matrix.Identity;
     private StrokeCollection? selectionTarget;
 
-    /// <summary>旋转手势中手柄的轨道位置（内容坐标，绕选区中心等半径跟随鼠标角度）；空闲为 null。</summary>
-    private Point? rotateHandleLive;
-
-    /// <summary>供视觉层绘制：旋转手势进行中返回手柄轨道位置，否则 null（视觉层回落默认顶中位置）。</summary>
-    internal Point? LiveRotateHandle => rotateHandleLive;
+    /// <summary>
+    /// 旋转手势中手柄的轨道位置（内容坐标，绕选区中心等半径跟随鼠标角度）；空闲为 null。
+    /// </summary>
+    internal Point? RotateHandleLive { get; private set; }
 
     private readonly List<Point> lassoPath = [];
     private readonly HashSet<Stroke> lassoSelected = [];
@@ -134,7 +126,7 @@ public partial class InkCanvasNext
 
         selectionGesture = SelectionGesture.None;
         selectionTarget = null;
-        rotateHandleLive = null;
+        RotateHandleLive = null;
         InnerCanvas.ReleaseMouseCapture( );
         selection.Invalidate( );
         RaiseViewOrSelectionChanged( );
@@ -237,7 +229,7 @@ public partial class InkCanvasNext
 
         selectionGesture = SelectionGesture.None;
         selectionTarget = null;
-        rotateHandleLive = null;
+        RotateHandleLive = null;
         selection.Invalidate( );
     }
 
@@ -250,8 +242,8 @@ public partial class InkCanvasNext
 
         (var c1, var c2) = GetPinchPoints( );
         var center = new Point((c1.X + c2.X) / 2, (c1.Y + c2.Y) / 2);
-        var dist = Math.Sqrt(Geometry.Distance2(c1, c2));
-        var angle = Math.Atan2(c2.Y - c1.Y, c2.X - c1.X);
+        var dist = Sqrt(Distance2(c1, c2));
+        var angle = Atan2(c2.Y - c1.Y, c2.X - c1.X);
 
         if (!pinchInit)
         {
@@ -291,15 +283,15 @@ public partial class InkCanvasNext
 
         (var c1, var c2) = GetPinchPoints( );
         var center = new Point((c1.X + c2.X) / 2, (c1.Y + c2.Y) / 2);
-        var dist = Math.Sqrt(Geometry.Distance2(c1, c2));
-        InitPinchBaseline(center, dist, Math.Atan2(c2.Y - c1.Y, c2.X - c1.X));
+        var dist = Sqrt(Distance2(c1, c2));
+        InitPinchBaseline(center, dist, Atan2(c2.Y - c1.Y, c2.X - c1.X));
     }
 
     private void InitPinchBaseline(Point center, double dist, double angle)
     {
         pinchInit = true;
         pinchStartCenter = center;
-        pinchStartDist = Math.Max(dist, 1e-6);
+        pinchStartDist = Max(dist, 1e-6);
         pinchStartAngle = angle;
     }
 
@@ -324,10 +316,10 @@ public partial class InkCanvasNext
                 var scaleY = selectionHandle is not (SelectionHandle.L or SelectionHandle.R);
 
                 var dx = selectionStartPoint.X - selectionAnchor.X;
-                var sx = (scaleX && Math.Abs(dx) > 1e-9) ? (p.X - selectionAnchor.X) / dx : 1.0;
+                var sx = (scaleX && Abs(dx) > 1e-9) ? (p.X - selectionAnchor.X) / dx : 1.0;
 
                 var dy = selectionStartPoint.Y - selectionAnchor.Y;
-                var sy = (scaleY && Math.Abs(dy) > 1e-9) ? (p.Y - selectionAnchor.Y) / dy : 1.0;
+                var sy = (scaleY && Abs(dy) > 1e-9) ? (p.Y - selectionAnchor.Y) / dy : 1.0;
 
                 newAbs = Matrix.Identity;
                 newAbs.ScaleAt(sx, sy, selectionAnchor.X, selectionAnchor.Y);
@@ -344,11 +336,11 @@ public partial class InkCanvasNext
                 // 手柄沿鼠标角度绕选区中心做圆周运动，到旋转中心距离保持手势起始值（距离不变）
                 var vx = p.X - selectionCenter.X;
                 var vy = p.Y - selectionCenter.Y;
-                var len = Math.Sqrt(vx * vx + vy * vy);
+                var len = Sqrt(vx * vx + vy * vy);
                 if (len > 1e-9)
                 {
                     var r0 = Distance(selectionCenter, selectionStartPoint);
-                    rotateHandleLive = new Point(
+                    RotateHandleLive = new Point(
                         selectionCenter.X + vx / len * r0,
                         selectionCenter.Y + vy / len * r0);
                 }
@@ -416,7 +408,7 @@ public partial class InkCanvasNext
         lassoSelected.Clear( );
         lassoDragged = false;
         pinchInit = false;
-        rotateHandleLive = null;
+        RotateHandleLive = null;
 
         if (lassoTester is not null)
         {
@@ -521,7 +513,7 @@ public partial class InkCanvasNext
             return SelectionHandle.None;
         }
 
-        if (Near(p, SelectionVisual.RotateHandleCenter(b, currentScale), RotateHitRadius / Math.Max(currentScale, 1e-6)))
+        if (Near(p, SelectionVisual.RotateHandleCenter(b, currentScale), RotateHitRadius / Max(currentScale, 1e-6)))
         {
             return SelectionHandle.Rotate;
         }

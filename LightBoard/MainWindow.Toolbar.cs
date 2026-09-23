@@ -7,25 +7,23 @@ using InkCanvasNext;
 
 namespace LightBoard;
 
+internal sealed record PenProfile(Color Color, double Width, bool IsHighlighter);
+
+internal sealed record ToolSnapshot(InkCanvasNextMode Mode, RadioButton? ColorRadio, RadioButton? ThicknessRadio);
+
 public partial class MainWindow
 {
-    private sealed record PenProfile(Color Color, double Width, bool IsHighlighter);
-
-    private static readonly PenProfile HighlighterProfile = new(Colors.Yellow, 36, true);
-
-    private RadioButton? colorRadio;
-    private ToolSnapshot? highlighterBackup;
-
-    // 显式状态机：Mode 是唯一真值来源
     internal InkCanvasNextMode Mode { get; private set; } = InkCanvasNextMode.Ink;
 
     private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false);
+    private static readonly PenProfile HighlighterProfile = new(Colors.Yellow, 36, true);
+
+    private RadioButton? colorRadio;
+    private RadioButton? thicknessRadio;
+    private ToolSnapshot? highlighterBackup;
+
     private Size? selectionBorderSize;
     private bool selectionBorderUpdating;
-    private RadioButton? thicknessRadio;
-
-    // 进入 Highlighter 前保存的工具状态（pen 在高亮期间不变，无需保存）；退出时整体还原
-    private sealed record ToolSnapshot(InkCanvasNextMode Mode, RadioButton? ColorRadio, RadioButton? ThicknessRadio);
 
     private static bool IsToolMode(InkCanvasNextMode m)
     {
@@ -92,6 +90,7 @@ public partial class MainWindow
             SyncToolState( );
         }
     }
+
     private Size MeasureSelectionBorder( )
     {
         SelectionBorder.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));

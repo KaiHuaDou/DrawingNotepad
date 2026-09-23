@@ -1,6 +1,8 @@
 using System.Windows;
 using System.Windows.Interop;
 
+using LightBoard;
+
 namespace InkCanvasNext.Tests;
 
 /// <summary>
@@ -19,7 +21,7 @@ internal sealed class TouchHost : IDisposable
 
     public TouchHost(double width = 1280, double height = 800)
     {
-        Canvas = new InkCanvasNext( );
+        Canvas = new InkCanvasNext(App.CanvasSize, App.InitialOffset);
 
         var parameters = new HwndSourceParameters("InkCanvasNext.Tests")
         {

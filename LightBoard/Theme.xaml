@@ -25,21 +25,21 @@
         </DrawingBrush.Drawing>
     </DrawingBrush>
 
-    <SolidColorBrush x:Key="DarkBrush" Color="#661C2B58" />
+    <SolidColorBrush x:Key="DarkBrush" Color="#441C2BCC" />
     <SolidColorBrush x:Key="DarkBorderBrush" Color="#6683FC" />
 
     <SolidColorBrush x:Key="HoverBrush" Color="#26FFFFFF" />
     <SolidColorBrush x:Key="PressedBrush" Color="#3AFFFFFF" />
 
-    <SolidColorBrush x:Key="ContainerBrush" Color="#44262626" />
-    <SolidColorBrush x:Key="ContainerBrushSolid" Color="#EE262626" />
+    <SolidColorBrush x:Key="ContainerBrush" Color="#99132032" />
+    <SolidColorBrush x:Key="ContainerBrushSolid" Color="#AA132032" />
 
-    <SolidColorBrush x:Key="IconBrush" Color="#F2F2F2" />
+    <SolidColorBrush x:Key="IconBrush" Color="#E3E3E3" />
 
     <DropShadowEffect x:Key="ContainerShadow"
-                      Opacity="0.45"
-                      BlurRadius="18" Direction="270" ShadowDepth="6"
-                      Color="#000000" />
+                      Opacity="0.5"
+                      BlurRadius="15" Direction="270" ShadowDepth="6"
+                      Color="#333333" />
 
     <Style x:Key="IconTextStyle" TargetType="TextBlock">
         <Setter Property="VerticalAlignment" Value="Center" />
@@ -60,8 +60,7 @@
                 <ControlTemplate TargetType="RadioButton">
                     <Border x:Name="PART_Border"
                             Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="0"
+                            BorderBrush="#AAEEEEEE" BorderThickness="0"
                             CornerRadius="5">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
@@ -217,7 +216,7 @@
     <Style x:Key="ContainerStyle" TargetType="{x:Type Border}">
         <Setter Property="Padding" Value="5" />
         <Setter Property="Panel.ZIndex" Value="36" />
-        <Setter Property="BorderBrush" Value="#33FFFFFF" />
+        <Setter Property="BorderBrush" Value="#66DDEEFF" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Background" Value="{StaticResource ContainerBrush}" />
         <Setter Property="Effect" Value="{StaticResource ContainerShadow}" />
@@ -268,14 +267,10 @@
                             Margin="2" Padding="10,6"
                             Background="Transparent"
                             CornerRadius="7">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="28" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                        <DockPanel>
                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" ContentSource="Icon" />
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" ContentSource="Header" />
-                        </Grid>
+                            <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center" ContentSource="Header" />
+                        </DockPanel>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">

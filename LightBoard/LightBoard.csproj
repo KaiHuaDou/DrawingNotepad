@@ -31,7 +31,6 @@
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="LightBoard.Tests" />
-        <InternalsVisibleTo Include="InkCanvasNext.Tests" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="NetOfficeFw.PowerPoint" Version="1.9.11" />

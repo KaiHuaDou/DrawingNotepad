@@ -2,7 +2,6 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:LightBoard"
-        xmlns:next="clr-namespace:InkCanvasNext"
         Title="轻白板"
         Width="1920"
         Height="1080"
@@ -22,13 +21,7 @@
             <ContentPresenter ClipToBounds="True" />
         </ControlTemplate>
     </Window.Template>
-    <Grid>
-        <next:InkCanvasNext x:Name="CanvasNext"
-                            Background="{StaticResource MajorGridBrush}"
-                            CanRedoChanged="CanvasNextCanRedoChanged"
-                            CanUndoChanged="CanvasNextCanUndoChanged"
-                            SelectionChanged="CanvasNextSelectionChanged"
-                            StrokesChanged="CanvasNextStrokesChanged" />
+    <Grid x:Name="MainGrid">
         <Border x:Name="LeftBorder"
                 Margin="5,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
@@ -166,7 +159,7 @@
                                  Background="#FF4345"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
-                                 Background="#D7BA7D"
+                                 Background="#CD961D"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#ECD201"
@@ -324,9 +317,9 @@
             </StackPanel>
         </Border>
         <Border x:Name="PassThroughBorder"
-                Width="48" Height="480"
+                Width="64" Height="640"
                 Margin="48,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
                 Visibility="Collapsed"
-                Background="Transparent" BorderBrush="#33FFFFFF" BorderThickness="1" />
+                Background="Transparent" BorderBrush="#EEEEEE" BorderThickness="2" />
     </Grid>
 </Window>

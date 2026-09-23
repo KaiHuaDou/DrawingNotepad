@@ -14,6 +14,14 @@ public partial class App : Application, ISingleInstance
 {
     public static readonly string AppPath = Path.GetDirectoryName(Environment.ProcessPath)!;
 
+    public static readonly Size CanvasSize = new(
+        4 * SystemParameters.PrimaryScreenWidth,
+        16 * SystemParameters.PrimaryScreenHeight);
+
+    public static readonly Point InitialOffset = new(
+        SystemParameters.PrimaryScreenWidth,
+        SystemParameters.PrimaryScreenHeight);
+
     private readonly DispatcherTimer recoverTimer = new( );
 
     public static event EventHandler? PageChanged;
@@ -126,15 +134,22 @@ public partial class App : Application, ISingleInstance
 
     public void OnInstanceInvoked(string[] args)
     {
-        Current.MainWindow.Show( );
-        Current.MainWindow.Activate( );
+        Current.Dispatcher.Invoke(( ) =>
+        {
+            Current.MainWindow.Show( );
+            Current.MainWindow.Activate( );
+            if (args?.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
+            {
+                (Current.MainWindow as MainWindow)!.RequestOpenFile(args[0]);
+            }
+        });
     }
 
     private void AppDispatcherUnhandledException(object o, DispatcherUnhandledExceptionEventArgs e)
     {
         LogException(e.Exception);
 
-        try { SaveRecover( ); } catch { }
+        SaveRecover( );
 
         ShowException(e.Exception, "程序即将关闭。错误日志已记录。墨迹已备份。");
 
