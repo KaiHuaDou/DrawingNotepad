@@ -26,4 +26,11 @@
         <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- 测试宿主存在多个已退场的瞬态 STA 线程 Dispatcher，进程退出时 WPF
+             WeakEventTable.OnShutDown 会对这些 Dispatcher 做 Invoke 且无限阻塞，
+             卡死 CLR 关停序列；打开官方开关跳过 Invoke，直接内联清理。 -->
+        <RuntimeHostConfigurationOption Include="Switch.MS.Internal.DoNotInvokeInWeakEventTableShutdownListener" Value="true" Trim="false" />
+    </ItemGroup>
+
 </Project>

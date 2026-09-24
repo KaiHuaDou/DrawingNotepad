@@ -16,9 +16,9 @@ namespace LightBoard;
 
 public partial class App
 {
-    public static void ExportAllPdf(string fileName, DpiScale dpi, int scale)
+    public static void ExportAllPdf(string fileName, DpiScale dpi, int scale, IProgress<ExportProgress>? progress = null)
     {
-        PdfWriter.Export(fileName, Pages, Document, dpi, scale);
+        PdfWriter.Export(fileName, Pages, Document, dpi, scale, progress);
     }
 }
 
@@ -29,20 +29,28 @@ internal static class PdfWriter
         fpdfview.FPDF_InitLibrary( );
     }
 
-    public static void Export(string path, IList<Page> pages, DocumentService? document, DpiScale dpi, int scale)
+    public static void Export(string path, IList<Page> pages, DocumentService? document, DpiScale dpi, int scale, IProgress<ExportProgress>? progress = null)
     {
+        const string pageTip = "正在导出 PDF";
+        const string saveTip = "正在写入 PDF";
+
         var pdf = fpdf_edit.FPDF_CreateNewDocument( ) ?? throw new InvalidDataException("无法创建 PDF 文档");
         try
         {
+            var count = pages.Count;
             var bitmaps = new List<FpdfBitmapT>( );
+            progress?.Report(new(pageTip, 0, count));
             try
             {
-                for (var i = 0; i < pages.Count; i++)
+                for (var i = 0; i < count; i++)
                 {
                     var bitmap = AddPage(pdf, i, pages[i], FetchBackground(document, i), dpi, scale);
                     bitmaps.Add(bitmap);
+                    progress?.Report(new(pageTip, i + 1, count));
                 }
 
+                // 位图压缩在保存期间完成，大文档写入耗时与页渲染相当，单独作为一步上报
+                progress?.Report(new(saveTip, count, count));
                 Save(pdf, path);
             }
             finally

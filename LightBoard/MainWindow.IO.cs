@@ -12,6 +12,9 @@ namespace LightBoard;
 
 public partial class MainWindow
 {
+    private const string FileFilter =
+        "可打开的文件|*.lbf;*.isf;*.pptx;*.ppt;*.docx;*.doc;*.xps;*.pdf;*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|轻白板文件|*.lbf|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|XPS 文档|*.xps|PDF 文档|*.pdf|图片|*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|所有文件|*.*";
+
     private void OpenFileClick(object o, RoutedEventArgs e)
     {
         if (WhetherCloseFile( ))
@@ -56,7 +59,7 @@ public partial class MainWindow
             else
             {
                 CanvasNext.IsEnabled = false;
-                LoadingBorder.Visibility = Visibility.Visible;
+                ShowLoading("正在打开文档");
 
                 try
                 {
@@ -65,7 +68,7 @@ public partial class MainWindow
                 finally
                 {
                     CanvasNext.IsEnabled = true;
-                    LoadingBorder.Visibility = Visibility.Hidden;
+                    HideLoading( );
                 }
 
                 await App.RefreshDocumentPreviewsAsync( );
@@ -80,7 +83,7 @@ public partial class MainWindow
         }
         finally
         {
-            LoadingBorder.Visibility = Visibility.Hidden;
+            HideLoading( );
         }
     }
 
@@ -160,8 +163,9 @@ public partial class MainWindow
             return;
         }
 
-        var directory = Path.Join(fileDialog.SelectedPath, DateTime.Now.Ticks.ToString( ));
+        var directory = Path.Join(fileDialog.SelectedPath, $"{DateTime.Now:yyyyMMddHHmmss}");
         var dpi = VisualTreeHelper.GetDpi(CanvasNext);
+        var progress = ShowProgress( );
 
         ExportImageMenu.IsEnabled = false;
         CanvasNext.IsEnabled = false;
@@ -170,7 +174,7 @@ public partial class MainWindow
         {
             try
             {
-                App.ExportAllImage(percent, directory, dpi);
+                App.ExportAllImage(percent, directory, dpi, progress);
             }
             catch (Exception ex)
             {
@@ -184,6 +188,7 @@ public partial class MainWindow
                 {
                     ExportImageMenu.IsEnabled = true;
                     CanvasNext.IsEnabled = true;
+                    HideLoading( );
                 });
             }
 
@@ -219,15 +224,16 @@ public partial class MainWindow
         }
 
         var dpi = VisualTreeHelper.GetDpi(CanvasNext);
-        var loadingTip = LoadingText.Text;
+        var progress = ShowProgress( );
 
         ExportPdfButton.IsEnabled = false;
+        CanvasNext.IsEnabled = false;
 
         Task.Run(( ) =>
         {
             try
             {
-                App.ExportAllPdf(dialog.FileName, dpi, percent);
+                App.ExportAllPdf(dialog.FileName, dpi, percent, progress);
             }
             catch (Exception ex)
             {
@@ -237,7 +243,12 @@ public partial class MainWindow
             }
             finally
             {
-                Dispatcher.Invoke(( ) => ExportPdfButton.IsEnabled = true);
+                Dispatcher.Invoke(( ) =>
+                {
+                    ExportPdfButton.IsEnabled = true;
+                    CanvasNext.IsEnabled = true;
+                    HideLoading( );
+                });
             }
 
             App.ShowInfo("导出 PDF 成功");

@@ -85,12 +85,11 @@ public partial class InkCanvasNext
         // 由状态元数据判定是否接管（原 UpdateState 返回值 + 区域擦除/选区三条件并联）
         e.Handled = BlocksNativeInput(State) || IsAreaEraserActive(State);
 
-        if (State == TouchState.Selection && selectionGesture == SelectionGesture.Move && touches.Count >= 2)
+        if (State == TouchState.Selection)
         {
-            // 选区移动中第二指落下：立即结束移动段并切入双指缩放/旋转（基线取落下瞬间，消除死区滞后）
-            PromoteMoveToPinch( );
+            // 选区手势中新落的手指同样要捕获：CaptureAll 只在进入 Selection 时执行一次，
+            // 未捕获的手指移出画布边界即触发 TouchLeave 而被移除
             e.TouchDevice.Capture(InnerCanvas);
-            e.Handled = true;
         }
         else if (State == TouchState.MultiDraw)
         {
@@ -270,6 +269,10 @@ public partial class InkCanvasNext
         {
             InitGesture( );
         }
+        else if (State == TouchState.Selection)
+        {
+            RefreshSelectionGesture( );
+        }
     }
 
     private void TrackTouchUp(int id)
@@ -280,6 +283,10 @@ public partial class InkCanvasNext
         if (State is TouchState.Pan or TouchState.PanZoom)
         {
             InitGesture( );
+        }
+        else if (State == TouchState.Selection)
+        {
+            RefreshSelectionGesture( );
         }
     }
 

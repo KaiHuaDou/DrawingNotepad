@@ -106,4 +106,12 @@ public partial class InkCanvasNext
         var (Device2, _) = enumerator.Current;
         return (Device1.GetTouchPoint(InnerCanvas).Position, Device2.GetTouchPoint(InnerCanvas).Position);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private Point GetFirstCanvasPoint( )
+    {
+        using var enumerator = touches.Values.GetEnumerator( );
+        enumerator.MoveNext( );
+        return enumerator.Current.Device.GetTouchPoint(InnerCanvas).Position;
+    }
 }

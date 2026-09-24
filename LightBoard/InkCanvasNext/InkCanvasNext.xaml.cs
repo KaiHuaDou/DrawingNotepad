@@ -482,6 +482,7 @@ public partial class InkCanvasNext : UserControl
         StampAction = StampAction.None;
 
         ClearHistory( );
+        EnsureStrokesFit( );
     }
 
     /// <summary>

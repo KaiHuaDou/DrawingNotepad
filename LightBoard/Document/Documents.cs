@@ -34,17 +34,46 @@ public partial class App
 
         for (var i = 0; i < document.PageCount; i++)
         {
-            Pages.Add(new Page
-            {
-                Number = i + 1,
-                Scale = 1.0,
-                OffsetX = CanvasSize.Width / 2 - viewport.Width / 2,
-                OffsetY = CanvasSize.Height / 2 - viewport.Height / 2,
-            });
+            AddDocumentPage(viewport);
         }
 
         Document = document;
         PageIndex = 0;
+    }
+
+    private static void AddDocumentPage(Size viewport)
+    {
+        Pages.Add(new Page
+        {
+            Number = Pages.Count + 1,
+            Scale = 1.0,
+            OffsetX = CanvasSize.Width / 2 - viewport.Width / 2,
+            OffsetY = CanvasSize.Height / 2 - viewport.Height / 2,
+        });
+    }
+
+    public static async Task<DocumentService> AttachDocument(string path)
+    {
+        var document = await DocumentService.OpenAsync(path);
+
+        var viewport = CanvasViewport( );
+
+        while (Pages.Count < document.PageCount)
+        {
+            AddDocumentPage(viewport);
+        }
+
+        // 仅当前页无墨迹时写页视图（对中文档）；有墨迹时页视图保持上次换页/保存的快照不动，调用方不得据此回写画布
+        var current = CurrentPage;
+        if (current.Strokes.Count == 0)
+        {
+            current.Scale = 1.0;
+            current.OffsetX = CanvasSize.Width / 2 - viewport.Width / 2;
+            current.OffsetY = CanvasSize.Height / 2 - viewport.Height / 2;
+        }
+
+        Document = document;
+        return document;
     }
 
     private static Size CanvasViewport( )
@@ -74,18 +103,6 @@ public partial class App
                 Current.Dispatcher.Invoke(( ) => page.Preview = preview);
             }
         });
-    }
-}
-
-public partial class MainWindow
-{
-    private void CloseDocumentViewer( )
-    {
-        // 先清空页面视图再释放 XPS，否则已渲染的页面会失效。
-        CanvasNext.SetDocumentPage(null);
-
-        App.Document?.Dispose( );
-        App.Document = null;
     }
 }
 

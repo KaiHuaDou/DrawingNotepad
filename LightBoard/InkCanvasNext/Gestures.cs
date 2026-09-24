@@ -117,6 +117,28 @@ public partial class InkCanvasNext
             ? CanvasScroll.ViewportHeight / currentScale
             : 0;
 
+        ExtendCanvas(extendWidth, extendHeight);
+    }
+
+    /// <summary>
+    /// 保证画布尺寸覆盖全部笔画：文件可能产生自其他分辨率设备，笔画越出画布右/下边界时扩展画布。
+    /// </summary>
+    public void EnsureStrokesFit( )
+    {
+        var bounds = InnerCanvas.Strokes.GetBounds( );
+        if (bounds.IsEmpty)
+        {
+            return;
+        }
+
+        ExtendCanvas(bounds.Right - InnerCanvas.Width, bounds.Bottom - InnerCanvas.Height);
+    }
+
+    private void ExtendCanvas(double extendWidth, double extendHeight)
+    {
+        extendWidth = Math.Max(0, extendWidth);
+        extendHeight = Math.Max(0, extendHeight);
+
         if (extendWidth == 0 && extendHeight == 0)
         {
             return;

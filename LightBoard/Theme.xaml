@@ -45,7 +45,7 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="FontFamily" Value="Segoe Fluent Icons" />
-        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontSize" Value="27" />
         <Setter Property="FontWeight" Value="Heavy" />
         <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
     </Style>
@@ -58,22 +58,34 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="PART_Border"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="#EEEEEEEE" BorderThickness="1"
-                            CornerRadius="5">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
+                    <Grid>
+                        <Border x:Name="PART_Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="#EEEEEEEE" BorderThickness="1"
+                                CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock x:Name="PART_CheckMark"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Visibility="Collapsed"
+                                   Foreground="#CCEEEEEE"
+                                   FontFamily="Segoe Fluent Icons" FontSize="22"
+                                   Text="&#xE73E;" />
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="PART_Border" Property="Width" Value="33" />
                             <Setter TargetName="PART_Border" Property="Height" Value="33" />
-                            <Setter TargetName="PART_Border" Property="CornerRadius" Value="6" />
+                            <Setter TargetName="PART_Border" Property="CornerRadius" Value="8" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Width" Value="30" />
                             <Setter TargetName="PART_Border" Property="Height" Value="30" />
                             <Setter TargetName="PART_Border" Property="CornerRadius" Value="8" />
+                            <Setter TargetName="PART_CheckMark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="MinWidth" Value="1">
+                            <Setter TargetName="PART_CheckMark" Property="Foreground" Value="#CC333333" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -91,7 +103,6 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Control">
                     <Border x:Name="PART_Border" Background="Transparent" CornerRadius="5">
-
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -111,7 +122,8 @@
                     <Border x:Name="PART_Border"
                             Background="Transparent" BorderThickness="1"
                             CornerRadius="5">
-                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                        <TextBlock x:Name="PART_Icon"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Style="{StaticResource IconTextStyle}"
                                    Foreground="{TemplateBinding Foreground}"
                                    Text="{TemplateBinding Tag}" />
@@ -123,6 +135,7 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                            <Setter TargetName="PART_Icon" Property="FontSize" Value="24" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -275,6 +288,10 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Border" Property="Background" Value="Transparent" />
+                            <Setter TargetName="PART_Border" Property="Opacity" Value="0.35" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />

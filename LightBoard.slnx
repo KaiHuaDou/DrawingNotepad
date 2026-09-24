@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Documents/">
+    <File Path="CHANGELOG.md" />
     <File Path="docs/Eraser.md" />
     <File Path="docs/ROADMAP.md" />
     <File Path="docs/TouchStates.md" />

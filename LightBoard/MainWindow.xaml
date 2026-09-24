@@ -22,6 +22,12 @@
         </ControlTemplate>
     </Window.Template>
     <Grid x:Name="MainGrid">
+        <Grid x:Name="DebugLayer" IsHitTestVisible="False" Visibility="Collapsed">
+            <TextBlock Margin="0,20,0,0" HorizontalAlignment="Center" VerticalAlignment="Top"
+                       Foreground="#EEEEEEEE"
+                       FontSize="32"
+                       Text="调试模式" />
+        </Grid>
         <Border x:Name="LeftBorder"
                 Margin="5,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
@@ -67,16 +73,31 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE946;" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="调试"
+                    <MenuItem x:Name="DebugLayerMenu" Header="调试"
                               Style="{StaticResource MenuItemStyle}"
                               Click="DebugLayerClick" IsCheckable="True">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEBE8;" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <MenuItem Header="新建" Style="{StaticResource MenuItemStyle}" Click="NewFileClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE7C3;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="打开" Style="{StaticResource MenuItemStyle}" Click="OpenFileClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE8DA;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="附加" Style="{StaticResource MenuItemStyle}" Click="AttachClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE723;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="视频展台" IsEnabled="False" Style="{StaticResource MenuItemStyle}">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE722;" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="保存" Style="{StaticResource MenuItemStyle}" Click="SaveFileClick">
@@ -164,6 +185,7 @@
                                  Background="#1E1E1E"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
                     <RadioButton x:Name="DefaultColorRadio"
+                                 MinWidth="1"
                                  IsChecked="True"
                                  Style="{StaticResource ColorRadioStyle}"
                                  Background="#E6E6E6"
@@ -172,16 +194,17 @@
                                  Background="#FF4345"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
-                                 Background="#CD961D"
+                                 Background="#F99739"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
-                    <RadioButton Style="{StaticResource ColorRadioStyle}"
+                    <RadioButton MinWidth="1"
+                                 Style="{StaticResource ColorRadioStyle}"
                                  Background="#ECD201"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#9184EE"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
-                                 Background="#569CD6"
+                                 Background="#2E7AE6"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#4EC9B0"
@@ -305,8 +328,7 @@
                 <TextBlock x:Name="LoadingText"
                            HorizontalAlignment="Center"
                            Foreground="#E6E6E6"
-                           FontSize="24"
-                           Text="正在加载中..." />
+                           FontSize="24" />
                 <ProgressBar x:Name="LoadingBar"
                              Width="280" Height="16"
                              Margin="0,16,0,0"

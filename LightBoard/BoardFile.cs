@@ -65,7 +65,13 @@ internal static class BoardFile
 
             var info = manifest.Pages[i];
             using var pageStream = entry.Open( );
-            pages.Add(new BoardPage([with(pageStream)], info.Scale, info.OffsetX, info.OffsetY));
+
+            // ZIP 条目流不可 seek，且 Read 会在 deflate 块边界返回短块；WPF 对非 seekable 流
+            // 按"读到短块即停"拷贝，超过一个缓冲区的数据会被静默截断。必须先完整转入可 seek 的流。
+            using var pageBuffer = new MemoryStream( );
+            pageStream.CopyTo(pageBuffer);
+            pageBuffer.Position = 0;
+            pages.Add(new BoardPage([with(pageBuffer)], info.Scale, info.OffsetX, info.OffsetY));
         }
 
         return new BoardContent(manifest.Version, pages);

@@ -158,21 +158,34 @@ public partial class App
         var content = BoardFile.Read(path);
 
         Pages.Clear( );
-        for (var i = 0; i < content.Pages.Count; i++)
+        foreach (var p in content.Pages)
         {
-            var p = content.Pages[i];
-            Pages.Add(new Page
-            {
-                Number = i + 1,
-                Strokes = p.Strokes,
-                Scale = p.Scale,
-                OffsetX = p.OffsetX,
-                OffsetY = p.OffsetY,
-                Preview = p.Strokes.Count > 0 ? p.Strokes.Preview( ) : StrokeCollectionExtension.PreviewEmpty( ),
-            });
+            AddBoardPage(p);
         }
 
         PageIndex = 0;
+    }
+
+    public static void AttachBoard(string path)
+    {
+        var content = BoardFile.Read(path);
+        foreach (var p in content.Pages)
+        {
+            AddBoardPage(p);
+        }
+    }
+
+    private static void AddBoardPage(BoardPage p)
+    {
+        Pages.Add(new Page
+        {
+            Number = Pages.Count + 1,
+            Strokes = p.Strokes,
+            Scale = p.Scale,
+            OffsetX = p.OffsetX,
+            OffsetY = p.OffsetY,
+            Preview = p.Strokes.Count > 0 ? p.Strokes.Preview( ) : StrokeCollectionExtension.PreviewEmpty( ),
+        });
     }
 
     private static void SaveRecover( )
@@ -194,30 +207,35 @@ public partial class App
         return Pages.All(p => p.Strokes.Count == 0);
     }
 
-    public static void ExportAllImage(int scale, string directory, DpiScale dpi)
+    public static void ExportAllImage(int scale, string directory, DpiScale dpi, IProgress<ExportProgress>? progress = null)
     {
+        const string tip = "正在导出图片";
+
         Directory.CreateDirectory(directory);
 
-        var exported = 0;
-        foreach (var page in Pages)
+        var count = Pages.Count;
+        progress?.Report(new(tip, 0, count));
+        for (var i = 0; i < count; i++)
         {
-            if (page.Strokes.Count == 0)
+            var page = Pages[i];
+            if (page.Strokes.Count > 0)
             {
-                continue;
+                var pad = (int) (Math.Log10(count) + 1);
+                var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.png");
+
+                // XPS 页树具有线程亲和性，背景统一派发到 UI 线程渲染（结果已冻结），再回后台线程合成。
+                ImageSource? background = null;
+                if (Document is not null)
+                {
+                    background = Current.Dispatcher.Invoke(( ) => Document.GetPage(page.Number - 1));
+                }
+
+                page.ExportStrokes(fileName, dpi, scale, background);
             }
 
-            var pad = (int) (Math.Log10(Pages.Count) + 1);
-            var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.png");
-
-            // XPS 页树具有线程亲和性，背景统一派发到 UI 线程渲染（结果已冻结），再回后台线程合成。
-            ImageSource? background = null;
-            if (Document is not null)
-            {
-                background = Current.Dispatcher.Invoke(( ) => Document.GetPage(page.Number - 1));
-            }
-
-            page.ExportStrokes(fileName, dpi, scale, background);
-            exported++;
+            progress?.Report(new(tip, i + 1, count));
         }
     }
 }
+
+public record ExportProgress(string Tip, int Done, int Total);
