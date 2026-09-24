@@ -22,7 +22,7 @@ public partial class InkCanvasNext
 
     /// <summary>
     /// 触点数变化（Down/Up），或 EvalDraw 状态下 Move 时重评迁移。
-    /// 守卫内联写死：switch 臂自上而下即优先级（选区 > MultiDraw > 单指 > 平移，参考 TouchStates3.md §4）；
+    /// 守卫内联写死：switch 臂自上而下即优先级（选区 > MultiDraw > 单指 > 平移，见 docs/TouchStates2.md）；
     /// d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态。
     /// </summary>
     private void UpdateState( )

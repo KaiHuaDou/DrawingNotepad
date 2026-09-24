@@ -161,8 +161,8 @@ public partial class InkCanvasNext : UserControl
     /// <summary>
     /// 初始化 InkCanvasNext 控件并装配内部画布与选择控制器。
     /// </summary>
-    /// <param name="canvasSize">内层墨迹画布尺寸，默认 5760x3240。</param>
-    /// <param name="initialOffset">初始视口左上角在画布内容坐标中的位置，默认画布中心。</param>
+    /// <param name="canvasSize">内层墨迹画布尺寸；文档背景页在此画布内居中。</param>
+    /// <param name="initialOffset">初始视口左上角在画布内容坐标中的位置。</param>
     public InkCanvasNext(Size canvasSize, Point initialOffset)
     {
         InitializeComponent( );
@@ -419,7 +419,7 @@ public partial class InkCanvasNext : UserControl
 
     /// <summary>
     /// 当前工具是否需要在 EvalDraw/Draw 期间抢先捕获触点（区域擦除需要，Ink 走原生不需要）。
-    /// 手势层（SetState）经由这一唯一接缝感知工具差异，勿在状态机内直接引用具体模式。
+    /// 状态机感知工具差异有两处接缝：本方法与选区入口的 Mode/StampAction 判定。
     /// </summary>
     private bool WantsPreemptiveDrawCapture( )
     {

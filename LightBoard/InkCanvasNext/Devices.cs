@@ -82,7 +82,7 @@ public partial class InkCanvasNext
         TrackTouchDown(e.TouchDevice.Id, e.TouchDevice, position);
         SubscribeDeactivated(e.TouchDevice);
         UpdateState( );
-        // 由状态元数据判定是否接管（原 UpdateState 返回值 + 区域擦除/选区三条件并联）
+        // 接管判定：手势接管态（BlocksNativeInput）与面积擦叠加态（IsAreaEraserActive）都拦下事件，不让原生收笔
         e.Handled = BlocksNativeInput(State) || IsAreaEraserActive(State);
 
         if (State == TouchState.Selection)

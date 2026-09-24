@@ -1,0 +1,146 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, e.g. v1.0.0（必填）"
+        required: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  BUILD_WORKFLOW: build.yml
+  BUILD_BRANCH: master
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      # 发版说明取自 tag 指向的那次提交的 CHANGELOG，因此按 tag 检出而非按触发 ref
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Resolve build run for this commit
+        id: build
+        shell: bash
+        run: |
+          # 取 tag 指向的提交：workflow_dispatch 时 github.sha 是分支 HEAD，不是输入的 tag
+          SHA=$(git rev-parse HEAD)
+
+          INFO=$(gh run list --workflow "$BUILD_WORKFLOW" --commit "$SHA" --limit 1 \
+            --json databaseId,conclusion --jq '.[0] // empty | "\(.databaseId)\t\(.conclusion // "pending")"')
+          if [ -z "$INFO" ]; then
+            echo "::error::$RELEASE_TAG ($SHA) 上没有 $BUILD_WORKFLOW 运行。请先把该 commit 推到 $BUILD_BRANCH 并等构建完成"
+            exit 1
+          fi
+
+          RUN_ID=$(printf '%s' "$INFO" | cut -f1)
+          CONCLUSION=$(printf '%s' "$INFO" | cut -f2)
+
+          # 最新运行尚未结束则等它跑完（只等，不重建）
+          if [ "$CONCLUSION" = "pending" ]; then
+            gh run watch "$RUN_ID" --exit-status
+          fi
+
+          RUN=$(gh run list --workflow "$BUILD_WORKFLOW" --commit "$SHA" --status success --limit 1 \
+            --json databaseId --jq '.[0].databaseId // empty')
+          if [ -z "$RUN" ]; then
+            echo "::error::$RELEASE_TAG ($SHA) 上没有成功的 $BUILD_WORKFLOW 运行，产物不可信，已中止发版"
+            exit 1
+          fi
+
+          echo "run=$RUN" >> "$GITHUB_OUTPUT"
+
+      # 逐个 --name 下载：--pattern 只命中一个产物时会直接解到 --dir，目录结构随命中数量变化
+      - name: Download artifacts
+        run: |
+          for name in LightBoard LightBoard-with-runtime; do
+            gh run download "${{ steps.build.outputs.run }}" --name "$name" --dir "artifacts/$name"
+          done
+
+      # 两个产物（框架依赖 / 自包含）文件名完全相同，不能合并到同一目录，各自打一个包
+      - name: Package
+        shell: bash
+        run: |
+          for name in LightBoard LightBoard-with-runtime; do
+            ( cd "artifacts/$name" && zip -qr "$GITHUB_WORKSPACE/$name.zip" . )
+          done
+          ls -l --block-size=K ./*.zip
+
+      - name: Extract release notes from CHANGELOG.md
+        id: notes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, re
+
+          tag = os.environ.get("RELEASE_TAG", "")
+          version = tag[1:] if tag.startswith("v") else tag
+
+          with open("CHANGELOG.md", encoding="utf-8") as f:
+              lines = f.read().splitlines()
+
+          esc = re.escape(version)
+          # 方括号内允许可选的 v 前缀（CHANGELOG 标题可能是 [vX.Y.Z] 或 [X.Y.Z]）；
+          # 尾部的 "- 日期" 必须带空白，否则 v1.0.0 会前缀命中 [v1.0.0-rc.4] 而取错小节
+          pat = re.compile(r"^##\s+\[?v?" + esc + r"\]?(?:\s+-\s+\S+)?\s*$")
+          start = None
+          for i, line in enumerate(lines):
+              if pat.match(line):
+                  start = i
+                  break
+
+          found = False
+          body_lines = []
+          if start is not None:
+              # 去掉版本号外的链接方括号，便于在 Release 正文里干净渲染
+              heading = re.sub(r"^##\s+\[([^\]]+)\]", r"## \1", lines[start])
+              body_lines.append(heading)
+              for line in lines[start + 1:]:
+                  # 遇到下一个二级标题或文件底部的链接引用定义即停止
+                  if re.match(r"^##\s+", line) or re.match(r"^\[[^\]]+\]:", line):
+                      break
+                  body_lines.append(line)
+              found = True
+
+          body = "\n".join(body_lines).strip() + "\n"
+          with open("release_notes.md", "w", encoding="utf-8") as f:
+              f.write(body)
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+              f.write(f"found={str(found).lower()}\n")
+          print(f"version={version} found={found}")
+          PY
+
+      - name: Create GitHub Release (from CHANGELOG)
+        if: steps.notes.outputs.found == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          files: "*.zip"
+          tag_name: ${{ env.RELEASE_TAG }}
+          body_path: release_notes.md
+          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
+
+      - name: Create GitHub Release (auto-generated notes)
+        if: steps.notes.outputs.found != 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          files: "*.zip"
+          tag_name: ${{ env.RELEASE_TAG }}
+          generate_release_notes: true
+          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}

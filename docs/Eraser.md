@@ -1,7 +1,5 @@
 # 面积擦实现
 
-- 参考  `docs/EraserReference.md` 中 InkCanvasForClass-community 的实现
-
 ## 具体要求
 
 - 总目标：利用自定义橡皮擦替换 `InkCanvasEditingMode.EraseByPoint`

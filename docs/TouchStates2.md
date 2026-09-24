@@ -28,6 +28,7 @@
 - 优先级（自上而下，即 switch 臂顺序）：**选区 > MultiDraw > 单指（EvalDraw/Draw）> 平移（PanZoom/Pan）> 橡皮（Eraser）**。
     - 例：`Idle` 下 `count == 1` 且选区候选成立 → `Selection`（而非 `EvalDraw`）；`count == 2` 同理压过 `PanZoom`。
 - `Selection` 内部不做 `d`/`l` 分析（`count ∈ {1,2}` 时维持选区手势）；`count == 0` 回 `Idle`。附加手指触发画布级手势：`count ∈ {3,4}` 且 `d <= l` → `Pan`（Select 模式下 3/4 指平移画布，退出时 `EndSelectionTouch` 提交当前变换）；`count >= 5` 且 `d <= l` → `Eraser`（掌心擦除）。
+- `PanZoom` 中减为单指（`count == 1`）迁入 `Pan`，此后落下第二指也停在 `Pan`（`Pan` 无回 `PanZoom` 的迁移），需全部抬起重新开始双指手势。
 
 ## 要求（副作用）
 
@@ -45,6 +46,7 @@
 - 进入 `Eraser`：`ReleaseAll` + `Canvas.EditingMode = None` + `CaptureAll`。
 - 进入 `MultiDraw`：`ReleaseAll` + `Canvas.EditingMode = None` + `CaptureAll` + `StartMultiTouch`。
 - 离开面积擦叠加态（`IsAreaEraserActive(from) && !IsAreaEraserActive(newState)`）：`EndEraserCycle`。
+- 离开 `Pan`/`PanZoom` 手势族（迁入 `Idle` 或任一其他状态）：`EnsureEdgeMargin`，即视口距右/下边缘不足一屏时把画布扩展一屏（`Gestures.cs`）。
 - `BlocksNativeInput`（全程接管 Down/Move/Up，`Handled`，InkCanvas 不再收笔）：`PanZoom`、`Pan`、`MultiDraw`、`Selection`。
 - `OverridesEditingMode`（进入时需把 `EditingMode` 置 `None` 的手势接管状态）：`PanZoom`、`Pan`、`MultiDraw`、`Eraser`。
 
@@ -83,8 +85,7 @@ stateDiagram-v2
     MultiDraw --> Draw: count == 1
 
     PanZoom --> Idle: count == 0
-    PanZoom --> Pan: (count == 3 or count == 4) and d <= l
-    PanZoom --> Eraser: count >= 5 and d <= l
+    PanZoom --> Pan: (count == 1 or count >= 3) and d <= l
     PanZoom --> MultiDraw: count > 2 and d > l
 
     Pan --> Idle: count == 0

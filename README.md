@@ -19,7 +19,7 @@
     - 课件即开即批注：PowerPoint / Word / PDF / XPS / 图片打开后直接书写，逐页生成可切换的白板页
 - **经过实地课堂检验**
     - 功能取舍来自真实课堂反馈：荧光笔、克隆盖章、透明模式、时间显示、一键收起工具栏等均来自课堂场景
-    - 超过 140 个自动化测试持续守护触摸状态机与工具栏交互，重构不改行为
+    - 超过 150 个自动化测试持续守护触摸状态机、工具栏交互与文件读写，重构不改行为
 
 ## 功能
 
@@ -29,6 +29,9 @@
 - 线擦 / 面积擦 / 选择（移动、缩放、旋转、套索圈选）
 - 撤销 / 重做（上限 200 步）
 - 多页面管理，支持页面切换、缩略图预览，每页独立保存视图状态（缩放/偏移/撤销历史）
+- 新建 / 附加
+    - 新建：清空当前墨迹与文档视图，回到单张空白页
+    - 附加：文档、图片、`*.lbf` 的页、`*.isf` 墨迹追加到当前白板，不覆盖已有内容
 - 文档与图片
     - 打开 PowerPoint 演示文稿与 Word 文档（使用本机 Office 栅格化，逐页生成背景）
     - 打开 XPS、PDF（PDFium 渲染）与图片（BMP / GIF / ICO / JPEG / PNG / TIFF，作为单页背景）
@@ -42,28 +45,36 @@
 - 导出
     - 画布导出为 `*.png`（支持 25% / 50% / 100% 缩放，可导出全部页面）
     - 整板导出为 `*.pdf`
+    - 导出期间显示进度条与「当前页 / 总页数」文案
 - 画布按主屏分辨率派生（宽 4 屏 × 高 16 屏），平移/缩放结束视口贴近右/下边缘时自动扩展一屏
 - 支持单实例运行：再次启动自动唤起已运行实例，并可加载传入的文件
 - 多人同时书写（大屏两侧各人独立绘制，互不干扰）
 - 标题栏实时时间显示
 - 网格背景
 - 透明背景模式（白板悬浮于桌面与其他应用之上，用于投影讲评）
+- 调试模式（菜单勾选）：在画布上叠加参数可视化（半径与距离的 1:1 标注、缩放范围、手势死区）
 
 ## 触摸手势
 
 | 手指数量        | 状态        | 说明                                 |
 | --------------- | ----------- | ------------------------------------ |
 | 1               | 绘图        | 单指轻触即可书写或绘制               |
+| 1（选择模式）   | 选区        | 拖拽移动选区、拖手柄缩放/旋转、空白处套索圈选 |
 | 2（近距离）     | 平移 + 缩放 | 双指移动平移，张合缩放               |
-| 3 ~ 4（近距离） | 平移        | 多指拖动平移画布                     |
+| 2（选择模式）   | 选区        | 选区随双指整体平移、旋转、缩放       |
+| 3 ~ 4（近距离） | 平移        | 多指拖动平移画布；选择模式下由选区手势转为平移画布 |
 | ≥ 5（近距离）   | 橡皮擦      | 多指用作大面积橡皮擦                 |
 | ≥ 2（远距离）   | 多人绘制    | 多人在大屏两侧同时书写，每人独立笔迹 |
 
-> 近距离/远距离由窗口宽度的 10% 作为阈值判断。
+> 近距离/远距离由主屏工作区宽度的 10% 作为阈值判断。
+> 双指缩放中抬起一指会转入单指平移，此后落下第二指也不再恢复缩放，需全部抬起重新开始。
 
 ## 下载
 
 前往 [Releases](https://github.com/KaiHuaDou/DrawingNotepad/releases/latest) 下载最新版本。
+
+- `LightBoard.zip`：框架依赖，需安装 .NET 10 桌面运行时
+- `LightBoard-with-runtime.zip`：自包含，免安装运行时
 
 前往 [Actions](https://github.com/KaiHuaDou/DrawingNotepad/actions) 下载构建版本。
 
@@ -121,7 +132,9 @@ LightBoard/               # 主程序
 │  ├─ Strokes.cs          # 墨迹集合、剪贴板与预览/导出
 │  ├─ UndoRedo.cs         # 历史栈管理
 │  ├─ Selection.cs        # 自绘选择控制器（选区集合与包围盒）
-│  ├─ SelectionInput.cs   # 选择手势（移动/缩放/旋转/套索/双指捏合）
+│  ├─ SelectionInput.cs   # 选择手势入口（落点判定、手柄命中）
+│  ├─ SelectionTransform.cs  # 选区变换管线（增量应用、双指相似变换、撤销单元）
+│  ├─ SelectionLasso.cs   # 套索圈选
 │  ├─ SelectionVisual.cs  # 选择视觉（高亮/边框/手柄/套索轨迹）
 │  ├─ Shapes.cs           # 直线/圆形形状绘制
 │  ├─ Geometry.cs         # 几何工具
@@ -134,6 +147,9 @@ LightBoard/               # 主程序
 ├─ MainWindow.Handler.cs  # 工具栏交互、菜单与动画
 ├─ MainWindow.Toolbar.cs  # 工具栏状态（模式/笔迹配置）与选区工具栏吸附
 ├─ MainWindow.IO.cs       # 打开/保存/导出流程
+├─ MainWindow.File.cs     # 文档状态（新建/附加、未保存确认、关闭文档）
+├─ MainWindow.Loading.cs  # 加载浮层与导出进度
+├─ ParametersDebugVisual.cs   # 调试模式下的参数可视化
 ├─ Theme.xaml             # 主题样式（图标/按钮/颜色选择器）
 ├─ External/NativeMethods.cs  # Win32 互操作（窗口切换）
 └─ App.xaml(.cs)          # 应用入口、单实例与崩溃恢复
@@ -143,6 +159,10 @@ docs/                     # 设计文档与参考资料
 ## 路线图
 
 见 [ROADMAP](docs/ROADMAP.md)。
+
+## 更新日志
+
+见 [CHANGELOG](CHANGELOG.md)。
 
 ## `InkCanvasNext`
 
@@ -155,7 +175,7 @@ WPF `InkCanvas` 现代封装
 - `InkCanvasNext`: 主控件
 - `InkCanvasNextMode`: 编辑模式（`Line`/`Circle` 为笔迹上的附加形状模式，`Highlighter` 为荧光笔模式）
 - `StampAction`: 盖章开关（克隆/粘贴）
-- `InkCanvasStrokesChangedEventArgs`: `StrokesChanged` 事件的载荷（Added/Removed）
+- `InkCanvasStrokesChangedEventArgs`: `StrokesChanged` 事件的载荷（Added/Removed，选区整体变换时 `TransformOnly` 为 true）
 - `MouseWheelAction`: 滚轮交互方式（Scroll/Zoom/None）
 - `HistorySnapshot`: 撤销/重做历史栈快照（`SwapHistory` 使用）
 
@@ -217,6 +237,8 @@ public InkCanvasNext(Size canvasSize, Point initialOffset)
 | `CurrentScale`     | `double`           | 当前画布缩放比例（自动钳制 0.1–10）   |
 | `OffsetX`          | `double`           | 画布水平滚动偏移                      |
 | `OffsetY`          | `double`           | 画布垂直滚动偏移                      |
+| `ViewportSize`     | `Size`             | 当前视口尺寸（DIP）                   |
+| `StampAction`      | `StampAction`      | 当前盖章模式（克隆/粘贴/无）          |
 | `DocumentPage`     | `ImageSource?`     | 当前文档背景页图像（无则为 `null`）   |
 | `MouseWheelAction` | `MouseWheelAction` | （依赖属性，见上）                    |
 
@@ -233,6 +255,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset)
 | `StampPasteAt(Point)`            | 以点击点为副本包围盒中心，粘贴剪贴板墨迹    |
 | `GetSelectionScreenBounds(Visual)` | 选区包围盒在指定坐标系下的矩形（无选区返回 null） |
 | `GetCanvasViewportBounds(UIElement)` | 可见视口在指定坐标系下的矩形             |
+| `EnsureStrokesFit()`             | 笔画越出画布右/下边界时扩展画布              |
 | `ResetTouchState()`              | 重置当前触摸状态并释放所有触摸捕获          |
 | `SwapHistory(...)`               | 交换撤销/重做历史栈，旧栈经 `out` 参数返回  |
 | `SetDocumentPage(ImageSource?)`  | 设置/清除文档页面背景图像（传 `null` 清除） |

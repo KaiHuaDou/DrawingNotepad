@@ -53,7 +53,7 @@ internal sealed class TransformChanges(StrokeCollection target, Matrix delta) : 
 }
 
 /// <summary>
-/// 结构性变化携带 Added/Removed；选区整体变换（移动/缩放/旋转）无增删，
+/// 结构性变化携带 Added/Removed；选区整体变换（移动/缩放/旋转）无增删，仅 TransformOnly 为 true。
 /// </summary>
 public sealed class InkCanvasStrokesChangedEventArgs : EventArgs
 {

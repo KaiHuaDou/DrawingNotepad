@@ -17,13 +17,8 @@ public partial class InkCanvasNext
     internal const double MaxScale = 10.0;
     internal readonly double distanceThreshold2;
 
-    //#if DEBUG
-    //    internal const double PanZoomDisplaceThreshold2 = double.PositiveInfinity;
-    //    internal const double PinchMinDistance2 = double.NegativeInfinity;
-    //#else
     internal const double PanZoomDisplaceThreshold2 = 30.0 * 30.0;
     internal const double PinchMinDistance2 = 24.0 * 24.0;
-    //#endif
 
     internal const double T = 0.2;
     internal const double Q = 0.5;

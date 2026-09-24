@@ -7,6 +7,17 @@ on:
   pull_request:
     branches: ["master"]
 
+  workflow_dispatch:
+
+# 同一 ref 上的构建排队执行而不互相取消：发版会复用某个 commit 的产物，
+# 取消会让该 commit 没有可信的构建结果
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: windows-latest
@@ -18,24 +29,31 @@ jobs:
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: ./global.json
+          cache: true
+          cache-dependency-path: "**/*.csproj"
 
       - name: Test
         run: dotnet test
 
-      - name: Build
+      - name: Publish (framework-dependent)
         run: dotnet publish LightBoard -p:PublishProfile=FolderProfile -c Release
 
-      - name: Upload
+      - name: Upload (framework-dependent)
         uses: actions/upload-artifact@v7
         with:
           name: LightBoard
           path: ./LightBoard/bin/publish/*
+          # 发版要复用这里的产物，保留期需覆盖「构建完成后过一段时间才打 tag」
+          retention-days: 30
 
-      - name: Build with Runtime
+      - name: Publish (self-contained)
         run: dotnet publish LightBoard -p:PublishProfile=FolderProfile -c Release --self-contained
 
-      - name: Upload with Runtime
+      - name: Upload (self-contained)
         uses: actions/upload-artifact@v7
         with:
           name: LightBoard-with-runtime
           path: ./LightBoard/bin/publish/*
+          retention-days: 30
