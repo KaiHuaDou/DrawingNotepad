@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace InkCanvasNext;
@@ -155,6 +156,16 @@ public partial class InkCanvasNext : UserControl
             typeof(InkCanvasNext),
             new PropertyMetadata(OnStrokesPropertyChanged));
 
+    /// <summary>
+    /// 标识 StampAction 依赖项属性。
+    /// </summary>
+    public static readonly DependencyProperty StampActionProperty =
+        DependencyProperty.Register(
+            nameof(StampAction),
+            typeof(StampAction),
+            typeof(InkCanvasNext),
+            new PropertyMetadata(StampAction.None, OnStampActionChanged));
+
     private readonly SelectionController selection;
     private readonly SelectionVisual selectionVisual;
 
@@ -193,8 +204,6 @@ public partial class InkCanvasNext : UserControl
         canvasScaleTransform.Changed += (_, _) => RaiseViewOrSelectionChanged( );
 
         InnerCanvas.Children.Add(multiTouchCanvas);
-
-        SetupShapePreview( );
     }
 
     /// <summary>
@@ -323,9 +332,13 @@ public partial class InkCanvasNext : UserControl
     public Size ViewportSize => new(CanvasScroll.ViewportWidth, CanvasScroll.ViewportHeight);
 
     /// <summary>
-    /// 当前盖章模式（克隆/粘贴）。
+    /// 当前盖章模式（克隆/粘贴）。激活期间单指只落章、原生收笔关闭，多指手势照常。
     /// </summary>
-    public StampAction StampAction { get; set; } = StampAction.None;
+    public StampAction StampAction
+    {
+        get => (StampAction) GetValue(StampActionProperty);
+        set => SetValue(StampActionProperty, value);
+    }
 
     /// <summary>
     /// 把选区包围盒（内容坐标）变换到 <paramref name="relativeTo"/> 坐标系返回；无选区或不可用返回 null。
@@ -401,6 +414,17 @@ public partial class InkCanvasNext : UserControl
         (d as InkCanvasNext)?.ApplyStrokes(e.NewValue as StrokeCollection);
     }
 
+    private static void OnStampActionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var canvas = (InkCanvasNext) d;
+
+        // 手势进行中由状态机的 RestoreMode 延迟应用，这里只处理静止期的切换
+        if (canvas.State == TouchState.Idle)
+        {
+            canvas.ApplyModeToEditing(canvas.Mode);
+        }
+    }
+
     private void ApplyEditingMode(InkCanvasNextMode mode)
     {
         prevMode = mode;
@@ -415,12 +439,12 @@ public partial class InkCanvasNext : UserControl
     }
 
     /// <summary>
-    /// 当前工具是否需要在 EvalDraw/Draw 期间抢先捕获触点（区域擦除需要，Ink 走原生不需要）。
+    /// 当前工具是否需要在 EvalDraw/Draw 期间抢先捕获触点（区域擦除与盖章需要，Ink 走原生不需要）。
     /// 状态机感知工具差异有两处接缝：本方法与选区入口的 Mode/StampAction 判定。
     /// </summary>
     private bool WantsPreemptiveDrawCapture( )
     {
-        return Mode == InkCanvasNextMode.EraseArea;
+        return Mode == InkCanvasNextMode.EraseArea || StampAction != StampAction.None;
     }
 
     private void ApplyModeToEditing(InkCanvasNextMode mode)
@@ -428,6 +452,15 @@ public partial class InkCanvasNext : UserControl
         // 切换工具即中断形状绘制（鼠标路径 state 恒为 Idle，形状取消依赖此处）
         CancelShape( );
 
+        // 盖章期间单指只落章：原生收笔一律关闭（触屏上仅 Handled 掉触摸事件压不住手写笔管线）
+        if (StampAction != StampAction.None)
+        {
+            InnerCanvas.EditingMode = InkCanvasEditingMode.None;
+            return;
+        }
+
+        // InkCanvas 内置光标在 Ink 模式下随 DrawingAttributes 实变重建（GDI 构造，单次 0.7~2 ms），
+        // 进出高亮各触发 3 次实变；UseCustomCursor 后属性实变降到 10~30 µs（探针实测）
         switch (mode)
         {
             case InkCanvasNextMode.Ink:
@@ -442,12 +475,9 @@ public partial class InkCanvasNext : UserControl
             case InkCanvasNextMode.EraseArea:
             case InkCanvasNextMode.Line:
             case InkCanvasNextMode.Circle:
-                InnerCanvas.EditingMode = InkCanvasEditingMode.None;
-                ConfigureSelectMode(false);
-                break;
             case InkCanvasNextMode.Select:
                 InnerCanvas.EditingMode = InkCanvasEditingMode.None;
-                ConfigureSelectMode(true);
+                ConfigureSelectMode(mode == InkCanvasNextMode.Select);
                 break;
         }
     }

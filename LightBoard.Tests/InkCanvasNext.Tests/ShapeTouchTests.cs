@@ -5,7 +5,8 @@ using System.Windows.Ink;
 namespace InkCanvasNext.Tests;
 
 /// <summary>
-/// 形状绘制的多指行为：形状只由插入序第一指驱动，其余手指的移动与抬起均被忽略。
+/// 形状绘制的多指行为：形状只在单指上下文（EvalDraw/Draw）存活；
+/// EvalDraw 落第二指优先捏合缩放，Draw 落第二指无条件升级 MultiDraw，两者均放弃形状。
 /// 所有测试体在 STA 线程上执行（WPF 控件与触摸输入管线要求）。
 /// </summary>
 public class ShapeTouchTests
@@ -14,7 +15,7 @@ public class ShapeTouchTests
     private static readonly Point Close2 = new(180, 140);      // 与 P1 相距 ~89px，恒满足 d <= l
     private static readonly Point Moved = new(300, 200);       // 与 P1 相距 100px > 20px 位移阈值
     private static readonly Point End1 = new(500, 320);        // 第一指的结束点
-    private static readonly Point Stray2 = new(260, 560);      // 其余手指，全程不得牵引形状
+    private static readonly Point Stray2 = new(260, 560);      // 附加指位置
 
     private static Point EndOf(Stroke stroke)
     {
@@ -23,7 +24,7 @@ public class ShapeTouchTests
     }
 
     [Fact]
-    public void Draw_SecondFingerMoveAndLift_AreIgnored( )
+    public void Draw_SecondFinger_AbandonsShapeAndTurnsMultiDraw( )
     {
         StaTest.Run(( ) =>
         {
@@ -35,23 +36,24 @@ public class ShapeTouchTests
             finger1.Down(host.Target, P1);
             finger1.Move(host.Target, Moved); // EvalDraw -> Draw，形状在途
             finger2.Down(host.Target, Close2);
+
+            // 第二指落下即无条件升级 MultiDraw：形状预览放弃，两指转入多指画笔
+            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
+
             finger2.Move(host.Target, Stray2);
             finger2.Up(host.Target, Stray2);
-
-            // 第二指移动与抬起均被忽略：不提交、不牵引终点，形状继续跟随第一指
-            Assert.Empty(host.Canvas.Strokes);
-            Assert.Equal(TouchState.Draw, host.Canvas.State);
-
             finger1.Move(host.Target, End1);
             finger1.Up(host.Target, End1);
 
-            var stroke = Assert.Single(host.Canvas.Strokes);
-            Assert.Equal(End1, EndOf(stroke));
+            // 无形状笔画（P1 -> End1 的直线不存在）；多指笔画各自提交
+            Assert.Equal(2, host.Canvas.Strokes.Count);
+            Assert.All(host.Canvas.Strokes, stroke => Assert.True(stroke.StylusPoints.Count <= 2));
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
         });
     }
 
     [Fact]
-    public void Draw_ThirdFingerMove_AreIgnored( )
+    public void Draw_MoreFingers_AllTurnMultiDraw( )
     {
         StaTest.Run(( ) =>
         {
@@ -69,13 +71,14 @@ public class ShapeTouchTests
             finger1.Move(host.Target, End1);
             finger1.Up(host.Target, End1);
 
+            // 形状放弃；在册各指以多指笔画收尾，f1 的多指笔画终点为 End1
             var stroke = Assert.Single(host.Canvas.Strokes);
             Assert.Equal(End1, EndOf(stroke));
         });
     }
 
     [Fact]
-    public void Draw_SecondFingerDoesNotSteerCircle( )
+    public void Draw_SecondFinger_AbandonsCircle( )
     {
         StaTest.Run(( ) =>
         {
@@ -89,11 +92,11 @@ public class ShapeTouchTests
             finger2.Down(host.Target, Close2);
             finger2.Move(host.Target, Stray2);
             finger1.Up(host.Target, new Point(200, 100));
+            finger2.Up(host.Target, Stray2);
 
-            // 圆心锚定第一指按下点，半径只由第一指决定（此处 100）
-            var stroke = Assert.Single(host.Canvas.Strokes);
-            Assert.Equal(200, stroke.StylusPoints[0].X, 6);
-            Assert.Equal(100, stroke.StylusPoints[0].Y, 6);
+            // 圆形笔画（CircleSegments + 1 点）被放弃，只余两指的多指笔画
+            Assert.Equal(2, host.Canvas.Strokes.Count);
+            Assert.All(host.Canvas.Strokes, stroke => Assert.NotEqual(InkCanvasNext.CircleSegments + 1, stroke.StylusPoints.Count));
         });
     }
 

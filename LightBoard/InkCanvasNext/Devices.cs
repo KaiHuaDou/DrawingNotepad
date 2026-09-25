@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -70,18 +71,14 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewTouchDown(object o, TouchEventArgs e)
     {
-        if (TryStamp(e.GetTouchPoint(InnerCanvas).Position))
-        {
-            e.Handled = true;
-            return;
-        }
-
         var position = e.GetTouchPoint(this).Position;
         TrackTouchDown(e.TouchDevice.Id, e.TouchDevice, position);
         SubscribeDeactivated(e.TouchDevice);
         UpdateState( );
-        // 接管判定：手势接管态（BlocksNativeInput）与面积擦叠加态（IsAreaEraserActive）都拦下事件，不让原生收笔
-        e.Handled = BlocksNativeInput(State) || IsAreaEraserActive(State);
+        // 接管判定：手势接管态（BlocksNativeInput）、面积擦叠加态（IsAreaEraserActive）、
+        // 盖章模式的单指上下文（EvalDraw/Draw）都拦下事件，不让原生收笔/移动选区
+        e.Handled = BlocksNativeInput(State) || IsAreaEraserActive(State)
+            || (StampAction != StampAction.None && State is TouchState.EvalDraw or TouchState.Draw);
 
         if (State == TouchState.Selection)
         {
@@ -149,8 +146,9 @@ public partial class InkCanvasNext
         }
 
         // EvalDraw/Draw 保留未拦截（InkCanvas 原生收笔）；平移/缩放/选区由状态元数据接管；
-        // MultiDraw 的 Move 已在上面多画笔画分支接管
-        if (BlocksNativeInput(State) || IsAreaEraserActive(State))
+        // MultiDraw 的 Move 已在上面多画笔画分支接管；盖章期间单指上下文全程拦截
+        if (BlocksNativeInput(State) || IsAreaEraserActive(State)
+            || (StampAction != StampAction.None && State is TouchState.EvalDraw or TouchState.Draw))
         {
             e.Handled = true;
         }
@@ -193,6 +191,13 @@ public partial class InkCanvasNext
             e.Handled = true;
         }
 
+        // 盖章提交：未升级为手势的单指序列在其抬手位置落章
+        if (stampArmed && State is TouchState.EvalDraw or TouchState.Draw
+            && TryStamp(e.GetTouchPoint(InnerCanvas).Position))
+        {
+            e.Handled = true;
+        }
+
         RemoveDevice(e.TouchDevice);
         e.Handled |= wasHandled || wasAreaEraser || wasMultiTouch || wasManipulating;
         TouchEpilogue( );
@@ -209,6 +214,7 @@ public partial class InkCanvasNext
         TouchEpilogue( );
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void CaptureAll( )
     {
         foreach ((var Device, _) in touches.Values)
@@ -217,6 +223,7 @@ public partial class InkCanvasNext
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void ReleaseAll( )
     {
         releasingCaptures = true;
@@ -335,6 +342,7 @@ public partial class InkCanvasNext
         e.Handled = true;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void CanvasPreviewMouseMove(object o, MouseEventArgs e)
     {
         if (e.StylusDevice != null)
@@ -420,7 +428,8 @@ public partial class InkCanvasNext
             .Clamp(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight);
     }
 
-    /// <summary>盖章模式拦截：命中则盖章并返回 true（调用方据此 Handled 并短路后续路由）。</summary>
+    /// <summary>在指定位置落章（克隆/粘贴），返回是否处于盖章模式（调用方据此 Handled）。
+    /// 鼠标在按下时落章，触摸由未升级为手势的单指序列在抬手时落章。</summary>
     private bool TryStamp(Point point)
     {
         if (StampAction == StampAction.None)

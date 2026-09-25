@@ -17,6 +17,7 @@
                 <InkCanvas x:Name="InnerCanvas"
                            Panel.ZIndex="36"
                            Background="Transparent"
+                           UseCustomCursor="True"
                            LostTouchCapture="CanvasLostTouchCapture"
                            PreviewMouseDown="CanvasPreviewMouseDown"
                            PreviewMouseMove="CanvasPreviewMouseMove" PreviewMouseUp="CanvasPreviewMouseUp"
@@ -30,6 +31,12 @@
                     </InkCanvas.DefaultDrawingAttributes>
                 </InkCanvas>
                 <Canvas x:Name="SelectionLayer" Panel.ZIndex="37" IsHitTestVisible="False" />
+                <Canvas x:Name="ShapePreviewLayer" Panel.ZIndex="38" IsHitTestVisible="False">
+                    <Line x:Name="ShapePreviewLine" Visibility="Collapsed"
+                          Stroke="White" StrokeThickness="3" />
+                    <Ellipse x:Name="ShapePreviewEllipse" Visibility="Collapsed"
+                             Fill="Transparent" Stroke="White" StrokeThickness="3" />
+                </Canvas>
             </Grid>
         </ScrollViewer>
 

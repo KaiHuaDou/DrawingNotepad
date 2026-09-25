@@ -12,6 +12,11 @@ namespace LightBoard.Tests.Toolbar;
 [Collection("Toolbar")]
 public class RightBorderTests
 {
+    // ExpandedWidth 对列表做无约束重测,真实自动布局的度量与它存在环境相关的漂移
+    // (CI 实测 1.38 px:字形/虚拟化度量在 ∞ 约束与有限视口两条路径上不逐位一致),
+    // 远超布局圆差 0.5,断言的是"写回后落回内容自适应宽"而非逐位相等。
+    private const double ExpandedTolerance = 2.5;
+
     [Fact]
     public void Expand_ConstrainedViewport_ColumnWidthMatchesContent( )
     {
@@ -28,7 +33,7 @@ public class RightBorderTests
 
             var column = ((GridView) window.PagePreviewsBox.View).Columns[0];
 
-            // 视口约 212,列内容(页码 + 225 宽缩略图)必须完整报出需求
+            // 视口约 212,列内容(页码 + 300 宽缩略图)必须完整报出需求
             Assert.True(column.ActualWidth >= 226, $"列宽 {column.ActualWidth:0.#} 被视口压缩,未报出内容需求");
         });
     }
@@ -45,14 +50,14 @@ public class RightBorderTests
 
             Toggle(window, true);
             PumpUntil(
-                ( ) => Math.Abs(border.ActualWidth - ExpandedWidth(window)) < 0.5,
+                ( ) => Math.Abs(border.ActualWidth - ExpandedWidth(window)) < ExpandedTolerance,
                 2000,
                 "展开终态宽",
                 ( ) => $"ActualWidth={border.ActualWidth:0.#} Width={border.Width} Height={border.Height:0.#} "
                     + $"列宽={((GridView) window.PagePreviewsBox.View).Columns[0].ActualWidth:0.#} "
                     + $"按钮行={window.PageButtonsRow.ActualWidth:0.#}");
 
-            Assert.Equal(ExpandedWidth(window), border.ActualWidth, 0.5);
+            Assert.Equal(ExpandedWidth(window), border.ActualWidth, ExpandedTolerance);
             Assert.True(double.IsNaN(border.Width), $"展开写回后 Width 应为 Auto,实际 {border.Width}");
             Assert.Equal(window.ActualHeight - border.Margin.Bottom, border.ActualHeight, 0.5);
             Assert.Equal(window.ActualHeight - border.Margin.Bottom, border.Height, 0.5);
@@ -82,8 +87,8 @@ public class RightBorderTests
             }
 
             Toggle(window, true);
-            PumpUntil(( ) => Math.Abs(border.ActualWidth - ExpandedWidth(window)) < 0.5, 2000, "连点后展开终态宽");
-            Assert.Equal(ExpandedWidth(window), border.ActualWidth, 0.5);
+            PumpUntil(( ) => Math.Abs(border.ActualWidth - ExpandedWidth(window)) < ExpandedTolerance, 2000, "连点后展开终态宽");
+            Assert.Equal(ExpandedWidth(window), border.ActualWidth, ExpandedTolerance);
 
             Toggle(window, false);
             PumpUntil(( ) => Math.Abs(border.ActualWidth - (window.PageButtonsRow.ActualWidth + chrome)) < 0.5, 2000, "连点后收起终态宽");
@@ -103,7 +108,7 @@ public class RightBorderTests
 
             Toggle(window, true);
             PumpUntil(
-                ( ) => Math.Abs(border.ActualWidth - ExpandedWidth(window)) < 0.5,
+                ( ) => Math.Abs(border.ActualWidth - ExpandedWidth(window)) < ExpandedTolerance,
                 2000,
                 "展开终态宽",
                 ( ) => $"ActualWidth={border.ActualWidth:0.#} 期望={ExpandedWidth(window):0.#} Width={border.Width}");
@@ -166,7 +171,7 @@ public class RightBorderTests
             var collapsedWidth = window.PageButtonsRow.ActualWidth + chrome;
 
             Toggle(window, true);
-            PumpUntil(( ) => Math.Abs(border.ActualWidth - ExpandedWidth(window)) < 0.5, 2000, "展开终态宽");
+            PumpUntil(( ) => Math.Abs(border.ActualWidth - ExpandedWidth(window)) < ExpandedTolerance, 2000, "展开终态宽");
 
             collapse.IsChecked = true;
             collapse.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));

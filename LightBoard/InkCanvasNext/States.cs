@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 
 namespace InkCanvasNext;
@@ -18,6 +19,9 @@ public partial class InkCanvasNext
 {
     private InkCanvasNextMode prevMode = InkCanvasNextMode.Ink;
 
+    /// <summary>盖章武装标记：本次触摸序列在盖章模式下以单指 EvalDraw 开始，且尚未升级为任何手势接管态。</summary>
+    private bool stampArmed;
+
     internal TouchState State { get; private set; } = TouchState.Idle;
 
     /// <summary>
@@ -25,6 +29,7 @@ public partial class InkCanvasNext
     /// 守卫内联写死：switch 臂自上而下即优先级（选区 > MultiDraw > 单指 > 平移，见 docs/TouchStates2.md）；
     /// d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态。
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void UpdateState( )
     {
         var count = touches.Count;
@@ -63,7 +68,7 @@ public partial class InkCanvasNext
             TouchState.Draw => count switch
             {
                 0 => TouchState.Idle,
-                >= 2 when d2 > l2 => TouchState.MultiDraw,
+                >= 2 => TouchState.MultiDraw,
                 _ => State,
             },
 
@@ -168,6 +173,18 @@ public partial class InkCanvasNext
         if (shapeActive && from is TouchState.EvalDraw or TouchState.Draw && newState is not (TouchState.EvalDraw or TouchState.Draw))
         {
             CancelShape( );
+        }
+
+        // 盖章只由未升级为手势的单指序列触发：Idle 进入 EvalDraw 时武装，
+        // 迁入任何手势接管态（含 MultiDraw）即解除，多指序列抬手不残留落章。
+        // 解除不依赖 StampAction 仍激活，避免中途退出盖章后残留脏标记
+        if (from == TouchState.Idle && newState == TouchState.EvalDraw && StampAction != StampAction.None)
+        {
+            stampArmed = true;
+        }
+        else if (newState is not (TouchState.EvalDraw or TouchState.Draw))
+        {
+            stampArmed = false;
         }
 
         switch (newState)

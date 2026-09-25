@@ -36,7 +36,7 @@
 - 离开 `Idle`：保存 `prevMode = Mode`（供 `RestoreMode` 还原）。
 - 离开 `MultiDraw`：`EndMultiTouch`。
 - 离开 `Selection`：`EndSelectionTouch`。
-- 离开 `EvalDraw`/`Draw` 进入手势接管态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`/`Selection`，或异常回 `Idle`）：若形状在途（`shapeActive`）→ `CancelShape`。形状只允许在单指绘制上下文（`EvalDraw`/`Draw`）存活；`EvalDraw` 中落第二指即迁入 `PanZoom`/`MultiDraw` 并放弃预览（捏合缩放优先）。`Draw` 中落第二指（`d <= l` 停留 `Draw`）时形状仍只由插入序第一指驱动，其余手指的移动与抬起均忽略；第一指抬起时按其触点提交。
+- 离开 `EvalDraw`/`Draw` 进入手势接管态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`/`Selection`，或异常回 `Idle`）：若形状在途（`shapeActive`）→ `CancelShape`。形状只允许在单指绘制上下文（`EvalDraw`/`Draw`）存活；`EvalDraw` 中落第二指即迁入 `PanZoom`/`MultiDraw` 并放弃预览（捏合缩放优先）；`Draw` 中落第二指**无条件**迁入 `MultiDraw` 并放弃形状（两指转入多指画笔）。
 - 离开"覆盖编辑模式"的状态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`）进入非覆盖状态 → `RestoreMode`（如 `MultiDraw --> Draw` 需恢复 `EditingMode`）。
 - 进入 `EvalDraw`，或 `EvalDraw --> Draw`：若 `WantsPreemptiveDrawCapture` → `CaptureAll`。
 - 进入 `Selection`：`CaptureAll` + `BeginSelectionTouch`。
@@ -49,6 +49,14 @@
 - 离开 `Pan`/`PanZoom` 手势族（迁入 `Idle` 或任一其他状态）：`EnsureEdgeMargin`，即视口距右/下边缘不足一屏时把画布扩展一屏（`Gestures.cs`）。
 - `BlocksNativeInput`（全程接管 Down/Move/Up，`Handled`，InkCanvas 不再收笔）：`PanZoom`、`Pan`、`MultiDraw`、`Selection`。
 - `OverridesEditingMode`（进入时需把 `EditingMode` 置 `None` 的手势接管状态）：`PanZoom`、`Pan`、`MultiDraw`、`Eraser`。
+
+## 盖章叠加（`StampAction != None`）
+
+- 盖章激活即 `EditingMode = None`（`ApplyModeToEditing` 的盖章分支）：单指不再原生收笔，仅拦截触摸事件压不住手写笔管线；手势进行中激活/退出时由状态机的 `RestoreMode` 延迟应用。
+- 单指序列照常进入 `EvalDraw`/`Draw`（事件全程 `Handled`，`WantsPreemptiveDrawCapture` 含盖章），但除落章外无任何功能；**抬手时落章**（按下不落，位置取抬手点）。
+- 多指手势照常：`PanZoom`（2 指）、`Pan`（3/4 指）、`Eraser`（5+ 指）可用；`MultiDraw` 被排除（`StartMultiTouchStroke` 直接返回，不创建笔画）。
+- 落章条件：`stampArmed`（`Idle --> EvalDraw` 且盖章激活时武装）且抬手时处于 `EvalDraw`/`Draw`。迁入任何手势接管态即解除武装，多指序列抬手不残留落章。
+- 鼠标不受状态机管理，仍在按下时立即落章（`TryStamp`）。
 
 ## 编码
 
@@ -79,7 +87,7 @@ stateDiagram-v2
     EvalDraw --> MultiDraw: count >= 2 and d > l
 
     Draw --> Idle: count == 0
-    Draw --> MultiDraw: count >= 2 and d > l
+    Draw --> MultiDraw: count >= 2
 
     MultiDraw --> Idle: count == 0
     MultiDraw --> Draw: count == 1

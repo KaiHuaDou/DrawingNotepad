@@ -4,7 +4,6 @@ using System.Windows.Controls;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Shapes;
 
 using static InkCanvasNext.Geometry;
 
@@ -12,28 +11,12 @@ namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
-    private readonly Canvas shapePreviewLayer = new( ) { IsHitTestVisible = false };
-    private readonly Line shapePreviewLine = new( ) { Visibility = Visibility.Collapsed };
-    private readonly Ellipse shapePreviewEllipse = new( ) { Visibility = Visibility.Collapsed };
-
     private Point shapeStart;
     private Point shapeEnd;
     private bool shapeActive;
 
     private bool IsShapeMode => Mode is InkCanvasNextMode.Line or InkCanvasNextMode.Circle;
     private bool IsCircle => Mode == InkCanvasNextMode.Circle;
-
-    private void SetupShapePreview( )
-    {
-        shapePreviewLine.Stroke = new SolidColorBrush(Colors.White);
-        shapePreviewLine.StrokeThickness = 3;
-        shapePreviewEllipse.Stroke = new SolidColorBrush(Colors.White);
-        shapePreviewEllipse.StrokeThickness = 3;
-        shapePreviewEllipse.Fill = Brushes.Transparent;
-        shapePreviewLayer.Children.Add(shapePreviewLine);
-        shapePreviewLayer.Children.Add(shapePreviewEllipse);
-        InnerCanvas.Children.Add(shapePreviewLayer);
-    }
 
     /// <summary>形状终点触点（InnerCanvas 坐标系）：恒取插入序第一指（形状归属指），
     /// 其余手指的移动与抬起均不参与。</summary>
@@ -52,21 +35,21 @@ public partial class InkCanvasNext
 
         if (IsCircle)
         {
-            Canvas.SetLeft(shapePreviewEllipse, point.X);
-            Canvas.SetTop(shapePreviewEllipse, point.Y);
-            shapePreviewEllipse.Width = 0;
-            shapePreviewEllipse.Height = 0;
-            shapePreviewEllipse.Visibility = Visibility.Visible;
-            shapePreviewLine.Visibility = Visibility.Collapsed;
+            Canvas.SetLeft(ShapePreviewEllipse, point.X);
+            Canvas.SetTop(ShapePreviewEllipse, point.Y);
+            ShapePreviewEllipse.Width = 0;
+            ShapePreviewEllipse.Height = 0;
+            ShapePreviewEllipse.Visibility = Visibility.Visible;
+            ShapePreviewLine.Visibility = Visibility.Collapsed;
         }
         else
         {
-            shapePreviewLine.X1 = point.X;
-            shapePreviewLine.Y1 = point.Y;
-            shapePreviewLine.X2 = point.X;
-            shapePreviewLine.Y2 = point.Y;
-            shapePreviewLine.Visibility = Visibility.Visible;
-            shapePreviewEllipse.Visibility = Visibility.Collapsed;
+            ShapePreviewLine.X1 = point.X;
+            ShapePreviewLine.Y1 = point.Y;
+            ShapePreviewLine.X2 = point.X;
+            ShapePreviewLine.Y2 = point.Y;
+            ShapePreviewLine.Visibility = Visibility.Visible;
+            ShapePreviewEllipse.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -92,21 +75,21 @@ public partial class InkCanvasNext
         if (IsCircle)
         {
             var r = Distance(shapeStart, end);
-            Canvas.SetLeft(shapePreviewEllipse, shapeStart.X - r);
-            Canvas.SetTop(shapePreviewEllipse, shapeStart.Y - r);
-            shapePreviewEllipse.Width = 2 * r;
-            shapePreviewEllipse.Height = 2 * r;
-            shapePreviewEllipse.Stroke = brush;
-            shapePreviewEllipse.StrokeThickness = width;
+            Canvas.SetLeft(ShapePreviewEllipse, shapeStart.X - r);
+            Canvas.SetTop(ShapePreviewEllipse, shapeStart.Y - r);
+            ShapePreviewEllipse.Width = 2 * r;
+            ShapePreviewEllipse.Height = 2 * r;
+            ShapePreviewEllipse.Stroke = brush;
+            ShapePreviewEllipse.StrokeThickness = width;
         }
         else
         {
-            shapePreviewLine.X1 = shapeStart.X;
-            shapePreviewLine.Y1 = shapeStart.Y;
-            shapePreviewLine.X2 = end.X;
-            shapePreviewLine.Y2 = end.Y;
-            shapePreviewLine.Stroke = brush;
-            shapePreviewLine.StrokeThickness = width;
+            ShapePreviewLine.X1 = shapeStart.X;
+            ShapePreviewLine.Y1 = shapeStart.Y;
+            ShapePreviewLine.X2 = end.X;
+            ShapePreviewLine.Y2 = end.Y;
+            ShapePreviewLine.Stroke = brush;
+            ShapePreviewLine.StrokeThickness = width;
         }
     }
 
@@ -128,8 +111,8 @@ public partial class InkCanvasNext
         }
 
         shapeActive = false;
-        shapePreviewLine.Visibility = Visibility.Collapsed;
-        shapePreviewEllipse.Visibility = Visibility.Collapsed;
+        ShapePreviewLine.Visibility = Visibility.Collapsed;
+        ShapePreviewEllipse.Visibility = Visibility.Collapsed;
 
         if (Distance(shapeStart, shapeEnd) < ShapeCommitMinDistance)
         {
@@ -146,8 +129,8 @@ public partial class InkCanvasNext
     private void CancelShape( )
     {
         shapeActive = false;
-        shapePreviewLine.Visibility = Visibility.Collapsed;
-        shapePreviewEllipse.Visibility = Visibility.Collapsed;
+        ShapePreviewLine.Visibility = Visibility.Collapsed;
+        ShapePreviewEllipse.Visibility = Visibility.Collapsed;
     }
 
     private Stroke? BuildShapeStroke( )

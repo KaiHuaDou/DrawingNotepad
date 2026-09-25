@@ -135,7 +135,6 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
-                            <Setter TargetName="PART_Icon" Property="FontSize" Value="24" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

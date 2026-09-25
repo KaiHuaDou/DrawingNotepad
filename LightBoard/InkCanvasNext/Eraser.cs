@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
@@ -127,6 +128,7 @@ internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
         CreateHitTester(canvasPosition);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal void Move(Point canvasPosition)
     {
         if (!Active)

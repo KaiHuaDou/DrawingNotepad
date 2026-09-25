@@ -93,7 +93,7 @@ public class SpecialModeGestureTests
     }
 
     [Fact]
-    public void SelectMode_StampConsumesTouch_StaysIdle( )
+    public void SelectMode_Stamp_SingleFingerSkipsSelection( )
     {
         StaTest.Run(( ) =>
         {
@@ -101,7 +101,12 @@ public class SpecialModeGestureTests
             host.Canvas.Mode = InkCanvasNextMode.Select;
             host.Canvas.StampAction = StampAction.Clone;
 
-            host.Device( ).Down(host.Target, P1);
+            var finger = host.Device( );
+            finger.Down(host.Target, P1);
+            // 盖章期间选区入口被跳过：单指进入单指绘制上下文，抬手落章（此处无选区，落章为空操作）
+            Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
+            finger.Up(host.Target, P1);
+
             Assert.Equal(TouchState.Idle, host.Canvas.State);
             Assert.Empty(host.Canvas.Strokes);
         });
