@@ -35,12 +35,12 @@
 - 文档与图片
     - 打开 PowerPoint 演示文稿与 Word 文档（使用本机 Office 栅格化，逐页生成背景）
     - 打开 XPS、PDF（PDFium 渲染）与图片（BMP / GIF / ICO / JPEG / PNG / TIFF，作为单页背景）
-    - 文档页自动生成缩略图预览
+    - 页面列表缩略图按需生成（显示时后台渲染）
 - 墨迹管理
     - 复制 / 粘贴 / 克隆 / 删除选中墨迹（可跨应用粘贴）
     - `*.lbf` 轻白板文件（zip 容器，可解压获得单页 ISF；带版本校验与完整性检查）
     - `*.isf` Windows 墨迹文件
-    - 自动备份当前墨迹（每分钟保存到 `recover/`），崩溃后下次启动可一键恢复
+    - 自动备份当前墨迹（每分钟一次，内容未变化时跳过；写入 `recover/`），崩溃后可用「打开」载入该目录中的文件恢复
     - 快速保存：一键写入 `fastsave/` 目录，无需文件对话框
 - 导出
     - 画布导出为 `*.png`（支持 25% / 50% / 100% 缩放，可导出全部页面）
@@ -149,7 +149,7 @@ LightBoard/               # 主程序
 ├─ MainWindow.IO.cs       # 打开/保存/导出流程
 ├─ MainWindow.File.cs     # 文档状态（新建/附加、未保存确认、关闭文档）
 ├─ MainWindow.Loading.cs  # 加载浮层与导出进度
-├─ ParametersDebugVisual.cs   # 调试模式下的参数可视化
+├─ ParametersDebugVisual.cs   # 调试浮层（参数可视化、运行状态与帧率）
 ├─ Theme.xaml             # 主题样式（图标/按钮/颜色选择器）
 ├─ External/NativeMethods.cs  # Win32 互操作（窗口切换）
 └─ App.xaml(.cs)          # 应用入口、单实例与崩溃恢复

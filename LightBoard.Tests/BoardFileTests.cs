@@ -6,7 +6,7 @@ using System.Windows.Input;
 
 namespace LightBoard.Tests;
 
-// BoardFile 与 Page 依赖 WPF Ink API，测试宿主主线程为 STA，可直接调用。
+// BoardFile 依赖 WPF Ink API，测试宿主主线程为 STA，可直接调用。
 public class BoardFileTests
 {
     private static string TempPath( )
@@ -14,27 +14,27 @@ public class BoardFileTests
         return Path.Join(Path.GetTempPath( ), $"lb-board-{Guid.NewGuid( ):N}.lbf");
     }
 
-    private static Page MakePage(int number, double scale, double offsetX, double offsetY, bool withStroke)
+    private static BoardPage MakePage(double scale, double offsetX, double offsetY, bool withStroke)
     {
-        var page = new Page { Number = number, Scale = scale, OffsetX = offsetX, OffsetY = offsetY };
+        var strokes = new StrokeCollection( );
         if (withStroke)
         {
-            page.Strokes.Add(new Stroke(
+            strokes.Add(new Stroke(
                 [new StylusPoint(10, 10), new StylusPoint(120, 80)],
                 new DrawingAttributes( )));
         }
 
-        return page;
+        return new BoardPage(strokes, scale, offsetX, offsetY);
     }
 
     [Fact]
     public void Write_Read_RoundTrip( )
     {
-        var pages = new List<Page>
-        {
-            MakePage(1, 1.25, 123.5, -45.25, withStroke: true),
-            MakePage(2, 1.0, 0, 0, withStroke: false),
-        };
+        BoardPage[] pages =
+        [
+            MakePage(1.25, 123.5, -45.25, withStroke: true),
+            MakePage(1.0, 0, 0, withStroke: false),
+        ];
 
         var path = TempPath( );
         try
@@ -62,7 +62,7 @@ public class BoardFileTests
         var path = TempPath( );
         try
         {
-            BoardFile.Write(path, [MakePage(1, 1.0, 0, 0, withStroke: false)]);
+            BoardFile.Write(path, [MakePage(1.0, 0, 0, withStroke: false)]);
             RewriteManifestVersion(path, 2);
 
             Assert.Throws<InvalidDataException>(( ) => BoardFile.Read(path));
@@ -81,8 +81,8 @@ public class BoardFileTests
         {
             BoardFile.Write(path,
             [
-                MakePage(1, 1.0, 0, 0, withStroke: false),
-                MakePage(2, 1.0, 0, 0, withStroke: false),
+                MakePage(1.0, 0, 0, withStroke: false),
+                MakePage(1.0, 0, 0, withStroke: false),
             ]);
 
             using (var zip = ZipFile.Open(path, ZipArchiveMode.Update))

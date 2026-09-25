@@ -18,7 +18,7 @@ internal sealed class PdfSource : PageSource
 
     private const ulong FpdfErrPassword = 4; // FPDF_ERR_PASSWORD：文档已加密
 
-    private const double Dpi = 192;
+    private const double Dpi = 144;
 
     private readonly FpdfDocumentT document;
 

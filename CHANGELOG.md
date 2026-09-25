@@ -6,6 +6,18 @@
 
 本文件的内容基于对代码实际差异的比对（而非提交信息），以准确反映用户可见的行为变化。
 
+## [v1.0.1]
+
+### 变更
+
+- 页面列表缩略图改为按需生成：打开文件或文档后不再逐页补齐，只有页面列表中被实现的页才渲染（列表默认收起，多数使用场景完全不渲染）。
+- 文档页背景光栅化由 192 DPI 改为 144 DPI：单页位图内存由约 11-14 MB 降至 6-8 MB，放大到约 1.3 倍以上时可察觉清晰度差异。
+- 文档页图像按最近使用缓存 3 页：上一页／下一页来回翻不再重复光栅化。
+- 自动备份改为内容未变化时跳过（只翻页或长时间停留不再产生文件），并在后台线程写盘；未处理异常路径仍同步写完。
+- 调试浮层：参数可视化去掉说明文案，改为「名称 = 值」标注；运行状态计数分列屏幕左右两侧（触点、笔画、撤销、重做），并新增帧率与最长帧读数，面板头部显示 `RenderCapability.Tier` 与 `ProcessRenderMode`（帧率口径与实测见 `docs/FrameRate.md`）。
+- 调试浮层：`PinchMinDistance` 与 `PanZoomDisplaceThreshold` 取超出屏幕尺度或非正值（表示关闭）时显示「禁用」，不再打印原始数值。
+- 关于对话框版本号由 `v1.0.0` 改为 `v1.0.1`。
+
 ## [v1.0.0]
 
 ### 新增
@@ -90,5 +102,6 @@
 
 - 删除内部设计文档 `docs/EraserReference.md`、`docs/MultiTouchReference.md`。
 
+[v1.0.1]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.0.0...v1.0.1
 [v1.0.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.0.0-rc.4...v1.0.0
 [v1.0.0-rc.4]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.0.0-rc.3...v1.0.0-rc.4

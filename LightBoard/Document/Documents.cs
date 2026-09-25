@@ -43,13 +43,17 @@ public partial class App
 
     private static void AddDocumentPage(Size viewport)
     {
-        Pages.Add(new Page
+        var page = new Page
         {
             Number = Pages.Count + 1,
             Scale = 1.0,
             OffsetX = CanvasSize.Width / 2 - viewport.Width / 2,
             OffsetY = CanvasSize.Height / 2 - viewport.Height / 2,
-        });
+        };
+
+        // 文档页即使没有墨迹也有背景缩略图
+        page.InvalidatePreview( );
+        Pages.Add(page);
     }
 
     public static async Task<DocumentService> AttachDocument(string path)
@@ -85,25 +89,6 @@ public partial class App
             ? viewport.Value
             : new Size(SystemParameters.PrimaryScreenWidth, SystemParameters.PrimaryScreenHeight);
     }
-
-    // 文档加载后全部页尚无缩略图；后台逐页合成（XPS 页树有线程亲和性，背景渲染必须留在 UI 线程），仅结果回投 UI 线程。
-    public static Task RefreshDocumentPreviewsAsync( )
-    {
-        return Document is null ? Task.CompletedTask : Task.Run(( ) =>
-        {
-            foreach (var page in Pages)
-            {
-                var background = Current.Dispatcher.Invoke(( ) => Document.GetPage(page.Number - 1));
-                if (background is null)
-                {
-                    continue;
-                }
-
-                var preview = page.Strokes.Preview(CanvasSize, background);
-                Current.Dispatcher.Invoke(( ) => page.Preview = preview);
-            }
-        });
-    }
 }
 
 // 文档页面渲染源：XPS 走矢量渲染、PDF 走 PDFium 位图渲染，在 DocumentService 处汇合。
@@ -122,11 +107,15 @@ public sealed class DocumentService : IDisposable
 
     private const long TrimWatermarkBytes = 400L * 1024 * 1024;
 
+    // 缓存最近使用的文档页图像：上一页/下一页来回翻时全部命中，省掉整页 144 DPI 光栅化。
+    private const int PageCacheCapacity = 3;
+
     private static readonly string[] ImageExtensions = [".bmp", ".gif", ".ico", ".jpg", ".jpeg", ".png", ".tiff"];
 
     private static readonly string CacheDir = Path.Join(App.AppPath, "XpsCache");
     private static readonly ConcurrentDictionary<string, Lazy<Task<(string Path, string? Temp)>>> Converting = new( );
     private readonly string? tempPath;
+    private readonly LruCache pageCache = new(PageCacheCapacity);
 
     private DocumentService(PageSource source, string? tempPath)
     {
@@ -195,7 +184,19 @@ public sealed class DocumentService : IDisposable
 
     public ImageSource? GetPage(int index)
     {
-        return Source.GetPage(index);
+        if (pageCache.Take(index) is ImageSource cached)
+        {
+            return cached;
+        }
+
+        var image = Source.GetPage(index);
+        if (image is null)
+        {
+            return null;
+        }
+
+        pageCache.Put(index, image);
+        return image;
     }
 
     public void Dispose( )

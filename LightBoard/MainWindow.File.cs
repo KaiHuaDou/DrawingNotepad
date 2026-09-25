@@ -93,15 +93,8 @@ public partial class MainWindow
                 CanvasNext.OffsetY = App.CurrentPage.OffsetY;
             }
 
-            // 附加在页与文档就位时已成立，缩略图刷新失败仅记录（切页时会重新生成）
-            try
-            {
-                await App.RefreshDocumentPreviewsAsync( );
-            }
-            catch (Exception ex)
-            {
-                App.LogException(ex);
-            }
+            // 背景页对所有页生效，缩略图整体置脏
+            App.InvalidatePagePreviews( );
         }
         catch (Exception ex)
         {
@@ -176,7 +169,9 @@ public partial class MainWindow
         {
             try
             {
-                BoardFile.Write(Path.Join(App.AppPath, "fastsave", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"), App.Pages);
+                BoardFile.Write(
+                    Path.Join(App.AppPath, "fastsave", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"),
+                    App.SnapshotPages(forBackgroundWrite: false));
                 Dirty = false;
                 return false;
             }

@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
@@ -12,7 +14,7 @@ using InkCanvasNext;
 
 namespace LightBoard;
 
-public class Page : INotifyPropertyChanged
+public partial class Page : INotifyPropertyChanged
 {
     public int Number { get; set; }
     public StrokeCollection Strokes { get; set; } = [];
@@ -20,15 +22,6 @@ public class Page : INotifyPropertyChanged
     public double OffsetX { get; set; } = App.InitialOffset.X;
     public double OffsetY { get; set; } = App.InitialOffset.Y;
     public HistorySnapshot? History { get; set; }
-
-    public ImageSource Preview
-    {
-        get; set
-        {
-            field = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Preview)));
-        }
-    } = StrokeCollectionExtension.PreviewEmpty( );
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -40,7 +33,8 @@ public class Page : INotifyPropertyChanged
         OffsetX = App.InitialOffset.X;
         OffsetY = App.InitialOffset.Y;
         History = null;
-        Preview = Strokes.Count > 0 ? Strokes.Preview( ) : StrokeCollectionExtension.PreviewEmpty( );
+        InvalidatePreview( );
+        App.MarkBoardChanged( );
     }
 
     public void ExportStrokes(string fileName, DpiScale dpi, int scale, ImageSource? background = null)
@@ -85,7 +79,9 @@ public partial class MainWindow
         page.Scale = CanvasNext.CurrentScale;
         page.OffsetX = CanvasNext.OffsetX;
         page.OffsetY = CanvasNext.OffsetY;
-        page.Preview = page.Strokes.Preview(App.CanvasSize, CanvasNext.DocumentPage);
+
+        // 缩略图只在过期时重建（未改动的页翻过去再翻回来不再重算）
+        page.RefreshPreview( );
     }
 
     private void PrevPage(object o, RoutedEventArgs e)
@@ -147,10 +143,22 @@ public partial class App
         return true;
     }
 
+    /// <summary>
+    /// 文档背景变化后把全部页的缩略图置脏：背景属于每一页，换页本身不改变背景。
+    /// </summary>
+    public static void InvalidatePagePreviews( )
+    {
+        foreach (var page in Pages)
+        {
+            page.InvalidatePreview( );
+        }
+    }
+
     public static void NewPage( )
     {
         Pages.Add(new Page { Number = Pages.Count + 1, Scale = 1.0, OffsetX = InitialOffset.X, OffsetY = InitialOffset.Y });
         PageIndex = Pages.Count - 1;
+        MarkBoardChanged( );
     }
 
     public static void LoadBoard(string path)
@@ -177,17 +185,44 @@ public partial class App
 
     private static void AddBoardPage(BoardPage p)
     {
-        Pages.Add(new Page
+        var page = new Page
         {
             Number = Pages.Count + 1,
             Strokes = p.Strokes,
             Scale = p.Scale,
             OffsetX = p.OffsetX,
             OffsetY = p.OffsetY,
-            Preview = p.Strokes.Count > 0 ? p.Strokes.Preview( ) : StrokeCollectionExtension.PreviewEmpty( ),
-        });
+        };
+
+        if (p.Strokes.Count > 0)
+        {
+            page.InvalidatePreview( );
+        }
+
+        Pages.Add(page);
+        MarkBoardChanged( );
     }
 
+    /// <summary>
+    /// 定时备份：内容未变化时跳过，写盘放到后台。
+    /// </summary>
+    private static void SaveRecoverInBackground( )
+    {
+        if (IsBoardEmpty( ) || RecoverRevision == BoardRevision)
+        {
+            return;
+        }
+
+        RecoverRevision = BoardRevision;
+        var path = Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf");
+        var snapshot = SnapshotPages(forBackgroundWrite: true);
+
+        Task.Run(( ) => WriteRecover(path, snapshot));
+    }
+
+    /// <summary>
+    /// 进程即将退出（未处理异常）时同步写完，不能等后台任务。
+    /// </summary>
     private static void SaveRecover( )
     {
         if (IsBoardEmpty( ))
@@ -195,11 +230,37 @@ public partial class App
             return;
         }
 
+        WriteRecover(
+            Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"),
+            SnapshotPages(forBackgroundWrite: false));
+    }
+
+    /// <summary>
+    /// 生成可序列化的页面快照。<paramref name="forBackgroundWrite"/> 为真时复制墨迹：
+    /// 后台写盘期间用户仍可继续编辑画布，必须用副本；UI 线程被阻塞的显式保存可直接引用活动墨迹。
+    /// </summary>
+    internal static BoardPage[] SnapshotPages(bool forBackgroundWrite)
+    {
+        return
+        [
+            .. Pages.Select(page => new BoardPage(
+                forBackgroundWrite ? [.. page.Strokes.Select(s => s.Clone( ))] : page.Strokes,
+                page.Scale,
+                page.OffsetX,
+                page.OffsetY)),
+        ];
+    }
+
+    private static void WriteRecover(string path, IReadOnlyList<BoardPage> pages)
+    {
         try
         {
-            BoardFile.Write(Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"), Pages);
+            BoardFile.Write(path, pages);
         }
-        catch { }
+        catch (Exception e)
+        {
+            LogException(e);
+        }
     }
 
     public static bool IsBoardEmpty( )

@@ -67,7 +67,7 @@ internal sealed class XpsSource : PageSource
 
     private static RenderTargetBitmap RenderFixedPage(FixedPage fixedPage)
     {
-        const double Dpi = 192; // 2x 渲染，放大查看时更清晰
+        const double Dpi = 144; // 1.5x 渲染：清晰度与整页位图内存（约 6 MB/页）的折中
         fixedPage.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         var size = fixedPage.DesiredSize;
         if (size.Width <= 0 || double.IsNaN(size.Width) || size.Height <= 0 || double.IsNaN(size.Height))

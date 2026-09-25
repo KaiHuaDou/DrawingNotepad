@@ -26,6 +26,21 @@ public partial class App : Application, ISingleInstance
 
     public static event EventHandler? PageChanged;
 
+    /// <summary>
+    /// 板子内容（墨迹或页集合）变化的版本号；自动备份据此跳过内容未变化的分钟。
+    /// </summary>
+    internal static int BoardRevision { get; private set; }
+
+    /// <summary>
+    /// 已写入备份的内容版本；等于 <see cref="BoardRevision"/> 时本次备份跳过。
+    /// </summary>
+    private static int RecoverRevision { get; set; }
+
+    internal static void MarkBoardChanged( )
+    {
+        BoardRevision++;
+    }
+
     public static Page CurrentPage => Pages[PageIndex];
 
     public static int PageIndex
@@ -62,7 +77,11 @@ public partial class App : Application, ISingleInstance
 
     public static void LogException(Exception e)
     {
-        File.AppendAllText(Path.Join(AppPath, "error.log"), $"\nTime:{DateTime.Now:yyyy-MM-dd HH:mm:ss}\n{e.Message}\n{e.StackTrace}\n");
+        try
+        {
+            File.AppendAllText(Path.Join(AppPath, "error.log"), $"\nTime:{DateTime.Now:yyyy-MM-dd HH:mm:ss}\n{e.Message}\n{e.StackTrace}\n");
+        }
+        catch { }
     }
 
     public static void ShowException(Exception e, string message)
@@ -164,7 +183,7 @@ public partial class App : Application, ISingleInstance
         }
 
         recoverTimer.Interval = TimeSpan.FromMinutes(1);
-        recoverTimer.Tick += (_, _) => SaveRecover( );
+        recoverTimer.Tick += (_, _) => SaveRecoverInBackground( );
         recoverTimer.Start( );
     }
 }

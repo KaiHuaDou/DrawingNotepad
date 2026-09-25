@@ -21,7 +21,7 @@ public partial class MainWindow
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
-            MainInstruction = "轻白板 / LightBoard v1.0.0",
+            MainInstruction = "轻白板 / LightBoard v1.0.1",
             MainIcon = TaskDialogIcon.Information,
             Content =
             """
@@ -110,6 +110,8 @@ public partial class MainWindow
     private void CanvasNextStrokesChanged(object? o, InkCanvasStrokesChangedEventArgs e)
     {
         Dirty = true;
+        App.MarkBoardChanged( );
+        App.CurrentPage.InvalidatePreview( );
 
         if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
         {

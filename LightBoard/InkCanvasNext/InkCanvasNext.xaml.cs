@@ -162,7 +162,7 @@ public partial class InkCanvasNext : UserControl
     /// 初始化 InkCanvasNext 控件并装配内部画布与选择控制器。
     /// </summary>
     /// <param name="canvasSize">内层墨迹画布尺寸；文档背景页在此画布内居中。</param>
-    /// <param name="initialOffset">初始视口左上角在画布内容坐标中的位置。</param>
+    /// <param name="initialOffset">初始视口左上角相对内容原点的偏移（视口单位）。</param>
     public InkCanvasNext(Size canvasSize, Point initialOffset)
     {
         InitializeComponent( );
@@ -189,8 +189,8 @@ public partial class InkCanvasNext : UserControl
         var distanceThreshold = DistanceThresholdFactor * SystemParameters.WorkArea.Width;
         distanceThreshold2 = distanceThreshold * distanceThreshold;
 
-        CanvasScroll.ScrollToHorizontalOffset(initialOffset.X);
-        CanvasScroll.ScrollToVerticalOffset(initialOffset.Y);
+        SetView(new View(1.0, initialOffset.X, initialOffset.Y));
+
         CanvasScroll.ScrollChanged += (_, _) => RaiseViewOrSelectionChanged( );
         canvasScaleTransform.Changed += (_, _) => RaiseViewOrSelectionChanged( );
 
@@ -292,14 +292,8 @@ public partial class InkCanvasNext : UserControl
     /// </summary>
     public double CurrentScale
     {
-        get => currentScale;
-        set
-        {
-            var clamped = Math.Clamp(value, MinScale, MaxScale);
-            currentScale = clamped;
-            canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = clamped;
-            eraser.Scale = clamped;
-        }
+        get => CurrentView.Scale;
+        set => ApplyScale(Math.Clamp(value, MinScale, MaxScale));
     }
 
     /// <summary>
@@ -484,11 +478,6 @@ public partial class InkCanvasNext : UserControl
         ClearHistory( );
         EnsureStrokesFit( );
     }
-
-    /// <summary>
-    /// 当前文档背景页；DocumentHost 中无 Image 时为 null。
-    /// </summary>
-    public ImageSource? DocumentPage => DocumentHost.Child is Image image ? image.Source : null;
 
     /// <summary>
     /// 设置文档背景页面；传入 null 时移除页面。

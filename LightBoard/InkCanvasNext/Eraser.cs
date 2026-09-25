@@ -42,7 +42,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        eraser.Scale = currentScale;
+        eraser.Scale = CurrentScale;
 
         if (State == TouchState.Eraser)
         {

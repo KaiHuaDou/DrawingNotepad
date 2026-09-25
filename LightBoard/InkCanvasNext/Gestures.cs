@@ -20,13 +20,30 @@ public partial class InkCanvasNext
     private Point panZoomAnchor;
     private bool zoomLocked;
 
-    private double currentScale = 1.0;
     private double initialScale = 1.0;
+
+    private View CurrentView => new(canvasScaleTransform.ScaleX, CanvasScroll.HorizontalOffset, CanvasScroll.VerticalOffset);
+
+    private void ApplyScale(double scale)
+    {
+        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = scale;
+        eraser.Scale = scale;
+    }
 
     protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
     {
         base.OnRenderSizeChanged(sizeInfo);
         viewportOrigin = CanvasScroll.TranslatePoint(new Point(0, 0), this);
+    }
+
+    /// <summary>
+    /// 整幅写入视图：缩放与偏移必须来自同一份视图快照。
+    /// </summary>
+    private void SetView(View view)
+    {
+        ApplyScale(view.Scale);
+        CanvasScroll.ScrollToHorizontalOffset(view.OffsetX);
+        CanvasScroll.ScrollToVerticalOffset(view.OffsetY);
     }
 
     private void InitGesture( )
@@ -39,7 +56,7 @@ public partial class InkCanvasNext
 
         panPoint0 = first.Value;
         distance0 = second is null ? 0 : Distance(first.Value, second.Value);
-        initialScale = currentScale;
+        initialScale = CurrentView.Scale;
         panZoomAnchor = second is null ? first.Value : MidPoint(first.Value, second.Value);
         zoomLocked = false;
     }
@@ -57,10 +74,12 @@ public partial class InkCanvasNext
             zoomLocked = true;
         }
 
+        var view = CurrentView;
+
         double targetScale;
         if (zoomLocked)
         {
-            targetScale = currentScale;
+            targetScale = view.Scale;
         }
         else
         {
@@ -72,22 +91,14 @@ public partial class InkCanvasNext
             targetScale = Math.Clamp(initialScale * k, MinScale, MaxScale);
         }
 
-        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = targetScale;
-        eraser.Scale = targetScale;
+        // 先把基线指位下的内容点钉住，再按两指位移平移：等价于把基线两指映射到当前两指
+        var anchor = new Point(panPoint0.X - viewportOrigin.X, panPoint0.Y - viewportOrigin.Y);
 
-        var scale = targetScale / currentScale;
+        SetView(view
+            .ZoomAt(anchor, targetScale)
+            .Panned(panPoint0 - firstPoint)
+            .Clamped(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight));
 
-        var newOffsetX = CanvasScroll.HorizontalOffset * scale
-            + (panPoint0.X - viewportOrigin.X) * scale
-            - (firstPoint.X - viewportOrigin.X);
-        var newOffsetY = CanvasScroll.VerticalOffset * scale
-            + (panPoint0.Y - viewportOrigin.Y) * scale
-            - (firstPoint.Y - viewportOrigin.Y);
-
-        CanvasScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, CanvasScroll.ScrollableWidth));
-        CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
-
-        currentScale = targetScale;
         panPoint0 = firstPoint;
     }
 
@@ -95,11 +106,9 @@ public partial class InkCanvasNext
     {
         (var first, _) = GetMajorTouches( );
 
-        var newOffsetX = CanvasScroll.HorizontalOffset + panPoint0.X - first!.Value.X;
-        var newOffsetY = CanvasScroll.VerticalOffset + panPoint0.Y - first!.Value.Y;
-
-        CanvasScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, CanvasScroll.ScrollableWidth));
-        CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
+        SetView(CurrentView
+            .Panned(panPoint0 - first!.Value)
+            .Clamped(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight));
 
         panPoint0 = first!.Value;
     }
@@ -110,11 +119,12 @@ public partial class InkCanvasNext
     /// </summary>
     private void EnsureEdgeMargin( )
     {
+        var scale = CurrentView.Scale;
         var extendWidth = CanvasScroll.ScrollableWidth - CanvasScroll.HorizontalOffset < CanvasScroll.ViewportWidth
-            ? CanvasScroll.ViewportWidth / currentScale
+            ? CanvasScroll.ViewportWidth / scale
             : 0;
         var extendHeight = CanvasScroll.ScrollableHeight - CanvasScroll.VerticalOffset < CanvasScroll.ViewportHeight
-            ? CanvasScroll.ViewportHeight / currentScale
+            ? CanvasScroll.ViewportHeight / scale
             : 0;
 
         ExtendCanvas(extendWidth, extendHeight);
@@ -151,26 +161,20 @@ public partial class InkCanvasNext
 
     private void ZoomAtCursor(MouseWheelEventArgs e)
     {
+        var view = CurrentView;
         var factor = e.Delta > 0 ? 1.1 : 1.0 / 1.1;
-        var target = Math.Clamp(currentScale * factor, MinScale, MaxScale);
-        var k = target / currentScale;
-        if (Math.Abs(k - 1.0) < 1e-9)
+        var target = Math.Clamp(view.Scale * factor, MinScale, MaxScale);
+        if (Math.Abs(target / view.Scale - 1.0) < 1e-9)
         {
             return;
         }
 
         var cursor = e.GetPosition(this);
-        var newOffsetX = CanvasScroll.HorizontalOffset * k
-            + (cursor.X - viewportOrigin.X) * (k - 1);
-        var newOffsetY = CanvasScroll.VerticalOffset * k
-            + (cursor.Y - viewportOrigin.Y) * (k - 1);
+        var anchor = new Point(cursor.X - viewportOrigin.X, cursor.Y - viewportOrigin.Y);
 
-        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = target;
-        eraser.Scale = target;
-        currentScale = target;
-
-        CanvasScroll.ScrollToHorizontalOffset(Math.Clamp(newOffsetX, 0, CanvasScroll.ScrollableWidth));
-        CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffsetY, 0, CanvasScroll.ScrollableHeight));
+        SetView(view
+            .ZoomAt(anchor, target)
+            .Clamped(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

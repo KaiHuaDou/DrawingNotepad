@@ -217,7 +217,7 @@ public partial class InkCanvasNext
             return SelectionHandle.None;
         }
 
-        if (Near(p, SelectionVisual.RotateHandleCenter(b, currentScale), RotateHitRadius / Max(currentScale, 1e-6)))
+        if (Near(p, SelectionVisual.RotateHandleCenter(b, CurrentScale), RotateHitRadius / Max(CurrentScale, 1e-6)))
         {
             return SelectionHandle.Rotate;
         }

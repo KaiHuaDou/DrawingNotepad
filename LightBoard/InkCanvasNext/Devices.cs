@@ -26,6 +26,8 @@ public partial class InkCanvasNext
     /// <summary>测试接缝：暴露内部墨迹画布（触摸事件处理目标，供 InkCanvasNext.Tests 上报触摸）。</summary>
     internal InkCanvas InnerCanvasElement => InnerCanvas;
 
+    internal int ActiveTouchCount => touches.Count;
+
     /// <summary>
     /// 重置触摸输入状态：释放全部触摸捕获、清空触点并取消进行中的手势。
     /// </summary>
@@ -331,7 +333,7 @@ public partial class InkCanvasNext
         var screenPosition = e.GetPosition(this);
         var canvasPosition = e.GetPosition(InnerCanvas);
         eraser.Diameter = EraserDiameter;
-        eraser.Scale = currentScale;
+        eraser.Scale = CurrentScale;
         eraser.Show(screenPosition);
         eraser.Start(canvasPosition);
         e.Handled = true;
@@ -416,9 +418,10 @@ public partial class InkCanvasNext
             return;
         }
 
-        var step = ScrollStep * currentScale;
-        var newOffset = CanvasScroll.VerticalOffset + (e.Delta > 0 ? -step : step);
-        CanvasScroll.ScrollToVerticalOffset(Math.Clamp(newOffset, 0, CanvasScroll.ScrollableHeight));
+        var step = ScrollStep * CurrentScale;
+        SetView(CurrentView
+            .Panned(new Vector(0, e.Delta > 0 ? -step : step))
+            .Clamped(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight));
     }
 
     /// <summary>盖章模式拦截：命中则盖章并返回 true（调用方据此 Handled 并短路后续路由）。</summary>

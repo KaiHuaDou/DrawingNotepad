@@ -88,18 +88,21 @@ public partial class InkCanvasNext
 {
     private const int MaxHistoryCount = 200;
     private readonly RingBuffer<IHistoryChange> history = new(MaxHistoryCount);
-    private int position;
     private bool applyingUndoRedo;
+
+    internal int Position { get; private set; }
+
+    internal int RedoDepth => history.Count - Position;
 
     private void PushChange(IHistoryChange change)
     {
-        if (position < history.Count)
+        if (Position < history.Count)
         {
-            history.Truncate(position);
+            history.Truncate(Position);
         }
 
         history.Enqueue(change);
-        position = history.Count;
+        Position = history.Count;
         UpdateCanUndoRedo( );
     }
 
@@ -127,7 +130,7 @@ public partial class InkCanvasNext
     /// </summary>
     public void Undo( )
     {
-        if (position == 0)
+        if (Position == 0)
         {
             return;
         }
@@ -135,8 +138,8 @@ public partial class InkCanvasNext
         applyingUndoRedo = true;
         try
         {
-            position--;
-            history[position].Revert(this);
+            Position--;
+            history[Position].Revert(this);
         }
         finally
         {
@@ -152,7 +155,7 @@ public partial class InkCanvasNext
     /// </summary>
     public void Redo( )
     {
-        if (position >= history.Count)
+        if (Position >= history.Count)
         {
             return;
         }
@@ -160,8 +163,8 @@ public partial class InkCanvasNext
         applyingUndoRedo = true;
         try
         {
-            var change = history[position];
-            position++;
+            var change = history[Position];
+            Position++;
             change.Apply(this);
         }
         finally
@@ -182,14 +185,14 @@ public partial class InkCanvasNext
     private void ClearHistory( )
     {
         history.Clear( );
-        position = 0;
+        Position = 0;
         UpdateCanUndoRedo( );
     }
 
     private void UpdateCanUndoRedo( )
     {
-        var canUndo = position > 0;
-        var canRedo = position < history.Count;
+        var canUndo = Position > 0;
+        var canRedo = Position < history.Count;
 
         if (CanUndo != canUndo)
         {
@@ -209,9 +212,9 @@ public partial class InkCanvasNext
     /// </summary>
     public void SwapHistory(out HistorySnapshot? old, HistorySnapshot? @new)
     {
-        old = history.Count > 0 ? new HistorySnapshot(history.ToArray( ), position) : null;
+        old = history.Count > 0 ? new HistorySnapshot(history.ToArray( ), Position) : null;
         history.Clear( );
-        position = 0;
+        Position = 0;
 
         if (@new is not null)
         {
@@ -220,7 +223,7 @@ public partial class InkCanvasNext
                 history.Enqueue(@new.Changes[i]);
             }
 
-            position = @new.Position;
+            Position = @new.Position;
         }
 
         UpdateCanUndoRedo( );

@@ -77,7 +77,7 @@ internal static class BoardFile
         return new BoardContent(manifest.Version, pages);
     }
 
-    public static void Write(string path, IReadOnlyList<Page> pages)
+    public static void Write(string path, IReadOnlyList<BoardPage> pages)
     {
         var tempPath = $"{path}.tmp";
 

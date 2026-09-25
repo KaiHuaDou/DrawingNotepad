@@ -70,8 +70,6 @@ public partial class MainWindow
                     CanvasNext.IsEnabled = true;
                     HideLoading( );
                 }
-
-                await App.RefreshDocumentPreviewsAsync( );
             }
 
             Dirty = false;
@@ -124,7 +122,7 @@ public partial class MainWindow
 
         try
         {
-            BoardFile.Write(dialog.FileName, App.Pages);
+            BoardFile.Write(dialog.FileName, App.SnapshotPages(forBackgroundWrite: false));
             Dirty = false;
         }
         catch (Exception ex)
