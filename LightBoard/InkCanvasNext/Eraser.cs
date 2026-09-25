@@ -47,7 +47,7 @@ public partial class InkCanvasNext
         if (State == TouchState.Eraser)
         {
             (var screenCenter, var radius) = Eraser.GetCircle(touches);
-            eraser.Diameter = radius * 2 + 8;
+            eraser.Diameter = radius * 2 + Eraser.EraserPalmExtra;
 
             var canvasCenter = GetCanvasCenter(touches);
             eraser.Show(screenCenter);
@@ -93,18 +93,17 @@ internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
 {
     internal StrokeChanges StrokeChanges { get; } = new([], []);
 
-    internal double Diameter { get; set; } = EraserDefaultDiameter;
+    internal double Diameter { get; set; } = DefaultDiameter;
 
     internal double Scale { get; set; } = 1.0;
 
     internal bool Active { get; private set; }
 
-    private double LogicalDiameter => Math.Max(Diameter / Scale, 1.0);
+    private double LogicalDiameter => Math.Max(Diameter / Scale, MinLogicalDiameter);
 
     private IncrementalStrokeHitTester? hitTester;
 
     private double hitTesterDiameter;
-    private const double RebuildThreshold = 0.5;
 
     internal void Show(Point screenPosition)
     {

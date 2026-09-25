@@ -22,28 +22,21 @@ public partial class InkCanvasNext
 
     private double initialScale = 1.0;
 
-    private View CurrentView => new(canvasScaleTransform.ScaleX, CanvasScroll.HorizontalOffset, CanvasScroll.VerticalOffset);
-
-    private void ApplyScale(double scale)
+    private View CurrentView
     {
-        canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = scale;
-        eraser.Scale = scale;
+        get => new(canvasScaleTransform.ScaleX, CanvasScroll.HorizontalOffset, CanvasScroll.VerticalOffset);
+        set
+        {
+            CurrentScale = value.Scale;
+            CanvasScroll.ScrollToHorizontalOffset(value.OffsetX);
+            CanvasScroll.ScrollToVerticalOffset(value.OffsetY);
+        }
     }
 
     protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
     {
         base.OnRenderSizeChanged(sizeInfo);
         viewportOrigin = CanvasScroll.TranslatePoint(new Point(0, 0), this);
-    }
-
-    /// <summary>
-    /// 整幅写入视图：缩放与偏移必须来自同一份视图快照。
-    /// </summary>
-    private void SetView(View view)
-    {
-        ApplyScale(view.Scale);
-        CanvasScroll.ScrollToHorizontalOffset(view.OffsetX);
-        CanvasScroll.ScrollToVerticalOffset(view.OffsetY);
     }
 
     private void InitGesture( )
@@ -69,7 +62,7 @@ public partial class InkCanvasNext
         var span2 = second is null ? 0.0 : Distance2(firstPoint, second.Value);
         var displ2 = second is null ? 0.0 : Distance2(MidPoint(firstPoint, second.Value), panZoomAnchor);
 
-        if (!zoomLocked && (displ2 > PanZoomDisplaceThreshold2 || span2 < PinchMinDistance2))
+        if (!zoomLocked && (displ2 > PanZoomDisplaceThreshold2 || span2 < PinchLockDistance2))
         {
             zoomLocked = true;
         }
@@ -94,10 +87,10 @@ public partial class InkCanvasNext
         // 先把基线指位下的内容点钉住，再按两指位移平移：等价于把基线两指映射到当前两指
         var anchor = new Point(panPoint0.X - viewportOrigin.X, panPoint0.Y - viewportOrigin.Y);
 
-        SetView(view
+        CurrentView = view
             .ZoomAt(anchor, targetScale)
-            .Panned(panPoint0 - firstPoint)
-            .Clamped(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight));
+            .Pan(panPoint0 - firstPoint)
+            .Clamp(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight);
 
         panPoint0 = firstPoint;
     }
@@ -106,9 +99,9 @@ public partial class InkCanvasNext
     {
         (var first, _) = GetMajorTouches( );
 
-        SetView(CurrentView
-            .Panned(panPoint0 - first!.Value)
-            .Clamped(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight));
+        CurrentView = CurrentView
+            .Pan(panPoint0 - first!.Value)
+            .Clamp(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight);
 
         panPoint0 = first!.Value;
     }
@@ -162,7 +155,7 @@ public partial class InkCanvasNext
     private void ZoomAtCursor(MouseWheelEventArgs e)
     {
         var view = CurrentView;
-        var factor = e.Delta > 0 ? 1.1 : 1.0 / 1.1;
+        var factor = e.Delta > 0 ? WheelZoomFactor : 1.0 / WheelZoomFactor;
         var target = Math.Clamp(view.Scale * factor, MinScale, MaxScale);
         if (Math.Abs(target / view.Scale - 1.0) < 1e-9)
         {
@@ -172,9 +165,9 @@ public partial class InkCanvasNext
         var cursor = e.GetPosition(this);
         var anchor = new Point(cursor.X - viewportOrigin.X, cursor.Y - viewportOrigin.Y);
 
-        SetView(view
+        CurrentView = view
             .ZoomAt(anchor, target)
-            .Clamped(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight));
+            .Clamp(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

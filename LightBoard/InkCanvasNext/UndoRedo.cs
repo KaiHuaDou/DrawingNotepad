@@ -86,7 +86,6 @@ public sealed class HistorySnapshot
 
 public partial class InkCanvasNext
 {
-    private const int MaxHistoryCount = 200;
     private readonly RingBuffer<IHistoryChange> history = new(MaxHistoryCount);
     private bool applyingUndoRedo;
 

@@ -62,14 +62,14 @@ internal sealed partial class SelectionVisual
     {
         if (drawHalo)
         {
-            var haloBrush = new SolidColorBrush(Color.FromArgb(120, AccentColor.R, AccentColor.G, AccentColor.B));
+            var haloBrush = new SolidColorBrush(Color.FromArgb(HaloAlpha, AccentColor.R, AccentColor.G, AccentColor.B));
             foreach (var s in selected)
             {
                 var halo = s.Clone( );
                 var attrs = halo.DrawingAttributes.Clone( );
                 attrs.Color = haloBrush.Color;
-                attrs.Width *= 2.4;
-                attrs.Height *= 2.4;
+                attrs.Width *= HaloWidthFactor;
+                attrs.Height *= HaloWidthFactor;
                 halo.DrawingAttributes = attrs;
                 halo.Draw(dc);
             }
@@ -77,17 +77,17 @@ internal sealed partial class SelectionVisual
 
         if (!bounds.IsEmpty)
         {
-            var accentBrush = new SolidColorBrush(Color.FromArgb(235, AccentColor.R, AccentColor.G, AccentColor.B));
-            var pen = new Pen(accentBrush, 2.0);
+            var accentBrush = new SolidColorBrush(Color.FromArgb(BorderAlpha, AccentColor.R, AccentColor.G, AccentColor.B));
+            var pen = new Pen(accentBrush, BorderWidth);
             dc.DrawRectangle(null, pen, bounds);
             DrawHandles(dc, bounds, pen, zoom, rotateHandlePosition);
         }
 
         if (lasso is { Count: >= 2 })
         {
-            var lassoPen = new Pen(new SolidColorBrush(AccentColor), 2.0)
+            var lassoPen = new Pen(new SolidColorBrush(AccentColor), LassoWidth)
             {
-                DashStyle = new DashStyle([4, 3], 0)
+                DashStyle = new DashStyle(LassoDashPattern, 0)
             };
             var figure = new PathFigure { StartPoint = lasso[0], IsClosed = true, IsFilled = false };
             for (var i = 1; i < lasso.Count; i++)

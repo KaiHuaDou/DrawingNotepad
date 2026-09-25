@@ -1,5 +1,4 @@
 using System;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
@@ -23,38 +22,6 @@ public partial class App : Application, ISingleInstance
         SystemParameters.PrimaryScreenHeight);
 
     private readonly DispatcherTimer recoverTimer = new( );
-
-    public static event EventHandler? PageChanged;
-
-    /// <summary>
-    /// 板子内容（墨迹或页集合）变化的版本号；自动备份据此跳过内容未变化的分钟。
-    /// </summary>
-    internal static int BoardRevision { get; private set; }
-
-    /// <summary>
-    /// 已写入备份的内容版本；等于 <see cref="BoardRevision"/> 时本次备份跳过。
-    /// </summary>
-    private static int RecoverRevision { get; set; }
-
-    internal static void MarkBoardChanged( )
-    {
-        BoardRevision++;
-    }
-
-    public static Page CurrentPage => Pages[PageIndex];
-
-    public static int PageIndex
-    {
-
-        get;
-        private set
-        {
-            field = value;
-            PageChanged?.Invoke(Current.MainWindow, EventArgs.Empty);
-        }
-    } = -1;
-
-    public static ObservableCollection<Page> Pages { get; } = [];
 
     public static string? PendingOpen { get; set; }
 
@@ -82,6 +49,26 @@ public partial class App : Application, ISingleInstance
             File.AppendAllText(Path.Join(AppPath, "error.log"), $"\nTime:{DateTime.Now:yyyy-MM-dd HH:mm:ss}\n{e.Message}\n{e.StackTrace}\n");
         }
         catch { }
+    }
+
+    public static void ShowDetailedInfo(string message, string content, string details)
+    {
+        using TaskDialog dialog = new( )
+        {
+            WindowTitle = "轻白板",
+            MainInstruction = message,
+            MainIcon = TaskDialogIcon.Warning,
+            Content = content,
+            ExpandedInformation = details,
+        };
+        var copyButton = new TaskDialogButton("复制信息");
+        dialog.Buttons.Add(copyButton);
+        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+        var result = dialog.ShowDialog( );
+        if (result == copyButton)
+        {
+            SetClipboard(details);
+        }
     }
 
     public static void ShowException(Exception e, string message)
@@ -118,24 +105,17 @@ public partial class App : Application, ISingleInstance
         dialog.ShowDialog( );
     }
 
-    public static void ShowDetailedInfo(string message, string content, string details)
+    public void OnInstanceInvoked(string[] args)
     {
-        using TaskDialog dialog = new( )
+        Current.Dispatcher.Invoke(( ) =>
         {
-            WindowTitle = "轻白板",
-            MainInstruction = message,
-            MainIcon = TaskDialogIcon.Warning,
-            Content = content,
-            ExpandedInformation = details,
-        };
-        var copyButton = new TaskDialogButton("复制信息");
-        dialog.Buttons.Add(copyButton);
-        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
-        var result = dialog.ShowDialog( );
-        if (result == copyButton)
-        {
-            SetClipboard(details);
-        }
+            Current.MainWindow.Show( );
+            Current.MainWindow.Activate( );
+            if (args?.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
+            {
+                (Current.MainWindow as MainWindow)!.RequestOpenFile(args[1]);
+            }
+        });
     }
 
     private static void SetClipboard(string details)
@@ -148,19 +128,6 @@ public partial class App : Application, ISingleInstance
                 Clipboard.SetDataObject(details, true);
             }
             catch { }
-        });
-    }
-
-    public void OnInstanceInvoked(string[] args)
-    {
-        Current.Dispatcher.Invoke(( ) =>
-        {
-            Current.MainWindow.Show( );
-            Current.MainWindow.Activate( );
-            if (args?.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
-            {
-                (Current.MainWindow as MainWindow)!.RequestOpenFile(args[1]);
-            }
         });
     }
 

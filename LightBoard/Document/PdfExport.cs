@@ -70,7 +70,7 @@ internal static class PdfWriter
 
     private static FpdfBitmapT AddPage(FpdfDocumentT pdf, int index, Page page, ImageSource? background, DpiScale dpi, int scale)
     {
-        var content = page.Strokes.Render(dpi, scale, App.CanvasSize, Brushes.White, background);
+        var content = page.Strokes.Render(dpi, scale, Brushes.White, background, App.DocumentBox);
         var ptW = content.PixelWidth * 72d / dpi.PixelsPerInchX;
         var ptH = content.PixelHeight * 72d / dpi.PixelsPerInchY;
 

@@ -22,7 +22,7 @@ public partial class InkCanvasNext
         selectionGesture = SelectionGesture.Lasso;
         lassoPath.Add(p);
         lassoDragged = false;
-        lassoTester = InnerCanvas.Strokes.GetIncrementalLassoHitTester(50);
+        lassoTester = InnerCanvas.Strokes.GetIncrementalLassoHitTester(LassoHitPercentage);
         lassoTester.SelectionChanged += OnLassoSelectionChanged;
         lassoTester.AddPoints([ToStylusPoint(p)]);
     }

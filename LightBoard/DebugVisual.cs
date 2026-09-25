@@ -11,7 +11,7 @@ using static InkCanvasNext.InkCanvasNext;
 namespace LightBoard;
 
 // 调试模式浮层：参数面板（1:1 半径圆、1:1 距离线、缩放与 Smooth 数轴、渲染层与渲染模式）居中贴底，运行状态计数与帧率分列左右两侧。
-internal sealed class ParametersDebugVisual : FrameworkElement
+internal sealed class DebugVisual : FrameworkElement
 {
     private const double PanelWidth = 900;
     private const double PanelHeight = 350;
@@ -57,7 +57,7 @@ internal sealed class ParametersDebugVisual : FrameworkElement
     private (int Touch, int Undo, int Redo, int Stroke) lastCounts = (-1, -1, -1, -1);
     private (double Rate, double Longest) lastFrames = (-1, -1);
 
-    internal ParametersDebugVisual(InkCanvasNext.InkCanvasNext canvas)
+    internal DebugVisual(InkCanvasNext.InkCanvasNext canvas)
     {
         this.canvas = canvas;
         lastScale = canvas.CurrentScale;
@@ -146,19 +146,19 @@ internal sealed class ParametersDebugVisual : FrameworkElement
         Text(dc, "半径（1:1）", 13, DimBrush, 24, 56, dip);
 
         var center = new Point(120, 180);
-        dc.DrawLine(ThinPen, new Point(center.X, center.Y), new Point(center.X + Eraser.EraserDefaultDiameter / 2, center.Y));
+        dc.DrawLine(ThinPen, new Point(center.X, center.Y), new Point(center.X + Eraser.DefaultDiameter / 2, center.Y));
         Circle(dc, center, SelectionVisual.HandleRadius, RowPens[0]);
         Circle(dc, center, SelectionVisual.RotateScreenRadius, RowPens[1]);
         Circle(dc, center, HandleHitRadius, RowPens[2]);
-        Circle(dc, center, RotateHitRadius, RowPens[3]);
-        Circle(dc, center, Eraser.EraserDefaultDiameter / 2, RowPens[4]);
+        Circle(dc, center, RotateHitScreenRadius, RowPens[3]);
+        Circle(dc, center, Eraser.DefaultDiameter / 2, RowPens[4]);
         dc.DrawEllipse(TextBrush, null, center, 2, 2);
 
         Legend(dc, 0, $"HandleRadius = {SelectionVisual.HandleRadius:0.#}", 96, dip);
         Legend(dc, 1, $"RotateScreenRadius = {SelectionVisual.RotateScreenRadius:0.#}", 122, dip);
         Legend(dc, 2, $"HandleHitRadius = {HandleHitRadius:0.#}", 148, dip);
-        Legend(dc, 3, $"RotateHitRadius = {RotateHitRadius:0.#}", 174, dip);
-        Legend(dc, 4, $"EraserDefaultDiameter = {Eraser.EraserDefaultDiameter:0.#}", 200, dip);
+        Legend(dc, 3, $"RotateHitScreenRadius = {RotateHitScreenRadius:0.#}", 174, dip);
+        Legend(dc, 4, $"DefaultDiameter = {Eraser.DefaultDiameter:0.#}", 200, dip);
     }
 
     private void DrawDistances(DrawingContext dc, double dip)
@@ -167,7 +167,7 @@ internal sealed class ParametersDebugVisual : FrameworkElement
 
         DistanceRow(dc, 0, 96, "LassoPointDistance", $"{Math.Sqrt(LassoPointDistance2):0.#} px", Math.Sqrt(LassoPointDistance2), false, dip);
         DistanceRow(dc, 1, 122, "ToolbarGapFromSelection", $"{SelectionVisual.ToolbarGapFromSelection:0.#} px", SelectionVisual.ToolbarGapFromSelection, false, dip);
-        DistanceRow(dc, 2, 148, "PinchMinDistance", ThresholdText(PinchMinDistance2), ThresholdLength(PinchMinDistance2), ThresholdDisabled(PinchMinDistance2), dip);
+        DistanceRow(dc, 2, 148, "PinchLockDistance", ThresholdText(PinchLockDistance2), ThresholdLength(PinchLockDistance2), ThresholdDisabled(PinchLockDistance2), dip);
         DistanceRow(dc, 3, 174, "PanZoomDisplaceThreshold", ThresholdText(PanZoomDisplaceThreshold2), ThresholdLength(PanZoomDisplaceThreshold2), ThresholdDisabled(PanZoomDisplaceThreshold2), dip);
         DistanceRow(dc, 4, 200, "RotateGapAboveSelection", $"{SelectionVisual.RotateGapAboveSelection:0.#} px", SelectionVisual.RotateGapAboveSelection, false, dip);
         DistanceRow(dc, 5, 226, "DistanceThreshold", $"≈ {Math.Sqrt(canvas.distanceThreshold2):0.#} px", 100, true, dip);

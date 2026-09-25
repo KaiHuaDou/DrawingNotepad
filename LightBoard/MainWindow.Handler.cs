@@ -35,56 +35,6 @@ public partial class MainWindow
         dialog.ShowDialog( );
     }
 
-    private void AllPageToogleClick(object o, RoutedEventArgs e)
-    {
-        if (o is not ToggleButton { IsChecked: bool isChecked })
-        {
-            return;
-        }
-
-        var heightAnimation = new DoubleAnimation
-        {
-            From = RightBorder.ActualHeight,
-            To = isChecked ? ActualHeight - 10 : 55,
-            Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
-        };
-
-        var widthAnimation = new DoubleAnimation
-        {
-            From = RightBorder.ActualWidth,
-            To = isChecked ? RightBorder.ActualWidth + 64 : RightBorder.ActualWidth - 64,
-            Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
-        };
-
-        TimeText.Visibility = isChecked ? Visibility.Collapsed : Visibility.Visible;
-
-        if (isChecked)
-        {
-            RightBorder.Background = Application.Current.FindResource("ContainerBrushSolid") as Brush;
-        }
-        else
-        {
-            PagePreviewsBox.Visibility = Visibility.Collapsed;
-        }
-
-        heightAnimation.Completed += (_, _) =>
-        {
-            if (isChecked)
-            {
-                PagePreviewsBox.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                RightBorder.Background = Application.Current.FindResource("ContainerBrush") as Brush;
-            }
-        };
-
-        RightBorder.BeginAnimation(HeightProperty, heightAnimation);
-        RightBorder.BeginAnimation(WidthProperty, widthAnimation);
-    }
-
     private void CanvasNextCanRedoChanged(object? o, DependencyPropertyChangedEventArgs e)
     {
         RedoButton.IsEnabled = CanvasNext.CanRedo;
@@ -110,7 +60,7 @@ public partial class MainWindow
     private void CanvasNextStrokesChanged(object? o, InkCanvasStrokesChangedEventArgs e)
     {
         Dirty = true;
-        App.MarkBoardChanged( );
+        App.BoardRevision++;
         App.CurrentPage.InvalidatePreview( );
 
         if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
@@ -146,25 +96,39 @@ public partial class MainWindow
         var flag = CollapseExpandButton.IsChecked == true;
         CollapseExpandButton.Tag = flag ? "\uE70E" : "\uE70D";
 
-        var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        if (flag && AllPageToogle.IsChecked == true)
+        {
+            AllPageToogle.IsChecked = false;
+            AllPageToogleClick(AllPageToogle, new RoutedEventArgs( ));
+        }
+
+        // 折叠后屏幕上保留折叠与上页按钮区(含两侧内衬),其余推到屏幕外;
+        // 位移按折叠后的布局宽计算,与收起动画并行时终点才对准保留区
+        var chrome = RightBorder.Padding.Left * 2 + RightBorder.BorderThickness.Left * 2;
+        var keptWidth = RightBorder.Padding.Left + RightBorder.BorderThickness.Left
+            + CollapseExpandButton.Margin.Left + CollapseExpandButton.ActualWidth
+            + PrevPageButton.Margin.Left + PrevPageButton.ActualWidth
+            + RightBorder.Padding.Right + RightBorder.BorderThickness.Right;
+        // From 取 Transform 当前值:快速连点时上一动画仍在 Hold,读端点值会造成跳变
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
         var animationLeft = new DoubleAnimation
         {
-            From = flag ? 0 : -LeftBorder.ActualWidth,
+            From = LeftTransform.X,
             To = flag ? -LeftBorder.ActualWidth : 0,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = ease
         };
         var animationCenter = new DoubleAnimation
         {
-            From = flag ? 0 : CenterBorder.ActualHeight,
+            From = CenterTransform.Y,
             To = flag ? CenterBorder.ActualHeight : 0,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = ease
         };
         var animationRight = new DoubleAnimation
         {
-            From = flag ? 0 : RightBorder.ActualWidth - 87,
-            To = flag ? RightBorder.ActualWidth - 87 : 0,
+            From = RightTransform.X,
+            To = flag ? PageButtonsRow.ActualWidth + chrome - keptWidth : 0,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = ease
         };
@@ -252,7 +216,7 @@ public partial class MainWindow
             From = CenterBorder.ActualHeight,
             To = isChecked ? (CenterBorder.ActualHeight - 10) * 2 + 10 : (CenterBorder.ActualHeight - 10) / 2 + 10,
             Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseInOut }
+            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseOut }
         };
 
         CenterBorder.BeginAnimation(HeightProperty, heightAnimation);

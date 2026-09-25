@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -31,7 +30,7 @@ internal sealed class BoardPageInfo(double scale, double offsetX, double offsetY
     public double OffsetY { get; set; } = offsetY;
 }
 
-internal static class BoardFile
+internal static class Board
 {
     public const string Ext = ".lbf";
 

@@ -30,8 +30,8 @@ public partial class InkCanvasNext
         var count = touches.Count;
         var d2 = GetMaxDistance2( );
         var l2 = distanceThreshold2;
+        const double c2 = TouchDisplacementThreshold2;
         var x2 = Get1stFingerDispl2( );
-        var c2 = touchDisplThreshold * touchDisplThreshold;
 
         var newState = State switch
         {

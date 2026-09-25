@@ -24,31 +24,35 @@ public partial class App
 {
     public static DocumentService? Document { get; internal set; }
 
+    // 文档背景页在内容坐标中的 Uniform 适配盒子（打开/附加文档时画布的可见内容区域）；显示、缩略图与导出共用
+    internal static Rect? DocumentBox { get; set; }
+
     public static async Task OpenDocument(string path)
     {
         var document = await DocumentService.OpenAsync(path);
 
         Pages.Clear( );
 
-        var viewport = CanvasViewport( );
+        var (scale, offsetX, offsetY, box) = CanvasView( );
 
         for (var i = 0; i < document.PageCount; i++)
         {
-            AddDocumentPage(viewport);
+            AddDocumentPage(scale, offsetX, offsetY);
         }
 
         Document = document;
+        DocumentBox = box;
         PageIndex = 0;
     }
 
-    private static void AddDocumentPage(Size viewport)
+    private static void AddDocumentPage(double scale, double offsetX, double offsetY)
     {
         var page = new Page
         {
             Number = Pages.Count + 1,
-            Scale = 1.0,
-            OffsetX = CanvasSize.Width / 2 - viewport.Width / 2,
-            OffsetY = CanvasSize.Height / 2 - viewport.Height / 2,
+            Scale = scale,
+            OffsetX = offsetX,
+            OffsetY = offsetY,
         };
 
         // 文档页即使没有墨迹也有背景缩略图
@@ -60,34 +64,50 @@ public partial class App
     {
         var document = await DocumentService.OpenAsync(path);
 
-        var viewport = CanvasViewport( );
+        var (scale, offsetX, offsetY, box) = CanvasView( );
 
         while (Pages.Count < document.PageCount)
         {
-            AddDocumentPage(viewport);
+            AddDocumentPage(scale, offsetX, offsetY);
         }
 
-        // 仅当前页无墨迹时写页视图（对中文档）；有墨迹时页视图保持上次换页/保存的快照不动，调用方不得据此回写画布
+        // 当前页视图同步为捕获视图（即画布当前视图），换页往返后文档盒仍落在视口内
         var current = CurrentPage;
-        if (current.Strokes.Count == 0)
-        {
-            current.Scale = 1.0;
-            current.OffsetX = CanvasSize.Width / 2 - viewport.Width / 2;
-            current.OffsetY = CanvasSize.Height / 2 - viewport.Height / 2;
-        }
+        current.Scale = scale;
+        current.OffsetX = offsetX;
+        current.OffsetY = offsetY;
 
         Document = document;
+        DocumentBox = box;
         return document;
     }
 
-    private static Size CanvasViewport( )
+    // 捕获画布当前视图：文档盒取可见内容区域，背景随之落在视口内、画布无需移动；各文档页视图取捕获视图，
+    // 换页后外观一致。极小缩放下可见区域大于画布，盒子夹回画布内。窗口尚未完成布局（如带参数启动即打开文档）
+    // 时视口尺寸未知，按 1x 整块主屏估算（无边框最大化窗口的视口即整块主屏）。
+    private static (double Scale, double OffsetX, double OffsetY, Rect Box) CanvasView( )
     {
-        var viewport = (Current.MainWindow as MainWindow)?.CanvasNext.ViewportSize;
+        var canvas = (Current.MainWindow as MainWindow)?.CanvasNext;
 
-        // 窗口尚未完成布局（如带参数启动即打开文档）时视口尺寸未知；无边框最大化窗口的视口即整块主屏，以此估算。
-        return viewport is { Width: > 0, Height: > 0 }
-            ? viewport.Value
-            : new Size(SystemParameters.PrimaryScreenWidth, SystemParameters.PrimaryScreenHeight);
+        if (canvas is null || canvas.ViewportSize is not { Width: > 0, Height: > 0 } viewport)
+        {
+            var width = SystemParameters.PrimaryScreenWidth;
+            var height = SystemParameters.PrimaryScreenHeight;
+            return (1.0, InitialOffset.X, InitialOffset.Y, new Rect(InitialOffset.X, InitialOffset.Y, width, height));
+        }
+
+        var scale = canvas.CurrentScale;
+        var offsetX = canvas.OffsetX;
+        var offsetY = canvas.OffsetY;
+
+        var box = new Rect(
+            offsetX / scale,
+            offsetY / scale,
+            viewport.Width / scale,
+            viewport.Height / scale);
+        box.Intersect(new Rect(0, 0, CanvasSize.Width, CanvasSize.Height));
+
+        return (scale, offsetX, offsetY, box);
     }
 }
 
@@ -107,8 +127,7 @@ public sealed class DocumentService : IDisposable
 
     private const long TrimWatermarkBytes = 400L * 1024 * 1024;
 
-    // 缓存最近使用的文档页图像：上一页/下一页来回翻时全部命中，省掉整页 144 DPI 光栅化。
-    private const int PageCacheCapacity = 3;
+    private const int PageCacheCapacity = 10;
 
     private static readonly string[] ImageExtensions = [".bmp", ".gif", ".ico", ".jpg", ".jpeg", ".png", ".tiff"];
 

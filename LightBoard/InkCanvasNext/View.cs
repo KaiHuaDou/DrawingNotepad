@@ -40,7 +40,7 @@ internal readonly record struct View(double Scale, double OffsetX, double Offset
     /// <summary>
     /// 视口窗口沿视口移动：偏移量增加 delta，内容在屏幕上反向移动 delta。
     /// </summary>
-    public View Panned(Vector offsetDelta)
+    public View Pan(Vector offsetDelta)
     {
         return this with { OffsetX = OffsetX + offsetDelta.X, OffsetY = OffsetY + offsetDelta.Y };
     }
@@ -49,7 +49,7 @@ internal readonly record struct View(double Scale, double OffsetX, double Offset
     /// 把偏移夹取到 [0, 上限]。上限由载体给出：当前为 ScrollViewer 的 ScrollableWidth/Height
     /// （等价于内容尺寸 × Scale − 视口尺寸），上限为负时按 0 处理。
     /// </summary>
-    public View Clamped(double maxOffsetX, double maxOffsetY)
+    public View Clamp(double maxOffsetX, double maxOffsetY)
     {
         var x = Math.Clamp(OffsetX, 0, Math.Max(0, maxOffsetX));
         var y = Math.Clamp(OffsetY, 0, Math.Max(0, maxOffsetY));

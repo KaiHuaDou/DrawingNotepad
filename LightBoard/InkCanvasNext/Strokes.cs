@@ -106,6 +106,37 @@ public partial class InkCanvasNext
         InnerCanvas.Strokes.Add(strokes);
     }
 
+    /// <summary>
+    /// 把笔画落入当前视口：包围盒不完全在可见内容区域内时平移到视口中心，否则按原坐标保留。
+    /// </summary>
+    public void EnsureStrokesVisible(StrokeCollection strokes)
+    {
+        // 布局完成前视口尺寸为 0，无法计算可见区域，此时不落位
+        if (CanvasScroll.ViewportWidth <= 0 || CanvasScroll.ViewportHeight <= 0)
+        {
+            return;
+        }
+
+        var bounds = strokes.GetBounds( );
+        if (bounds.IsEmpty)
+        {
+            return;
+        }
+
+        var view = CurrentView;
+        var visible = new Rect(
+            view.OffsetX / view.Scale,
+            view.OffsetY / view.Scale,
+            CanvasScroll.ViewportWidth / view.Scale,
+            CanvasScroll.ViewportHeight / view.Scale);
+        if (visible.Contains(bounds))
+        {
+            return;
+        }
+
+        CenterAt(strokes, new Point(visible.X + visible.Width / 2, visible.Y + visible.Height / 2));
+    }
+
     private static void CenterAt(StrokeCollection strokes, Point point)
     {
         var bounds = strokes.GetBounds( );
@@ -124,33 +155,21 @@ public partial class InkCanvasNext
     }
 }
 
-internal static class StrokeCollectionExtension
+internal static partial class StrokeCollectionExtension
 {
-    private const int PreviewWidth = 225;
-    private const int PreviewHeight = PreviewWidth / 16 * 9;
-
-    private const double FallbackCanvasWidth = 1920;
-    private const double FallbackCanvasHeight = 1080;
-    private static readonly SolidColorBrush Background = new(Color.FromRgb(0x1E, 0x1E, 0x1E));
-
-    static StrokeCollectionExtension( )
-    {
-        Background.Freeze( );
-    }
-
     internal static RenderTargetBitmap Render(
         this StrokeCollection strokes,
         DpiScale dpi,
         int scale = 100,
-        Size? canvasSize = null,
         Brush? canvas = null,
-        ImageSource? background = null)
+        ImageSource? background = null,
+        Rect? box = null)
     {
         var ratio = scale / 100.0;
         var bounds = strokes.GetBounds( );
         if (background is not null)
         {
-            bounds.Union(BackgroundRect(canvasSize, background));
+            bounds.Union(BackgroundRect(box!.Value, background));
         }
 
         if (bounds.IsEmpty)
@@ -158,7 +177,7 @@ internal static class StrokeCollectionExtension
             bounds = new Rect(0, 0, FallbackCanvasWidth, FallbackCanvasHeight);
         }
 
-        bounds.Inflate(64, 64);
+        bounds.Inflate(RenderPadding, RenderPadding);
 
         var matrix = new Matrix(ratio, 0, 0, ratio,
             -bounds.X * ratio,
@@ -167,8 +186,8 @@ internal static class StrokeCollectionExtension
             new Rect(0, 0, bounds.Width * ratio, bounds.Height * ratio),
             matrix,
             canvas ?? Background,
-            canvasSize,
-            background);
+            background,
+            box);
 
         var pixelWidth = Math.Max(1, (int) Math.Ceiling(bounds.Width * ratio * dpi.DpiScaleX));
         var pixelHeight = Math.Max(1, (int) Math.Ceiling(bounds.Height * ratio * dpi.DpiScaleY));
@@ -199,13 +218,13 @@ internal static class StrokeCollectionExtension
 
     internal static RenderTargetBitmap Preview(
         this StrokeCollection strokes,
-        Size? canvasSize = null,
-        ImageSource? background = null)
+        ImageSource? background = null,
+        Rect? box = null)
     {
         var bounds = strokes.GetBounds( );
         if (background is not null)
         {
-            bounds.Union(BackgroundRect(canvasSize, background));
+            bounds.Union(BackgroundRect(box!.Value, background));
         }
 
         var matrix = Matrix.Identity;
@@ -214,7 +233,7 @@ internal static class StrokeCollectionExtension
         {
             var scaleX = PreviewWidth / bounds.Width;
             var scaleY = PreviewHeight / bounds.Height;
-            var scale = Math.Min(scaleX, scaleY) * 0.8;
+            var scale = Math.Min(scaleX, scaleY) * PreviewContentFill;
 
             var centerX = bounds.Left + bounds.Width / 2;
             var centerY = bounds.Top + bounds.Height / 2;
@@ -224,7 +243,7 @@ internal static class StrokeCollectionExtension
         }
 
         var visual = strokes.CreateVisual(
-            new Rect(0, 0, PreviewWidth, PreviewHeight), matrix, Background, canvasSize, background);
+            new Rect(0, 0, PreviewWidth, PreviewHeight), matrix, Background, background, box);
 
         var render = new RenderTargetBitmap(PreviewWidth, PreviewHeight, 96, 96, PixelFormats.Pbgra32);
         render.Render(visual);
@@ -237,8 +256,8 @@ internal static class StrokeCollectionExtension
         Rect bounds,
         Matrix transform,
         Brush background,
-        Size? canvasSize = null,
-        ImageSource? image = null)
+        ImageSource? image = null,
+        Rect? box = null)
     {
         var visual = new DrawingVisual( );
         using (var context = visual.RenderOpen( ))
@@ -250,7 +269,7 @@ internal static class StrokeCollectionExtension
                 context.PushTransform(new MatrixTransform(transform));
                 try
                 {
-                    context.DrawImage(image, BackgroundRect(canvasSize, image));
+                    context.DrawImage(image, BackgroundRect(box!.Value, image));
                 }
                 finally
                 {
@@ -269,14 +288,17 @@ internal static class StrokeCollectionExtension
         return visual;
     }
 
-    // 文档背景在世界坐标中的矩形：DocumentHost 将背景页居中于墨迹画布（未给出画布尺寸时按默认画布），
-    // 显示尺寸按图像自身 DPI 折算为 DIP。
-    private static Rect BackgroundRect(Size? canvasSize, ImageSource image)
+    // 文档背景在世界坐标中的矩形：显示尺寸为图像 DPI 折算的 DIP 尺寸等比装进盒子、位置在盒子内居中
+    // （与 SetDocumentPage 的布局适配同一公式）。背景与盒子成对提供（App.Document 与 App.DocumentBox 同步赋值）。
+    private static Rect BackgroundRect(Rect box, ImageSource image)
     {
-        var size = canvasSize ?? InkCanvasNext.DefaultCanvasSize;
         var bitmap = (BitmapSource) image;
         var width = bitmap.PixelWidth * 96.0 / bitmap.DpiX;
         var height = bitmap.PixelHeight * 96.0 / bitmap.DpiY;
-        return new Rect(size.Width / 2 - width / 2, size.Height / 2 - height / 2, width, height);
+        var k = Math.Min(box.Width / width, box.Height / height);
+        width *= k;
+        height *= k;
+
+        return new Rect(box.X + (box.Width - width) / 2, box.Y + (box.Height - height) / 2, width, height);
     }
 }

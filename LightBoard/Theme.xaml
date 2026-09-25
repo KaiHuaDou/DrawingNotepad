@@ -45,7 +45,7 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="FontFamily" Value="Segoe Fluent Icons" />
-        <Setter Property="FontSize" Value="27" />
+        <Setter Property="FontSize" Value="25" />
         <Setter Property="FontWeight" Value="Heavy" />
         <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
     </Style>
@@ -68,8 +68,8 @@
                         <TextBlock x:Name="PART_CheckMark"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Visibility="Collapsed"
-                                   Foreground="#CCEEEEEE"
-                                   FontFamily="Segoe Fluent Icons" FontSize="22"
+                                   Foreground="#DDEEEEEE"
+                                   FontFamily="Segoe Fluent Icons" FontSize="22" FontWeight="Bold"
                                    Text="&#xE73E;" />
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -85,7 +85,7 @@
                             <Setter TargetName="PART_CheckMark" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="MinWidth" Value="1">
-                            <Setter TargetName="PART_CheckMark" Property="Foreground" Value="#CC333333" />
+                            <Setter TargetName="PART_CheckMark" Property="Foreground" Value="#DD111111" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -54,6 +54,11 @@ public partial class MainWindow
             else if (IsInkFile(fileName))
             {
                 App.CurrentPage.OpenStrokes(fileName);
+                // 整页替换后页视图与画布当前视图同步（不跳视图），墨迹落入视口保证打开即可见
+                CanvasNext.EnsureStrokesVisible(App.CurrentPage.Strokes);
+                App.CurrentPage.Scale = CanvasNext.CurrentScale;
+                App.CurrentPage.OffsetX = CanvasNext.OffsetX;
+                App.CurrentPage.OffsetY = CanvasNext.OffsetY;
                 OnPageChanged(this, EventArgs.Empty);
             }
             else
@@ -87,7 +92,7 @@ public partial class MainWindow
 
     private static bool IsBoardFile(string fileName)
     {
-        return Path.GetExtension(fileName).Equals(BoardFile.Ext, StringComparison.OrdinalIgnoreCase);
+        return Path.GetExtension(fileName).Equals(Board.Ext, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsInkFile(string fileName)
@@ -122,7 +127,7 @@ public partial class MainWindow
 
         try
         {
-            BoardFile.Write(dialog.FileName, App.SnapshotPages(forBackgroundWrite: false));
+            Board.Write(dialog.FileName, App.SnapshotPages(cloneStrokes: false));
             Dirty = false;
         }
         catch (Exception ex)

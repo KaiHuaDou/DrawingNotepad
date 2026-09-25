@@ -87,7 +87,7 @@ public partial class InkCanvasNext
 
         var attrs = DefaultDrawingAttributes;
         var brush = new SolidColorBrush(attrs.Color);
-        var width = Math.Max(attrs.Width, 1.0);
+        var width = Math.Max(attrs.Width, ShapeMinStrokeWidth);
 
         if (IsCircle)
         {
@@ -131,7 +131,7 @@ public partial class InkCanvasNext
         shapePreviewLine.Visibility = Visibility.Collapsed;
         shapePreviewEllipse.Visibility = Visibility.Collapsed;
 
-        if (Distance(shapeStart, shapeEnd) < 4)
+        if (Distance(shapeStart, shapeEnd) < ShapeCommitMinDistance)
         {
             return;
         }
@@ -162,17 +162,16 @@ public partial class InkCanvasNext
             var cy = shapeStart.Y;
             var r = Distance(shapeStart, shapeEnd);
 
-            if (r < 1)
+            if (r < CircleMinRadius)
             {
                 return null;
             }
 
-            const int Segments = 64;
-            var points = new StylusPointCollection(Segments + 1);
-            for (var i = 0; i <= Segments; i++)
+            var points = new StylusPointCollection(CircleSegments + 1);
+            for (var i = 0; i <= CircleSegments; i++)
             {
-                var a = 2 * Math.PI * i / Segments;
-                points.Add(new StylusPoint(cx + r * Math.Cos(a), cy + r * Math.Sin(a), 0.5f));
+                var a = 2 * Math.PI * i / CircleSegments;
+                points.Add(new StylusPoint(cx + r * Math.Cos(a), cy + r * Math.Sin(a), DefaultPressure));
             }
 
             return new Stroke(points, attrs);
@@ -180,8 +179,8 @@ public partial class InkCanvasNext
 
         return new Stroke(
             [
-                new StylusPoint(shapeStart.X, shapeStart.Y, 0.5f),
-                new StylusPoint(shapeEnd.X, shapeEnd.Y, 0.5f)
+                new StylusPoint(shapeStart.X, shapeStart.Y, DefaultPressure),
+                new StylusPoint(shapeEnd.X, shapeEnd.Y, DefaultPressure)
             ],
             attrs);
     }

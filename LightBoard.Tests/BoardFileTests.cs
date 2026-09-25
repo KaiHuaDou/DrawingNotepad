@@ -39,9 +39,9 @@ public class BoardFileTests
         var path = TempPath( );
         try
         {
-            BoardFile.Write(path, pages);
+            Board.Write(path, pages);
 
-            var content = BoardFile.Read(path);
+            var content = Board.Read(path);
 
             Assert.Equal(2, content.Pages.Count);
             Assert.Equal(1.25, content.Pages[0].Scale, 12);
@@ -62,10 +62,10 @@ public class BoardFileTests
         var path = TempPath( );
         try
         {
-            BoardFile.Write(path, [MakePage(1.0, 0, 0, withStroke: false)]);
+            Board.Write(path, [MakePage(1.0, 0, 0, withStroke: false)]);
             RewriteManifestVersion(path, 2);
 
-            Assert.Throws<InvalidDataException>(( ) => BoardFile.Read(path));
+            Assert.Throws<InvalidDataException>(( ) => Board.Read(path));
         }
         finally
         {
@@ -79,7 +79,7 @@ public class BoardFileTests
         var path = TempPath( );
         try
         {
-            BoardFile.Write(path,
+            Board.Write(path,
             [
                 MakePage(1.0, 0, 0, withStroke: false),
                 MakePage(1.0, 0, 0, withStroke: false),
@@ -90,7 +90,7 @@ public class BoardFileTests
                 zip.GetEntry("pages/002.isf")!.Delete( );
             }
 
-            Assert.Throws<InvalidDataException>(( ) => BoardFile.Read(path));
+            Assert.Throws<InvalidDataException>(( ) => Board.Read(path));
         }
         finally
         {

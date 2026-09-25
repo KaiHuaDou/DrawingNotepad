@@ -15,7 +15,7 @@ public partial class InkCanvasNext
     private void StartMultiTouchStroke(int touchId, Point canvasPoint)
     {
         var attributes = InnerCanvas.DefaultDrawingAttributes.Clone( );
-        var initialPoint = new StylusPoint(canvasPoint.X, canvasPoint.Y, 0.5f);
+        var initialPoint = new StylusPoint(canvasPoint.X, canvasPoint.Y, DefaultPressure);
         var strokeVisual = new StrokeVisual(attributes, initialPoint);
         strokeVisual.SetVisualCanvas(multiTouchCanvas);
 
@@ -43,7 +43,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        strokeVisual.Add(new StylusPoint(canvasPoint.X, canvasPoint.Y, 0.5f));
+        strokeVisual.Add(new StylusPoint(canvasPoint.X, canvasPoint.Y, DefaultPressure));
         strokeVisual.Redraw( );
     }
 
@@ -118,7 +118,7 @@ internal sealed class VisualCanvas : FrameworkElement
     protected override int VisualChildrenCount => visuals.Count;
 }
 
-internal sealed class StrokeVisual(DrawingAttributes drawingAttributes, StylusPoint initialPoint)
+internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, StylusPoint initialPoint)
 {
     private readonly DrawingAttributes drawingAttributes = drawingAttributes;
     private VisualCanvas? visualCanvas;
@@ -179,7 +179,7 @@ internal sealed class StrokeVisual(DrawingAttributes drawingAttributes, StylusPo
 
         if (drawingAttributes.IsHighlighter)
         {
-            brush.Opacity = 0.5;
+            brush.Opacity = HighlighterOpacity;
         }
 
         brush.Freeze( );

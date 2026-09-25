@@ -52,7 +52,7 @@
 - 标题栏实时时间显示
 - 网格背景
 - 透明背景模式（白板悬浮于桌面与其他应用之上，用于投影讲评）
-- 调试模式（菜单勾选）：在画布上叠加参数可视化（半径与距离的 1:1 标注、缩放范围、手势死区）
+- 调试模式（菜单勾选）：在画布上叠加参数可视化（1:1 半径圆与距离线、缩放数轴、渲染层与渲染模式）、运行状态计数（触点、笔画、撤销、重做）与帧率、最长帧读数
 
 ## 触摸手势
 
@@ -128,6 +128,7 @@ LightBoard/               # 主程序
 │  ├─ Gestures.cs         # 平移/缩放手势（带平滑）与画布边缘扩展
 │  ├─ MultiTouch.cs       # 多人同时绘制与增量渲染
 │  ├─ Parameters.cs       # 控件参数常量
+│  ├─ View.cs             # 视口与内容坐标的相似变换（缩放/平移纯函数）
 │  ├─ Eraser.cs           # 橡皮擦反馈与增量命中
 │  ├─ Strokes.cs          # 墨迹集合、剪贴板与预览/导出
 │  ├─ UndoRedo.cs         # 历史栈管理
@@ -141,15 +142,18 @@ LightBoard/               # 主程序
 │  └─ RingBuffer.cs       # 定容环形缓冲（撤销栈）
 ├─ Document/              # 渲染源：XpsSource / PdfSource / ImagePageSource / PdfExport
 ├─ Documents.cs           # 文档/图片打开：Office COM → XPS、XPS/PDF/图片渲染源与缓存
-├─ Page.cs                # 多页面管理
-├─ BoardFile.cs           # 多页整体存档（.lbf）与自动恢复
+├─ Page.cs                # 页面模型与页集合管理
+├─ Page.Preview.cs        # 页面缩略图按需生成
+├─ Board.cs               # 多页整体存档（.lbf）与自动恢复
 ├─ MainWindow.xaml(.cs)   # 主窗口与工具栏
 ├─ MainWindow.Handler.cs  # 工具栏交互、菜单与动画
+├─ MainWindow.Pages.cs    # 页面列表面板与翻页交互
 ├─ MainWindow.Toolbar.cs  # 工具栏状态（模式/笔迹配置）与选区工具栏吸附
 ├─ MainWindow.IO.cs       # 打开/保存/导出流程
-├─ MainWindow.File.cs     # 文档状态（新建/附加、未保存确认、关闭文档）
+├─ File.cs                # 文档状态（新建/附加、未保存确认、关闭文档）；板级读写与自动恢复
 ├─ MainWindow.Loading.cs  # 加载浮层与导出进度
-├─ ParametersDebugVisual.cs   # 调试浮层（参数可视化、运行状态与帧率）
+├─ DebugVisual.cs         # 调试浮层（参数可视化、运行状态与帧率）
+├─ FrameRateMeter.cs      # 帧率与最长帧统计（调试浮层用）
 ├─ Theme.xaml             # 主题样式（图标/按钮/颜色选择器）
 ├─ External/NativeMethods.cs  # Win32 互操作（窗口切换）
 └─ App.xaml(.cs)          # 应用入口、单实例与崩溃恢复
@@ -202,7 +206,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset)
 
 | 参数            | 说明                                       |
 | --------------- | ------------------------------------------ |
-| `canvasSize`    | 内层墨迹画布尺寸，文档背景页在此画布内居中 |
+| `canvasSize`    | 内层墨迹画布尺寸，文档背景页定位在此画布内 |
 | `initialOffset` | 初始视口左上角在画布内容坐标中的位置       |
 
 #### 依赖属性
@@ -239,7 +243,6 @@ public InkCanvasNext(Size canvasSize, Point initialOffset)
 | `OffsetY`          | `double`           | 画布垂直滚动偏移                      |
 | `ViewportSize`     | `Size`             | 当前视口尺寸（DIP）                   |
 | `StampAction`      | `StampAction`      | 当前盖章模式（克隆/粘贴/无）          |
-| `DocumentPage`     | `ImageSource?`     | 当前文档背景页图像（无则为 `null`）   |
 | `MouseWheelAction` | `MouseWheelAction` | （依赖属性，见上）                    |
 
 #### 方法
@@ -256,9 +259,10 @@ public InkCanvasNext(Size canvasSize, Point initialOffset)
 | `GetSelectionScreenBounds(Visual)` | 选区包围盒在指定坐标系下的矩形（无选区返回 null） |
 | `GetCanvasViewportBounds(UIElement)` | 可见视口在指定坐标系下的矩形             |
 | `EnsureStrokesFit()`             | 笔画越出画布右/下边界时扩展画布              |
+| `EnsureStrokesVisible(StrokeCollection)` | 笔画包围盒不完全在可见内容区域内时平移到视口中心 |
 | `ResetTouchState()`              | 重置当前触摸状态并释放所有触摸捕获          |
 | `SwapHistory(...)`               | 交换撤销/重做历史栈，旧栈经 `out` 参数返回  |
-| `SetDocumentPage(ImageSource?)`  | 设置/清除文档页面背景图像（传 `null` 清除） |
+| `SetDocumentPage(ImageSource?, Rect?)` | 设置/清除文档页面背景图像；第二参数为背景页在内容坐标中的 Uniform 适配盒子，决定位置与尺寸，页面为 null 或盒子无效时移除背景页 |
 | `ClearMultiTouchVisuals()`       | 清空进行中的多指笔画（视觉与笔迹）          |
 
 ## 许可证

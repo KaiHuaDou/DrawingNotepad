@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Ink;
 
 using Microsoft.Win32;
 
@@ -83,18 +87,15 @@ public partial class MainWindow
         {
             var document = await App.AttachDocument(fileName);
 
-            // 不走 OnPageChanged：ApplyStrokes 会清空撤销历史。背景立即应用；视图仅在对中文档（无墨迹）时
-            // 套用 Page 中的居中参数，有墨迹时不动画布，避免把上次换页/保存的快照回写到画布
-            CanvasNext.SetDocumentPage(document.GetPage(App.PageIndex));
-            if (App.CurrentPage.Strokes.Count == 0)
-            {
-                CanvasNext.CurrentScale = App.CurrentPage.Scale;
-                CanvasNext.OffsetX = App.CurrentPage.OffsetX;
-                CanvasNext.OffsetY = App.CurrentPage.OffsetY;
-            }
+            // 不走 OnPageChanged：ApplyStrokes 会清空撤销历史。文档盒已落在附加时的可见内容区域内，
+            // 画布视图无需移动；页视图已在 AttachDocument 中与画布视图同步
+            CanvasNext.SetDocumentPage(document.GetPage(App.PageIndex), App.DocumentBox);
 
             // 背景页对所有页生效，缩略图整体置脏
-            App.InvalidatePagePreviews( );
+            foreach (var page in App.Pages)
+            {
+                page.InvalidatePreview( );
+            }
         }
         catch (Exception ex)
         {
@@ -111,7 +112,10 @@ public partial class MainWindow
     private void AttachInk(string fileName)
     {
         using var stream = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-        CanvasNext.Strokes.Add([with(stream)]);
+        StrokeCollection strokes = [with(stream)];
+        // 墨迹落入视口：不完全在可见内容区域内时平移到视口中心（与粘贴落点同一语义），保证附加后可见
+        CanvasNext.EnsureStrokesVisible(strokes);
+        CanvasNext.Strokes.Add(strokes);
         // 直接向活动集合追加不经过 ApplyStrokes，画布尺寸保障需单独调用
         CanvasNext.EnsureStrokesFit( );
     }
@@ -119,10 +123,11 @@ public partial class MainWindow
     private void CloseDocumentViewer( )
     {
         // 先清空页面视图再释放 XPS，否则已渲染的页面会失效。
-        CanvasNext.SetDocumentPage(null);
+        CanvasNext.SetDocumentPage(null, null);
 
         App.Document?.Dispose( );
         App.Document = null;
+        App.DocumentBox = null;
     }
 
     private void NewFileClick(object o, RoutedEventArgs e)
@@ -169,9 +174,9 @@ public partial class MainWindow
         {
             try
             {
-                BoardFile.Write(
+                Board.Write(
                     Path.Join(App.AppPath, "fastsave", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"),
-                    App.SnapshotPages(forBackgroundWrite: false));
+                    App.SnapshotPages(cloneStrokes: false));
                 Dirty = false;
                 return false;
             }
@@ -196,5 +201,111 @@ public partial class MainWindow
     private void WindowClosing(object o, CancelEventArgs e)
     {
         e.Cancel = WhetherCloseFile( );
+    }
+}
+
+public partial class App
+{
+    /// <summary>
+    /// 板子内容（墨迹或页集合）变化的版本号；自动备份据此跳过内容未变化的分钟。
+    /// </summary>
+    internal static int BoardRevision { get; set; }
+
+    /// <summary>
+    /// 已写入备份的内容版本；等于 <see cref="BoardRevision"/> 时本次备份跳过。
+    /// </summary>
+    private static int RecoverRevision { get; set; }
+
+    public static void AttachBoard(string path)
+    {
+        var content = Board.Read(path);
+        foreach (var p in content.Pages)
+        {
+            AddBoardPage(p);
+        }
+    }
+
+    public static void LoadBoard(string path)
+    {
+        var content = Board.Read(path);
+
+        Pages.Clear( );
+        foreach (var p in content.Pages)
+        {
+            AddBoardPage(p);
+        }
+
+        PageIndex = 0;
+    }
+
+    internal static BoardPage[] SnapshotPages(bool cloneStrokes)
+    {
+        return
+        [
+            .. Pages.Select(page => new BoardPage(
+                cloneStrokes ? [.. page.Strokes.Select(s => s.Clone( ))] : page.Strokes,
+                page.Scale,
+                page.OffsetX,
+                page.OffsetY)),
+        ];
+    }
+
+    private static void AddBoardPage(BoardPage p)
+    {
+        var page = new Page
+        {
+            Number = Pages.Count + 1,
+            Strokes = p.Strokes,
+            Scale = p.Scale,
+            OffsetX = p.OffsetX,
+            OffsetY = p.OffsetY,
+        };
+
+        Pages.Add(page);
+        BoardRevision++;
+    }
+
+    /// <summary>
+    /// 进程即将退出（未处理异常）时同步写完，不能等后台任务。
+    /// </summary>
+    private static void SaveRecover( )
+    {
+        if (IsBoardEmpty( ))
+        {
+            return;
+        }
+
+        WriteRecover(
+            Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"),
+            SnapshotPages(false));
+    }
+
+    /// <summary>
+    /// 定时备份：内容未变化时跳过，写盘放到后台。
+    /// </summary>
+    private static void SaveRecoverInBackground( )
+    {
+        if (IsBoardEmpty( ) || RecoverRevision == BoardRevision)
+        {
+            return;
+        }
+
+        RecoverRevision = BoardRevision;
+        var path = Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf");
+        var snapshot = SnapshotPages(cloneStrokes: true);
+
+        Task.Run(( ) => WriteRecover(path, snapshot));
+    }
+
+    private static void WriteRecover(string path, IReadOnlyList<BoardPage> pages)
+    {
+        try
+        {
+            Board.Write(path, pages);
+        }
+        catch (Exception e)
+        {
+            LogException(e);
+        }
     }
 }

@@ -48,7 +48,7 @@ public partial class MainWindow : Window
         SyncToolState( );
 
         CanvasNext.ViewOrSelectionChanged += (_, _) => UpdateSelectionBorderPosition( );
-        DebugLayer.Children.Add(new ParametersDebugVisual(CanvasNext));
+        DebugLayer.Children.Add(new DebugVisual(CanvasNext));
 
         timeTimer = new(
             TimeSpan.FromSeconds(1),

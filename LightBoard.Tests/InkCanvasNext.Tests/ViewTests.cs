@@ -67,13 +67,13 @@ public class ViewTests
     [InlineData(2.0, 300, 1000, -45, 60)]
     [InlineData(0.5, 100, 50, 0, 0)]
     [InlineData(10.0, 5000, 20000, 33.5, 7.25)]
-    public void Panned_MovesContentOppositeToOffsetDelta(double scale, double offsetX, double offsetY, double dx, double dy)
+    public void Pan_MovesContentOppositeToOffsetDelta(double scale, double offsetX, double offsetY, double dx, double dy)
     {
         var view = new View(scale, offsetX, offsetY);
         var content = new Point(500, 750);
 
         var before = view.ToViewport(content);
-        var after = view.Panned(new Vector(dx, dy)).ToViewport(content);
+        var after = view.Pan(new Vector(dx, dy)).ToViewport(content);
 
         Assert.Equal(before.X - dx, after.X, 9);
         Assert.Equal(before.Y - dy, after.Y, 9);
@@ -84,21 +84,21 @@ public class ViewTests
     [InlineData(1.0, 500, 500, 300, 400, 300, 400)]
     [InlineData(2.0, double.MaxValue, double.MaxValue, 14080, 33760, 14080, 33760)]
     [InlineData(1.0, 100, 100, -50, -50, 0, 0)]
-    public void Clamped_BoundsOffsetsToZeroAndLimit(
+    public void Clamp_BoundsOffsetsToZeroAndLimit(
         double scale, double offsetX, double offsetY,
         double maxOffsetX, double maxOffsetY,
         double expectedX, double expectedY)
     {
-        var actual = new View(scale, offsetX, offsetY).Clamped(maxOffsetX, maxOffsetY);
+        var actual = new View(scale, offsetX, offsetY).Clamp(maxOffsetX, maxOffsetY);
 
         Assert.Equal(expectedX, actual.OffsetX, 12);
         Assert.Equal(expectedY, actual.OffsetY, 12);
     }
 
     [Fact]
-    public void Clamped_KeepsScale( )
+    public void Clamp_KeepsScale( )
     {
-        var actual = new View(2.5, 100, 100).Clamped(10, 10);
+        var actual = new View(2.5, 100, 100).Clamp(10, 10);
 
         Assert.Equal(2.5, actual.Scale, 12);
     }
@@ -111,7 +111,7 @@ public class ViewTests
     [InlineData(1.0, 200, 100, 150, 90, 2.0)]
     [InlineData(4.0, 800, 400, 640, 360, 1.0)]
     [InlineData(0.25, 40, 20, 33, 25, 9.0)]
-    public void ZoomAtThenPanned_MatchesPinchClosedForm(
+    public void ZoomAtThenPan_MatchesPinchClosedForm(
         double scale, double offsetX, double offsetY,
         double baselineX, double baselineY,
         double targetScale)
@@ -121,7 +121,7 @@ public class ViewTests
         var current = new Point(baselineX + 37, baselineY - 21);
         var s = targetScale / scale;
 
-        var actual = view.ZoomAt(baseline, targetScale).Panned(baseline - current);
+        var actual = view.ZoomAt(baseline, targetScale).Pan(baseline - current);
 
         Assert.Equal(offsetX * s + baselineX * s - current.X, actual.OffsetX, 9);
         Assert.Equal(offsetY * s + baselineY * s - current.Y, actual.OffsetY, 9);
@@ -156,8 +156,8 @@ public class ViewTests
 
         var actual = view
             .ZoomAt(new Point(1280, 800), scale)
-            .Panned(new Vector(double.MaxValue / 4, -double.MaxValue / 4))
-            .Clamped(double.MaxValue, double.MaxValue);
+            .Pan(new Vector(double.MaxValue / 4, -double.MaxValue / 4))
+            .Clamp(double.MaxValue, double.MaxValue);
 
         Assert.True(double.IsFinite(actual.OffsetX));
         Assert.True(double.IsFinite(actual.OffsetY));

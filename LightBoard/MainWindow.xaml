@@ -241,7 +241,10 @@
                 <TranslateTransform x:Name="RightTransform" />
             </Border.RenderTransform>
             <DockPanel>
-                <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Right" Orientation="Horizontal">
+                <StackPanel x:Name="PageButtonsRow"
+                            DockPanel.Dock="Bottom"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal">
                     <ToggleButton x:Name="CollapseExpandButton"
                                   Style="{StaticResource ToggleStyle}"
                                   Click="CollapseExpandClick" Tag="&#xE70D;" />
@@ -316,7 +319,7 @@
         <TextBlock x:Name="TimeText"
                    Margin="0,20,25,0" HorizontalAlignment="Right" VerticalAlignment="Top"
                    Panel.ZIndex="16"
-                   Foreground="#66FFFFFF"
+                   Foreground="#AACCCCCC"
                    FontSize="48" />
         <Border x:Name="LoadingBorder"
                 HorizontalAlignment="Center" VerticalAlignment="Center"

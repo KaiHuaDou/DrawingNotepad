@@ -136,7 +136,7 @@ public partial class InkCanvasNext : UserControl
             nameof(EraserDiameter),
             typeof(double),
             typeof(InkCanvasNext),
-            new PropertyMetadata(Eraser.EraserDefaultDiameter));
+            new PropertyMetadata(Eraser.DefaultDiameter));
 
     /// <summary>
     /// 标识 MouseWheelAction 依赖项属性。
@@ -161,7 +161,7 @@ public partial class InkCanvasNext : UserControl
     /// <summary>
     /// 初始化 InkCanvasNext 控件并装配内部画布与选择控制器。
     /// </summary>
-    /// <param name="canvasSize">内层墨迹画布尺寸；文档背景页在此画布内居中。</param>
+    /// <param name="canvasSize">内层墨迹画布尺寸；文档背景页定位在此画布内。</param>
     /// <param name="initialOffset">初始视口左上角相对内容原点的偏移（视口单位）。</param>
     public InkCanvasNext(Size canvasSize, Point initialOffset)
     {
@@ -169,8 +169,6 @@ public partial class InkCanvasNext : UserControl
 
         InnerCanvas.Width = canvasSize.Width;
         InnerCanvas.Height = canvasSize.Height;
-        DocumentHostGrid.Width = canvasSize.Width;
-        DocumentHostGrid.Height = canvasSize.Height;
 
         eraser = new Eraser(InnerCanvas, EraserFeedback);
 
@@ -189,7 +187,7 @@ public partial class InkCanvasNext : UserControl
         var distanceThreshold = DistanceThresholdFactor * SystemParameters.WorkArea.Width;
         distanceThreshold2 = distanceThreshold * distanceThreshold;
 
-        SetView(new View(1.0, initialOffset.X, initialOffset.Y));
+        CurrentView = new View(1.0, initialOffset.X, initialOffset.Y);
 
         CanvasScroll.ScrollChanged += (_, _) => RaiseViewOrSelectionChanged( );
         canvasScaleTransform.Changed += (_, _) => RaiseViewOrSelectionChanged( );
@@ -293,7 +291,12 @@ public partial class InkCanvasNext : UserControl
     public double CurrentScale
     {
         get => CurrentView.Scale;
-        set => ApplyScale(Math.Clamp(value, MinScale, MaxScale));
+        set
+        {
+            var scale = Math.Clamp(value, MinScale, MaxScale);
+            canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = scale;
+            eraser.Scale = scale;
+        }
     }
 
     /// <summary>
@@ -480,11 +483,23 @@ public partial class InkCanvasNext : UserControl
     }
 
     /// <summary>
-    /// 设置文档背景页面；传入 null 时移除页面。
+    /// 设置文档背景页面；页面为 null 或盒子无效时移除页面。
+    /// fitBox 为背景页在内容坐标中的 Uniform 适配盒子，决定 DocumentHost 的位置与尺寸，页面由布局居中等比适配；
+    /// 页面与盒子成对提供（App.Document 与 App.DocumentBox 同步赋值）。
     /// </summary>
-    public void SetDocumentPage(ImageSource? page)
+    public void SetDocumentPage(ImageSource? page, Rect? fitBox)
     {
-        DocumentHost.Child = page is null ? null : new Image { Source = page };
-        DocumentHost.Visibility = page is null ? Visibility.Collapsed : Visibility.Visible;
+        if (page is null || fitBox is not { Width: > 0, Height: > 0 })
+        {
+            DocumentHost.Child = null;
+            DocumentHost.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        DocumentHost.Margin = new Thickness(fitBox.Value.X, fitBox.Value.Y, 0, 0);
+        DocumentHost.Width = fitBox.Value.Width;
+        DocumentHost.Height = fitBox.Value.Height;
+        DocumentHost.Child = new Image { Source = page, Stretch = Stretch.Uniform };
+        DocumentHost.Visibility = Visibility.Visible;
     }
 }

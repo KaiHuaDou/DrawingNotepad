@@ -66,7 +66,7 @@ public partial class Page
             ImageSource? image = null;
             try
             {
-                image = strokes.Preview(App.CanvasSize, BackgroundPage( ));
+                image = strokes.Preview(BackgroundPage( ), App.DocumentBox);
             }
             catch (Exception e)
             {

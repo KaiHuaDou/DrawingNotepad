@@ -8,10 +8,6 @@ namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
-    private readonly double touchDisplThreshold = 20.0;
-
-    private const double ScrollStep = 25;
-
     /// <summary>
     /// 升级需注意：此处依赖 .NET Core 3.1+ 内部实现细节：<br />
     /// 1. 未调用 Remove/TrimExcess 时迭代顺序等同于插入顺序。<br />
@@ -419,9 +415,9 @@ public partial class InkCanvasNext
         }
 
         var step = ScrollStep * CurrentScale;
-        SetView(CurrentView
-            .Panned(new Vector(0, e.Delta > 0 ? -step : step))
-            .Clamped(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight));
+        CurrentView = CurrentView
+            .Pan(new Vector(0, e.Delta > 0 ? -step : step))
+            .Clamp(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight);
     }
 
     /// <summary>盖章模式拦截：命中则盖章并返回 true（调用方据此 Handled 并短路后续路由）。</summary>
