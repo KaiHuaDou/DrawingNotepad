@@ -250,6 +250,70 @@ public class SpecialModeGestureTests
         });
     }
 
+    /// <summary>缩放手柄拖过锚点（对侧中点）不再翻转选区：单轴因子钳在 MinSelectionScale，
+    /// 笔画停在被压缩的一侧而非镜像到锚点另一侧（x 不越过锚点、y 不变）。
+    /// 手柄与锚点由包围盒推导，GetBounds 含笔画半宽外扩，期望值在手势前按真实包围盒捕获。</summary>
+    [Fact]
+    public void SelectMode_ScaleHandlePastAnchor_ClampsToMinScale( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateSelectHost(
+                new Point(180, 60), new Point(200, 100), new Point(300, 100), new Point(320, 140));
+
+            // R 手柄在右缘中点、锚点在左中；宽 3 的笔画使包围盒左缘在 178.5 而非 180
+            var left = host.Canvas.Strokes[0].GetBounds( ).Left;
+            var xs = host.Canvas.Strokes[0].StylusPoints.Select(p => p.X).ToArray( );
+            var ys = host.Canvas.Strokes[0].StylusPoints.Select(p => p.Y).ToArray( );
+            const double minScale = InkCanvasNext.MinSelectionScale;
+
+            var a = host.Device( );
+            a.Down(host.Target, new Point(320, 100));
+            // 拖到锚点左侧：原始因子 -78.5/141.5 ≈ -0.55，钳制后为 MinSelectionScale
+            a.Move(host.Target, new Point(100, 100));
+            a.Up(host.Target, new Point(100, 100));
+
+            var points = host.Canvas.Strokes[0].StylusPoints;
+            Assert.Equal(xs.Length, points.Count);
+            for (var i = 0; i < xs.Length; i++)
+            {
+                Assert.Equal(left + (xs[i] - left) * minScale, points[i].X, 9);
+                Assert.Equal(ys[i], points[i].Y, 9);
+            }
+        });
+    }
+
+    /// <summary>旋转手柄拖拽：手柄命中（选区正上方 40）、角度换算（弧度差 × RadToDeg）、
+    /// 绕选区中心整体旋转 +90°（手从正上方移到右方同半径处），旋转手柄沿鼠标角度等半径跟随、抬手清空。</summary>
+    [Fact]
+    public void SelectMode_RotateHandle_NinetyDegrees_RotatesStrokeAroundCenter( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateSelectHost(PinchStrokePoints);
+
+            var a = host.Device( );
+            // 旋转手柄悬于选区正上方（zoom = 1 时间距 40，bounds.Top = 94.5 含笔画半宽外扩）
+            a.Down(host.Target, new Point(250, 54.5));
+            // 移到选区右中（与起始点同在半径 45.5 的圆上）：+90°
+            a.Move(host.Target, new Point(295.5, 100));
+            var live = host.Canvas.RotateHandleLive;
+            a.Up(host.Target, new Point(295.5, 100));
+
+            // 绕选区中心 (250, 100) 旋转 +90°：相对坐标 (x, y) → (−y, x)
+            var points = host.Canvas.Strokes[0].StylusPoints;
+            AssertPoint(points[0], 254, 30);
+            AssertPoint(points[1], 250, 50);
+            AssertPoint(points[2], 250, 150);
+            AssertPoint(points[3], 246, 170);
+
+            Assert.NotNull(live);
+            Assert.Equal(295.5, live!.Value.X, 9);
+            Assert.Equal(100, live.Value.Y, 9);
+            Assert.Null(host.Canvas.RotateHandleLive);
+        });
+    }
+
     // ---------- 橡皮模式 ----------
     [Fact]
     public void EraseAreaMode_SingleFinger_ErasesStroke( )

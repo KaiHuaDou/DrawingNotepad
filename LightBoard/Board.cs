@@ -56,6 +56,11 @@ internal static class Board
             throw new InvalidDataException($"文件版本 {manifest.Version} 高于当前支持的版本 {CurrentVersion}");
         }
 
+        if (manifest.Pages.Count == 0)
+        {
+            throw new InvalidDataException("文件没有任何页面");
+        }
+
         var pages = new List<BoardPage>(manifest.Pages.Count);
         for (var i = 0; i < manifest.Pages.Count; i++)
         {
@@ -82,7 +87,11 @@ internal static class Board
 
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
 
             // 归档必须在 File.Move 之前关闭，否则临时文件句柄仍被占用
             using (var zip = ZipFile.Open(tempPath, ZipArchiveMode.Create))

@@ -190,7 +190,7 @@ public class ToolbarStampTests
             using var host = new MainWindowHost( );
             ActivateClone(host);
 
-            ToolDriver.Toggle(host.Window.HighLighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
             Assert.Equal(StampAction.None, host.Canvas.StampAction);
             Assert.False(host.Window.CloneButton.IsChecked);
@@ -247,7 +247,7 @@ public class ToolbarStampTests
 
             Assert.Equal(StampAction.Paste, host.Canvas.StampAction);
             Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.False(host.Window.HighLighterToggle.IsChecked);
+            Assert.False(host.Window.HighlighterToggle.IsChecked);
             Assert.False(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
             ToolbarAssertions.AssertConsistent(host, StampAction.Paste);
         });

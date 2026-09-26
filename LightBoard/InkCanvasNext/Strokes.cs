@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Media;
@@ -34,7 +35,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        var copy = SelectedStrokes.Clone( );
+        var copy = new StrokeCollection([.. selection.SelectedStrokes.Select(s => s.Clone( ))]);
         using var stream = new MemoryStream( );
         copy.Save(stream);
         var data = new DataObject(StrokeCollection.InkSerializedFormat, stream);
@@ -79,7 +80,8 @@ public partial class InkCanvasNext
             return;
         }
 
-        var clone = SelectedStrokes.Clone( );
+        // 深拷贝必须保留：落章要对副本平移并加入画布，浅引用会拖动原选中笔画
+        var clone = new StrokeCollection([.. selection.SelectedStrokes.Select(s => s.Clone( ))]);
         CenterAt(clone, point);
         InnerCanvas.Strokes.Add(clone);
     }

@@ -81,11 +81,11 @@ public partial class MainWindow
         PasteButton?.IsChecked = false;
     }
 
-    private void HighLighterBoxClicked(object o, RoutedEventArgs e)
+    private void HighlighterBoxClicked(object o, RoutedEventArgs e)
     {
         ExitStamp( );
 
-        if (HighLighterToggle.IsChecked == true)
+        if (HighlighterToggle.IsChecked == true)
         {
             EnterHighlighter( );
         }
@@ -116,10 +116,10 @@ public partial class MainWindow
     // 状态机唯一出口：从 Mode 推导 UI 勾选与画布模式
     private void SyncToolState( )
     {
-        var hightlighter = Mode == InkCanvasNextMode.Highlighter;
-        HighLighterToggle?.IsChecked = hightlighter;
+        var highlighter = Mode == InkCanvasNextMode.Highlighter;
+        HighlighterToggle?.IsChecked = highlighter;
 
-        if (hightlighter)
+        if (highlighter)
         {
             colorRadio?.IsChecked = false;
             thicknessRadio?.IsChecked = false;

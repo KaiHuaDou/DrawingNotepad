@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Ink;
 
@@ -22,10 +23,13 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
 
     internal void SetStrokes(IEnumerable<Stroke> strokes)
     {
+        // StrokeCollection.Contains 是线性扫描，先建哈希集把逐笔命中降为 O(1)
+        var existing = owner.InnerCanvas.Strokes.ToHashSet( );
+
         selectedStrokes.Clear( );
         foreach (var s in strokes)
         {
-            if (owner.InnerCanvas.Strokes.Contains(s))
+            if (existing.Contains(s))
             {
                 selectedStrokes.Add(s);
             }
@@ -69,8 +73,9 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
             return;
         }
 
+        var existing = canvasStrokes.ToHashSet( );
         var before = selectedStrokes.Count;
-        selectedStrokes.RemoveWhere(s => !canvasStrokes.Contains(s));
+        selectedStrokes.RemoveWhere(s => !existing.Contains(s));
 
         if (selectedStrokes.Count == before)
         {

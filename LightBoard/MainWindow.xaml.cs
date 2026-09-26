@@ -111,6 +111,7 @@ public partial class MainWindow : Window
           || PassThroughBorder.Visibility != Visibility.Visible)
         {
             NativeMethods.ClearWindowRegion(hWnd);
+            return;
         }
 
         var transform = PassThroughBorder.TransformToAncestor(this);

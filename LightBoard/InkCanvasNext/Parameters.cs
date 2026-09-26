@@ -39,6 +39,7 @@ public partial class InkCanvasNext
     internal const double RotateHitScreenRadius = 24; // 视口 DIP，使用时除以缩放转内容
     internal const double LassoPointDistance2 = 16; // 内容 DIP²
     internal const int LassoHitPercentage = 50; // 笔画点落入套索的百分比阈值（0~100）
+    internal const double MinSelectionScale = 0.05; // 手柄单轴缩放因子下限（相对手势起点，无量纲），低于即停，防止缩成一点或翻转到锚点另一侧
 
     // ---------- 撤销 ----------
 
@@ -68,6 +69,26 @@ internal sealed partial class SelectionVisual
     internal static readonly double[] LassoDashPattern = [4, 3]; // 内容 DIP
 
     private static readonly Color AccentColor = Color.FromRgb(0x4C, 0x8B, 0xF5);
+
+    private static readonly SolidColorBrush HaloBrush = CreateAccentBrush(HaloAlpha);
+    private static readonly Brush BorderBrush = CreateAccentBrush(BorderAlpha);
+    private static readonly Pen BorderPen = CreateFrozenPen(BorderBrush, BorderWidth);
+    private static readonly Pen LassoPen = CreateFrozenPen(
+        new SolidColorBrush(AccentColor), LassoWidth, new DashStyle(LassoDashPattern, 0));
+
+    private static SolidColorBrush CreateAccentBrush(byte alpha)
+    {
+        var brush = new SolidColorBrush(Color.FromArgb(alpha, AccentColor.R, AccentColor.G, AccentColor.B));
+        brush.Freeze( );
+        return brush;
+    }
+
+    private static Pen CreateFrozenPen(Brush brush, double width, DashStyle? dash = null)
+    {
+        var pen = new Pen(brush, width) { DashStyle = dash };
+        pen.Freeze( );
+        return pen;
+    }
 }
 
 internal sealed partial class Eraser

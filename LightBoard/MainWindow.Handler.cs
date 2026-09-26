@@ -21,7 +21,7 @@ public partial class MainWindow
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
-            MainInstruction = "轻白板 / LightBoard v1.0.1",
+            MainInstruction = "轻白板 / LightBoard v1.0.2",
             MainIcon = TaskDialogIcon.Information,
             Content =
             """
@@ -96,10 +96,10 @@ public partial class MainWindow
         var flag = CollapseExpandButton.IsChecked == true;
         CollapseExpandButton.Tag = flag ? "\uE70E" : "\uE70D";
 
-        if (flag && AllPageToogle.IsChecked == true)
+        if (flag && AllPageToggle.IsChecked == true)
         {
-            AllPageToogle.IsChecked = false;
-            AllPageToogleClick(AllPageToogle, new RoutedEventArgs( ));
+            AllPageToggle.IsChecked = false;
+            ApplyPagePanel(false);
         }
 
         // 折叠后屏幕上保留折叠与上页按钮区(含两侧内衬),其余推到屏幕外;
@@ -330,7 +330,7 @@ public partial class MainWindow
         var mode = (TransparentModeButton.Tag as string) == "\uE729";
 
         CanvasNext.Background = mode ? Brushes.Transparent : CanvasNextBackgroundBrush;
-        TimeText.Visibility = mode || AllPageToogle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
+        TimeText.Visibility = mode || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
         LeftBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
         CenterBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
         RightBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;

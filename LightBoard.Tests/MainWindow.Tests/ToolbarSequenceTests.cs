@@ -41,7 +41,7 @@ public class ToolbarSequenceTests
             ToolEntry.Enter(host, InkCanvasNextMode.Highlighter);
             ToolbarAssertions.AssertConsistent(host);
 
-            ToolDriver.Toggle(window.HighLighterToggle, false);
+            ToolDriver.Toggle(window.HighlighterToggle, false);
             ToolbarAssertions.AssertConsistent(host);
 
             // 高亮退出后仍在 EraseArea（快照还原），再点一次当前模式回退到画笔

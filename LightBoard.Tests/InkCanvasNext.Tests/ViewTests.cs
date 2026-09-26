@@ -104,8 +104,8 @@ public class ViewTests
     }
 
     /// <summary>
-    /// 与迁移前的双指公式等价：旧实现为 offset' = offset · s + panPoint₀ · s − first（s = k'/k），
-    /// 即"以基线指位为锚点缩放，再按本帧指位位移平移"。
+    /// 双指手势的闭式解：以基线指位为锚点缩放、再按本帧指位平移，
+    /// 等价于 offset' = s · (offset + baseline) − current（s = targetScale / scale）。
     /// </summary>
     [Theory]
     [InlineData(1.0, 200, 100, 150, 90, 2.0)]
@@ -128,7 +128,8 @@ public class ViewTests
     }
 
     /// <summary>
-    /// 与迁移前的光标缩放公式等价：旧实现为 offset' = offset · k + 光标 · (k − 1)，k = k'/k。
+    /// 光标锚定缩放的闭式解：offset' = k · (offset + cursor) − cursor = k · offset + cursor · (k − 1)
+    /// （k = targetScale / scale）。
     /// </summary>
     [Theory]
     [InlineData(1.0, 300, 1000, 640, 360, 2.0)]

@@ -2,7 +2,6 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
-using System.Windows.Input;
 using System.Windows.Media;
 
 namespace InkCanvasNext;
@@ -85,87 +84,6 @@ public enum MouseWheelAction
 /// </summary>
 public partial class InkCanvasNext : UserControl
 {
-    private static readonly DependencyPropertyKey CanRedoPropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(CanRedo),
-            typeof(bool),
-            typeof(InkCanvasNext),
-            new PropertyMetadata(false));
-
-    private static readonly DependencyPropertyKey CanUndoPropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(CanUndo),
-            typeof(bool),
-            typeof(InkCanvasNext),
-            new PropertyMetadata(false));
-
-    /// <summary>
-    /// 标识 CanRedo 依赖项属性。
-    /// </summary>
-    public static readonly DependencyProperty CanRedoProperty = CanRedoPropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// 标识 CanUndo 依赖项属性。
-    /// </summary>
-    public static readonly DependencyProperty CanUndoProperty = CanUndoPropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// 标识 DefaultDrawingAttributes 依赖项属性。
-    /// </summary>
-    public static readonly DependencyProperty DefaultDrawingAttributesProperty =
-        DependencyProperty.Register(
-            nameof(DefaultDrawingAttributes),
-            typeof(DrawingAttributes),
-            typeof(InkCanvasNext),
-            new PropertyMetadata(OnDefaultDrawingAttributesChanged));
-
-    /// <summary>
-    /// 标识 Mode 依赖项属性。
-    /// </summary>
-    public static readonly DependencyProperty ModeProperty =
-        DependencyProperty.Register(
-            nameof(Mode),
-            typeof(InkCanvasNextMode),
-            typeof(InkCanvasNext),
-            new PropertyMetadata(InkCanvasNextMode.Ink, OnModeChanged));
-
-    /// <summary>
-    /// 标识 EraserDiameter 依赖项属性。
-    /// </summary>
-    public static readonly DependencyProperty EraserDiameterProperty =
-        DependencyProperty.Register(
-            nameof(EraserDiameter),
-            typeof(double),
-            typeof(InkCanvasNext),
-            new PropertyMetadata(Eraser.DefaultDiameter));
-
-    /// <summary>
-    /// 标识 MouseWheelAction 依赖项属性。
-    /// </summary>
-    public static readonly DependencyProperty MouseWheelActionProperty =
-        DependencyProperty.Register(
-            nameof(MouseWheelAction),
-            typeof(MouseWheelAction),
-            typeof(InkCanvasNext),
-            new PropertyMetadata(MouseWheelAction.Scroll));
-
-    public static readonly DependencyProperty StrokesProperty =
-        DependencyProperty.Register(
-            nameof(Strokes),
-            typeof(StrokeCollection),
-            typeof(InkCanvasNext),
-            new PropertyMetadata(OnStrokesPropertyChanged));
-
-    /// <summary>
-    /// 标识 StampAction 依赖项属性。
-    /// </summary>
-    public static readonly DependencyProperty StampActionProperty =
-        DependencyProperty.Register(
-            nameof(StampAction),
-            typeof(StampAction),
-            typeof(InkCanvasNext),
-            new PropertyMetadata(StampAction.None, OnStampActionChanged));
-
     private readonly SelectionController selection;
     private readonly SelectionVisual selectionVisual;
 
@@ -207,137 +125,16 @@ public partial class InkCanvasNext : UserControl
     }
 
     /// <summary>
-    /// CanRedo 值发生变化时触发。
+    /// 供 internal 协作对象（SelectionController 等）回调，外部消费者请订阅对应事件。
     /// </summary>
-    public event EventHandler<DependencyPropertyChangedEventArgs>? CanRedoChanged;
-
-    /// <summary>
-    /// CanUndo 值发生变化时触发。
-    /// </summary>
-    public event EventHandler<DependencyPropertyChangedEventArgs>? CanUndoChanged;
-
-    /// <summary>
-    /// 画布上的墨迹笔画集合发生变化时触发。
-    /// </summary>
-    public event EventHandler<InkCanvasStrokesChangedEventArgs>? StrokesChanged;
-
-    /// <summary>
-    /// 当前选区发生变化时触发。
-    /// </summary>
-    public event EventHandler? SelectionChanged;
-
-    /// <summary>
-    /// 视口（滚动/缩放）或选区包围盒变化，用于外部工具栏跟随。
-    /// </summary>
-    public event EventHandler? ViewOrSelectionChanged;
-
-    /// <summary>
-    /// 获取是否存在可重做的操作。
-    /// </summary>
-    public bool CanRedo
+    internal void RaiseSelectionChanged( )
     {
-        get => (bool) GetValue(CanRedoProperty);
-        private set => SetValue(CanRedoPropertyKey, value);
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>
-    /// 获取是否存在可撤销的操作。
-    /// </summary>
-    public bool CanUndo
+    internal void RaiseViewOrSelectionChanged( )
     {
-        get => (bool) GetValue(CanUndoProperty);
-        private set => SetValue(CanUndoPropertyKey, value);
-    }
-
-    /// <summary>
-    /// 获取或设置默认的墨迹绘制属性。
-    /// </summary>
-    public DrawingAttributes DefaultDrawingAttributes
-    {
-        get => (DrawingAttributes) GetValue(DefaultDrawingAttributesProperty);
-        set => SetValue(DefaultDrawingAttributesProperty, value);
-    }
-
-    /// <summary>
-    /// 获取或设置当前编辑工具模式。
-    /// </summary>
-    public InkCanvasNextMode Mode
-    {
-        get => (InkCanvasNextMode) GetValue(ModeProperty);
-        set => SetValue(ModeProperty, value);
-    }
-
-    /// <summary>
-    /// 获取或设置橡皮擦的直径（像素）。
-    /// </summary>
-    public double EraserDiameter
-    {
-        get => (double) GetValue(EraserDiameterProperty);
-        set => SetValue(EraserDiameterProperty, value);
-    }
-
-    /// <summary>
-    /// 获取或设置鼠标滚轮的响应方式。
-    /// </summary>
-    public MouseWheelAction MouseWheelAction
-    {
-        get => (MouseWheelAction) GetValue(MouseWheelActionProperty);
-        set => SetValue(MouseWheelActionProperty, value);
-    }
-
-    /// <summary>
-    /// 获取或设置画布上的墨迹笔画集合。
-    /// </summary>
-    public StrokeCollection Strokes
-    {
-        get => (StrokeCollection) GetValue(StrokesProperty);
-        set => SetValue(StrokesProperty, value);
-    }
-
-    /// <summary>
-    /// 获取或设置画布缩放比例，范围 0.1 ~ 10。
-    /// </summary>
-    public double CurrentScale
-    {
-        get => CurrentView.Scale;
-        set
-        {
-            var scale = Math.Clamp(value, MinScale, MaxScale);
-            canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = scale;
-            eraser.Scale = scale;
-        }
-    }
-
-    /// <summary>
-    /// 获取或设置画布的水平滚动偏移量。
-    /// </summary>
-    public double OffsetX
-    {
-        get => CanvasScroll.HorizontalOffset;
-        set => CanvasScroll.ScrollToHorizontalOffset(value);
-    }
-
-    /// <summary>
-    /// 获取或设置画布的垂直滚动偏移量。
-    /// </summary>
-    public double OffsetY
-    {
-        get => CanvasScroll.VerticalOffset;
-        set => CanvasScroll.ScrollToVerticalOffset(value);
-    }
-
-    /// <summary>
-    /// 获取当前视口尺寸（DIP）。
-    /// </summary>
-    public Size ViewportSize => new(CanvasScroll.ViewportWidth, CanvasScroll.ViewportHeight);
-
-    /// <summary>
-    /// 当前盖章模式（克隆/粘贴）。激活期间单指只落章、原生收笔关闭，多指手势照常。
-    /// </summary>
-    public StampAction StampAction
-    {
-        get => (StampAction) GetValue(StampActionProperty);
-        set => SetValue(StampActionProperty, value);
+        ViewOrSelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -381,19 +178,6 @@ public partial class InkCanvasNext : UserControl
         {
             return null;
         }
-    }
-
-    /// <summary>
-    /// 供 internal 协作对象（SelectionController 等）回调，外部消费者请订阅对应事件。
-    /// </summary>
-    internal void RaiseSelectionChanged( )
-    {
-        SelectionChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    internal void RaiseViewOrSelectionChanged( )
-    {
-        ViewOrSelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private static void OnDefaultDrawingAttributesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

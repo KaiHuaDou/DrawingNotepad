@@ -105,6 +105,8 @@ public partial class App : Application, ISingleInstance
         dialog.ShowDialog( );
     }
 
+    // SingleInstanceCore 发布的是 Environment.GetCommandLineArgs() 全量数组：args[0] 是程序自身路径，
+    // args[1] 才是第一个真参数；与 Main(string[]) 的 args（不含程序路径）索引语义相反，勿"统一"。
     public void OnInstanceInvoked(string[] args)
     {
         Current.Dispatcher.Invoke(( ) =>
@@ -146,7 +148,13 @@ public partial class App : Application, ISingleInstance
     {
         if (!this.InitializeAsFirstInstance("LightBoardInstanceInvariantVersion"))
         {
+            // 已有实例接管：文件参数已由 SignalFirstInstance 发布给第一实例。TinyIpc 的
+            // PublishAsync 是 Task.Run 后台写共享内存且任务被丢弃，第二实例必须存活到写入
+            // 完成，否则消息丢失、文件打不开——主窗口由 StartupUri 照常构造，恰为写入留出
+            // 时间窗，不要在此提前退出或清 StartupUri。只清掉待打开文件，避免构造中读文件。
+            PendingOpen = null;
             Current.Shutdown( );
+            return;
         }
 
         recoverTimer.Interval = TimeSpan.FromMinutes(1);

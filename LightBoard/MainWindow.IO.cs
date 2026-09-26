@@ -182,7 +182,7 @@ public partial class MainWindow
             catch (Exception ex)
             {
                 App.LogException(ex);
-                App.ShowException(ex, "导出失败。错误日志已记录。");
+                Dispatcher.Invoke(( ) => App.ShowException(ex, "导出失败。错误日志已记录。"));
                 return;
             }
             finally
@@ -195,7 +195,7 @@ public partial class MainWindow
                 });
             }
 
-            App.ShowInfo("导出图片成功");
+            Dispatcher.Invoke(( ) => App.ShowInfo("导出图片成功"));
         });
     }
 
@@ -241,7 +241,7 @@ public partial class MainWindow
             catch (Exception ex)
             {
                 App.LogException(ex);
-                App.ShowException(ex, "导出失败。错误日志已记录。");
+                Dispatcher.Invoke(( ) => App.ShowException(ex, "导出失败。错误日志已记录。"));
                 return;
             }
             finally
@@ -254,7 +254,7 @@ public partial class MainWindow
                 });
             }
 
-            App.ShowInfo("导出 PDF 成功");
+            Dispatcher.Invoke(( ) => App.ShowInfo("导出 PDF 成功"));
         });
     }
 

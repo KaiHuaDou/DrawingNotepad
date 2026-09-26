@@ -8,13 +8,19 @@ namespace LightBoard;
 
 public partial class MainWindow
 {
-    private void AllPageToogleClick(object o, RoutedEventArgs e)
+    private void AllPageToggleClick(object o, RoutedEventArgs e)
     {
         if (o is not ToggleButton { IsChecked: bool isChecked })
         {
             return;
         }
 
+        ApplyPagePanel(isChecked);
+    }
+
+    // 页面列表面板的开合本体：事件处理器与折叠联动共用
+    private void ApplyPagePanel(bool isChecked)
+    {
         TimeText.Visibility = isChecked ? Visibility.Collapsed : Visibility.Visible;
         PagePreviewsBox.Visibility = isChecked ? Visibility.Visible : Visibility.Collapsed;
         RightBorder.Background = isChecked ? ContainerBrushSolid : ContainerBrush;
@@ -62,7 +68,7 @@ public partial class MainWindow
         heightAnimation.Completed += (_, _) =>
         {
             RightBorder.BeginAnimation(HeightProperty, null);
-            RightBorder.Height = AllPageToogle.IsChecked == true ? ActualHeight - RightBorder.Margin.Bottom : double.NaN;
+            RightBorder.Height = AllPageToggle.IsChecked == true ? ActualHeight - RightBorder.Margin.Bottom : double.NaN;
         };
 
         RightBorder.BeginAnimation(WidthProperty, widthAnimation);
@@ -137,7 +143,7 @@ public partial class MainWindow
 
     private void UpdatePageUI( )
     {
-        (AllPageToogle.Content as TextBlock)?.Text = $"{App.PageIndex + 1}/{App.Pages.Count}";
+        (AllPageToggle.Content as TextBlock)?.Text = $"{App.PageIndex + 1}/{App.Pages.Count}";
         NewNextPageButton.Tag = App.PageIndex < App.Pages.Count - 1 ? "\uE72A" : "\uE710";
         PrevPageButton.IsEnabled = App.PageIndex > 0;
     }

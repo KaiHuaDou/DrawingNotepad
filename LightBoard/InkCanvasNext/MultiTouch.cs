@@ -99,9 +99,7 @@ internal sealed class VisualCanvas : FrameworkElement
 
     internal VisualCanvas( )
     {
-        CacheMode = new BitmapCache( );
         RenderOptions.SetEdgeMode(this, EdgeMode.Aliased);
-        RenderOptions.SetCachingHint(this, CachingHint.Cache);
     }
 
     internal void AddVisual(DrawingVisual visual)

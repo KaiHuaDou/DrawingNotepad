@@ -26,7 +26,7 @@ internal static class ToolEntry
                 ToolDriver.ClickRadio(host, host.Window.CircleRadio);
                 break;
             case InkCanvasNextMode.Highlighter:
-                ToolDriver.Toggle(host.Window.HighLighterToggle, true);
+                ToolDriver.Toggle(host.Window.HighlighterToggle, true);
                 break;
         }
     }

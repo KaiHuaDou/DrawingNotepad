@@ -34,6 +34,11 @@ internal sealed class ImagePageSource : PageSource
             throw new InvalidDataException("无法打开图片（格式不受支持或文件损坏）", ex);
         }
 
+        if (decoder.Frames.Count == 0)
+        {
+            throw new InvalidDataException("无法打开图片（文件中没有图像帧）");
+        }
+
         var frame = decoder.Frames[0];
 
         return new ImagePageSource(frame);

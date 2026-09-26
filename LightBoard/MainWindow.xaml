@@ -209,9 +209,9 @@
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#4EC9B0"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
-                    <ToggleButton x:Name="HighLighterToggle"
+                    <ToggleButton x:Name="HighlighterToggle"
                                   Style="{StaticResource ToggleStyle}"
-                                  Click="HighLighterBoxClicked" Tag="&#xE7E6;" />
+                                  Click="HighlighterBoxClicked" Tag="&#xE7E6;" />
                     <Border Width="36" Visibility="Hidden" />
                     <RadioButton x:Name="EraseAreaRadio"
                                  Style="{StaticResource RadioStyle}"
@@ -252,11 +252,11 @@
                             IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
                             Click="PrevPage" Tag="&#xE72B;" />
-                    <ToggleButton x:Name="AllPageToogle"
+                    <ToggleButton x:Name="AllPageToggle"
                                   Height="36"
                                   Margin="3,0,3,0" Padding="5,1,5,1"
                                   Style="{StaticResource PageTabStyle}"
-                                  Click="AllPageToogleClick">
+                                  Click="AllPageToggleClick">
                         <TextBlock FontSize="19" Text="1/1" />
                     </ToggleButton>
                     <Button x:Name="NewNextPageButton"

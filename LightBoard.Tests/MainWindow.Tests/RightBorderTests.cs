@@ -25,7 +25,7 @@ public class RightBorderTests
             using var host = CreateVisibleHost(out var window);
             var border = window.RightBorder;
 
-            // 复现 AllPageToogleClick 的测量序列:锁宽补布局后,列宽应是内容需求而非被视口压缩
+            // 复现 AllPageToggleClick 的测量序列:锁宽补布局后,列宽应是内容需求而非被视口压缩
             var from = border.ActualWidth;
             border.BeginAnimation(FrameworkElement.WidthProperty, new DoubleAnimation(from, from, TimeSpan.FromSeconds(0.2)));
             window.PagePreviewsBox.Visibility = Visibility.Visible;
@@ -115,7 +115,7 @@ public class RightBorderTests
             Toggle(window, false);
             PumpUntil(( ) => Math.Abs(border.ActualWidth - initial) < 0.5, 2000, "收起终态宽");
 
-            (window.AllPageToogle.Content as TextBlock)!.Text = "10/12";
+            (window.AllPageToggle.Content as TextBlock)!.Text = "10/12";
             border.UpdateLayout( );
 
             Assert.True(
@@ -178,7 +178,7 @@ public class RightBorderTests
             PumpUntil(( ) => Math.Abs(window.RightTransform.X - (collapsedWidth - kept)) < 0.5, 2000, "折叠位移");
 
             Assert.Equal(Visibility.Collapsed, window.PagePreviewsBox.Visibility);
-            Assert.False(window.AllPageToogle.IsChecked);
+            Assert.False(window.AllPageToggle.IsChecked);
             Assert.Equal(collapsedWidth, border.ActualWidth, 0.5);
             Assert.True(double.IsNaN(border.Width), $"折叠收起后 Width 应为 Auto,实际 {border.Width}");
 
@@ -205,8 +205,8 @@ public class RightBorderTests
 
     private static void Toggle(MainWindow window, bool expand)
     {
-        window.AllPageToogle.IsChecked = expand;
-        window.AllPageToogle.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        window.AllPageToggle.IsChecked = expand;
+        window.AllPageToggle.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
     }
 
     private static double ExpandedWidth(MainWindow window)

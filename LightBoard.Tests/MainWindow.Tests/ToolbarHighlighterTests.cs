@@ -16,7 +16,7 @@ public class ToolbarHighlighterTests
         {
             using var host = new MainWindowHost( );
 
-            ToolDriver.Toggle(host.Window.HighLighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
             Assert.Equal(InkCanvasNextMode.Highlighter, host.Window.Mode);
             Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
@@ -35,15 +35,15 @@ public class ToolbarHighlighterTests
             ToolDriver.ClickRadio(host, host.FindColor(Red));
             ToolDriver.ClickRadio(host, host.FindThickness(5));
 
-            ToolDriver.Toggle(host.Window.HighLighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
             Assert.Equal(InkCanvasNextMode.Highlighter, host.Window.Mode);
-            ToolDriver.Toggle(host.Window.HighLighterToggle, false);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
             Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
             Assert.Equal(Red, host.Canvas.DefaultDrawingAttributes.Color);
             Assert.Equal(5, host.Canvas.DefaultDrawingAttributes.Width);
             Assert.False(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
-            Assert.False(host.Window.HighLighterToggle.IsChecked);
+            Assert.False(host.Window.HighlighterToggle.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -59,9 +59,9 @@ public class ToolbarHighlighterTests
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, tool);
 
-            ToolDriver.Toggle(host.Window.HighLighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
             Assert.Equal(InkCanvasNextMode.Highlighter, host.Window.Mode);
-            ToolDriver.Toggle(host.Window.HighLighterToggle, false);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
             Assert.Equal(tool, host.Window.Mode);
             Assert.Equal(tool, host.Canvas.Mode);
@@ -78,8 +78,8 @@ public class ToolbarHighlighterTests
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, InkCanvasNextMode.Line);
 
-            ToolDriver.Toggle(host.Window.HighLighterToggle, true);
-            ToolDriver.Toggle(host.Window.HighLighterToggle, false);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
             Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
             Assert.False(host.Window.LineRadio.IsChecked);
@@ -95,8 +95,8 @@ public class ToolbarHighlighterTests
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, InkCanvasNextMode.Circle);
 
-            ToolDriver.Toggle(host.Window.HighLighterToggle, true);
-            ToolDriver.Toggle(host.Window.HighLighterToggle, false);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
             Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
             Assert.False(host.Window.CircleRadio.IsChecked);
@@ -110,9 +110,9 @@ public class ToolbarHighlighterTests
         UiThread.Run(( ) =>
         {
             using var host = new MainWindowHost( );
-            ToolDriver.Toggle(host.Window.HighLighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
-            ToolDriver.Toggle(host.Window.HighLighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
             Assert.Equal(InkCanvasNextMode.Highlighter, host.Window.Mode);
             ToolbarAssertions.AssertConsistent(host);
@@ -127,7 +127,7 @@ public class ToolbarHighlighterTests
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, InkCanvasNextMode.Select);
 
-            ToolDriver.Toggle(host.Window.HighLighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
             ToolDriver.ClickRadio(host, host.FindThickness(10));
 
             Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);

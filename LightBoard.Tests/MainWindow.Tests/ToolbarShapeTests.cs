@@ -197,7 +197,7 @@ public class ToolbarShapeTests
             ToolDriver.ClickRadio(host, host.Window.LineRadio);
 
             Assert.Equal(InkCanvasNextMode.Line, host.Window.Mode);
-            Assert.False(host.Window.HighLighterToggle.IsChecked);
+            Assert.False(host.Window.HighlighterToggle.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
     }

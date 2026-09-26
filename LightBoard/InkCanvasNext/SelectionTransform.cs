@@ -41,10 +41,10 @@ public partial class InkCanvasNext
                 var scaleY = selectionHandle is not (SelectionHandle.L or SelectionHandle.R);
 
                 var dx = selectionStartPoint.X - selectionAnchor.X;
-                var sx = scaleX && Abs(dx) > 1e-9 ? (p.X - selectionAnchor.X) / dx : 1.0;
+                var sx = scaleX && Abs(dx) > 1e-9 ? Max((p.X - selectionAnchor.X) / dx, MinSelectionScale) : 1.0;
 
                 var dy = selectionStartPoint.Y - selectionAnchor.Y;
-                var sy = scaleY && Abs(dy) > 1e-9 ? (p.Y - selectionAnchor.Y) / dy : 1.0;
+                var sy = scaleY && Abs(dy) > 1e-9 ? Max((p.Y - selectionAnchor.Y) / dy, MinSelectionScale) : 1.0;
 
                 newAbs = Matrix.Identity;
                 newAbs.ScaleAt(sx, sy, selectionAnchor.X, selectionAnchor.Y);

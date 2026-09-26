@@ -20,7 +20,7 @@ internal static class ToolbarAssertions
 
         if (mode == InkCanvasNextMode.Highlighter)
         {
-            Assert.True(window.HighLighterToggle.IsChecked);
+            Assert.True(window.HighlighterToggle.IsChecked);
             Assert.Equal(InkCanvasNextMode.Ink, canvas.Mode);
             Assert.Equal(Colors.Yellow, attrs.Color);
             Assert.Equal(36, attrs.Width);
@@ -30,7 +30,7 @@ internal static class ToolbarAssertions
         }
         else
         {
-            Assert.False(window.HighLighterToggle.IsChecked);
+            Assert.False(window.HighlighterToggle.IsChecked);
             Assert.Equal(mode, canvas.Mode);
             Assert.False(attrs.IsHighlighter);
 

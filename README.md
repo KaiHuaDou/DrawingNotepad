@@ -121,8 +121,10 @@ dotnet test
 ```
 LightBoard/               # 主程序
 ├─ InkCanvasNext/         # WPF InkCanvas 现代封装（可独立复用）
-│  ├─ InkCanvasNext.xaml(.cs) # 主控件：依赖属性、模式切换与文档页背景
-│  ├─ Devices.cs          # 触摸/鼠标设备事件处理与捕获
+│  ├─ InkCanvasNext.xaml(.cs) # 主控件：模式切换与文档页背景
+│  ├─ InkCanvasNext.Properties.cs # 依赖属性注册、公共事件与 CLR 属性
+│  ├─ Devices.cs          # 触摸设备事件处理与捕获
+│  ├─ Mouse.cs            # 鼠标输入路径（形状/选区/落章/橡皮/滚轮）
 │  ├─ Touches.cs          # 触摸事件的转发与坐标处理
 │  ├─ States.cs           # 触摸状态机
 │  ├─ Gestures.cs         # 平移/缩放手势（带平滑）与画布边缘扩展
@@ -140,8 +142,8 @@ LightBoard/               # 主程序
 │  ├─ Shapes.cs           # 直线/圆形形状绘制
 │  ├─ Geometry.cs         # 几何工具
 │  └─ RingBuffer.cs       # 定容环形缓冲（撤销栈）
-├─ Document/              # 渲染源：XpsSource / PdfSource / ImagePageSource / PdfExport
-├─ Documents.cs           # 文档/图片打开：Office COM → XPS、XPS/PDF/图片渲染源与缓存
+├─ Document/              # 渲染源：XpsSource / PdfSource / ImagePageSource / PdfExport；文档服务：DocumentService（转换与缓存）
+├─ Documents.cs           # 文档打开/附加：页集合装配与文档盒捕获
 ├─ Page.cs                # 页面模型与页集合管理
 ├─ Page.Preview.cs        # 页面缩略图按需生成
 ├─ Board.cs               # 多页整体存档（.lbf）与自动恢复
