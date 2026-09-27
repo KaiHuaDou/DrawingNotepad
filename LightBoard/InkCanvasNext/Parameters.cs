@@ -7,50 +7,131 @@ public partial class InkCanvasNext
 {
     // ---------- 画布与视图 ----------
 
-    internal const double MinScale = 0.1;
-    internal const double MaxScale = 10.0;
-    internal const double WheelZoomFactor = 1.1;
-    internal const double ScrollStep = 25; // 内容 DIP，乘 Scale 后为视口位移
+    public const double MinScale = 0.1;
+    public const double MaxScale = 10.0;
+    public const double WheelZoomFactor = 1.1;
+
+    /// <summary>
+    /// 内容 DIP，乘 Scale 后为视口位移
+    /// </summary>
+    public const double ScrollStep = 25;
 
     // ---------- 手势 ----------
 
 #if DEBUG
-    internal const double DistanceThresholdFactor = 0.9;
+    public const double DistanceThresholdFactor = 0.9;
 #else
-    internal const double DistanceThresholdFactor = 0.1;
+    public const double DistanceThresholdFactor = 0.1;
 #endif
 
-    internal readonly double distanceThreshold2; // 视口 DIP²，构造时按 DistanceThresholdFactor × 工作区宽度算出
+    /// <summary>
+    /// 视口 DIP²，构造时按 DistanceThresholdFactor × 工作区宽度算出
+    /// </summary>
+    internal readonly double distanceThreshold2;
 
-    internal const double TouchDisplacementThreshold2 = 20 * 20; // 视口 DIP²
-    internal const double PanZoomDisplaceThreshold2 = 30 * 30; // 视口 DIP²
-    internal const double PinchLockDistance2 = 24 * 24; // 视口 DIP²，两指间距低于此即锁定缩放
+    /// <summary>
+    /// 视口 DIP，单指 Move 位移超过此值即起笔（默认值）
+    /// </summary>
+    public const double TouchDisplacementThresholdDefault = 20;
+
+    /// <summary>
+    /// 视口 DIP，双指平移位移超过此值即锁定缩放（默认值）
+    /// </summary>
+    public const double PanZoomDisplaceThresholdDefault = 30;
+
+    /// <summary>
+    /// 视口 DIP，两指间距低于此值即锁定缩放（默认值）
+    /// </summary>
+    public const double PinchLockDistanceDefault = 24;
+
+    /// <summary>
+    /// 视口 DIP^2
+    /// </summary>
+    public double TouchDisplacementThreshold2 { get; set; } = TouchDisplacementThresholdDefault * TouchDisplacementThresholdDefault;
+
+    /// <summary>
+    /// 视口 DIP^2
+    /// </summary>
+    public double PanZoomDisplaceThreshold2 { get; set; } = PanZoomDisplaceThresholdDefault * PanZoomDisplaceThresholdDefault;
+
+    /// <summary>
+    /// 视口 DIP^2，两指间距低于此值即锁定缩放
+    /// </summary>
+    public double PinchLockDistance2 { get; set; } = PinchLockDistanceDefault * PinchLockDistanceDefault;
 
     // Smooth 缩放曲线：|k - 1| ≤ T 时输出 1，≥ Q 时原样输出，S 为过渡段指数
-    internal const double T = 0.2;
-    internal const double Q = 0.5;
-    internal const double S = 1;
+    public const double T = 0.2;
+    public const double Q = 0.5;
+    public const double S = 1;
 
-    internal const float DefaultPressure = 0.5f;
+    public const float DefaultPressure = 0.5f;
+
+    // ---------- 边缘自动滚动 ----------
+
+    /// <summary>
+    /// 视口 DIP，抬手落点距上/下边缘小于此值即触发
+    /// </summary>
+    public const double AutoScrollVerticalDefaultThreshold = 96;
+
+    /// <summary>
+    /// 视口 DIP，抬手落点距左/右边缘小于此值即触发
+    /// </summary>
+    public const double AutoScrollHorizontalDefaultThreshold = 96;
+
+    public double AutoScrollVerticalThreshold { get; set; } = AutoScrollVerticalDefaultThreshold; // 视口 DIP，抬手落点距上/下边缘小于此值即触发
+    public double AutoScrollHorizontalThreshold { get; set; } = AutoScrollHorizontalDefaultThreshold; // 视口 DIP，抬手落点距左/右边缘小于此值即触发
 
     // ---------- 选区 ----------
 
-    internal const double HandleHitRadius = 16; // 内容 DIP
-    internal const double RotateHitScreenRadius = 24; // 视口 DIP，使用时除以缩放转内容
-    internal const double LassoPointDistance2 = 16; // 内容 DIP²
-    internal const int LassoHitPercentage = 50; // 笔画点落入套索的百分比阈值（0~100）
-    internal const double MinSelectionScale = 0.05; // 手柄单轴缩放因子下限（相对手势起点，无量纲），低于即停，防止缩成一点或翻转到锚点另一侧
+    /// <summary>
+    /// 内容 DIP
+    /// </summary>
+    public const double HandleHitRadius = 16;
+
+    /// <summary>
+    /// 视口 DIP，使用时除以缩放转内容
+    /// </summary>
+    public const double RotateHitScreenRadius = 24;
+
+    /// <summary>
+    /// 内容 DIP^2
+    /// </summary>
+    public const double LassoPointDistance2 = 16;
+
+    /// <summary>
+    /// 笔画点落入套索的百分比阈值（0~100）
+    /// </summary>
+    public const int LassoHitPercentage = 50;
+
+    /// <summary>
+    /// 手柄单轴缩放因子下限（相对手势起点，无量纲），低于即停，防止缩成一点或翻转到锚点另一侧
+    /// </summary>
+    public const double MinSelectionScale = 0.05;
 
     // ---------- 撤销 ----------
 
-    internal const int MaxHistoryCount = 200;
+    /// <summary>
+    /// 最大历史记录数量默认值
+    /// </summary>
+    public const int MaxHistoryCount = 200;
 
     // ---------- 形状 ----------
 
-    internal const double ShapeMinStrokeWidth = 1.0; // 内容 DIP
-    internal const double ShapeCommitMinDistance = 4; // 内容 DIP
-    internal const int CircleSegments = 64;
-    internal const double CircleMinRadius = 1; // 内容 DIP
+    /// <summary>
+    /// 内容 DIP
+    /// </summary>
+    public const double ShapeMinStrokeWidth = 1.0;
+
+    /// <summary>
+    /// 内容 DIP
+    /// </summary>
+    public const double ShapeCommitMinDistance = 4;
+    public const int CircleSegments = 64;
+
+    /// <summary>
+    /// 内容 DIP
+    /// </summary>
+    public const double CircleMinRadius = 1;
 }
 
 internal sealed partial class SelectionVisual

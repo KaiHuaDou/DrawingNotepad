@@ -36,7 +36,7 @@
 - 离开 `Idle`：保存 `prevMode = Mode`（供 `RestoreMode` 还原）。
 - 离开 `MultiDraw`：`EndMultiTouch`。
 - 离开 `Selection`：`EndSelectionTouch`。
-- 离开 `EvalDraw`/`Draw` 进入手势接管态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`/`Selection`，或异常回 `Idle`）：若形状在途（`shapeActive`）→ `CancelShape`。形状只允许在单指绘制上下文（`EvalDraw`/`Draw`）存活；`EvalDraw` 中落第二指即迁入 `PanZoom`/`MultiDraw` 并放弃预览（捏合缩放优先）；`Draw` 中落第二指**无条件**迁入 `MultiDraw` 并放弃形状（两指转入多指画笔）。
+- 离开 `EvalDraw`/`Draw` 进入手势接管态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`/`Selection`，或异常回 `Idle`）：若形状在途（`shapeActive`），迁入 `MultiDraw` 时按当前预览 `CommitShape`，迁入其余状态则 `CancelShape`。形状只允许在单指绘制上下文（`EvalDraw`/`Draw`）存活；`EvalDraw` 中落第二指按距离迁入 `PanZoom`（捏合优先）或 `MultiDraw`；`Draw` 中落第二指**无条件**迁入 `MultiDraw`（在途形状提交，两指转入多指画笔）。
 - 离开"覆盖编辑模式"的状态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`）进入非覆盖状态 → `RestoreMode`（如 `MultiDraw --> Draw` 需恢复 `EditingMode`）。
 - 进入 `EvalDraw`，或 `EvalDraw --> Draw`：若 `WantsPreemptiveDrawCapture` → `CaptureAll`。
 - 进入 `Selection`：`CaptureAll` + `BeginSelectionTouch`。
@@ -44,7 +44,7 @@
     - `from != PanZoom` 时：`ReleaseAll` + `Canvas.EditingMode = None` + `CaptureAll`（`PanZoom --> Pan` 只做基准校准，不重做释放/捕获）；
     - 随后 `InitGesture`。
 - 进入 `Eraser`：`ReleaseAll` + `Canvas.EditingMode = None` + `CaptureAll`。
-- 进入 `MultiDraw`：`ReleaseAll` + `Canvas.EditingMode = None` + `CaptureAll` + `StartMultiTouch`。
+- 进入 `MultiDraw`：若来自 `EvalDraw`/`Draw` 且原生在绘笔画存在（Ink 模式且已捕获触笔），先 `ReleaseStylusCapture` 触发原生整笔提交（InkCanvas 对中途切换编辑模式的在绘笔画只做丢弃，对捕获丢失才整笔提交）；随后 `ReleaseAll` + `Canvas.EditingMode = None` + `CaptureAll` + `StartMultiTouch`（原绘制指以多指笔画从当前触点续接）。
 - 离开面积擦叠加态（`IsAreaEraserActive(from) && !IsAreaEraserActive(newState)`）：`EndEraserCycle`。
 - 离开 `Pan`/`PanZoom` 手势族（迁入 `Idle` 或任一其他状态）：`EnsureEdgeMargin`，即视口距右/下边缘不足一屏时把画布扩展一屏（`Gestures.cs`）。
 - `BlocksNativeInput`（全程接管 Down/Move/Up，`Handled`，InkCanvas 不再收笔）：`PanZoom`、`Pan`、`MultiDraw`、`Selection`。

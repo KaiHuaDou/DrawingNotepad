@@ -3,27 +3,20 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid PreviewMouseWheel="CanvasPreviewMouseWheel">
         <ScrollViewer x:Name="CanvasScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
-            <Grid x:Name="CanvasGrid"
-                  Background="{Binding Background, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                  RenderOptions.CacheInvalidationThresholdMaximum="2.0"
-                  RenderOptions.CacheInvalidationThresholdMinimum="0.5"
-                  RenderOptions.CachingHint="Cache">
-                <Grid.CacheMode>
-                    <BitmapCache />
-                </Grid.CacheMode>
+            <Grid x:Name="CanvasGrid" Background="{Binding Background, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <Border x:Name="DocumentHost"
                         HorizontalAlignment="Left" VerticalAlignment="Top"
                         Visibility="Collapsed" />
                 <InkCanvas x:Name="InnerCanvas"
                            Panel.ZIndex="36"
                            Background="Transparent"
-                           UseCustomCursor="True"
                            LostTouchCapture="CanvasLostTouchCapture"
                            PreviewMouseDown="CanvasPreviewMouseDown"
                            PreviewMouseMove="CanvasPreviewMouseMove" PreviewMouseUp="CanvasPreviewMouseUp"
                            PreviewTouchDown="CanvasPreviewTouchDown"
                            PreviewTouchMove="CanvasPreviewTouchMove" PreviewTouchUp="CanvasPreviewTouchUp"
-                           Stylus.IsPressAndHoldEnabled="False" TouchLeave="CanvasTouchLeave">
+                           Stylus.IsPressAndHoldEnabled="False" TouchLeave="CanvasTouchLeave"
+                           UseCustomCursor="True">
                     <InkCanvas.DefaultDrawingAttributes>
                         <DrawingAttributes Width="3" Height="3"
                                            FitToCurve="True" StylusTip="Ellipse"
@@ -32,9 +25,11 @@
                 </InkCanvas>
                 <Canvas x:Name="SelectionLayer" Panel.ZIndex="37" IsHitTestVisible="False" />
                 <Canvas x:Name="ShapePreviewLayer" Panel.ZIndex="38" IsHitTestVisible="False">
-                    <Line x:Name="ShapePreviewLine" Visibility="Collapsed"
+                    <Line x:Name="ShapePreviewLine"
+                          Visibility="Collapsed"
                           Stroke="White" StrokeThickness="3" />
-                    <Ellipse x:Name="ShapePreviewEllipse" Visibility="Collapsed"
+                    <Ellipse x:Name="ShapePreviewEllipse"
+                             Visibility="Collapsed"
                              Fill="Transparent" Stroke="White" StrokeThickness="3" />
                 </Canvas>
             </Grid>

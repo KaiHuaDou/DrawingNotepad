@@ -5,10 +5,11 @@ namespace InkCanvasNext;
 internal sealed class RingBuffer<T>(int capacity)
 {
     private readonly T[] buffer = new T[capacity];
-    private readonly int capacity = capacity;
     private int head;
 
     internal int Count { get; private set; }
+
+    internal int Capacity { get; } = capacity;
 
     internal T this[int index]
     {
@@ -19,20 +20,20 @@ internal sealed class RingBuffer<T>(int capacity)
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
-            return buffer[(head + index) % capacity];
+            return buffer[(head + index) % Capacity];
         }
     }
 
     internal void Enqueue(T item)
     {
-        if (Count == capacity)
+        if (Count == Capacity)
         {
             buffer[head] = item;
-            head = (head + 1) % capacity;
+            head = (head + 1) % Capacity;
         }
         else
         {
-            buffer[(head + Count) % capacity] = item;
+            buffer[(head + Count) % Capacity] = item;
             Count++;
         }
     }
@@ -46,7 +47,7 @@ internal sealed class RingBuffer<T>(int capacity)
 
         for (var i = newCount; i < Count; i++)
         {
-            buffer[(head + i) % capacity] = default!;
+            buffer[(head + i) % Capacity] = default!;
         }
 
         Count = newCount;
@@ -54,7 +55,7 @@ internal sealed class RingBuffer<T>(int capacity)
 
     internal void Clear( )
     {
-        Array.Clear(buffer, 0, capacity);
+        Array.Clear(buffer, 0, Capacity);
         head = 0;
         Count = 0;
     }
@@ -64,7 +65,7 @@ internal sealed class RingBuffer<T>(int capacity)
         var arr = new T[Count];
         for (var i = 0; i < Count; i++)
         {
-            arr[i] = buffer[(head + i) % capacity];
+            arr[i] = buffer[(head + i) % Capacity];
         }
 
         return arr;

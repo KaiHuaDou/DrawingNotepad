@@ -19,7 +19,9 @@ public partial class InkCanvasNext
 {
     private InkCanvasNextMode prevMode = InkCanvasNextMode.Ink;
 
-    /// <summary>盖章武装标记：本次触摸序列在盖章模式下以单指 EvalDraw 开始，且尚未升级为任何手势接管态。</summary>
+    /// <summary>
+    /// 盖章武装标记：本次触摸序列在盖章模式下以单指 EvalDraw 开始，且尚未升级为任何手势接管态。
+    /// </summary>
     private bool stampArmed;
 
     internal TouchState State { get; private set; } = TouchState.Idle;
@@ -35,7 +37,7 @@ public partial class InkCanvasNext
         var count = touches.Count;
         var d2 = GetMaxDistance2( );
         var l2 = distanceThreshold2;
-        const double c2 = TouchDisplacementThreshold2;
+        var c2 = TouchDisplacementThreshold2;
         var x2 = Get1stFingerDispl2( );
 
         var newState = State switch
@@ -49,7 +51,6 @@ public partial class InkCanvasNext
                 2 when d2 <= l2 => TouchState.PanZoom,
                 3 or 4 when d2 <= l2 => TouchState.Pan,
                 >= 5 when d2 <= l2 => TouchState.Eraser,
-                // d > l 视为多人两侧同时落笔，优先于平移
                 >= 2 when d2 > l2 => TouchState.MultiDraw,
                 _ => State,
             },
@@ -167,12 +168,19 @@ public partial class InkCanvasNext
             prevMode = Mode;
         }
 
-        // 形状只允许在单指绘制上下文（EvalDraw/Draw）存活：
-        // 一旦迁出手势接管态（平移/缩放/多指/擦除/选区/回 Idle），放弃未提交的形状预览，
-        // 避免 shapeActive 在事件处理器中抢占手势路由（如形状绘制中落第二指导致平移缩放失效）。
+        // 形状只允许在单指绘制上下文（EvalDraw/Draw）存活：迁入 MultiDraw 时按当前预览提交，
+        // 迁入其余接管态（平移/缩放/擦除/选区/回 Idle）则放弃预览，
+        // 避免 shapeActive 在事件处理器中抢占手势路由。
         if (shapeActive && from is TouchState.EvalDraw or TouchState.Draw && newState is not (TouchState.EvalDraw or TouchState.Draw))
         {
-            CancelShape( );
+            if (newState == TouchState.MultiDraw)
+            {
+                CommitShape( );
+            }
+            else
+            {
+                CancelShape( );
+            }
         }
 
         // 盖章只由未升级为手势的单指序列触发：Idle 进入 EvalDraw 时武装，
@@ -230,6 +238,7 @@ public partial class InkCanvasNext
                 break;
 
             case TouchState.MultiDraw:
+                HandOffDrawingStroke( );
                 ReleaseAll( );
                 InnerCanvas.EditingMode = InkCanvasEditingMode.None;
                 CaptureAll( );

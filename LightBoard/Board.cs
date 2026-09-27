@@ -127,4 +127,4 @@ internal static class Board
 }
 
 [JsonSerializable(typeof(BoardManifest))]
-internal sealed partial class BoardSerializerContext : JsonSerializerContext;
+internal sealed partial class BoardSerializerContext : System.Text.Json.Serialization.JsonSerializerContext;

@@ -167,8 +167,8 @@ internal sealed class DebugVisual : FrameworkElement
 
         DistanceRow(dc, 0, 96, "LassoPointDistance", $"{Math.Sqrt(LassoPointDistance2):0.#} px", Math.Sqrt(LassoPointDistance2), false, dip);
         DistanceRow(dc, 1, 122, "ToolbarGapFromSelection", $"{SelectionVisual.ToolbarGapFromSelection:0.#} px", SelectionVisual.ToolbarGapFromSelection, false, dip);
-        DistanceRow(dc, 2, 148, "PinchLockDistance", ThresholdText(PinchLockDistance2), ThresholdLength(PinchLockDistance2), ThresholdDisabled(PinchLockDistance2), dip);
-        DistanceRow(dc, 3, 174, "PanZoomDisplaceThreshold", ThresholdText(PanZoomDisplaceThreshold2), ThresholdLength(PanZoomDisplaceThreshold2), ThresholdDisabled(PanZoomDisplaceThreshold2), dip);
+        DistanceRow(dc, 2, 148, "PinchLockDistance", ThresholdText(canvas.PinchLockDistance2), ThresholdLength(canvas.PinchLockDistance2), ThresholdDisabled(canvas.PinchLockDistance2), dip);
+        DistanceRow(dc, 3, 174, "PanZoomDisplaceThreshold", ThresholdText(canvas.PanZoomDisplaceThreshold2), ThresholdLength(canvas.PanZoomDisplaceThreshold2), ThresholdDisabled(canvas.PanZoomDisplaceThreshold2), dip);
         DistanceRow(dc, 4, 200, "RotateGapAboveSelection", $"{SelectionVisual.RotateGapAboveSelection:0.#} px", SelectionVisual.RotateGapAboveSelection, false, dip);
         DistanceRow(dc, 5, 226, "DistanceThreshold", $"≈ {Math.Sqrt(canvas.distanceThreshold2):0.#} px", 100, true, dip);
     }

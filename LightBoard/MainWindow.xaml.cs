@@ -33,6 +33,9 @@ public partial class MainWindow : Window
         CanvasNext.StrokesChanged += CanvasNextStrokesChanged;
         MainGrid.Children.Insert(0, CanvasNext);
 
+        Settings.LoadSettings( );
+        ApplySettings( );
+
         colorRadio ??= DefaultColorRadio;
         thicknessRadio ??= DefaultThicknessRadio;
         App.InitializePages( );
@@ -125,5 +128,26 @@ public partial class MainWindow : Window
     {
         var isChecked = DebugLayerMenu.IsChecked;
         DebugLayer.Visibility = isChecked ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void SettingsClick(object o, RoutedEventArgs e)
+    {
+        var dialog = new Settings { Owner = this };
+        dialog.ShowDialog( );
+        ApplySettings( );
+    }
+
+    private void ApplySettings( )
+    {
+        var data = Settings.Data;
+        CanvasNext.AutoScrollHorizontalThreshold = data.AutoScroll ? InkCanvasNext.InkCanvasNext.AutoScrollHorizontalDefaultThreshold : 0;
+        CanvasNext.AutoScrollVerticalThreshold = data.AutoScroll ? InkCanvasNext.InkCanvasNext.AutoScrollVerticalDefaultThreshold : 0;
+        var touch = Math.Clamp(data.TouchDisplacementThreshold, Settings.ThresholdMin, Settings.ThresholdMax);
+        var panZoom = Math.Clamp(data.PanZoomDisplaceThreshold, Settings.ThresholdMin, Settings.ThresholdMax);
+        var pinch = Math.Clamp(data.PinchLockDistance, Settings.ThresholdMin, Settings.ThresholdMax);
+        CanvasNext.TouchDisplacementThreshold2 = touch * touch;
+        CanvasNext.PanZoomDisplaceThreshold2 = panZoom * panZoom;
+        CanvasNext.PinchLockDistance2 = pinch * pinch;
+        CanvasNext.SetMaxHistoryCount(Math.Clamp(data.MaxHistoryCount, Settings.HistoryMin, Settings.HistoryMax));
     }
 }

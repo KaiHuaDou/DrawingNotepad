@@ -53,7 +53,7 @@
                IsOpen="{Binding IsChecked, ElementName=MoreButton, Mode=TwoWay}"
                Placement="Top"
                PlacementTarget="{Binding ElementName=MoreButton}"
-               StaysOpen="False">
+               PopupAnimation="Slide" StaysOpen="False">
             <Border Margin="0,0,0,8" Padding="6"
                     Background="#FB2B2C31" BorderBrush="#33FFFFFF" BorderThickness="1"
                     CornerRadius="12">
@@ -71,6 +71,11 @@
                     <MenuItem Header="关于" Style="{StaticResource MenuItemStyle}" Click="AboutClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE946;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="设置" Style="{StaticResource MenuItemStyle}" Click="SettingsClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE713;" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem x:Name="DebugLayerMenu" Header="调试"

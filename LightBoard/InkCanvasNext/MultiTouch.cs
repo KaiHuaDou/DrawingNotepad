@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -27,6 +28,21 @@ public partial class InkCanvasNext
 
         multiTouchStrokes[touchId] = strokeVisual;
         strokeVisual.Redraw( );
+    }
+
+    /// <summary>
+    /// 迁入 MultiDraw 前保住原生在绘笔画：InkCanvas 对中途切换编辑模式的在绘笔画只做丢弃
+    /// （InkCollectionBehavior 对非 Ink 目标一律 Commit(commit: false)），对捕获丢失则整笔提交，
+    /// 故先释放捕获触发提交，多指笔画随后从当前触点续接。
+    /// </summary>
+    private void HandOffDrawingStroke( )
+    {
+        if (State is TouchState.EvalDraw or TouchState.Draw
+            && InnerCanvas.EditingMode == InkCanvasEditingMode.Ink
+            && InnerCanvas.IsStylusCaptured)
+        {
+            InnerCanvas.ReleaseStylusCapture( );
+        }
     }
 
     private void StartMultiTouch( )

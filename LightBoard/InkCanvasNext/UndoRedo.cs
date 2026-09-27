@@ -86,12 +86,33 @@ public sealed class HistorySnapshot
 
 public partial class InkCanvasNext
 {
-    private readonly RingBuffer<IHistoryChange> history = new(MaxHistoryCount);
+    private RingBuffer<IHistoryChange> history = new(MaxHistoryCount);
     private bool applyingUndoRedo;
 
     internal int Position { get; private set; }
 
     internal int RedoDepth => history.Count - Position;
+
+    /// <summary>
+    /// 调整撤销历史容量：顺序搬移现有条目，容量缩小时丢弃最旧条目，Position 平移保持指向同一条目
+    /// </summary>
+    public void SetMaxHistoryCount(int max)
+    {
+        if (max == history.Capacity)
+        {
+            return;
+        }
+
+        var next = new RingBuffer<IHistoryChange>(max);
+        for (var i = 0; i < history.Count; i++)
+        {
+            next.Enqueue(history[i]);
+        }
+
+        Position = Math.Max(0, Position - (history.Count - next.Count));
+        history = next;
+        UpdateCanUndoRedo( );
+    }
 
     private void PushChange(IHistoryChange change)
     {

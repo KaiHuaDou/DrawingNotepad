@@ -44,6 +44,7 @@ public partial class InkCanvasNext
             SetState(TouchState.Idle);
             CancelSelectionGesture( );
             CancelShape( );
+            CancelAutoScroll( );
         }
         finally
         {
@@ -71,6 +72,7 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewTouchDown(object o, TouchEventArgs e)
     {
+        CancelAutoScroll( );
         var position = e.GetTouchPoint(this).Position;
         TrackTouchDown(e.TouchDevice.Id, e.TouchDevice, position);
         SubscribeDeactivated(e.TouchDevice);
@@ -201,6 +203,12 @@ public partial class InkCanvasNext
         RemoveDevice(e.TouchDevice);
         e.Handled |= wasHandled || wasAreaEraser || wasMultiTouch || wasManipulating;
         TouchEpilogue( );
+
+        // 其余触点未抬完时不滚动，避免画布在多指作画或手势进行期间移动
+        if (touches.Count == 0)
+        {
+            AutoScrollFromEdge(e.GetTouchPoint(CanvasScroll).Position);
+        }
     }
 
     private void CanvasTouchLeave(object o, TouchEventArgs e)
@@ -249,6 +257,7 @@ public partial class InkCanvasNext
             UpdateState( );
         }
     }
+
     private void SubscribeDeactivated(TouchDevice device)
     {
         device.Deactivated -= TouchDeviceDeactivated;
