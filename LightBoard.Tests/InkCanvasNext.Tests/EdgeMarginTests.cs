@@ -11,8 +11,6 @@ namespace InkCanvasNext.Tests;
 public class EdgeMarginTests
 {
     private static readonly Point P1 = new(100, 100);
-    private static readonly Point Close2 = new(180, 140);
-    private static readonly Point Close3 = new(300, 100);
 
     [Fact]
     public void Pan_ReleaseAtRightBottomEdge_ExtendsCanvasByOneViewport( )
@@ -31,16 +29,17 @@ public class EdgeMarginTests
             var a = host.Device( );
             var b = host.Device( );
             var c = host.Device( );
-            a.Down(host.Target, P1);
-            b.Down(host.Target, Close2);
-            c.Down(host.Target, Close3);
+            var cluster = TestPoints.CloseCluster(host, P1, 3);
+            a.Down(host.Target, cluster[0]);
+            b.Down(host.Target, cluster[1]);
+            c.Down(host.Target, cluster[2]);
             Assert.Equal(TouchState.Pan, host.Canvas.State);
 
             // 手指左移推高滚动偏移但被夹在最大值，视口保持贴住右缘
             a.Move(host.Target, new Point(50, 100));
             a.Up(host.Target, new Point(50, 100));
-            b.Up(host.Target, Close2);
-            c.Up(host.Target, Close3);
+            b.Up(host.Target, cluster[1]);
+            c.Up(host.Target, cluster[2]);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
 
             Assert.Equal(1280, host.Canvas.InnerCanvas.Width - widthBefore, 5);
@@ -62,16 +61,17 @@ public class EdgeMarginTests
             var a = host.Device( );
             var b = host.Device( );
             var c = host.Device( );
-            a.Down(host.Target, P1);
-            b.Down(host.Target, Close2);
-            c.Down(host.Target, Close3);
+            var cluster = TestPoints.CloseCluster(host, P1, 3);
+            a.Down(host.Target, cluster[0]);
+            b.Down(host.Target, cluster[1]);
+            c.Down(host.Target, cluster[2]);
             Assert.Equal(TouchState.Pan, host.Canvas.State);
 
             // 手指右移压低滚动偏移但被夹在 0，视口保持贴住左缘
             a.Move(host.Target, new Point(150, 100));
             a.Up(host.Target, new Point(150, 100));
-            b.Up(host.Target, Close2);
-            c.Up(host.Target, Close3);
+            b.Up(host.Target, cluster[1]);
+            c.Up(host.Target, cluster[2]);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
 
             Assert.Equal(App.CanvasSize.Width, host.Canvas.InnerCanvas.Width, 5);

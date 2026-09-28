@@ -77,10 +77,8 @@ public partial class InkCanvasNext
         TrackTouchDown(e.TouchDevice.Id, e.TouchDevice, position);
         SubscribeDeactivated(e.TouchDevice);
         UpdateState( );
-        // 接管判定：手势接管态（BlocksNativeInput）、面积擦叠加态（IsAreaEraserActive）、
-        // 盖章模式的单指上下文（EvalDraw/Draw）都拦下事件，不让原生收笔/移动选区
-        e.Handled = BlocksNativeInput(State) || IsAreaEraserActive(State)
-            || (StampAction != StampAction.None && State is TouchState.EvalDraw or TouchState.Draw);
+        // 接管判定由 HandlesEvent 统一给出：手势接管态、面积擦叠加态、盖章的单指上下文
+        e.Handled = HandlesEvent(State);
 
         if (State == TouchState.Selection)
         {
@@ -97,10 +95,8 @@ public partial class InkCanvasNext
                 var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
                 StartMultiTouchStroke(e.TouchDevice.Id, canvasPos);
             }
-
-            e.Handled = true;
         }
-        else if (IsShapeMode && State == TouchState.EvalDraw && !shapeActive)
+        else if (Tool.IsShape && State == TouchState.EvalDraw && !shapeActive)
         {
             var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
             StartShape(canvasPos);
@@ -147,10 +143,9 @@ public partial class InkCanvasNext
             case TouchState.Selection: UpdateSelectionTouch( ); break;
         }
 
-        // EvalDraw/Draw 保留未拦截（InkCanvas 原生收笔）；平移/缩放/选区由状态元数据接管；
-        // MultiDraw 的 Move 已在上面多画笔画分支接管；盖章期间单指上下文全程拦截
-        if (BlocksNativeInput(State) || IsAreaEraserActive(State)
-            || (StampAction != StampAction.None && State is TouchState.EvalDraw or TouchState.Draw))
+        // EvalDraw/Draw 保留未拦截（InkCanvas 原生收笔）；其余接管态见 HandlesEvent；
+        // MultiDraw 的 Move 已在上面多画笔画分支接管
+        if (HandlesEvent(State))
         {
             e.Handled = true;
         }
@@ -173,10 +168,8 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewTouchUp(object o, TouchEventArgs e)
     {
-        var wasHandled = State is TouchState.PanZoom or TouchState.Pan;
-        var wasAreaEraser = IsAreaEraserActive(State);
+        var wasHandled = HandlesEvent(State);
         var wasMultiTouch = multiTouchStrokes.ContainsKey(e.TouchDevice.Id);
-        var wasManipulating = State == TouchState.Selection;
 
         if (wasMultiTouch)
         {
@@ -201,7 +194,7 @@ public partial class InkCanvasNext
         }
 
         RemoveDevice(e.TouchDevice);
-        e.Handled |= wasHandled || wasAreaEraser || wasMultiTouch || wasManipulating;
+        e.Handled |= wasHandled || wasMultiTouch;
         TouchEpilogue( );
 
         // 其余触点未抬完时不滚动，避免画布在多指作画或手势进行期间移动

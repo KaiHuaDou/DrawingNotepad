@@ -23,14 +23,14 @@ public partial class InkCanvasNext
             return;
         }
 
-        if (IsShapeMode && !shapeActive)
+        if (Tool.IsShape && !shapeActive)
         {
             StartShape(e.GetPosition(InnerCanvas));
             e.Handled = true;
             return;
         }
 
-        if (Mode == InkCanvasNextMode.Select)
+        if (Tool.IsSelect)
         {
             BeginMouseSelection(e.GetPosition(InnerCanvas));
             InnerCanvas.CaptureMouse( );
@@ -38,7 +38,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        if (Mode != InkCanvasNextMode.EraseArea)
+        if (!Tool.IsAreaErase)
         {
             return;
         }
@@ -67,7 +67,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        if (Mode == InkCanvasNextMode.Select && selectionGesture != SelectionGesture.None)
+        if (Tool.IsSelect && selectionGesture != SelectionGesture.None)
         {
             UpdateMouseSelection(e.GetPosition(InnerCanvas));
             e.Handled = true;
@@ -101,7 +101,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        if (Mode == InkCanvasNextMode.Select && selectionGesture != SelectionGesture.None)
+        if (Tool.IsSelect && selectionGesture != SelectionGesture.None)
         {
             EndMouseSelection( );
             e.Handled = true;
@@ -142,16 +142,16 @@ public partial class InkCanvasNext
     /// 鼠标在按下时落章，触摸由未升级为手势的单指序列在抬手时落章（CanvasPreviewTouchUp）。</summary>
     private bool TryStamp(Point point)
     {
-        if (StampAction == StampAction.None)
+        if (!Tool.IsStamp)
         {
             return false;
         }
 
-        if (StampAction == StampAction.Clone)
+        if (Tool.Stamp == StampAction.Clone)
         {
             StampCloneAt(point);
         }
-        else if (StampAction == StampAction.Paste)
+        else if (Tool.Stamp == StampAction.Paste)
         {
             StampPasteAt(point);
         }

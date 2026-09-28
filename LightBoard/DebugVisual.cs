@@ -39,7 +39,6 @@ internal sealed class DebugVisual : FrameworkElement
 
     private static readonly Pen ThinPen = MakePen(MakeBrush("#66FFFFFF"), 1);
     private static readonly Pen DashPen = MakePen(MakeBrush("#CCFFFFFF"), 2, new DashStyle([4, 3], 0));
-    private static readonly Pen MarkPen = MakePen(Palette[4], 3);
     private static readonly Pen AccentPen = MakePen(Palette[0], 5);
     private static readonly Pen[] RowPens =
     [
@@ -102,10 +101,8 @@ internal sealed class DebugVisual : FrameworkElement
         var top = Math.Max(0, RenderSize.Height - PanelHeight - PanelBottomMargin);
         dc.PushTransform(new TranslateTransform(left, top));
         Text(dc, "InkCanvasNext 参数", 20, TextBrush, 24, 12, dip);
-        TextRight(dc, $"RenderCapability.Tier = {RenderCapability.Tier >> 16}   ProcessRenderMode = {RenderOptions.ProcessRenderMode}", 11, DimBrush, PanelWidth - 24, 22, dip);
         DrawRadii(dc, dip);
         DrawDistances(dc, dip);
-        DrawScaleAxis(dc, dip);
         DrawSmoothAxis(dc, dip);
         dc.Pop( );
 
@@ -134,16 +131,21 @@ internal sealed class DebugVisual : FrameworkElement
 
         Count(dc, "触点", $"{canvas.ActiveTouchCount}", SideMargin, mid - CountRowHeight, dip);
         Count(dc, "笔画", $"{canvas.Strokes.Count}", SideMargin, mid, dip);
+        Count(dc, "缩放", $"{canvas.CurrentScale:0.##}×", SideMargin, mid + CountRowHeight, dip);
 
-        CountRight(dc, "帧率", $"{frameMeter.Rate:0.0}", right, mid - 2 * CountRowHeight, dip);
-        CountRight(dc, "最长帧", $"{frameMeter.LongestFrame:0.0} ms", right, mid - CountRowHeight, dip);
-        CountRight(dc, "撤销", $"{canvas.Position}", right, mid, dip);
-        CountRight(dc, "重做", $"{canvas.RedoDepth}", right, mid + CountRowHeight, dip);
+        CountRight(dc, "帧率", $"{frameMeter.Rate:0.0}", right, mid - 3.5 * CountRowHeight, dip);
+        CountRight(dc, "最长帧", $"{frameMeter.LongestFrame:0.0} ms", right, mid - 2.5 * CountRowHeight, dip);
+        CountRight(dc, "撤销", $"{canvas.Position}", right, mid - 1.5 * CountRowHeight, dip);
+        CountRight(dc, "重做", $"{canvas.RedoDepth}", right, mid - 0.5 * CountRowHeight, dip);
+        CountRight(dc, "系统缩放", $"{dip:P0}", right, mid + 0.5 * CountRowHeight, dip);
+        CountRight(dc, "1 DIP", $"{dip:0.###} px", right, mid + 1.5 * CountRowHeight, dip);
+        CountRight(dc, "渲染", $"Tier {RenderCapability.Tier >> 16} · {RenderOptions.ProcessRenderMode}", right, mid + 2.5 * CountRowHeight, dip);
+        CountRight(dc, "T/Q/S", $"{T:0.#}/{Q:0.#}/{S:0.#}", right, mid + 3.5 * CountRowHeight, dip);
     }
 
     private static void DrawRadii(DrawingContext dc, double dip)
     {
-        Text(dc, "半径（1:1）", 13, DimBrush, 24, 56, dip);
+        Text(dc, "半径（1:1 DIP）", 13, DimBrush, 24, 56, dip);
 
         var center = new Point(120, 180);
         dc.DrawLine(ThinPen, new Point(center.X, center.Y), new Point(center.X + Eraser.DefaultDiameter / 2, center.Y));
@@ -154,44 +156,28 @@ internal sealed class DebugVisual : FrameworkElement
         Circle(dc, center, Eraser.DefaultDiameter / 2, RowPens[4]);
         dc.DrawEllipse(TextBrush, null, center, 2, 2);
 
-        Legend(dc, 0, $"HandleRadius = {SelectionVisual.HandleRadius:0.#}", 96, dip);
-        Legend(dc, 1, $"RotateScreenRadius = {SelectionVisual.RotateScreenRadius:0.#}", 122, dip);
-        Legend(dc, 2, $"HandleHitRadius = {HandleHitRadius:0.#}", 148, dip);
-        Legend(dc, 3, $"RotateHitScreenRadius = {RotateHitScreenRadius:0.#}", 174, dip);
-        Legend(dc, 4, $"DefaultDiameter = {Eraser.DefaultDiameter:0.#}", 200, dip);
+        Legend(dc, 0, $"HandleRadius = {SelectionVisual.HandleRadius:0.#} DIP", 96, dip);
+        Legend(dc, 1, $"RotateScreenRadius = {SelectionVisual.RotateScreenRadius:0.#} DIP", 122, dip);
+        Legend(dc, 2, $"HandleHitRadius = {HandleHitRadius:0.#} DIP", 148, dip);
+        Legend(dc, 3, $"RotateHitScreenRadius = {RotateHitScreenRadius:0.#} DIP", 174, dip);
+        Legend(dc, 4, $"DefaultDiameter/2 = {Eraser.DefaultDiameter / 2:0.#} DIP", 200, dip);
     }
 
     private void DrawDistances(DrawingContext dc, double dip)
     {
-        Text(dc, "距离（1:1）", 13, DimBrush, 460, 56, dip);
+        Text(dc, "距离（1:1 DIP）", 13, DimBrush, 460, 56, dip);
 
-        DistanceRow(dc, 0, 96, "LassoPointDistance", $"{Math.Sqrt(LassoPointDistance2):0.#} px", Math.Sqrt(LassoPointDistance2), false, dip);
-        DistanceRow(dc, 1, 122, "ToolbarGapFromSelection", $"{SelectionVisual.ToolbarGapFromSelection:0.#} px", SelectionVisual.ToolbarGapFromSelection, false, dip);
+        DistanceRow(dc, 0, 96, "LassoPointDistance", $"{Math.Sqrt(LassoPointDistance2):0.#} DIP", Math.Sqrt(LassoPointDistance2), false, dip);
+        DistanceRow(dc, 1, 122, "ToolbarGapFromSelection", $"{SelectionVisual.ToolbarGapFromSelection:0.#} DIP", SelectionVisual.ToolbarGapFromSelection, false, dip);
         DistanceRow(dc, 2, 148, "PinchLockDistance", ThresholdText(canvas.PinchLockDistance2), ThresholdLength(canvas.PinchLockDistance2), ThresholdDisabled(canvas.PinchLockDistance2), dip);
         DistanceRow(dc, 3, 174, "PanZoomDisplaceThreshold", ThresholdText(canvas.PanZoomDisplaceThreshold2), ThresholdLength(canvas.PanZoomDisplaceThreshold2), ThresholdDisabled(canvas.PanZoomDisplaceThreshold2), dip);
-        DistanceRow(dc, 4, 200, "RotateGapAboveSelection", $"{SelectionVisual.RotateGapAboveSelection:0.#} px", SelectionVisual.RotateGapAboveSelection, false, dip);
-        DistanceRow(dc, 5, 226, "DistanceThreshold", $"≈ {Math.Sqrt(canvas.distanceThreshold2):0.#} px", 100, true, dip);
-    }
-
-    private void DrawScaleAxis(DrawingContext dc, double dip)
-    {
-        Text(dc, "缩放（对数）", 13, DimBrush, 60, 268, dip);
-        dc.DrawLine(ThinPen, new Point(60, 316), new Point(420, 316));
-        foreach (var v in new[] { 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0 })
-        {
-            var x = ScalePos(v);
-            dc.DrawLine(ThinPen, new Point(x, 310), new Point(x, 322));
-            TextCentered(dc, $"{v:0.#}", 11, TextBrush, x, 326, dip);
-        }
-
-        var cx = Math.Clamp(ScalePos(canvas.CurrentScale), 60, 420);
-        dc.DrawLine(MarkPen, new Point(cx, 302), new Point(cx, 330));
-        Text(dc, $"{canvas.CurrentScale:0.00}×", 11, Palette[4], cx + 6, 290, dip);
+        DistanceRow(dc, 4, 200, "RotateGapAboveSelection", $"{SelectionVisual.RotateGapAboveSelection:0.#} DIP", SelectionVisual.RotateGapAboveSelection, false, dip);
+        DistanceRow(dc, 5, 226, "DistanceThreshold", ThresholdText(canvas.distanceThreshold2), ThresholdLength(canvas.distanceThreshold2), ThresholdApproximate(canvas.distanceThreshold2) || ThresholdDisabled(canvas.distanceThreshold2), dip);
     }
 
     private static void DrawSmoothAxis(DrawingContext dc, double dip)
     {
-        Text(dc, $"Smooth  T = {T:0.#}  Q = {Q:0.#}  S = {S:0.#}", 13, DimBrush, 460, 268, dip);
+        Text(dc, "Smooth", 13, DimBrush, 460, 268, dip);
         dc.DrawLine(ThinPen, new Point(460, 316), new Point(880, 316));
         dc.DrawLine(RowPens[1], new Point(460, 316), new Point(SmoothPos(1 - T), 316));
         dc.DrawLine(RowPens[1], new Point(SmoothPos(1 + T), 316), new Point(880, 316));
@@ -255,25 +241,34 @@ internal sealed class DebugVisual : FrameworkElement
         dc.DrawText(ft, new Point(right - ft.Width, y));
     }
 
+    // 值文本列固定在 590：线段起点 470，可用长度留出间距
+    private const double MaxThresholdLineLength = 112;
+
     private static string ThresholdText(double threshold2)
     {
-        return ThresholdDisabled(threshold2) ? "禁用" : $"{Math.Sqrt(threshold2):0.#} px";
+        if (ThresholdDisabled(threshold2))
+        {
+            return "禁用";
+        }
+
+        var length = Math.Sqrt(threshold2);
+        return length > MaxThresholdLineLength ? $"≈ {length:0.#} DIP" : $"{length:0.#} DIP";
     }
 
     private static double ThresholdLength(double threshold2)
     {
-        return ThresholdDisabled(threshold2) ? 44 : Math.Sqrt(threshold2);
+        return ThresholdDisabled(threshold2) ? 44 : Math.Min(Math.Sqrt(threshold2), MaxThresholdLineLength);
+    }
+
+    private static bool ThresholdApproximate(double threshold2)
+    {
+        return !ThresholdDisabled(threshold2) && Math.Sqrt(threshold2) > MaxThresholdLineLength;
     }
 
     // 阈值以超出屏幕尺度的极大值或非正值表示关闭（见 Parameters.cs），此时不参与距离比较。
     private static bool ThresholdDisabled(double threshold2)
     {
         return !double.IsFinite(threshold2) || threshold2 < 0 || threshold2 > 1e10;
-    }
-
-    private static double ScalePos(double v)
-    {
-        return 60 + (Math.Log10(v) + 1) / 2 * 360;
     }
 
     private static double SmoothPos(double v)

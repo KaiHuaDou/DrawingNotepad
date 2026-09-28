@@ -30,7 +30,9 @@ public partial class InkCanvasNext
     /// <summary>套索轨迹追加（鼠标/触摸共用）：去抖后累积路径点并更新命中测试与套索视觉。</summary>
     private void UpdateLassoTrack(Point p)
     {
-        if (Distance2(p, lassoPath[^1]) < LassoPointDistance2)
+        // 采样间距为视口 DIP：平方距离比较除以缩放平方转内容，保持屏幕绝对大小
+        var minDistance2 = LassoPointDistance2 / (CurrentScale * CurrentScale);
+        if (Distance2(p, lassoPath[^1]) < minDistance2)
         {
             return;
         }

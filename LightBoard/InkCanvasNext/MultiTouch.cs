@@ -16,7 +16,7 @@ public partial class InkCanvasNext
     private void StartMultiTouchStroke(int touchId, Point canvasPoint)
     {
         // 盖章期间 MultiDraw 被排除：多指落笔不创建笔画
-        if (StampAction != StampAction.None)
+        if (Tool.IsStamp)
         {
             return;
         }

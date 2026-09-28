@@ -111,8 +111,6 @@ public partial class InkCanvasNext : UserControl
         Strokes = InnerCanvas.Strokes;
         DefaultDrawingAttributes = InnerCanvas.DefaultDrawingAttributes;
 
-        prevMode = InkCanvasNextMode.Ink;
-
         var distanceThreshold = DistanceThresholdFactor * SystemParameters.WorkArea.Width;
         distanceThreshold2 = distanceThreshold * distanceThreshold;
 
@@ -202,7 +200,7 @@ public partial class InkCanvasNext : UserControl
     {
         var canvas = (InkCanvasNext) d;
 
-        // 手势进行中由状态机的 RestoreMode 延迟应用，这里只处理静止期的切换
+        // 手势进行中不立即应用，由手势结束时的状态机迁出路径统一重应用；这里只处理静止期的切换
         if (canvas.State == TouchState.Idle)
         {
             canvas.ApplyModeToEditing(canvas.Mode);
@@ -211,7 +209,6 @@ public partial class InkCanvasNext : UserControl
 
     private void ApplyEditingMode(InkCanvasNextMode mode)
     {
-        prevMode = mode;
         if (State != TouchState.Idle)
         {
             // 手势接管期间切换工具：放弃进行中的形状，避免抬手时把过时形状提交
@@ -222,22 +219,13 @@ public partial class InkCanvasNext : UserControl
         ApplyModeToEditing(mode);
     }
 
-    /// <summary>
-    /// 当前工具是否需要在 EvalDraw/Draw 期间抢先捕获触点（区域擦除与盖章需要，Ink 走原生不需要）。
-    /// 状态机感知工具差异有两处接缝：本方法与选区入口的 Mode/StampAction 判定。
-    /// </summary>
-    private bool WantsPreemptiveDrawCapture( )
-    {
-        return Mode == InkCanvasNextMode.EraseArea || StampAction != StampAction.None;
-    }
-
     private void ApplyModeToEditing(InkCanvasNextMode mode)
     {
         // 切换工具即中断形状绘制（鼠标路径 state 恒为 Idle，形状取消依赖此处）
         CancelShape( );
 
         // 盖章期间单指只落章：原生收笔一律关闭（触屏上仅 Handled 掉触摸事件压不住手写笔管线）
-        if (StampAction != StampAction.None)
+        if (Tool.IsStamp)
         {
             InnerCanvas.EditingMode = InkCanvasEditingMode.None;
             return;

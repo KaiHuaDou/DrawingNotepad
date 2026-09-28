@@ -13,10 +13,7 @@ namespace InkCanvasNext.Tests;
 public class StampTouchTests
 {
     private static readonly Point P1 = new(100, 100);
-    private static readonly Point Close2 = new(180, 140);      // 与 P1 相距 ~89px，恒满足 d <= l
-    private static readonly Point Moved = new(300, 200);       // 与 P1 相距 100px > 20px 位移阈值
     private static readonly Point End1 = new(500, 320);        // 第一指的结束点
-    private static readonly Point Far2 = new(100, 20_000);     // 与 P1 相距 ~19900px，恒满足 d > l
 
     [Fact]
     public void SingleFingerTap_StampsAtLiftPoint( )
@@ -45,7 +42,7 @@ public class StampTouchTests
             var finger = host.Device( );
 
             finger.Down(host.Target, P1);
-            finger.Move(host.Target, Moved);
+            finger.Move(host.Target, TestPoints.BeyondDisplacement(host, P1));
             Assert.Equal(TouchState.Draw, host.Canvas.State);
             finger.Up(host.Target, End1);
 
@@ -64,7 +61,7 @@ public class StampTouchTests
             var finger2 = host.Device( );
 
             finger1.Down(host.Target, P1);
-            finger2.Down(host.Target, Close2);
+            finger2.Down(host.Target, TestPoints.CloseTo(host, P1));
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
 
             finger1.Move(host.Target, new Point(120, 80));
@@ -86,15 +83,16 @@ public class StampTouchTests
             using var host = CreateStampHost( );
             var finger1 = host.Device( );
             var finger2 = host.Device( );
+            var farPoint = TestPoints.FarFrom(host, P1);
 
             finger1.Down(host.Target, P1);
-            finger2.Down(host.Target, Far2);
+            finger2.Down(host.Target, farPoint);
             Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
 
-            finger1.Move(host.Target, Moved);
-            finger2.Move(host.Target, new Point(200, 19_000));
+            finger1.Move(host.Target, TestPoints.BeyondDisplacement(host, P1));
+            finger2.Move(host.Target, new Point(farPoint.X, farPoint.Y + 500));
             finger1.Up(host.Target, End1);
-            finger2.Up(host.Target, new Point(300, 19_500));
+            finger2.Up(host.Target, new Point(farPoint.X + 100, farPoint.Y + 600));
 
             // MultiDraw 在盖章期间被排除：不创建笔画，抬手也不残留落章
             Assert.Single(host.Canvas.Strokes);
@@ -117,6 +115,34 @@ public class StampTouchTests
             // 序列中途退出盖章：抬手不落章
             Assert.Single(host.Canvas.Strokes);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
+        });
+    }
+
+    /// <summary>武装随手势解除、随下一单指序列重新武装：捏合手势不落章，其后的单击照常落章。</summary>
+    [Fact]
+    public void PinchGesture_Disarms_NextTapRestamps( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateStampHost( );
+
+            var secondPoint = TestPoints.CloseTo(host, P1);
+            var a = host.Device( );
+            var b = host.Device( );
+            a.Down(host.Target, P1);
+            b.Down(host.Target, secondPoint);
+            Assert.Equal(TouchState.PanZoom, host.Canvas.State);
+
+            a.Up(host.Target, P1);
+            b.Up(host.Target, secondPoint);
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.Single(host.Canvas.Strokes);
+
+            var finger = host.Device( );
+            finger.Down(host.Target, End1);
+            finger.Up(host.Target, TestPoints.BeyondDisplacement(host, P1));
+            Assert.Equal(2, host.Canvas.Strokes.Count);
+            AssertStampCenter(host.Canvas.Strokes[1], TestPoints.BeyondDisplacement(host, P1));
         });
     }
 

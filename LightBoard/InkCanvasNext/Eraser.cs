@@ -26,13 +26,8 @@ public partial class InkCanvasNext
 
     private bool IsAreaEraserActive(TouchState state)
     {
-        if (state == TouchState.Eraser)
-        {
-            return true;
-        }
-
-        return Mode == InkCanvasNextMode.EraseArea
-            && state is TouchState.EvalDraw or TouchState.Draw or TouchState.MultiDraw;
+        var traits = Traits(state);
+        return traits.PalmErase || (Tool.IsAreaErase && traits.AreaEraseHost);
     }
 
     private void UpdateAreaEraser( )

@@ -1,4 +1,3 @@
-using System.Windows;
 using System.Windows.Media;
 
 namespace InkCanvasNext;
@@ -17,6 +16,8 @@ public partial class InkCanvasNext
     public const double ScrollStep = 25;
 
     // ---------- 手势 ----------
+    // 触点坐标统一取自 GetTouchPoint(this)（根可视空间：WPF 只按 relativeTo 的祖先链做变换），
+    // 不经过画布 LayoutTransform，因此以下视口 DIP 阈值不随缩放变化。
 
 #if DEBUG
     public const double DistanceThresholdFactor = 0.9;
@@ -84,7 +85,7 @@ public partial class InkCanvasNext
     // ---------- 选区 ----------
 
     /// <summary>
-    /// 内容 DIP
+    /// 视口 DIP，使用时除以缩放转内容
     /// </summary>
     public const double HandleHitRadius = 16;
 
@@ -94,7 +95,7 @@ public partial class InkCanvasNext
     public const double RotateHitScreenRadius = 24;
 
     /// <summary>
-    /// 内容 DIP^2
+    /// 视口 DIP^2，使用时除以缩放平方转内容
     /// </summary>
     public const double LassoPointDistance2 = 16;
 
@@ -136,7 +137,7 @@ public partial class InkCanvasNext
 
 internal sealed partial class SelectionVisual
 {
-    internal const double HandleRadius = 5; // 内容 DIP
+    internal const double HandleRadius = 5; // 视口 DIP，绘制时除以缩放转内容
 
     internal const double RotateScreenRadius = 8; // 视口 DIP
     internal const double RotateGapAboveSelection = 32; // 视口 DIP，使用时除以缩放转内容
@@ -145,30 +146,21 @@ internal sealed partial class SelectionVisual
     internal const double HaloWidthFactor = 2.4;
     internal const byte HaloAlpha = 120; // 0~255
     internal const byte BorderAlpha = 235; // 0~255
-    internal const double BorderWidth = 2.0; // 内容 DIP
-    internal const double LassoWidth = 2.0; // 内容 DIP
-    internal static readonly double[] LassoDashPattern = [4, 3]; // 内容 DIP
+    internal const double BorderWidth = 2.0; // 视口 DIP，绘制时除以缩放转内容
+    internal const double LassoWidth = 2.0; // 视口 DIP，绘制时除以缩放转内容
+    internal static readonly double[] LassoDashPattern = [4, 3]; // 视口 DIP，绘制时除以缩放转内容
 
     private static readonly Color AccentColor = Color.FromRgb(0x4C, 0x8B, 0xF5);
 
     private static readonly SolidColorBrush HaloBrush = CreateAccentBrush(HaloAlpha);
-    private static readonly Brush BorderBrush = CreateAccentBrush(BorderAlpha);
-    private static readonly Pen BorderPen = CreateFrozenPen(BorderBrush, BorderWidth);
-    private static readonly Pen LassoPen = CreateFrozenPen(
-        new SolidColorBrush(AccentColor), LassoWidth, new DashStyle(LassoDashPattern, 0));
+    private static readonly SolidColorBrush BorderBrush = CreateAccentBrush(BorderAlpha);
+    private static readonly SolidColorBrush LassoBrush = CreateAccentBrush(0xFF);
 
     private static SolidColorBrush CreateAccentBrush(byte alpha)
     {
         var brush = new SolidColorBrush(Color.FromArgb(alpha, AccentColor.R, AccentColor.G, AccentColor.B));
         brush.Freeze( );
         return brush;
-    }
-
-    private static Pen CreateFrozenPen(Brush brush, double width, DashStyle? dash = null)
-    {
-        var pen = new Pen(brush, width) { DashStyle = dash };
-        pen.Freeze( );
-        return pen;
     }
 }
 

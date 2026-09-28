@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
@@ -74,14 +75,20 @@ internal sealed partial class SelectionVisual
             }
         }
 
+        // 覆盖层位于内容坐标系：视口 DIP 的线宽、手柄与虚线尺寸一律除以缩放，保持屏幕绝对大小
+        var borderPen = new Pen(BorderBrush, BorderWidth / zoom);
         if (!bounds.IsEmpty)
         {
-            dc.DrawRectangle(null, BorderPen, bounds);
-            DrawHandles(dc, bounds, BorderPen, zoom, rotateHandlePosition);
+            dc.DrawRectangle(null, borderPen, bounds);
+            DrawHandles(dc, bounds, borderPen, zoom, rotateHandlePosition);
         }
 
         if (lasso is { Count: >= 2 })
         {
+            var lassoPen = new Pen(LassoBrush, LassoWidth / zoom)
+            {
+                DashStyle = new DashStyle([.. LassoDashPattern.Select(d => d / zoom)], 0)
+            };
             var figure = new PathFigure { StartPoint = lasso[0], IsClosed = true, IsFilled = false };
             for (var i = 1; i < lasso.Count; i++)
             {
@@ -90,12 +97,13 @@ internal sealed partial class SelectionVisual
 
             var geometry = new PathGeometry( );
             geometry.Figures.Add(figure);
-            dc.DrawGeometry(null, LassoPen, geometry);
+            dc.DrawGeometry(null, lassoPen, geometry);
         }
     }
 
     private static void DrawHandles(DrawingContext dc, Rect b, Pen pen, double zoom, Point? rotateHandlePosition)
     {
+        var handleRadius = HandleRadius / zoom;
         var white = Brushes.White;
         var pts = new[]
         {
@@ -108,7 +116,7 @@ internal sealed partial class SelectionVisual
 
         foreach (var p in pts)
         {
-            dc.DrawRectangle(white, pen, new Rect(p.X - HandleRadius, p.Y - HandleRadius, HandleRadius * 2, HandleRadius * 2));
+            dc.DrawRectangle(white, pen, new Rect(p.X - handleRadius, p.Y - handleRadius, handleRadius * 2, handleRadius * 2));
         }
 
         // 旋转手柄：默认浮于选区正上方；旋转手势中沿鼠标角度绕选区中心等半径跟随（rotateHandlePosition）

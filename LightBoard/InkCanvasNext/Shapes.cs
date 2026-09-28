@@ -15,11 +15,6 @@ public partial class InkCanvasNext
     private Point shapeEnd;
     private bool shapeActive;
 
-    private bool IsShapeMode => Mode is InkCanvasNextMode.Line or InkCanvasNextMode.Circle;
-    private bool IsCircle => Mode == InkCanvasNextMode.Circle;
-
-    /// <summary>形状终点触点（InnerCanvas 坐标系）：恒取插入序第一指（形状归属指），
-    /// 其余手指的移动与抬起均不参与。</summary>
     private Point GetShapeEndPoint( )
     {
         using var enumerator = touches.Values.GetEnumerator( );
@@ -33,7 +28,7 @@ public partial class InkCanvasNext
         shapeEnd = point;
         shapeActive = true;
 
-        if (IsCircle)
+        if (Tool.IsCircle)
         {
             Canvas.SetLeft(ShapePreviewEllipse, point.X);
             Canvas.SetTop(ShapePreviewEllipse, point.Y);
@@ -61,7 +56,7 @@ public partial class InkCanvasNext
         }
 
         var end = point;
-        if (!IsCircle && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        if (!Tool.IsCircle && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
             end = ConstrainLine(shapeStart, point);
         }
@@ -72,7 +67,7 @@ public partial class InkCanvasNext
         var brush = new SolidColorBrush(attrs.Color);
         var width = Math.Max(attrs.Width, ShapeMinStrokeWidth);
 
-        if (IsCircle)
+        if (Tool.IsCircle)
         {
             var r = Distance(shapeStart, end);
             Canvas.SetLeft(ShapePreviewEllipse, shapeStart.X - r);
@@ -139,7 +134,7 @@ public partial class InkCanvasNext
         attrs.FitToCurve = false;
         attrs.IsHighlighter = false;
 
-        if (IsCircle)
+        if (Tool.IsCircle)
         {
             var cx = shapeStart.X;
             var cy = shapeStart.Y;

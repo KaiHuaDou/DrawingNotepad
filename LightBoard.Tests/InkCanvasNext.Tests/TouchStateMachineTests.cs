@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 
 namespace InkCanvasNext.Tests;
 
@@ -9,14 +10,8 @@ namespace InkCanvasNext.Tests;
 public class TouchStateMachineTests
 {
     // 坐标位于根可视（InkCanvasNext）坐标系。MockTouchDevice 预先捕获到 InnerCanvas，
-    // 命中测试被跳过，因此坐标无需落在视口内，间距可任意放大以满足 d > l 的 MultiDraw 判定。
+    // 命中测试被跳过，因此坐标无需落在视口内；间距/位移相关的坐标一律由 TestPoints 按运行时参数推导。
     private static readonly Point P1 = new(100, 100);
-    private static readonly Point Close2 = new(180, 140);      // 与 P1 相距 ~89px，恒满足 d <= l
-    private static readonly Point Far2 = new(100, 20_000);     // 与 P1 相距 ~19900px，恒满足 d > l
-    private static readonly Point Close3 = new(300, 100);
-    private static readonly Point Close4 = new(350, 120);
-    private static readonly Point Close5 = new(400, 140);
-    private static readonly Point Moved = new(100, 200);       // 与 P1 相距 100px > 20px 位移阈值
 
     [Fact]
     public void Idle_OneFinger_EntersEvalDraw_ThenRelease_ReturnsIdle( )
@@ -43,7 +38,7 @@ public class TouchStateMachineTests
             var finger = host.Device( );
 
             finger.Down(host.Target, P1);
-            finger.Move(host.Target, Moved);
+            finger.Move(host.Target, TestPoints.BeyondDisplacement(host, P1));
             Assert.Equal(TouchState.Draw, host.Canvas.State);
         });
     }
@@ -56,7 +51,7 @@ public class TouchStateMachineTests
             using var host = new TouchHost( );
 
             host.Device( ).Down(host.Target, P1);
-            host.Device( ).Down(host.Target, Close2);
+            host.Device( ).Down(host.Target, TestPoints.CloseTo(host, P1));
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
         });
     }
@@ -69,7 +64,7 @@ public class TouchStateMachineTests
             using var host = new TouchHost( );
 
             host.Device( ).Down(host.Target, P1);
-            host.Device( ).Down(host.Target, Close2);
+            host.Device( ).Down(host.Target, TestPoints.CloseTo(host, P1));
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
         });
     }
@@ -82,7 +77,7 @@ public class TouchStateMachineTests
             using var host = new TouchHost( );
 
             host.Device( ).Down(host.Target, P1);
-            host.Device( ).Down(host.Target, Far2);
+            host.Device( ).Down(host.Target, TestPoints.FarFrom(host, P1));
             Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
         });
     }
@@ -95,7 +90,7 @@ public class TouchStateMachineTests
             using var host = new TouchHost( );
 
             host.Device( ).Down(host.Target, P1);
-            host.Device( ).Down(host.Target, Far2);
+            host.Device( ).Down(host.Target, TestPoints.FarFrom(host, P1));
             Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
         });
     }
@@ -109,8 +104,8 @@ public class TouchStateMachineTests
 
             var finger = host.Device( );
             finger.Down(host.Target, P1);
-            finger.Move(host.Target, Moved); // EvalDraw -> Draw
-            host.Device( ).Down(host.Target, Far2);
+            finger.Move(host.Target, TestPoints.BeyondDisplacement(host, P1)); // EvalDraw -> Draw
+            host.Device( ).Down(host.Target, TestPoints.FarFrom(host, P1));
 
             Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
         });
@@ -125,10 +120,10 @@ public class TouchStateMachineTests
 
             var finger = host.Device( );
             finger.Down(host.Target, P1);
-            finger.Move(host.Target, Moved);
+            finger.Move(host.Target, TestPoints.BeyondDisplacement(host, P1));
             Assert.Equal(TouchState.Draw, host.Canvas.State);
 
-            finger.Up(host.Target, Moved);
+            finger.Up(host.Target, TestPoints.BeyondDisplacement(host, P1));
             Assert.Equal(TouchState.Idle, host.Canvas.State);
         });
     }
@@ -139,10 +134,11 @@ public class TouchStateMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
+            var cluster = TestPoints.CloseCluster(host, P1, 3);
 
-            host.Device( ).Down(host.Target, P1);
-            host.Device( ).Down(host.Target, Close2);
-            host.Device( ).Down(host.Target, Close3);
+            host.Device( ).Down(host.Target, cluster[0]);
+            host.Device( ).Down(host.Target, cluster[1]);
+            host.Device( ).Down(host.Target, cluster[2]);
             Assert.Equal(TouchState.Pan, host.Canvas.State);
         });
     }
@@ -153,12 +149,13 @@ public class TouchStateMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
+            var cluster = TestPoints.CloseCluster(host, P1, 5);
 
-            host.Device( ).Down(host.Target, P1);
-            host.Device( ).Down(host.Target, Close2);
-            host.Device( ).Down(host.Target, Close3);
-            host.Device( ).Down(host.Target, Close4);
-            host.Device( ).Down(host.Target, Close5);
+            foreach (var point in cluster)
+            {
+                host.Device( ).Down(host.Target, point);
+            }
+
             Assert.Equal(TouchState.Eraser, host.Canvas.State);
         });
     }
@@ -193,7 +190,7 @@ public class TouchStateMachineTests
             var a = host.Device( );
             var b = host.Device( );
             a.Down(host.Target, P1);
-            b.Down(host.Target, Close2);
+            b.Down(host.Target, TestPoints.CloseTo(host, P1));
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
 
             a.Move(host.Target, new Point(150, 150));
@@ -211,10 +208,10 @@ public class TouchStateMachineTests
             var a = host.Device( );
             var b = host.Device( );
             a.Down(host.Target, P1);
-            b.Down(host.Target, Close2);
+            b.Down(host.Target, TestPoints.CloseTo(host, P1));
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
 
-            b.Up(host.Target, Close2);
+            b.Up(host.Target, TestPoints.CloseTo(host, P1));
             Assert.Equal(TouchState.Pan, host.Canvas.State);
         });
     }
@@ -225,12 +222,13 @@ public class TouchStateMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
+            var cluster = TestPoints.CloseCluster(host, P1, 3);
 
-            host.Device( ).Down(host.Target, P1);
-            host.Device( ).Down(host.Target, Close2);
+            host.Device( ).Down(host.Target, cluster[0]);
+            host.Device( ).Down(host.Target, cluster[1]);
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
 
-            host.Device( ).Down(host.Target, Close3);
+            host.Device( ).Down(host.Target, cluster[2]);
             Assert.Equal(TouchState.Pan, host.Canvas.State);
         });
     }
@@ -245,11 +243,11 @@ public class TouchStateMachineTests
             var a = host.Device( );
             var b = host.Device( );
             a.Down(host.Target, P1);
-            b.Down(host.Target, Close2);
+            b.Down(host.Target, TestPoints.CloseTo(host, P1));
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
 
             a.Up(host.Target, P1);
-            b.Up(host.Target, Close2);
+            b.Up(host.Target, TestPoints.CloseTo(host, P1));
             Assert.Equal(TouchState.Idle, host.Canvas.State);
         });
     }
@@ -264,8 +262,8 @@ public class TouchStateMachineTests
             var a = host.Device( );
             var b = host.Device( );
             a.Down(host.Target, P1);
-            b.Down(host.Target, Close2);
-            b.Up(host.Target, Close2); // PanZoom -> Pan（剩 a）
+            b.Down(host.Target, TestPoints.CloseTo(host, P1));
+            b.Up(host.Target, TestPoints.CloseTo(host, P1)); // PanZoom -> Pan（剩 a）
 
             var before = host.Canvas.OffsetX;
             a.Move(host.Target, new Point(50, 100)); // 向左平移 50px
@@ -287,10 +285,10 @@ public class TouchStateMachineTests
             var a = host.Device( );
             var b = host.Device( );
             a.Down(host.Target, P1);
-            b.Down(host.Target, Far2);
+            b.Down(host.Target, TestPoints.FarFrom(host, P1));
             Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
 
-            b.Up(host.Target, Far2);
+            b.Up(host.Target, TestPoints.FarFrom(host, P1));
             Assert.Equal(TouchState.Draw, host.Canvas.State);
         });
     }
@@ -305,12 +303,160 @@ public class TouchStateMachineTests
             var a = host.Device( );
             var b = host.Device( );
             a.Down(host.Target, P1);
-            b.Down(host.Target, Far2);
+            b.Down(host.Target, TestPoints.FarFrom(host, P1));
             Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
 
             a.Up(host.Target, P1);
-            b.Up(host.Target, Far2);
+            b.Up(host.Target, TestPoints.FarFrom(host, P1));
             Assert.Equal(TouchState.Idle, host.Canvas.State);
+        });
+    }
+
+    /// <summary>多指作画中重置输入（换页/窗口失活路径）：在途笔画按抬手提交，状态回 Idle。</summary>
+    [Fact]
+    public void MultiDraw_ResetTouchState_CommitsInflightStrokes( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+
+            var a = host.Device( );
+            var b = host.Device( );
+            var farPoint = TestPoints.FarFrom(host, P1);
+            a.Down(host.Target, P1);
+            b.Down(host.Target, farPoint);
+            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
+
+            a.Move(host.Target, new Point(120, 120));
+            b.Move(host.Target, new Point(farPoint.X, farPoint.Y + 100));
+
+            host.Canvas.ResetTouchState( );
+
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.Equal(2, host.Canvas.Strokes.Count);
+        });
+    }
+
+    // ---------- 编辑模式的覆盖与恢复（OverridesEditing 元数据） ----------
+
+    /// <summary>MultiDraw --> Draw：迁出覆盖编辑模式的接管态时，把编辑模式恢复为当前工具。</summary>
+    [Fact]
+    public void MultiDraw_ReleaseToOneFinger_RestoresEditingMode( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var farPoint = TestPoints.FarFrom(host, P1);
+
+            var a = host.Device( );
+            var b = host.Device( );
+            a.Down(host.Target, P1);
+            b.Down(host.Target, farPoint);
+            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+
+            b.Up(host.Target, farPoint);
+            Assert.Equal(TouchState.Draw, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
+
+            a.Up(host.Target, P1);
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+        });
+    }
+
+    /// <summary>双指手势中切换工具：EditingMode 延迟到迁出路径统一应用为当前模式（取代 prevMode/RestoreMode）。</summary>
+    [Fact]
+    public void PanZoom_ModeSwitchDuringGesture_AppliesNewModeOnExit( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var closePoint = TestPoints.CloseTo(host, P1);
+
+            var a = host.Device( );
+            var b = host.Device( );
+            a.Down(host.Target, P1);
+            b.Down(host.Target, closePoint);
+            Assert.Equal(TouchState.PanZoom, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+
+            host.Canvas.Mode = InkCanvasNextMode.EraseStroke;
+            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+
+            a.Up(host.Target, P1);
+            b.Up(host.Target, closePoint);
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.EraseByStroke, host.Canvas.InnerCanvasElement.EditingMode);
+        });
+    }
+
+    /// <summary>单指按住未起笔时切换工具：迁出 EvalDraw 回 Idle 时应用新模式。</summary>
+    [Fact]
+    public void EvalDraw_ModeSwitchDuringStroke_AppliesNewModeOnRelease( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+
+            var finger = host.Device( );
+            finger.Down(host.Target, P1);
+            Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
+
+            host.Canvas.Mode = InkCanvasNextMode.EraseStroke;
+            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
+
+            finger.Up(host.Target, P1);
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.EraseByStroke, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Empty(host.Canvas.Strokes);
+        });
+    }
+
+    // ---------- ResetTouchState（换页/窗口失活路径） ----------
+
+    [Fact]
+    public void PanZoom_ResetTouchState_RestoresEditingMode( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var closePoint = TestPoints.CloseTo(host, P1);
+
+            var a = host.Device( );
+            var b = host.Device( );
+            a.Down(host.Target, P1);
+            b.Down(host.Target, closePoint);
+            Assert.Equal(TouchState.PanZoom, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+
+            host.Canvas.ResetTouchState( );
+
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
+        });
+    }
+
+    [Fact]
+    public void Eraser_ResetTouchState_RestoresEditingMode( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var spacing = TestPoints.Spacing(host);
+
+            for (var i = 0; i < 5; i++)
+            {
+                host.Device( ).Down(host.Target, new Point(P1.X + i * spacing / 10, P1.Y));
+            }
+
+            Assert.Equal(TouchState.Eraser, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+
+            host.Canvas.ResetTouchState( );
+
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
         });
     }
 

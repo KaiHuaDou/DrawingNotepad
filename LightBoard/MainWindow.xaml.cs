@@ -89,9 +89,8 @@ public partial class MainWindow : Window
         CanvasNext.ResetTouchState( );
     }
 
-    private void WindowSourceInitialized(object sender, EventArgs e)
+    private void WindowSourceInitialized(object o, EventArgs e)
     {
-
         PassThroughBorder.LayoutUpdated += (_, _) => UpdateWindowRegion( );
         LocationChanged += (_, _) => UpdateWindowRegion( );
         SizeChanged += (_, _) => UpdateWindowRegion( );
@@ -103,8 +102,7 @@ public partial class MainWindow : Window
         var dpi = VisualTreeHelper.GetDpi(this);
         var hWnd = new WindowInteropHelper(this).Handle;
 
-        if (hWnd == IntPtr.Zero
-            || PassThroughBorder == null)
+        if (hWnd == IntPtr.Zero|| PassThroughBorder == null)
         {
             return;
         }

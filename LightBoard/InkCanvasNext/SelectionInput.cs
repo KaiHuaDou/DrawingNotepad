@@ -217,39 +217,41 @@ public partial class InkCanvasNext
             return SelectionHandle.None;
         }
 
-        if (Near(p, SelectionVisual.RotateHandleCenter(b, CurrentScale), RotateHitScreenRadius / Max(CurrentScale, 1e-6)))
+        // 命中半径为视口 DIP：除以缩放转内容坐标比较，保持屏幕绝对大小
+        var scale = Max(CurrentScale, 1e-6);
+        if (Near(p, SelectionVisual.RotateHandleCenter(b, scale), RotateHitScreenRadius / scale))
         {
             return SelectionHandle.Rotate;
         }
-        else if (Near(p, b.TopLeft, HandleHitRadius))
+        else if (Near(p, b.TopLeft, HandleHitRadius / scale))
         {
             return SelectionHandle.TL;
         }
-        else if (Near(p, b.TopRight, HandleHitRadius))
+        else if (Near(p, b.TopRight, HandleHitRadius / scale))
         {
             return SelectionHandle.TR;
         }
-        else if (Near(p, b.BottomLeft, HandleHitRadius))
+        else if (Near(p, b.BottomLeft, HandleHitRadius / scale))
         {
             return SelectionHandle.BL;
         }
-        else if (Near(p, b.BottomRight, HandleHitRadius))
+        else if (Near(p, b.BottomRight, HandleHitRadius / scale))
         {
             return SelectionHandle.BR;
         }
-        else if (Near(p, new Point(b.Left + b.Width / 2, b.Top), HandleHitRadius))
+        else if (Near(p, new Point(b.Left + b.Width / 2, b.Top), HandleHitRadius / scale))
         {
             return SelectionHandle.T;
         }
-        else if (Near(p, new Point(b.Left + b.Width / 2, b.Bottom), HandleHitRadius))
+        else if (Near(p, new Point(b.Left + b.Width / 2, b.Bottom), HandleHitRadius / scale))
         {
             return SelectionHandle.B;
         }
-        else if (Near(p, new Point(b.Left, b.Top + b.Height / 2), HandleHitRadius))
+        else if (Near(p, new Point(b.Left, b.Top + b.Height / 2), HandleHitRadius / scale))
         {
             return SelectionHandle.L;
         }
-        else if (Near(p, new Point(b.Right, b.Top + b.Height / 2), HandleHitRadius))
+        else if (Near(p, new Point(b.Right, b.Top + b.Height / 2), HandleHitRadius / scale))
         {
             return SelectionHandle.R;
         }
