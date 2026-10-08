@@ -100,7 +100,6 @@ internal sealed class DebugVisual : FrameworkElement
         var left = Math.Max(0, (RenderSize.Width - PanelWidth) / 2);
         var top = Math.Max(0, RenderSize.Height - PanelHeight - PanelBottomMargin);
         dc.PushTransform(new TranslateTransform(left, top));
-        Text(dc, "InkCanvasNext 参数", 20, TextBrush, 24, 12, dip);
         DrawRadii(dc, dip);
         DrawDistances(dc, dip);
         DrawSmoothAxis(dc, dip);
@@ -139,14 +138,13 @@ internal sealed class DebugVisual : FrameworkElement
         CountRight(dc, "重做", $"{canvas.RedoDepth}", right, mid - 0.5 * CountRowHeight, dip);
         CountRight(dc, "系统缩放", $"{dip:P0}", right, mid + 0.5 * CountRowHeight, dip);
         CountRight(dc, "1 DIP", $"{dip:0.###} px", right, mid + 1.5 * CountRowHeight, dip);
-        CountRight(dc, "渲染", $"Tier {RenderCapability.Tier >> 16} · {RenderOptions.ProcessRenderMode}", right, mid + 2.5 * CountRowHeight, dip);
-        CountRight(dc, "T/Q/S", $"{T:0.#}/{Q:0.#}/{S:0.#}", right, mid + 3.5 * CountRowHeight, dip);
+        CountRight(dc, "渲染", $"Tier {RenderCapability.Tier >> 16}", right, mid + 2.5 * CountRowHeight, dip);
+        CountRight(dc, "", $"{RenderOptions.ProcessRenderMode}", right, mid + 3.5 * CountRowHeight, dip);
+        CountRight(dc, "T/Q/S", $"{T:0.#}/{Q:0.#}/{S:0.#}", right, mid + 4.5 * CountRowHeight, dip);
     }
 
     private static void DrawRadii(DrawingContext dc, double dip)
     {
-        Text(dc, "半径（1:1 DIP）", 13, DimBrush, 24, 56, dip);
-
         var center = new Point(120, 180);
         dc.DrawLine(ThinPen, new Point(center.X, center.Y), new Point(center.X + Eraser.DefaultDiameter / 2, center.Y));
         Circle(dc, center, SelectionVisual.HandleRadius, RowPens[0]);
@@ -165,8 +163,6 @@ internal sealed class DebugVisual : FrameworkElement
 
     private void DrawDistances(DrawingContext dc, double dip)
     {
-        Text(dc, "距离（1:1 DIP）", 13, DimBrush, 460, 56, dip);
-
         DistanceRow(dc, 0, 96, "LassoPointDistance", $"{Math.Sqrt(LassoPointDistance2):0.#} DIP", Math.Sqrt(LassoPointDistance2), false, dip);
         DistanceRow(dc, 1, 122, "ToolbarGapFromSelection", $"{SelectionVisual.ToolbarGapFromSelection:0.#} DIP", SelectionVisual.ToolbarGapFromSelection, false, dip);
         DistanceRow(dc, 2, 148, "PinchLockDistance", ThresholdText(canvas.PinchLockDistance2), ThresholdLength(canvas.PinchLockDistance2), ThresholdDisabled(canvas.PinchLockDistance2), dip);

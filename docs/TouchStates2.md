@@ -28,6 +28,7 @@
 - 优先级（自上而下，即 switch 臂顺序）：**选区 > MultiDraw > 单指（EvalDraw/Draw）> 平移（PanZoom/Pan）> 橡皮（Eraser）**。
     - 例：`Idle` 下 `count == 1` 且选区候选成立 → `Selection`（而非 `EvalDraw`）；`count == 2` 同理压过 `PanZoom`。
 - `Selection` 内部不做 `d`/`l` 分析（`count ∈ {1,2}` 时维持选区手势）；`count == 0` 回 `Idle`。附加手指触发画布级手势：`count ∈ {3,4}` 且 `d <= l` → `Pan`（Select 模式下 3/4 指平移画布，退出时 `EndSelectionTouch` 提交当前变换）；`count >= 5` 且 `d <= l` → `Eraser`（掌心擦除）。
+- 擦除工具（`Mode ∈ {EraseArea, EraseStroke}`，`Tool.IsErase`）的多指手势与普通模式同款（并拢判定：2 指 → `PanZoom`、3/4 指 → `Pan`），差异：`count >= 5` 无论间距均迁 `Eraser`（手掌压屏常呈张开）；多指张开（`d > l`）不迁 `MultiDraw` 起笔画，保持当前擦除上下文。
 - `PanZoom` 中减为单指（`count == 1`）迁入 `Pan`，此后落下第二指也停在 `Pan`（`Pan` 无回 `PanZoom` 的迁移），需全部抬起重新开始双指手势。
 
 ## 要求（副作用）
@@ -36,7 +37,7 @@
 - 离开 `Idle`：保存 `prevMode = Mode`（供 `RestoreMode` 还原）。
 - 离开 `MultiDraw`：`EndMultiTouch`。
 - 离开 `Selection`：`EndSelectionTouch`。
-- 离开 `EvalDraw`/`Draw` 进入手势接管态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`/`Selection`，或异常回 `Idle`）：若形状在途（`shapeActive`），迁入 `MultiDraw` 时按当前预览 `CommitShape`，迁入其余状态则 `CancelShape`。形状只允许在单指绘制上下文（`EvalDraw`/`Draw`）存活；`EvalDraw` 中落第二指按距离迁入 `PanZoom`（捏合优先）或 `MultiDraw`；`Draw` 中落第二指**无条件**迁入 `MultiDraw`（在途形状提交，两指转入多指画笔）。
+- 离开 `EvalDraw`/`Draw` 进入手势接管态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`/`Selection`，或异常回 `Idle`）：若形状在途（`shapeActive`），迁入 `MultiDraw` 时按当前预览 `CommitShape`，迁入其余状态则 `CancelShape`。形状只允许在单指绘制上下文（`EvalDraw`/`Draw`）存活；`EvalDraw` 中落第二指按距离迁入 `PanZoom`（捏合优先）或 `MultiDraw`；`Draw` 中落第二指迁入 `MultiDraw`，擦除工具例外（见假设：多指手势与普通模式同款，5+ 指掌擦，张开保持擦除上下文）。
 - 离开"覆盖编辑模式"的状态（`PanZoom`/`Pan`/`MultiDraw`/`Eraser`）进入非覆盖状态 → `RestoreMode`（如 `MultiDraw --> Draw` 需恢复 `EditingMode`）。
 - 进入 `EvalDraw`，或 `EvalDraw --> Draw`：若 `WantsPreemptiveDrawCapture` → `CaptureAll`。
 - 进入 `Selection`：`CaptureAll` + `BeginSelectionTouch`。
@@ -81,27 +82,28 @@ stateDiagram-v2
 
     EvalDraw --> Idle: count == 0
     EvalDraw --> Draw: count == 1 and x > c
+    EvalDraw --> Eraser: count >= 5 and (d <= l or IsErase)
     EvalDraw --> PanZoom: count == 2 and d <= l
     EvalDraw --> Pan: (count == 3 or count == 4) and d <= l
-    EvalDraw --> Eraser: count >= 5 and d <= l
-    EvalDraw --> MultiDraw: count >= 2 and d > l
+    EvalDraw --> MultiDraw: count >= 2 and d > l and not IsErase
 
     Draw --> Idle: count == 0
-    Draw --> MultiDraw: count >= 2
+    Draw --> Eraser: count >= 5 and IsErase
+    Draw --> MultiDraw: count >= 2 and not IsErase
 
     MultiDraw --> Idle: count == 0
     MultiDraw --> Draw: count == 1
 
     PanZoom --> Idle: count == 0
     PanZoom --> Pan: (count == 1 or count >= 3) and d <= l
-    PanZoom --> MultiDraw: count > 2 and d > l
+    PanZoom --> MultiDraw: count > 2 and d > l and not IsErase
 
     Pan --> Idle: count == 0
-    Pan --> Eraser: count >= 5 and d <= l
-    Pan --> MultiDraw: count > 3 and d > l
+    Pan --> Eraser: count >= 5 and (d <= l or IsErase)
+    Pan --> MultiDraw: count > 3 and d > l and not IsErase
 
     Eraser --> Idle: count == 0
-    Eraser --> MultiDraw: count > 5 and d > l
+    Eraser --> MultiDraw: count > 5 and d > l and not IsErase
 
     Selection --> Idle: count == 0
     Selection --> Pan: (count == 3 or count == 4) and d <= l

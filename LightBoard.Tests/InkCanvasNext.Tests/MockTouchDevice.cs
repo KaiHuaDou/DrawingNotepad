@@ -18,9 +18,7 @@ internal sealed class MockTouchDevice : TouchDevice
     private bool active;
     private bool down;
 
-    public MockTouchDevice( ) : base(Interlocked.Increment(ref NextId))
-    {
-    }
+    public MockTouchDevice( ) : base(Interlocked.Increment(ref NextId)) { }
 
     public Point Position { get; private set; }
 

@@ -216,7 +216,7 @@ public partial class MainWindow
             From = CenterBorder.ActualHeight,
             To = isChecked ? (CenterBorder.ActualHeight - 10) * 2 + 10 : (CenterBorder.ActualHeight - 10) / 2 + 10,
             Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseOut }
+            EasingFunction = new CubicEase( ) { EasingMode = isChecked ? EasingMode.EaseIn: EasingMode.EaseOut }
         };
 
         CenterBorder.BeginAnimation(HeightProperty, heightAnimation);
@@ -327,7 +327,7 @@ public partial class MainWindow
 
     private void TransparentModeClick(object o, RoutedEventArgs e)
     {
-        var mode = (TransparentModeButton.Tag as string) == "\uE729";
+        var mode = TransparentModeMenu.IsChecked;
 
         CanvasNext.Background = mode ? Brushes.Transparent : CanvasNextBackgroundBrush;
         TimeText.Visibility = mode || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
@@ -335,7 +335,7 @@ public partial class MainWindow
         CenterBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
         RightBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
         PassThroughBorder.Visibility = mode ? Visibility.Visible : Visibility.Collapsed;
-        TransparentModeButton.Tag = mode ? "\uE7C3" : "\uE729";
+        TransparentModeIcon.Text = mode ? "\uE7C3" : "\uE729";
         Topmost = mode;
     }
 

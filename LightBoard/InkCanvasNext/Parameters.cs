@@ -72,12 +72,12 @@ public partial class InkCanvasNext
     /// <summary>
     /// 视口 DIP，抬手落点距上/下边缘小于此值即触发
     /// </summary>
-    public const double AutoScrollVerticalDefaultThreshold = 96;
+    public const double AutoScrollVerticalDefaultThreshold = 192;
 
     /// <summary>
     /// 视口 DIP，抬手落点距左/右边缘小于此值即触发
     /// </summary>
-    public const double AutoScrollHorizontalDefaultThreshold = 96;
+    public const double AutoScrollHorizontalDefaultThreshold = 192;
 
     public double AutoScrollVerticalThreshold { get; set; } = AutoScrollVerticalDefaultThreshold; // 视口 DIP，抬手落点距上/下边缘小于此值即触发
     public double AutoScrollHorizontalThreshold { get; set; } = AutoScrollHorizontalDefaultThreshold; // 视口 DIP，抬手落点距左/右边缘小于此值即触发

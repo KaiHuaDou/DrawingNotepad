@@ -23,8 +23,8 @@
     </Window.Template>
     <Grid x:Name="MainGrid">
         <Grid x:Name="DebugLayer" IsHitTestVisible="False" Visibility="Collapsed">
-            <TextBlock Margin="0,20,0,0" HorizontalAlignment="Center" VerticalAlignment="Top"
-                       Foreground="#EEEEEEEE"
+            <TextBlock Margin="0,50,0,0" HorizontalAlignment="Center" VerticalAlignment="Top"
+                       Foreground="#AAEEEEEE"
                        FontSize="32"
                        Text="调试模式" />
         </Grid>
@@ -38,7 +38,7 @@
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="ExitButton"
                         Style="{StaticResource ButtonStyle}"
-                        Click="CloseWindowClick" Tag="&#xE711;" />
+                        Click="CloseWindowClick" Tag="&#xE7E8;" />
                 <Button x:Name="WindowMinimizeButton"
                         Style="{StaticResource ButtonStyle}"
                         Click="MinimizeWindowClick" Tag="&#xE921;" />
@@ -85,6 +85,7 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEBE8;" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
                     <MenuItem Header="新建" Style="{StaticResource MenuItemStyle}" Click="NewFileClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE7C3;" />
@@ -100,11 +101,20 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE723;" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                    <MenuItem x:Name="TransparentModeMenu" Header="透明模式"
+                              Style="{StaticResource MenuItemStyle}"
+                              Click="TransparentModeClick" IsCheckable="True">
+                        <MenuItem.Icon>
+                            <TextBlock x:Name="TransparentModeIcon" Style="{StaticResource IconTextStyle}" Text="&#xE729;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="视频展台" IsEnabled="False" Style="{StaticResource MenuItemStyle}">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE722;" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
                     <MenuItem Header="保存" Style="{StaticResource MenuItemStyle}" Click="SaveFileClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE74E;" />
@@ -121,7 +131,7 @@
                               Style="{StaticResource MenuItemStyle}"
                               Click="ExportPdfClick">
                         <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE8A5;" />
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEA90;" />
                         </MenuItem.Icon>
                     </MenuItem>
                 </Menu>
@@ -153,9 +163,6 @@
                                  IsChecked="True"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <RadioButton MinWidth="4"
-                                 Style="{StaticResource SelectiveRadioStyle}"
-                                 Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
                     <RadioButton MinWidth="5"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
@@ -169,21 +176,18 @@
                     <RadioButton x:Name="CircleRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEA3A;" />
-                    <Border Width="35" Visibility="Hidden" />
+                    <Border Width="71" Visibility="Hidden" />
                     <RadioButton x:Name="EraseStrokeRadio"
+                                 Visibility="Collapsed"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED61;" />
-                    <Border Width="20" Visibility="Hidden" />
                     <RadioButton x:Name="SelectRadio"
-                                 Style="{StaticResource RadioStyle}"
-                                 Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEF20;" />
+                                 Style="{StaticResource LabelledRadioStyle}"
+                                 Click="ModeRadioChecked" Content="选择" GroupName="EditGroup"
+                                 Tag="&#xEF20;" />
                     <ToggleButton x:Name="PasteButton"
-                                  Style="{StaticResource ToggleStyle}"
-                                  Click="PasteClick" Tag="&#xE77F;" />
-                    <Border Width="23" Visibility="Hidden" />
-                    <Button x:Name="TransparentModeButton"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="TransparentModeClick" Tag="&#xE729;" />
+                                  Style="{StaticResource LabelledToggleStyle}"
+                                  Click="PasteClick" Content="粘贴" Tag="&#xE77F;" />
                 </StackPanel>
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
@@ -223,7 +227,7 @@
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED60;" />
                     <Button Style="{StaticResource ButtonStyle}"
                             Foreground="#F25767"
-                            Click="EraseAll" Tag="&#xED62;" />
+                            Click="EraseAll" Tag="&#xE894;" />
                     <Button x:Name="UndoButton"
                             IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"

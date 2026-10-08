@@ -61,7 +61,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 抬手后无剩余触点且落点贴边时，把落点推离边缘至阈值处（0.1 秒 CubicEase EaseInOut 动画）。
+    /// 抬手后无剩余触点且落点贴边时，把落点推离边缘至阈值处
     /// </summary>
     private void AutoScrollFromEdge(Point touch)
     {

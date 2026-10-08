@@ -51,7 +51,6 @@ public partial class InkCanvasNext
         return (first, second);
     }
 
-    /// <summary>指定触点是否为插入序的第一指。</summary>
     private bool IsFirstTouch(int id)
     {
         if (touches.Count == 0)
@@ -59,9 +58,7 @@ public partial class InkCanvasNext
             return false;
         }
 
-        using var enumerator = touches.Keys.GetEnumerator( );
-        enumerator.MoveNext( );
-        return enumerator.Current == id;
+        return touches.Keys.First( ) == id;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

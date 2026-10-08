@@ -49,7 +49,7 @@ public partial class MainWindow
             From = fromWidth,
             To = toWidth,
             Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseOut }
+            EasingFunction = new CubicEase( ) { EasingMode = isChecked? EasingMode.EaseIn : EasingMode.EaseOut }
         };
         widthAnimation.Completed += (_, _) =>
         {
@@ -62,7 +62,7 @@ public partial class MainWindow
             From = fromHeight,
             To = toHeight,
             Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase( ) { EasingMode = EasingMode.EaseOut }
+            EasingFunction = new CubicEase( ) { EasingMode = isChecked ? EasingMode.EaseIn : EasingMode.EaseOut }
         };
         // 写回按当前 IsChecked 判定:连点时旧动画的 Completed 被替换吞掉,回调必须指向最终状态
         heightAnimation.Completed += (_, _) =>
