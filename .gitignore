@@ -2,7 +2,8 @@
 EasiNote*/
 draft/
 LightBoard.Installer/Output/
-
+**/memory
+**/tmp
 
 # User-specific files
 *.rsuser

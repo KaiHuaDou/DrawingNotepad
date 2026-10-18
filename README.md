@@ -112,8 +112,10 @@ dotnet publish -p:PublishProfile=FolderProfile -c Release
 如需免装运行时（自包含）版本：
 
 ```bash
-dotnet publish -p:PublishProfile=FolderProfile -c Release --self-contained
+dotnet publish -p:PublishProfile=SelfContained -c Release
 ```
+
+输出位于 `LightBoard/bin/publish-with-runtime/`。
 
 运行测试（STA 测试宿主，含触摸状态机、工具栏交互与文件读写用例）：
 

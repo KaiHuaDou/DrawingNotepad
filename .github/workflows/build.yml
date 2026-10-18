@@ -19,7 +19,26 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  meta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      numeric: ${{ steps.version.outputs.numeric }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Read version from CHANGELOG
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(python3 .github/scripts/changelog.py version)
+          NUMERIC=$(python3 .github/scripts/changelog.py version --numeric)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "numeric=$NUMERIC" >> "$GITHUB_OUTPUT"
+
+  test:
     runs-on: windows-latest
     timeout-minutes: 20
 
@@ -37,96 +56,76 @@ jobs:
       - name: Test
         run: dotnet test
 
-      - name: Publish (framework-dependent)
-        run: dotnet publish LightBoard -p:PublishProfile=FolderProfile -c Release
+  # 两个变体各自一个作业：发布目录与安装包输出目录互不共享，单变体失败不影响另一个
+  package:
+    needs: [meta, test]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: LightBoard
+            profile: FolderProfile
+            publish_dir: bin/publish
+            installer: LightBoard-installer
+            self_contained: "false"
+          - app: LightBoard-with-runtime
+            profile: SelfContained
+            publish_dir: bin/publish-with-runtime
+            installer: LightBoard-installer-with-runtime
+            self_contained: "true"
+    runs-on: windows-latest
+    timeout-minutes: 20
 
-      - name: Upload (framework-dependent)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: ./global.json
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+
+      - name: Publish
+        run: dotnet publish LightBoard -p:PublishProfile=${{ matrix.profile }} -c Release
+
+      - name: Upload app
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard
-          path: ./LightBoard/bin/publish/*
+          name: ${{ matrix.app }}
+          path: ./LightBoard/${{ matrix.publish_dir }}/*
           # 发版要复用这里的产物，保留期需覆盖「构建完成后过一段时间才打 tag」
           retention-days: 30
+          if-no-files-found: error
 
-      # 自包含版输出到独立目录：两个变体的安装包各自从自己的发布目录取文件，与构建顺序无关
-      - name: Publish (self-contained)
-        run: dotnet publish LightBoard -p:PublishProfile=FolderProfile -c Release --self-contained -p:PublishDir=bin/publish-with-runtime/
-
-      - name: Upload (self-contained)
-        uses: actions/upload-artifact@v7
-        with:
-          name: LightBoard-with-runtime
-          path: ./LightBoard/bin/publish-with-runtime/*
-          # 发版要复用这里的产物，保留期需覆盖「构建完成后过一段时间才打 tag」
-          retention-days: 30
-
-      - name: Read version from CHANGELOG
-        id: version
-        shell: bash
-        run: |
-          V=$(sed -n 's/^## \[v\{0,1\}\([^]]*\)\].*/\1/p' CHANGELOG.md | head -n1)
-          if [ -z "$V" ]; then
-            echo "::error::CHANGELOG.md 中没有找到版本标题（## [vX.Y.Z]）"
-            exit 1
-          fi
-          echo "version=$V" >> "$GITHUB_OUTPUT"
-
-      - name: Install Inno Setup 7
+      - name: Install Inno Setup
         shell: pwsh
-        run: |
-          # Chocolatey 的 innosetup 包停留在 6.7.1，直接安装官方 7.1.0
-          $installer = "$env:RUNNER_TEMP\innosetup-7.1.0-x64.exe"
-          Invoke-WebRequest -Uri 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe' -OutFile $installer
-          Unblock-File $installer
-          # -ArgumentList 的数组元素以空格拼接且不自动加引号，含空格的 /DIR 会被拆成多个参数
-          # （/DIR=C:\Program Files\... 实际只取到 C:\Program）；不指定 /DIR，使用 x64 安装包的默认目录
-          $p = Start-Process -FilePath $installer -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
-          if ($p.ExitCode -notin @(0, 3010)) { Write-Error "Inno Setup 安装失败：退出码 $($p.ExitCode)"; exit 1 }
+        run: ./.github/scripts/install-inno-setup.ps1
 
-          $candidates = @(
-            "$env:ProgramFiles\Inno Setup 7\ISCC.exe",
-            "${env:ProgramFiles(x86)}\Inno Setup 7\ISCC.exe"
+      - name: Build installer
+        shell: pwsh
+        env:
+          APP_VERSION: ${{ needs.meta.outputs.version }}
+          APP_VERSION_NUMERIC: ${{ needs.meta.outputs.numeric }}
+          SELF_CONTAINED: ${{ matrix.self_contained }}
+        run: |
+          $isccArgs = @(
+            "-DAppVersion=$env:APP_VERSION",
+            "-DAppVersionNumeric=$env:APP_VERSION_NUMERIC",
+            "--output-dir=LightBoard.Installer\Output\${{ matrix.installer }}",
+            "LightBoard.Installer\LightBoard.iss"
           )
-          $iscc = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $iscc) {
-            Write-Error "未找到 ISCC.exe。候选路径：$($candidates -join '; ')"
-            exit 1
+          if ($env:SELF_CONTAINED -eq 'true') {
+            $isccArgs = @('-DSelfContained') + $isccArgs
           }
-          "ISCC=$iscc" >> $env:GITHUB_ENV
-          Write-Host "ISCC: $iscc"
-
-      - name: Build installer (framework-dependent)
-        shell: pwsh
-        run: |
-          # 先清空 Output：上传通配只应命中本次变体的产物，旧版本或另一变体的安装包不得混入
-          Remove-Item -Recurse -Force 'LightBoard.Installer\Output' -ErrorAction SilentlyContinue
-          if (-not (Test-Path $env:ISCC)) { Write-Error "ISCC.exe 未找到：$env:ISCC"; exit 1 }
-          & $env:ISCC "-DAppVersion=$env:LB_VERSION" 'LightBoard.Installer\LightBoard.iss'
+          & $env:ISCC @isccArgs
           exit $LASTEXITCODE
-        env:
-          LB_VERSION: ${{ steps.version.outputs.version }}
 
-      - name: Upload (installer)
+      - name: Upload installer
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard-installer
-          path: LightBoard.Installer/Output/LightBoard-Setup-*.exe
+          name: ${{ matrix.installer }}
+          path: LightBoard.Installer/Output/${{ matrix.installer }}/*.exe
           retention-days: 30
-
-      - name: Build installer (self-contained)
-        shell: pwsh
-        run: |
-          # 先清空 Output：上传通配只应命中本次变体的产物，旧版本或另一变体的安装包不得混入
-          Remove-Item -Recurse -Force 'LightBoard.Installer\Output' -ErrorAction SilentlyContinue
-          if (-not (Test-Path $env:ISCC)) { Write-Error "ISCC.exe 未找到：$env:ISCC"; exit 1 }
-          & $env:ISCC "-DAppVersion=$env:LB_VERSION" '-DSelfContained' 'LightBoard.Installer\LightBoard.iss'
-          exit $LASTEXITCODE
-        env:
-          LB_VERSION: ${{ steps.version.outputs.version }}
-
-      - name: Upload (installer with runtime)
-        uses: actions/upload-artifact@v7
-        with:
-          name: LightBoard-installer-with-runtime
-          path: LightBoard.Installer/Output/LightBoard-Setup-with-runtime-*.exe
-          retention-days: 30
+          if-no-files-found: error

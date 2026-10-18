@@ -10,7 +10,7 @@ using static InkCanvasNext.InkCanvasNext;
 
 namespace LightBoard;
 
-// 调试模式浮层：参数面板（1:1 半径圆、1:1 距离线、缩放与 Smooth 数轴、渲染层与渲染模式）居中贴底，运行状态计数与帧率分列左右两侧。
+// 调试模式浮层：参数面板（1:1 半径圆、1:1 距离线、渲染层与渲染模式）居中贴底，运行状态计数与帧率分列左右两侧，边缘自动滚动热区以红色虚线标出。
 internal sealed class DebugVisual : FrameworkElement
 {
     private const double PanelWidth = 900;
@@ -39,7 +39,7 @@ internal sealed class DebugVisual : FrameworkElement
 
     private static readonly Pen ThinPen = MakePen(MakeBrush("#66FFFFFF"), 1);
     private static readonly Pen DashPen = MakePen(MakeBrush("#CCFFFFFF"), 2, new DashStyle([4, 3], 0));
-    private static readonly Pen AccentPen = MakePen(Palette[0], 5);
+    private static readonly Pen AutoScrollPen = MakePen(MakeBrush("#E0FF3B30"), 1.5, new DashStyle([6, 4], 0));
     private static readonly Pen[] RowPens =
     [
         MakePen(Palette[0], 2),
@@ -77,6 +77,9 @@ internal sealed class DebugVisual : FrameworkElement
             Dispatcher.CurrentDispatcher
         );
 
+        // 视口尺寸变化时热区线位置随之变化，且没有对应事件，只能依赖自身 SizeChanged 重绘
+        SizeChanged += (_, _) => InvalidateVisual( );
+
         IsVisibleChanged += (_, _) =>
         {
             if (IsVisible)
@@ -102,8 +105,10 @@ internal sealed class DebugVisual : FrameworkElement
         dc.PushTransform(new TranslateTransform(left, top));
         DrawRadii(dc, dip);
         DrawDistances(dc, dip);
-        DrawSmoothAxis(dc, dip);
         dc.Pop( );
+
+        // 热区线在视口坐标系绘制，不参与面板平移
+        DrawAutoScrollZones(dc);
 
         DrawCounts(dc, dip);
     }
@@ -140,7 +145,6 @@ internal sealed class DebugVisual : FrameworkElement
         CountRight(dc, "1 DIP", $"{dip:0.###} px", right, mid + 1.5 * CountRowHeight, dip);
         CountRight(dc, "渲染", $"Tier {RenderCapability.Tier >> 16}", right, mid + 2.5 * CountRowHeight, dip);
         CountRight(dc, "", $"{RenderOptions.ProcessRenderMode}", right, mid + 3.5 * CountRowHeight, dip);
-        CountRight(dc, "T/Q/S", $"{T:0.#}/{Q:0.#}/{S:0.#}", right, mid + 4.5 * CountRowHeight, dip);
     }
 
     private static void DrawRadii(DrawingContext dc, double dip)
@@ -171,20 +175,21 @@ internal sealed class DebugVisual : FrameworkElement
         DistanceRow(dc, 5, 226, "DistanceThreshold", ThresholdText(canvas.distanceThreshold2), ThresholdLength(canvas.distanceThreshold2), ThresholdApproximate(canvas.distanceThreshold2) || ThresholdDisabled(canvas.distanceThreshold2), dip);
     }
 
-    private static void DrawSmoothAxis(DrawingContext dc, double dip)
+    // 边缘自动滚动热区：在视口上下左右各阈值距离处画红色虚线
+    private void DrawAutoScrollZones(DrawingContext dc)
     {
-        Text(dc, "Smooth", 13, DimBrush, 460, 268, dip);
-        dc.DrawLine(ThinPen, new Point(460, 316), new Point(880, 316));
-        dc.DrawLine(RowPens[1], new Point(460, 316), new Point(SmoothPos(1 - T), 316));
-        dc.DrawLine(RowPens[1], new Point(SmoothPos(1 + T), 316), new Point(880, 316));
-        dc.DrawLine(AccentPen, new Point(SmoothPos(1 - T), 316), new Point(SmoothPos(1 + T), 316));
-
-        foreach (var v in new[] { 0.5, 1 - T, 1.0, 1 + T, 1.5 })
+        var viewport = canvas.ViewportSize;
+        if (viewport.Width <= 0 || viewport.Height <= 0)
         {
-            var x = SmoothPos(v);
-            dc.DrawLine(ThinPen, new Point(x, 310), new Point(x, 322));
-            TextCentered(dc, $"{v:0.#}", 11, TextBrush, x, 326, dip);
+            return;
         }
+
+        var v = canvas.AutoScrollVerticalThreshold;
+        var h = canvas.AutoScrollHorizontalThreshold;
+        dc.DrawLine(AutoScrollPen, new Point(0, v), new Point(viewport.Width, v));
+        dc.DrawLine(AutoScrollPen, new Point(0, viewport.Height - v), new Point(viewport.Width, viewport.Height - v));
+        dc.DrawLine(AutoScrollPen, new Point(h, 0), new Point(h, viewport.Height));
+        dc.DrawLine(AutoScrollPen, new Point(viewport.Width - h, 0), new Point(viewport.Width - h, viewport.Height));
     }
 
     private static void Circle(DrawingContext dc, Point center, double radius, Pen pen)
@@ -225,12 +230,6 @@ internal sealed class DebugVisual : FrameworkElement
         dc.DrawText(ft, new Point(x, y));
     }
 
-    private static void TextCentered(DrawingContext dc, string s, double size, Brush brush, double centerX, double y, double dip)
-    {
-        var ft = new FormattedText(s, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Font, size, brush, dip);
-        dc.DrawText(ft, new Point(centerX - ft.Width / 2, y));
-    }
-
     private static void TextRight(DrawingContext dc, string s, double size, Brush brush, double right, double y, double dip)
     {
         var ft = new FormattedText(s, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Font, size, brush, dip);
@@ -265,11 +264,6 @@ internal sealed class DebugVisual : FrameworkElement
     private static bool ThresholdDisabled(double threshold2)
     {
         return !double.IsFinite(threshold2) || threshold2 < 0 || threshold2 > 1e10;
-    }
-
-    private static double SmoothPos(double v)
-    {
-        return 460 + (v - 0.5) * 420;
     }
 
     private static SolidColorBrush MakeBrush(string hex)

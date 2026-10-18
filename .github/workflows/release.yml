@@ -37,15 +37,11 @@ jobs:
           ref: ${{ env.RELEASE_TAG }}
 
       # 构建时从 CHANGELOG 首个版本标题提取 AppVersion 写入安装包，此处校验 tag 与之一致，
-      # 避免发版版本与安装包版本错位（提取式与 build.yml 相同）
+      # 避免发版版本与安装包版本错位
       - name: Verify tag matches CHANGELOG version
         shell: bash
         run: |
-          TOP=$(sed -n 's/^## \[v\{0,1\}\([^]]*\)\].*/\1/p' CHANGELOG.md | head -n1)
-          if [ -z "$TOP" ]; then
-            echo "::error::CHANGELOG.md 中没有找到版本标题（## [vX.Y.Z]）"
-            exit 1
-          fi
+          TOP=$(python3 .github/scripts/changelog.py version)
           if [ "$TOP" != "${RELEASE_TAG#v}" ]; then
             echo "::error::$RELEASE_TAG 与 CHANGELOG 首个版本 v$TOP 不一致：该 commit 构建出的安装包版本为 $TOP"
             exit 1
@@ -103,52 +99,10 @@ jobs:
           ls -l --block-size=K ./*.zip ./*.exe
 
       - name: Extract release notes from CHANGELOG.md
-        id: notes
         shell: bash
-        run: |
-          python3 - <<'PY'
-          import os, re
+        run: python3 .github/scripts/changelog.py notes --tag "$RELEASE_TAG" --out release_notes.md
 
-          tag = os.environ.get("RELEASE_TAG", "")
-          version = tag[1:] if tag.startswith("v") else tag
-
-          with open("CHANGELOG.md", encoding="utf-8") as f:
-              lines = f.read().splitlines()
-
-          esc = re.escape(version)
-          # 方括号内允许可选的 v 前缀（CHANGELOG 标题可能是 [vX.Y.Z] 或 [X.Y.Z]）；
-          # 尾部的 "- 日期" 必须带空白，否则 v1.0.0 会前缀命中 [v1.0.0-rc.4] 而取错小节
-          pat = re.compile(r"^##\s+\[?v?" + esc + r"\]?(?:\s+-\s+\S+)?\s*$")
-          start = None
-          for i, line in enumerate(lines):
-              if pat.match(line):
-                  start = i
-                  break
-
-          found = False
-          body_lines = []
-          if start is not None:
-              # 去掉版本号外的链接方括号，便于在 Release 正文里干净渲染
-              heading = re.sub(r"^##\s+\[([^\]]+)\]", r"## \1", lines[start])
-              body_lines.append(heading)
-              for line in lines[start + 1:]:
-                  # 遇到下一个二级标题或文件底部的链接引用定义即停止
-                  if re.match(r"^##\s+", line) or re.match(r"^\[[^\]]+\]:", line):
-                      break
-                  body_lines.append(line)
-              found = True
-
-          body = "\n".join(body_lines).strip() + "\n"
-          with open("release_notes.md", "w", encoding="utf-8") as f:
-              f.write(body)
-
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
-              f.write(f"found={str(found).lower()}\n")
-          print(f"version={version} found={found}")
-          PY
-
-      - name: Create GitHub Release (from CHANGELOG)
-        if: steps.notes.outputs.found == 'true'
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           files: |
@@ -156,15 +110,4 @@ jobs:
             LightBoard-Setup-*.exe
           tag_name: ${{ env.RELEASE_TAG }}
           body_path: release_notes.md
-          prerelease: ${{ env.PRERELEASE }}
-
-      - name: Create GitHub Release (auto-generated notes)
-        if: steps.notes.outputs.found != 'true'
-        uses: softprops/action-gh-release@v3
-        with:
-          files: |
-            *.zip
-            LightBoard-Setup-*.exe
-          tag_name: ${{ env.RELEASE_TAG }}
-          generate_release_notes: true
           prerelease: ${{ env.PRERELEASE }}

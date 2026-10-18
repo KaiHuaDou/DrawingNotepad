@@ -126,8 +126,19 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseUp(object o, MouseButtonEventArgs e)
     {
-        if (e.StylusDevice != null || !MousePointer.IsDown)
+        if (e.StylusDevice != null)
         {
+            return;
+        }
+
+        // 原生工具：鼠标未走合成触点，抬手贴边滚动与触摸抬手同款（仅左键，排除右键菜单）
+        if (!MousePointer.IsDown)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                AutoScrollFromEdge(e.GetPosition(CanvasScroll));
+            }
+
             return;
         }
 

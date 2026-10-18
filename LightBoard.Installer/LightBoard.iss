@@ -7,15 +7,18 @@
 ;
 ; 产物来源（两个变体各自读取自己的发布目录，与发布、构建的先后顺序无关）：
 ;   框架依赖版 ← LightBoard/bin/publish
-;     dotnet publish LightBoard -p:PublishProfile=FolderProfile -c Release
 ;   自包含版 ← LightBoard/bin/publish-with-runtime
-;     dotnet publish LightBoard -p:PublishProfile=FolderProfile -c Release --self-contained -p:PublishDir=bin/publish-with-runtime/
+;   发布命令见 README 的「开发与构建」。
 ;
 ; 框架依赖版在运行时缺失时，在 PrepareToInstall 阶段从 aka.ms 下载最新 .NET 10 Desktop Runtime
 ; 并静默安装，普通模式与静默模式（/SILENT、/VERYSILENT）行为一致。
 
 #ifndef AppVersion
     #define AppVersion "0.0.0"
+#endif
+; VersionInfoVersion 只接受点分数字；预发布版本需另传 -DAppVersionNumeric=1.2.3
+#ifndef AppVersionNumeric
+    #define AppVersionNumeric AppVersion
 #endif
 
 #ifdef SelfContained
@@ -38,7 +41,7 @@ AppId={{57F024C3-01AE-49FB-935E-F82E13059603}}
 AppVersion={#AppVersion}
 AppName={#AppDisplayName}
 AppVerName={#AppDisplayName} {#AppVersion}
-VersionInfoVersion={#AppVersion}
+VersionInfoVersion={#AppVersionNumeric}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppDisplayName}
 UninstallDisplayIcon={app}\{#AppName}.exe
