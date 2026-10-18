@@ -7,9 +7,17 @@ using InkCanvasNext;
 
 namespace LightBoard;
 
-internal sealed record PenProfile(Color Color, double Width, bool IsHighlighter);
+internal sealed record PenProfile(
+    Color Color,
+    double Width,
+    bool IsHighlighter
+);
 
-internal sealed record ToolSnapshot(InkCanvasNextMode Mode, RadioButton? ColorRadio, RadioButton? ThicknessRadio);
+internal sealed record ToolSnapshot(
+    InkCanvasNextMode Mode,
+    RadioButton? ColorRadio,
+    RadioButton? ThicknessRadio
+);
 
 public partial class MainWindow
 {

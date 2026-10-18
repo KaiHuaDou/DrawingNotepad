@@ -3,14 +3,15 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
+using Windows.Win32.UI.WindowsAndMessaging;
+
 namespace LightBoard.External;
 
-internal static partial class NativeMethods
+internal static class NativeMethods
 {
-    private const int RGN_DIFF = 4;
-
-    private const int SW_RESTORE = 9;
-
     public static void ClearWindowRegion(IntPtr hWnd)
     {
         if (hWnd == IntPtr.Zero)
@@ -18,7 +19,7 @@ internal static partial class NativeMethods
             return;
         }
 
-        SetWindowRgn(hWnd, IntPtr.Zero, true);
+        _ = PInvoke.SetWindowRgn((HWND) hWnd, default, true);
     }
 
     public static void SetWindowRegion(IntPtr hWnd, double windowWidth, double windowHeight, DpiScale dpi, Rect borderRect)
@@ -30,13 +31,13 @@ internal static partial class NativeMethods
         var holeR = (int) Math.Round(borderRect.Right * dpi.DpiScaleX);
         var holeB = (int) Math.Round(borderRect.Bottom * dpi.DpiScaleY);
 
-        var hRgnWindow = CreateRectRgn(0, 0, winW, winH);
-        var hRgnHole = CreateRectRgn(holeL, holeT, holeR, holeB);
-        _ = CombineRgn(hRgnWindow, hRgnWindow, hRgnHole, RGN_DIFF);
+        var hRgnWindow = PInvoke.CreateRectRgn(0, 0, winW, winH);
+        var hRgnHole = PInvoke.CreateRectRgn(holeL, holeT, holeR, holeB);
+        _ = PInvoke.CombineRgn(hRgnWindow, hRgnWindow, hRgnHole, RGN_COMBINE_MODE.RGN_DIFF);
 
-        SetWindowRgn(hWnd, hRgnWindow, true);
+        _ = PInvoke.SetWindowRgn((HWND) hWnd, hRgnWindow, true);
 
-        DeleteObject(hRgnHole);
+        PInvoke.DeleteObject(hRgnHole);
     }
 
     public static void SwitchTo(string processName)
@@ -50,37 +51,37 @@ internal static partial class NativeMethods
 
         var hWnd = processes[0].MainWindowHandle;
 
-        if (hWnd != IntPtr.Zero)
+        if (hWnd == IntPtr.Zero)
         {
-            ShowWindow(hWnd, SW_RESTORE);
-            SetForegroundWindow(hWnd);
+            return;
         }
+
+        var window = (HWND) hWnd;
+
+        RestoreWindow(window);
+        PInvoke.SetForegroundWindow(window);
     }
 
-    [LibraryImport("gdi32.dll")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial int CombineRgn(IntPtr hrgnDst, IntPtr hrgnSrc1, IntPtr hrgnSrc2, int iMode);
+    /// <summary>
+    /// 仅不可见的窗口需要还原：最小化且最小化前是最大化时按最大化还原
+    /// </summary>
+    private static void RestoreWindow(HWND window)
+    {
+        var placement = new WINDOWPLACEMENT { length = (uint) Marshal.SizeOf<WINDOWPLACEMENT>() };
 
-    [LibraryImport("gdi32.dll")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial IntPtr CreateRectRgn(int nLeft, int nTop, int nRight, int nBottom);
+        if (!PInvoke.GetWindowPlacement(window, ref placement))
+        {
+            return;
+        }
 
-    [LibraryImport("gdi32.dll")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool DeleteObject(IntPtr hObject);
-
-    [LibraryImport("user32.dll")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool SetForegroundWindow(IntPtr hWnd);
-
-    [LibraryImport("user32.dll")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, [MarshalAs(UnmanagedType.Bool)] bool bRedraw);
-
-    [LibraryImport("user32.dll")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        if (placement.showCmd == SHOW_WINDOW_CMD.SW_SHOWMINIMIZED)
+        {
+            var maximized = (placement.flags & WINDOWPLACEMENT_FLAGS.WPF_RESTORETOMAXIMIZED) != 0;
+            PInvoke.ShowWindow(window, maximized ? SHOW_WINDOW_CMD.SW_SHOWMAXIMIZED : SHOW_WINDOW_CMD.SW_RESTORE);
+        }
+        else if (placement.showCmd == SHOW_WINDOW_CMD.SW_HIDE)
+        {
+            PInvoke.ShowWindow(window, SHOW_WINDOW_CMD.SW_SHOWNA);
+        }
+    }
 }

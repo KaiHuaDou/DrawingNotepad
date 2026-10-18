@@ -201,7 +201,6 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="PART_Border" Background="Transparent" CornerRadius="5">
-
                         <TextBlock x:Name="PART_IconText"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Style="{StaticResource IconTextStyle}"
@@ -209,6 +208,53 @@
                                    Text="{TemplateBinding Tag}" />
                     </Border>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Border" Property="Opacity" Value="0.75" />
+                            <Setter TargetName="PART_IconText" Property="Foreground" Value="#AAAAAA" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ImageButtonStyle" TargetType="{x:Type Button}">
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Margin" Value="3" />
+        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="PART_Border" Background="Transparent" CornerRadius="5">
+                        <Grid>
+                            <TextBlock x:Name="PART_IconText"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="Collapsed"
+                                       Style="{StaticResource IconTextStyle}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       Text="{TemplateBinding Tag}" />
+                            <StackPanel x:Name="PART_Icon" Margin="5,0,5,0" Orientation="Horizontal">
+                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center"
+                                           FontSize="19"
+                                           Text="切换到" />
+                                <Image Width="24" Height="24"
+                                       VerticalAlignment="Center"
+                                       Source="{TemplateBinding Content}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Content" Value="{x:Null}">
+                            <Setter TargetName="PART_IconText" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="PART_Icon" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
                         </Trigger>
@@ -267,7 +313,7 @@
             <Setter.Value>
                 <DataTemplate>
                     <TextBlock Margin="5" VerticalAlignment="Center"
-                               FontSize="19"
+                               FontSize="18"
                                Text="{Binding}" />
                 </DataTemplate>
             </Setter.Value>
@@ -276,7 +322,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
                     <Border x:Name="PART_Border"
-                            Margin="2" Padding="10,6"
+                            Margin="2" Padding="8,4"
                             Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
                             CornerRadius="7">
                         <DockPanel>
@@ -328,6 +374,7 @@
                             <TextBlock VerticalAlignment="Center"
                                        Style="{StaticResource IconTextStyle}"
                                        Foreground="{TemplateBinding Foreground}"
+                                       FontSize="19"
                                        Text="{TemplateBinding Tag}" />
                             <ContentPresenter Margin="5,0,0,0" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
                         </StackPanel>

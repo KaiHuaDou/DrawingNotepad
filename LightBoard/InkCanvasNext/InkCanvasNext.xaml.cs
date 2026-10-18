@@ -186,9 +186,9 @@ public partial class InkCanvasNext : UserControl
         }
     }
 
-    private static void OnModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    partial void OnModeChanged(InkCanvasNextMode oldValue, InkCanvasNextMode newValue)
     {
-        (d as InkCanvasNext)?.ApplyEditingMode((InkCanvasNextMode) e.NewValue);
+        ApplyEditingMode(newValue);
     }
 
     private static void OnStrokesPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -196,14 +196,12 @@ public partial class InkCanvasNext : UserControl
         (d as InkCanvasNext)?.ApplyStrokes(e.NewValue as StrokeCollection);
     }
 
-    private static void OnStampActionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    partial void OnStampActionChanged(StampAction oldValue, StampAction newValue)
     {
-        var canvas = (InkCanvasNext) d;
-
         // 手势进行中不立即应用，由手势结束时的状态机迁出路径统一重应用；这里只处理静止期的切换
-        if (canvas.State == TouchState.Idle)
+        if (State == TouchState.Idle)
         {
-            canvas.ApplyModeToEditing(canvas.Mode);
+            ApplyModeToEditing(Mode);
         }
     }
 

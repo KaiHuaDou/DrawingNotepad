@@ -7,10 +7,14 @@
     <File Path="docs/TouchStates2.md" />
     <File Path="README.md" />
   </Folder>
+  <Folder Name="/Installer/">
+    <File Path="LightBoard.Installer/LightBoard.iss" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
     <File Path=".github/workflows/build.yml" />
+    <File Path=".github/workflows/release.yml" />
     <File Path=".gitignore" />
     <File Path="global.json" />
     <File Path="Settings.XamlStyler" />

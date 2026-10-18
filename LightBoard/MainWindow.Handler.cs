@@ -21,7 +21,7 @@ public partial class MainWindow
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
-            MainInstruction = "轻白板 / LightBoard v1.0.2",
+            MainInstruction = "轻白板 / LightBoard v1.1.0",
             MainIcon = TaskDialogIcon.Information,
             Content =
             """
@@ -216,7 +216,7 @@ public partial class MainWindow
             From = CenterBorder.ActualHeight,
             To = isChecked ? (CenterBorder.ActualHeight - 10) * 2 + 10 : (CenterBorder.ActualHeight - 10) / 2 + 10,
             Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase( ) { EasingMode = isChecked ? EasingMode.EaseIn: EasingMode.EaseOut }
+            EasingFunction = new CubicEase( ) { EasingMode = isChecked ? EasingMode.EaseIn : EasingMode.EaseOut }
         };
 
         CenterBorder.BeginAnimation(HeightProperty, heightAnimation);

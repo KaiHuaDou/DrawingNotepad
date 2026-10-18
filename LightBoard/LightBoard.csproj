@@ -33,10 +33,18 @@
         <InternalsVisibleTo Include="LightBoard.Tests" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="NetOfficeFw.PowerPoint" Version="1.9.11" />
-        <PackageReference Include="NetOfficeFw.Word" Version="1.9.11" />
+        <PackageReference Include="DependencyPropertyGenerator" Version="1.5.1">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.363">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="NetOfficeFw.PowerPoint" Version="1.9.12" />
+        <PackageReference Include="NetOfficeFw.Word" Version="1.9.12" />
         <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
-        <PackageReference Include="PDFiumCore" Version="155.0.8057" />
+        <PackageReference Include="PDFiumCore" Version="157.0.8100" />
         <PackageReference Include="SingleInstanceCore" Version="2.2.2" />
     </ItemGroup>
 </Project>

@@ -2,25 +2,22 @@ using System;
 using System.Windows;
 using System.Windows.Media.Animation;
 
+using DependencyPropertyGenerator;
+
 namespace InkCanvasNext;
 
+[DependencyProperty<double>("AutoScrollProgress", OnChanged = nameof(OnAutoScrollProgressChanged))]
 public partial class InkCanvasNext
 {
     private const double AutoScrollDurationSeconds = 0.1;
-
-    private static readonly DependencyProperty AutoScrollProgressProperty = DependencyProperty.Register(
-        "AutoScrollProgress",
-        typeof(double),
-        typeof(InkCanvasNext),
-        new PropertyMetadata(OnAutoScrollProgressChanged));
 
     private View autoScrollFrom;
     private View autoScrollTo;
     private bool autoScrolling;
 
-    private static void OnAutoScrollProgressChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private void OnAutoScrollProgressChanged(double oldValue, double newValue)
     {
-        (d as InkCanvasNext)?.AutoScrollTick((double) e.NewValue);
+        AutoScrollTick(newValue);
     }
 
     /// <summary>

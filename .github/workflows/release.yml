@@ -21,6 +21,7 @@ env:
   BUILD_WORKFLOW: build.yml
   BUILD_BRANCH: master
   RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+  PRERELEASE: ${{ contains(inputs.tag || github.ref_name, '-') }}
 
 jobs:
   release:
@@ -34,6 +35,21 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ env.RELEASE_TAG }}
+
+      # 构建时从 CHANGELOG 首个版本标题提取 AppVersion 写入安装包，此处校验 tag 与之一致，
+      # 避免发版版本与安装包版本错位（提取式与 build.yml 相同）
+      - name: Verify tag matches CHANGELOG version
+        shell: bash
+        run: |
+          TOP=$(sed -n 's/^## \[v\{0,1\}\([^]]*\)\].*/\1/p' CHANGELOG.md | head -n1)
+          if [ -z "$TOP" ]; then
+            echo "::error::CHANGELOG.md 中没有找到版本标题（## [vX.Y.Z]）"
+            exit 1
+          fi
+          if [ "$TOP" != "${RELEASE_TAG#v}" ]; then
+            echo "::error::$RELEASE_TAG 与 CHANGELOG 首个版本 v$TOP 不一致：该 commit 构建出的安装包版本为 $TOP"
+            exit 1
+          fi
 
       - name: Resolve build run for this commit
         id: build
@@ -67,9 +83,10 @@ jobs:
           echo "run=$RUN" >> "$GITHUB_OUTPUT"
 
       # 逐个 --name 下载：--pattern 只命中一个产物时会直接解到 --dir，目录结构随命中数量变化
+      # 四个产物都是构建的必备项，任一缺失即失败
       - name: Download artifacts
         run: |
-          for name in LightBoard LightBoard-with-runtime; do
+          for name in LightBoard LightBoard-with-runtime LightBoard-installer LightBoard-installer-with-runtime; do
             gh run download "${{ steps.build.outputs.run }}" --name "$name" --dir "artifacts/$name"
           done
 
@@ -80,7 +97,10 @@ jobs:
           for name in LightBoard LightBoard-with-runtime; do
             ( cd "artifacts/$name" && zip -qr "$GITHUB_WORKSPACE/$name.zip" . )
           done
-          ls -l --block-size=K ./*.zip
+          for name in LightBoard-installer LightBoard-installer-with-runtime; do
+            cp "artifacts/$name"/*.exe "$GITHUB_WORKSPACE/"
+          done
+          ls -l --block-size=K ./*.zip ./*.exe
 
       - name: Extract release notes from CHANGELOG.md
         id: notes
@@ -131,16 +151,20 @@ jobs:
         if: steps.notes.outputs.found == 'true'
         uses: softprops/action-gh-release@v3
         with:
-          files: "*.zip"
+          files: |
+            *.zip
+            LightBoard-Setup-*.exe
           tag_name: ${{ env.RELEASE_TAG }}
           body_path: release_notes.md
-          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
+          prerelease: ${{ env.PRERELEASE }}
 
       - name: Create GitHub Release (auto-generated notes)
         if: steps.notes.outputs.found != 'true'
         uses: softprops/action-gh-release@v3
         with:
-          files: "*.zip"
+          files: |
+            *.zip
+            LightBoard-Setup-*.exe
           tag_name: ${{ env.RELEASE_TAG }}
           generate_release_notes: true
-          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
+          prerelease: ${{ env.PRERELEASE }}

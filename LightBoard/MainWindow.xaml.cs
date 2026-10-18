@@ -10,6 +10,12 @@ namespace LightBoard;
 
 public partial class MainWindow : Window
 {
+#if DEBUG
+    private const string SwitchOutProcessName = "thorium";
+#else
+    private const string SwitchOutProcessName = "msedge";
+#endif
+
     private readonly DispatcherTimer timeTimer;
 
     internal readonly InkCanvasNext.InkCanvasNext CanvasNext;
@@ -17,6 +23,8 @@ public partial class MainWindow : Window
     public MainWindow( )
     {
         InitializeComponent( );
+
+        RefreshSwitchOutIcon( );
 
         if (Resources["MajorGridBrush"] is DrawingBrush gridBrush)
         {
@@ -74,14 +82,16 @@ public partial class MainWindow : Window
 
     private void SwitchOutClick(object o, RoutedEventArgs e)
     {
+        NativeMethods.SwitchTo(SwitchOutProcessName);
+        RefreshSwitchOutIcon( );
+    }
 
-#if DEBUG
-        const string ProcessName = "thorium";
-#else
-        const string ProcessName = "msedge";
-#endif
-
-        NativeMethods.SwitchTo(ProcessName);
+    /// <summary>
+    /// 目标程序在运行才显示其图标；Content 为 null 时按钮按 Tag 字形回退。
+    /// </summary>
+    private void RefreshSwitchOutIcon( )
+    {
+        SwitchOutButton.Content = ProgramIcon.FromProcess(SwitchOutProcessName, 48);
     }
 
     private void WindowDeactivated(object o, EventArgs e)
@@ -102,7 +112,7 @@ public partial class MainWindow : Window
         var dpi = VisualTreeHelper.GetDpi(this);
         var hWnd = new WindowInteropHelper(this).Handle;
 
-        if (hWnd == IntPtr.Zero|| PassThroughBorder == null)
+        if (hWnd == IntPtr.Zero || PassThroughBorder == null)
         {
             return;
         }

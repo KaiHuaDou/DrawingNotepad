@@ -21,7 +21,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -48,12 +48,72 @@ jobs:
           # 发版要复用这里的产物，保留期需覆盖「构建完成后过一段时间才打 tag」
           retention-days: 30
 
+      # 自包含版输出到独立目录：两个变体的安装包各自从自己的发布目录取文件，与构建顺序无关
       - name: Publish (self-contained)
-        run: dotnet publish LightBoard -p:PublishProfile=FolderProfile -c Release --self-contained
+        run: dotnet publish LightBoard -p:PublishProfile=FolderProfile -c Release --self-contained -p:PublishDir=bin/publish-with-runtime/
 
       - name: Upload (self-contained)
         uses: actions/upload-artifact@v7
         with:
           name: LightBoard-with-runtime
-          path: ./LightBoard/bin/publish/*
+          path: ./LightBoard/bin/publish-with-runtime/*
+          # 发版要复用这里的产物，保留期需覆盖「构建完成后过一段时间才打 tag」
+          retention-days: 30
+
+      - name: Read version from CHANGELOG
+        id: version
+        shell: bash
+        run: |
+          V=$(sed -n 's/^## \[v\{0,1\}\([^]]*\)\].*/\1/p' CHANGELOG.md | head -n1)
+          if [ -z "$V" ]; then
+            echo "::error::CHANGELOG.md 中没有找到版本标题（## [vX.Y.Z]）"
+            exit 1
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Install Inno Setup 7
+        shell: pwsh
+        run: |
+          # Chocolatey 的 innosetup 包停留在 6.7.1，直接安装官方 7.1.0
+          $installer = "$env:RUNNER_TEMP\innosetup-7.1.0-x64.exe"
+          Invoke-WebRequest -Uri 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe' -OutFile $installer
+          $p = Start-Process -FilePath $installer -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/DIR=C:\Program Files\Inno Setup 7' -Wait -PassThru
+          exit $p.ExitCode
+
+      - name: Build installer (framework-dependent)
+        shell: pwsh
+        run: |
+          # 先清空 Output：上传通配只应命中本次变体的产物，旧版本或另一变体的安装包不得混入
+          Remove-Item -Recurse -Force 'LightBoard.Installer\Output' -ErrorAction SilentlyContinue
+          $iscc = 'C:\Program Files\Inno Setup 7\ISCC.exe'
+          if (-not (Test-Path $iscc)) { Write-Error "ISCC.exe 未找到：$iscc"; exit 1 }
+          & $iscc "-DAppVersion=$env:LB_VERSION" 'LightBoard.Installer\LightBoard.iss'
+          exit $LASTEXITCODE
+        env:
+          LB_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Upload (installer)
+        uses: actions/upload-artifact@v7
+        with:
+          name: LightBoard-installer
+          path: LightBoard.Installer/Output/LightBoard-Setup-*.exe
+          retention-days: 30
+
+      - name: Build installer (self-contained)
+        shell: pwsh
+        run: |
+          # 先清空 Output：上传通配只应命中本次变体的产物，旧版本或另一变体的安装包不得混入
+          Remove-Item -Recurse -Force 'LightBoard.Installer\Output' -ErrorAction SilentlyContinue
+          $iscc = 'C:\Program Files\Inno Setup 7\ISCC.exe'
+          if (-not (Test-Path $iscc)) { Write-Error "ISCC.exe 未找到：$iscc"; exit 1 }
+          & $iscc "-DAppVersion=$env:LB_VERSION" '-DSelfContained' 'LightBoard.Installer\LightBoard.iss'
+          exit $LASTEXITCODE
+        env:
+          LB_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Upload (installer with runtime)
+        uses: actions/upload-artifact@v7
+        with:
+          name: LightBoard-installer-with-runtime
+          path: LightBoard.Installer/Output/LightBoard-Setup-with-runtime-*.exe
           retention-days: 30

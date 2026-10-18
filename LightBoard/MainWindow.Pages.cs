@@ -49,7 +49,7 @@ public partial class MainWindow
             From = fromWidth,
             To = toWidth,
             Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase( ) { EasingMode = isChecked? EasingMode.EaseIn : EasingMode.EaseOut }
+            EasingFunction = new CubicEase( ) { EasingMode = isChecked ? EasingMode.EaseIn : EasingMode.EaseOut }
         };
         widthAnimation.Completed += (_, _) =>
         {

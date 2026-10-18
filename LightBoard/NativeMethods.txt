@@ -1,0 +1,12 @@
+CombineRgn
+CreateRectRgn
+DeleteObject
+GetWindowPlacement
+IShellItemImageFactory
+SetForegroundWindow
+SetWindowRgn
+SHCreateItemFromParsingName
+ShowWindow
+SIIGBF
+SIZE
+WINDOWPLACEMENT

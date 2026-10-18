@@ -44,7 +44,7 @@
                         Click="MinimizeWindowClick" Tag="&#xE921;" />
                 <ToggleButton x:Name="MoreButton" Style="{StaticResource ToggleStyle}" Tag="&#xE700;" />
                 <Button x:Name="SwitchOutButton"
-                        Style="{StaticResource ButtonStyle}"
+                        Style="{StaticResource ImageButtonStyle}"
                         Click="SwitchOutClick" Tag="&#xE8AB;" />
             </StackPanel>
         </Border>
