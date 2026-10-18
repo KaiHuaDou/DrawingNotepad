@@ -235,7 +235,7 @@
                     <Border x:Name="PART_Border" Background="Transparent" CornerRadius="5">
                         <Grid>
                             <TextBlock x:Name="PART_IconText"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Margin="5,0,5,0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Visibility="Collapsed"
                                        Style="{StaticResource IconTextStyle}"
                                        Foreground="{TemplateBinding Foreground}"

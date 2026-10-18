@@ -9,7 +9,6 @@ using System.Windows.Media.Imaging;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Gdi;
 using Windows.Win32.UI.Shell;
 
 namespace LightBoard.External;
@@ -79,9 +78,7 @@ internal static class ProgramIcon
     /// </summary>
     private static string? ProcessPath(string processName)
     {
-        var processes = Process.GetProcessesByName(processName);
-
-        foreach (var process in processes)
+        foreach (var process in Process.GetProcessesByName(processName))
         {
             string? path;
 

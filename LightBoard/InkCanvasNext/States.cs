@@ -33,6 +33,11 @@ internal readonly record struct ToolSnapshot(InkCanvasNextMode Mode, StampAction
 
     internal bool AllowsMultiDraw => !IsErase;
 
+    /// <summary>
+    /// 自定义工具：鼠标经合成触点进入状态机；原生工具（墨迹/按笔擦）维持原生鼠标路径
+    /// </summary>
+    internal bool IsCustomTool => IsStamp || IsShape || IsSelect || IsAreaErase;
+
     internal bool WantsPreemptiveCapture => IsAreaErase || IsStamp;
 
     internal bool IsStampSingleFinger(TouchState state)

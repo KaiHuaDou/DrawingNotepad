@@ -77,17 +77,31 @@ jobs:
           # Chocolatey 的 innosetup 包停留在 6.7.1，直接安装官方 7.1.0
           $installer = "$env:RUNNER_TEMP\innosetup-7.1.0-x64.exe"
           Invoke-WebRequest -Uri 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe' -OutFile $installer
-          $p = Start-Process -FilePath $installer -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/DIR=C:\Program Files\Inno Setup 7' -Wait -PassThru
-          exit $p.ExitCode
+          Unblock-File $installer
+          # -ArgumentList 的数组元素以空格拼接且不自动加引号，含空格的 /DIR 会被拆成多个参数
+          # （/DIR=C:\Program Files\... 实际只取到 C:\Program）；不指定 /DIR，使用 x64 安装包的默认目录
+          $p = Start-Process -FilePath $installer -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          if ($p.ExitCode -notin @(0, 3010)) { Write-Error "Inno Setup 安装失败：退出码 $($p.ExitCode)"; exit 1 }
+
+          $candidates = @(
+            "$env:ProgramFiles\Inno Setup 7\ISCC.exe",
+            "${env:ProgramFiles(x86)}\Inno Setup 7\ISCC.exe"
+          )
+          $iscc = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) {
+            Write-Error "未找到 ISCC.exe。候选路径：$($candidates -join '; ')"
+            exit 1
+          }
+          "ISCC=$iscc" >> $env:GITHUB_ENV
+          Write-Host "ISCC: $iscc"
 
       - name: Build installer (framework-dependent)
         shell: pwsh
         run: |
           # 先清空 Output：上传通配只应命中本次变体的产物，旧版本或另一变体的安装包不得混入
           Remove-Item -Recurse -Force 'LightBoard.Installer\Output' -ErrorAction SilentlyContinue
-          $iscc = 'C:\Program Files\Inno Setup 7\ISCC.exe'
-          if (-not (Test-Path $iscc)) { Write-Error "ISCC.exe 未找到：$iscc"; exit 1 }
-          & $iscc "-DAppVersion=$env:LB_VERSION" 'LightBoard.Installer\LightBoard.iss'
+          if (-not (Test-Path $env:ISCC)) { Write-Error "ISCC.exe 未找到：$env:ISCC"; exit 1 }
+          & $env:ISCC "-DAppVersion=$env:LB_VERSION" 'LightBoard.Installer\LightBoard.iss'
           exit $LASTEXITCODE
         env:
           LB_VERSION: ${{ steps.version.outputs.version }}
@@ -104,9 +118,8 @@ jobs:
         run: |
           # 先清空 Output：上传通配只应命中本次变体的产物，旧版本或另一变体的安装包不得混入
           Remove-Item -Recurse -Force 'LightBoard.Installer\Output' -ErrorAction SilentlyContinue
-          $iscc = 'C:\Program Files\Inno Setup 7\ISCC.exe'
-          if (-not (Test-Path $iscc)) { Write-Error "ISCC.exe 未找到：$iscc"; exit 1 }
-          & $iscc "-DAppVersion=$env:LB_VERSION" '-DSelfContained' 'LightBoard.Installer\LightBoard.iss'
+          if (-not (Test-Path $env:ISCC)) { Write-Error "ISCC.exe 未找到：$env:ISCC"; exit 1 }
+          & $env:ISCC "-DAppVersion=$env:LB_VERSION" '-DSelfContained' 'LightBoard.Installer\LightBoard.iss'
           exit $LASTEXITCODE
         env:
           LB_VERSION: ${{ steps.version.outputs.version }}

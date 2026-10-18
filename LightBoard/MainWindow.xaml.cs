@@ -86,9 +86,6 @@ public partial class MainWindow : Window
         RefreshSwitchOutIcon( );
     }
 
-    /// <summary>
-    /// 目标程序在运行才显示其图标；Content 为 null 时按钮按 Tag 字形回退。
-    /// </summary>
     private void RefreshSwitchOutIcon( )
     {
         SwitchOutButton.Content = ProgramIcon.FromProcess(SwitchOutProcessName, 48);

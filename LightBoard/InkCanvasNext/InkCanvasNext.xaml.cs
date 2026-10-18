@@ -100,6 +100,7 @@ public partial class InkCanvasNext : UserControl
         InnerCanvas.Height = canvasSize.Height;
 
         eraser = new Eraser(InnerCanvas, EraserFeedback);
+        MousePointer = new MouseTouchDevice(this);
 
         CanvasGrid.LayoutTransform = canvasScaleTransform;
 

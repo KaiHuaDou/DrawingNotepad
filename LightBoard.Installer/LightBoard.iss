@@ -44,51 +44,74 @@ DefaultGroupName={#AppDisplayName}
 UninstallDisplayIcon={app}\{#AppName}.exe
 OutputDir=Output
 OutputBaseFilename=LightBoard-Setup{#VariantSuffix}-{#AppVersion}
-Compression=lzma2/max
-SolidCompression=yes
 WizardStyle=modern
 ; x64 安装器：{pf} 等路径不经过 WOW64 重定向，与 win-x64 应用匹配
 SetupArchitecture=x64
-MinVersion=10.0
 PrivilegesRequired=admin
-PrivilegesRequiredOverridesAllowed=dialog commandline
 SetupLogging=yes
+
+Compression=lzma2/max
+SolidCompression=yes
+LZMAUseSeparateProcess=yes
+LZMANumBlockThreads=6
 
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Files]
 ; 发布目录可能残留应用运行时生成的数据（本地从发布目录直接启动过）：不得打入安装包
-Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "\settings.json,\error.log,\XpsCache,\recover"
+Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "\settings.json,\error.log,\XpsCache,\recover,\fastsave"
 
 [Icons]
-Name: "{autoprograms}\{#AppDisplayName}"; Filename: "{app}\{#AppName}.exe"
+Name: "{group}\{#AppDisplayName}"; Filename: "{app}\{#AppName}.exe"
 Name: "{autodesktop}\{#AppDisplayName}"; Filename: "{app}\{#AppName}.exe"
 
 [Run]
 Filename: "{app}\{#AppName}.exe"; Description: "{cm:LaunchProgram,{#AppDisplayName}}"; Flags: nowait postinstall skipifsilent
 
-[UninstallDelete]
-Type: files; Name: "{app}\settings.json"; Check: DeleteUserData
-Type: filesandordirs; Name: "{app}\XpsCache"; Check: DeleteUserData
-Type: filesandordirs; Name: "{app}\recover"; Check: DeleteUserData
-
 [Code]
 var
-    DeleteUserDataAsked: Boolean;
-    DeleteUserDataValue: Boolean;
+    DeleteUserDataOnUninstall: Boolean;
 
-// [UninstallDelete] 的 Check 条目：存在数据文件才询问，默认「否」即保留；一次卸载只问一次
-function DeleteUserData: Boolean;
+// 数据文件由卸载程序在卸载阶段按用户选择处理，不写入 [UninstallDelete]：
+// 该节的 Check 在安装阶段评估，首次安装时数据尚不存在，条目会被永久跳过。
+function HasUserData: Boolean;
 begin
-    if not DeleteUserDataAsked then
+    Result :=
+        FileExists(ExpandConstant('{app}\settings.json')) or
+        FileExists(ExpandConstant('{app}\error.log')) or
+        DirExists(ExpandConstant('{app}\XpsCache')) or
+        DirExists(ExpandConstant('{app}\recover')) or
+        DirExists(ExpandConstant('{app}\fastsave'));
+end;
+
+function InitializeUninstall: Boolean;
+begin
+    Result := True;
+    DeleteUserDataOnUninstall := HasUserData;
+    if not DeleteUserDataOnUninstall then
+        Exit;
+
+    // 静默卸载不显示消息框，按默认值保留数据
+    if UninstallSilent then
     begin
-        DeleteUserDataAsked := True;
-        DeleteUserDataValue := FileExists(ExpandConstant('{app}\settings.json')) or DirExists(ExpandConstant('{app}\XpsCache')) or DirExists(ExpandConstant('{app}\recover'));
-        if DeleteUserDataValue then
-            DeleteUserDataValue := MsgBox('是否删除数据文件？', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
+        DeleteUserDataOnUninstall := False;
+        Exit;
     end;
-    Result := DeleteUserDataValue;
+
+    DeleteUserDataOnUninstall := MsgBox('是否删除设置、日志、缓存与自动备份？', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+    if (CurUninstallStep = usPostUninstall) and DeleteUserDataOnUninstall then
+    begin
+        DelTree(ExpandConstant('{app}\XpsCache'), True, True, True);
+        DelTree(ExpandConstant('{app}\recover'), True, True, True);
+        DelTree(ExpandConstant('{app}\fastsave'), True, True, True);
+        DeleteFile(ExpandConstant('{app}\settings.json'));
+        DeleteFile(ExpandConstant('{app}\error.log'));
+    end;
 end;
 
 // 自包含发布已内置运行时，跳过运行时检测与安装
@@ -116,26 +139,31 @@ begin
     if FindFirst(AddBackslash(FxDir) + '*', FindRec) then
     try
         repeat
-        if (FindRec.Name <> '.') and (FindRec.Name <> '..') and
-            (Copy(FindRec.Name, 1, Pos('.', FindRec.Name + '.') - 1) = IntToStr(DesktopRuntimeMajor)) then
-        begin
-            Result := True;
-            Break;
-        end;
+            if (FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY) = 0 then
+                Continue;
+            if Copy(FindRec.Name, 1, Pos('.', FindRec.Name + '.') - 1) = IntToStr(DesktopRuntimeMajor) then
+            begin
+                Result := True;
+                Break;
+            end;
         until not FindNext(FindRec);
     finally
         FindClose(FindRec);
     end;
 end;
 
-// 机器级 C:\Program Files\dotnet 与 dotnet-install 脚本的 per-user 安装位置
+// 机器级安装位置（含 ARM64 Windows 11 上 x64 运行的 {pf}\dotnet\x64）与显式声明的 DOTNET_ROOT_X64
 function DesktopRuntimeInstalled: Boolean;
+var
+    EnvRoot: String;
 begin
     if not RuntimeChecked then
     begin
+        EnvRoot := ExpandConstant('{%DOTNET_ROOT_X64|}');
         RuntimePresent :=
         DirHasDesktopRuntime(ExpandConstant('{pf}\dotnet')) or
-        DirHasDesktopRuntime(ExpandConstant('{localappdata}\Microsoft\dotnet'));
+        DirHasDesktopRuntime(ExpandConstant('{pf}\dotnet\x64')) or
+        ((EnvRoot <> '') and DirHasDesktopRuntime(EnvRoot));
         RuntimeChecked := True;
     end;
     Result := RuntimePresent;
@@ -163,40 +191,36 @@ begin
     if DesktopRuntimeInstalled then
         Exit;
 
-    if not IsAdmin then
-    begin
-        Result := '本机缺少 .NET 10 Desktop Runtime，自动安装需要管理员权限。'#13#10'请以管理员身份重新运行安装程序，或从以下地址手动安装后再运行：'#13#10 + ManualDownloadUrl;
-        Exit;
-    end;
-
     InstallerPath := AddBackslash(ExpandConstant('{tmp}')) + DesktopRuntimeName;
     if not WizardSilent then
         WizardForm.StatusLabel.Caption := '正在下载 .NET 10 Desktop Runtime……';
-        try
-            // aka.ms 是常青链接，运行时每次补丁更新都会改变文件哈希，无法固定 RequiredSHA256；
-            // 传输完整性由 TLS 与微软官方域名承担
-            DownloadTemporaryFile(DesktopRuntimeUrl, DesktopRuntimeName, '', @OnDownloadProgress);
-        except
-            Result := '下载 .NET 10 Desktop Runtime 失败：' + GetExceptionMessage + #13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
-            Exit;
+
+    try
+        // aka.ms 是常青链接，运行时每次补丁更新都会改变文件哈希，无法固定 RequiredSHA256；
+        // 传输完整性由 TLS 与微软官方域名承担
+        DownloadTemporaryFile(DesktopRuntimeUrl, DesktopRuntimeName, '', @OnDownloadProgress);
+    except
+        Result := '下载 .NET 10 Desktop Runtime 失败：' + GetExceptionMessage + #13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
+        Exit;
     end;
 
     if not WizardSilent then
         WizardForm.StatusLabel.Caption := '正在安装 .NET 10 Desktop Runtime……';
     if not Exec(InstallerPath, '/install /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
     begin
-        Result := '无法启动 .NET 10 Desktop Runtime 安装程序：' + SysErrorMessage(ResultCode) + #13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
+        Result := '无法启动 .NET 10 Desktop Runtime 安装程序。'#13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
         Exit;
     end;
 
-    // 0 成功；1641/3010 成功但要求重启，运行时无需重启即可使用
+    // 0 成功；1641/3010 表示安装器报告成功并要求重启
     case ResultCode of
-        0, 1641, 3010: ;
+        0: ;
+        1641, 3010: NeedsRestart := True;
     else
-    begin
-        Result := '.NET 10 Desktop Runtime 安装失败（退出码 ' + IntToStr(ResultCode) + '）。'#13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
-        Exit;
-    end;
+        begin
+            Result := '.NET 10 Desktop Runtime 安装失败（退出码 ' + IntToStr(ResultCode) + '）。'#13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
+            Exit;
+        end;
     end;
 
     RuntimeChecked := False;
