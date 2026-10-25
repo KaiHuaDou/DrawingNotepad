@@ -29,7 +29,6 @@ public partial class MainWindow
         // 空白板（无页）不切换，避免跳到既有末页
         if (first < App.Pages.Count)
         {
-            SaveCurrentViewToPage( );
             App.SwitchPage(first);
             Dirty = true;
         }

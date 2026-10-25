@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 using InkCanvasNext;
 
@@ -46,7 +47,8 @@ public partial class Page
     }
 
     /// <summary>
-    /// 过期时在后台重建缩略图；同一页同时只跑一个。
+    /// 过期时重建缩略图；同一页同时只跑一个。
+    /// 取快照推到布局之后：绑定在布局过程中读 Preview，整页克隆压在布局里会挡住页面列表动画。
     /// </summary>
     internal void RefreshPreview( )
     {
@@ -58,6 +60,14 @@ public partial class Page
         previewRendering = true;
         var version = previewVersion;
 
+        // 快照必须由持有这些墨迹的线程取，因此排在调用方自己的 Dispatcher 上
+        Dispatcher.CurrentDispatcher.BeginInvoke(
+            DispatcherPriority.Background,
+            ( ) => StartPreviewRender(version));
+    }
+
+    private void StartPreviewRender(int version)
+    {
         // 快照必须在 UI 线程取：渲染期间画布仍可被编辑（选区变换会就地改触点）；背景图同理。
         var strokes = new StrokeCollection([.. Strokes.Select(s => s.Clone( ))]);
         var background = Background;

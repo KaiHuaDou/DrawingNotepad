@@ -42,6 +42,7 @@ public partial class MainWindow
     {
         CanvasNext.Background = transparent ? Brushes.Transparent : MajorGridBrush;
         TimeText.Visibility = transparent || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
+        SwitchOutButton.Visibility = transparent ? Visibility.Collapsed : Visibility.Visible;
         LeftBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
         CenterBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
         RightBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;

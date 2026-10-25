@@ -22,9 +22,27 @@ public class AppPagesTests
         UiThread.Run(( ) =>
         {
             ResetPages( ); // 单页，当前索引 0
-            Assert.False(App.SwitchPage(-1));
-            Assert.False(App.SwitchPage(0));
-            Assert.False(App.SwitchPage(1));
+
+            var changed = 0;
+            void counter(object? _o, EventArgs _e)
+            {
+                changed++;
+            }
+
+            App.PageChanged +=  counter;
+            try
+            {
+                App.SwitchPage(-1);
+                App.SwitchPage(1);
+                App.SwitchPage(0);
+
+                Assert.Equal(0, App.PageIndex);
+                Assert.Equal(0, changed);
+            }
+            finally
+            {
+                App.PageChanged -=  counter;
+            }
         });
     }
 
@@ -36,10 +54,10 @@ public class AppPagesTests
             ResetPages( );
             App.NewPage( ); // 共 2 页，当前索引 1
 
-            Assert.True(App.SwitchPage(0));
+            App.SwitchPage(0);
             Assert.Equal(0, App.PageIndex);
 
-            Assert.True(App.SwitchPage(1));
+            App.SwitchPage(1);
             Assert.Equal(1, App.PageIndex);
         });
     }

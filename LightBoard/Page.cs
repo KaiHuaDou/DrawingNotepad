@@ -72,15 +72,16 @@ public partial class App
         PageIndex = 0;
     }
 
-    public static bool SwitchPage(int newIndex)
+    public static void SwitchPage(int index)
     {
-        if (newIndex < 0 || newIndex >= Pages.Count || newIndex == PageIndex)
+        // 同索引不重绑：SwapHistory 会用页上的旧快照覆盖当前撤销历史
+        if (index < 0 || index >= Pages.Count || index == PageIndex)
         {
-            return false;
+            return;
         }
 
-        PageIndex = newIndex;
-        return true;
+        (Current.MainWindow as MainWindow)?.SaveCurrentViewToPage( );
+        PageIndex = index;
     }
 
     public static void NewPage( )
@@ -92,7 +93,7 @@ public partial class App
 
     public static bool IsBoardEmpty( )
     {
-        return Pages.All(p => p.Strokes.Count == 0);
+        return !Pages.Any(p => p.Strokes.Count != 0);
     }
 
     public static void ExportAllImage(int scale, string directory, DpiScale dpi, IProgress<ExportProgress>? progress = null)

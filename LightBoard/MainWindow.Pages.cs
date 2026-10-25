@@ -100,27 +100,18 @@ public partial class MainWindow
 
     private void PagePreviewsBoxSelectionChanged(object o, SelectionChangedEventArgs e)
     {
-        if (PagePreviewsBox.SelectedIndex >= 0 && PagePreviewsBox.SelectedIndex != App.PageIndex)
-        {
-            SaveCurrentViewToPage( );
-            App.SwitchPage(PagePreviewsBox.SelectedIndex);
-        }
+        App.SwitchPage(PagePreviewsBox.SelectedIndex);
     }
 
     private void PrevPage(object o, RoutedEventArgs e)
     {
-        if (App.PageIndex > 0)
-        {
-            SaveCurrentViewToPage( );
-            App.SwitchPage(App.PageIndex - 1);
-        }
+        App.SwitchPage(App.PageIndex - 1);
     }
 
     private void NewNextPage(object o, RoutedEventArgs e)
     {
         if (App.PageIndex < App.Pages.Count - 1)
         {
-            SaveCurrentViewToPage( );
             App.SwitchPage(App.PageIndex + 1);
         }
         else
@@ -130,7 +121,7 @@ public partial class MainWindow
         }
     }
 
-    private void SaveCurrentViewToPage( )
+    internal void SaveCurrentViewToPage( )
     {
         var page = App.CurrentPage;
         CanvasNext.SwapHistory(out var snapshot, null);

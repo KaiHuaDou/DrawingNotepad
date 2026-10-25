@@ -9,13 +9,6 @@ namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
-    /// <summary>
-    /// 升级需注意：此处依赖 .NET Core 3.1+ 内部实现细节：<br />
-    /// 1. 未调用 Remove/TrimExcess 时迭代顺序等同于插入顺序。<br />
-    /// 2. 调用 Remove 后，只影响所移除元素后面的元素。<br />
-    /// 3. 实际情况：防止跳变即可，因此允许 Hack。<br />
-    /// 4. 变通方案：OrderedDictionary、手动维护前两根手指。
-    /// </summary>
     private readonly OrderedDictionary<int, (TouchDevice Device, Point Position)> touches = [with(20)];
     private readonly Dictionary<int, Point> touchStarts = [];
     private bool releasingCaptures;

@@ -6,6 +6,14 @@
 
 本文件的内容基于对代码实际差异的比对（而非提交信息），以准确反映用户可见的行为变化。
 
+## [v1.2.0]
+
+### 变更
+
+- 多指书写的笔画重建按帧合并：一帧内到达的触点只重建一次；长笔画分段绘制，每帧只重建末尾一段，段间共享接头点以免出现缺口。高亮笔整笔重建，半透明笔迹的接头重合会叠色。
+- 缩略图改在布局完成后重建，翻页时页面列表动画不被整页墨迹克隆阻塞。
+- 透明模式下隐藏左侧「切换」按钮。
+
 ## [v1.1.1]
 
 ### 新增
@@ -169,6 +177,7 @@
 
 - 删除内部设计文档 `docs/EraserReference.md`、`docs/MultiTouchReference.md`。
 
+[v1.2.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.0.1...v1.1.0
 [v1.0.1]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.0.0...v1.0.1
