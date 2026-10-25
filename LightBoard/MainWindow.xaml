@@ -361,17 +361,23 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE713;" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem x:Name="DebugLayerMenu" Header="调试"
-                              Style="{StaticResource MenuItemStyle}"
-                              Click="DebugLayerClick" IsCheckable="True">
+                    <MenuItem Header="帮助" Style="{StaticResource MenuItemStyle}" Click="HelpClick">
                         <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEBE8;" />
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE897;" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator Style="{StaticResource MenuSeparatorStyle}" />
                     <MenuItem Header="计时" Style="{StaticResource MenuItemStyle}" Click="TimerMenuClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE917;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                    <MenuItem x:Name="DebugLayerMenu" Header="调试"
+                              Style="{StaticResource MenuItemStyle}"
+                              Click="DebugLayerClick" IsCheckable="True">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEBE8;" />
                         </MenuItem.Icon>
                     </MenuItem>
                 </Menu>

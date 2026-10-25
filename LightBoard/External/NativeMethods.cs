@@ -42,14 +42,9 @@ internal static class NativeMethods
 
     public static void SwitchTo(string processName)
     {
-        var processes = Process.GetProcessesByName(processName);
+        using var process = VisibleProcess(processName);
 
-        if (processes.Length == 0)
-        {
-            return;
-        }
-
-        var hWnd = processes[0].MainWindowHandle;
+        var hWnd = process?.MainWindowHandle ?? IntPtr.Zero;
 
         if (hWnd == IntPtr.Zero)
         {
@@ -60,6 +55,25 @@ internal static class NativeMethods
 
         RestoreWindow(window);
         PInvoke.SetForegroundWindow(window);
+    }
+
+    /// <summary>
+    /// 同名进程中第一个有可见主窗口的进程；没有时返回 null。调用方负责释放。
+    /// </summary>
+    public static Process? VisibleProcess(string processName)
+    {
+        foreach (var process in Process.GetProcessesByName(processName))
+        {
+            if (process.MainWindowHandle == IntPtr.Zero)
+            {
+                process.Dispose( );
+                continue;
+            }
+
+            return process;
+        }
+
+        return null;
     }
 
     /// <summary>

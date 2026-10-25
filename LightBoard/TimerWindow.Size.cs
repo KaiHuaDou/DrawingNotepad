@@ -1,6 +1,8 @@
 using System;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace LightBoard;
 
@@ -17,6 +19,7 @@ public partial class TimerWindow
     private int resizeGeneration;
     private bool sizeReady;
     private bool fullscreenTransition;
+    private bool resizePending;
 
     protected override void OnContentRendered(EventArgs e)
     {
@@ -41,19 +44,41 @@ public partial class TimerWindow
     /// <summary>窗口与秒区的宽度同步过渡；秒区收窄即被裁掉，动画结束时才设为收起</summary>
     private void ResizeToContent( )
     {
+        if (!sizeReady)
+        {
+            // 首次渲染前没有动画在飞，直接落位
+            SecondsPanel.BeginAnimation(WidthProperty, null);
+            SecondsPanel.Width = state != TimerState.Idle ? double.NaN : 0;
+            return;
+        }
+
+        // 合并同一事件批内的重复进入，并且时钟生成挪出点击/点击链路，规避同拍先撤再加的时钟竞态
+        if (resizePending)
+        {
+            return;
+        }
+
+        resizePending = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(ApplyResize));
+    }
+
+    private void ApplyResize( )
+    {
+        resizePending = false;
+
         var showSeconds = state != TimerState.Idle;
 
-        if (!sizeReady || WindowState != WindowState.Normal)
+        if (WindowState != WindowState.Normal)
         {
             SecondsPanel.BeginAnimation(WidthProperty, null);
             SecondsPanel.Width = showSeconds ? double.NaN : 0;
             return;
         }
 
-        // ActualWidth 存在排版下限，收起后仍停在自然宽上；动画进行中 Width 读数即动画当前值
+        // 动画进行中 Width 读数即动画当前值，从当前值续动画才不被 Actual 的滞后拉回去
         var fromSeconds = SecondsPanel.Width;
 
-        // 进行中的宽度动画会接管 Width，量尺寸前先停掉
+        // 量秒区自然宽度前先停掉进行中的宽度动画
         SecondsPanel.BeginAnimation(WidthProperty, null);
 
         var toSeconds = showSeconds ? Math.Ceiling(NaturalSecondsWidth( )) : 0;
@@ -94,8 +119,17 @@ public partial class TimerWindow
         SecondsPanel.Width = fromSeconds;
 
         AnimateSize(SecondsPanel, WidthProperty, fromSeconds, toSeconds, generation);
-        AnimateSize(this, WidthProperty, ActualWidth, target.Width, generation);
-        AnimateSize(this, HeightProperty, ActualHeight, target.Height, generation);
+
+        // 窗口尺寸已到位就不拆不建时钟，零长度时钟只会制造竞态
+        if (Math.Abs(target.Width - Width) > 0.5)
+        {
+            AnimateSize(this, WidthProperty, Width, target.Width, generation);
+        }
+
+        if (Math.Abs(target.Height - Height) > 0.5)
+        {
+            AnimateSize(this, HeightProperty, Height, target.Height, generation);
+        }
     }
 
     /// <summary>秒区按自身内容排版所需的宽度</summary>
@@ -138,10 +172,25 @@ public partial class TimerWindow
     {
         var content = (FrameworkElement) Content;
 
-        // 约束相同时 Measure 可能命中缓存拿回旧 DesiredSize，先作废脏标记再量
-        content.InvalidateMeasure( );
+        // 子级按上次约束缓存 DesiredSize 且同约束则直接旁路，同约束的 Measure(∞) 拿回旧值；
+        // 整棵子树先打脏标记再量，保证拿回自然尺寸
+        InvalidateMeasureTree(content);
         content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-
         return content.DesiredSize;
+    }
+
+    private static void InvalidateMeasureTree(DependencyObject node)
+    {
+        if (node is UIElement element)
+        {
+            element.InvalidateMeasure( );
+        }
+
+        var count = VisualTreeHelper.GetChildrenCount(node);
+
+        for (var i = 0; i < count; i++)
+        {
+            InvalidateMeasureTree(VisualTreeHelper.GetChild(node, i));
+        }
     }
 }

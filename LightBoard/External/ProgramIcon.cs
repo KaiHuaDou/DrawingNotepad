@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -16,7 +15,7 @@ namespace LightBoard.External;
 internal static class ProgramIcon
 {
     /// <summary>
-    /// 提取运行中进程的程序图标；进程未运行或提取失败返回 null。
+    /// 提取有可见窗口的进程的程序图标；未运行、没有可见窗口或提取失败返回 null。
     /// </summary>
     public static ImageSource? FromProcess(string processName, int size)
     {
@@ -74,32 +73,25 @@ internal static class ProgramIcon
     }
 
     /// <summary>
-    /// 取运行中进程的主模块路径；同名的多个进程逐个尝试，全部不可达时返回 null。
+    /// 取有可见窗口的进程的主模块路径；没有可见窗口或路径不可读时返回 null。
     /// </summary>
     private static string? ProcessPath(string processName)
     {
-        foreach (var process in Process.GetProcessesByName(processName))
+        using var process = NativeMethods.VisibleProcess(processName);
+
+        if (process is null)
         {
-            string? path;
-
-            try
-            {
-                path = process.MainModule?.FileName;
-            }
-            catch (Exception e) when (e is Win32Exception or InvalidOperationException)
-            {
-                // 目标进程可能拒绝访问主模块或已退出枚举窗口
-                path = null;
-            }
-
-            process.Dispose( );
-
-            if (path is not null)
-            {
-                return path;
-            }
+            return null;
         }
 
-        return null;
+        try
+        {
+            return process.MainModule?.FileName;
+        }
+        catch (Exception e) when (e is Win32Exception or InvalidOperationException)
+        {
+            // 目标进程可能拒绝访问主模块或已退出
+            return null;
+        }
     }
 }

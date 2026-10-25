@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -16,6 +15,10 @@ namespace LightBoard;
 
 public partial class MainWindow
 {
+    private static readonly Brush ContainerBrush = (Application.Current.FindResource("ContainerBrush") as Brush)!;
+    private static readonly Brush ContainerBrushSolid = (Application.Current.FindResource("ContainerBrushSolid") as Brush)!;
+    private static readonly Brush MajorGridBrush = (Application.Current.FindResource("MajorGridBrush") as Brush)!;
+
     private void AboutClick(object o, RoutedEventArgs e)
     {
         using TaskDialog dialog = new( )
@@ -35,41 +38,25 @@ public partial class MainWindow
         dialog.ShowDialog( );
     }
 
-    private void CanvasNextCanRedoChanged(object? o, DependencyPropertyChangedEventArgs e)
+    private void ApplyBackground(bool transparent)
     {
-        RedoButton.IsEnabled = CanvasNext.CanRedo;
+        CanvasNext.Background = transparent ? Brushes.Transparent : MajorGridBrush;
+        TimeText.Visibility = transparent || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
+        LeftBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
+        CenterBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
+        RightBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
+        PassThroughBorder.Visibility = transparent ? Visibility.Visible : Visibility.Collapsed;
+        Topmost = transparent;
     }
 
-    private void CanvasNextCanUndoChanged(object? o, DependencyPropertyChangedEventArgs e)
+    private void BackgroundRadioClick(object o, RoutedEventArgs e)
     {
-        UndoButton.IsEnabled = CanvasNext.CanUndo;
-    }
-
-    private void CanvasNextSelectionChanged(object? o, EventArgs e)
-    {
-        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
+        if (o is not RadioButton { IsChecked: true })
         {
-            SelectionBorder.Visibility = Visibility.Collapsed;
             return;
         }
 
-        SelectionBorder.Visibility = Visibility.Visible;
-        UpdateSelectionBorderPosition( );
-    }
-
-    private void CanvasNextStrokesChanged(object? o, InkCanvasStrokesChangedEventArgs e)
-    {
-        Dirty = true;
-        App.BoardRevision++;
-        App.CurrentPage.InvalidatePreview( );
-
-        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
-        {
-            SelectionBorder.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        UpdateSelectionBorderPosition( );
+        ApplyBackground(ReferenceEquals(o, TransparentBackgroundRadio));
     }
 
     private void CloneClick(object o, RoutedEventArgs e)
@@ -183,6 +170,12 @@ public partial class MainWindow
         SelectionBorder.Visibility = Visibility.Collapsed;
     }
 
+    private void DebugLayerClick(object o, RoutedEventArgs e)
+    {
+        var isChecked = DebugLayerMenu.IsChecked;
+        DebugLayer.Visibility = isChecked ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private void DeleteClick(object o, RoutedEventArgs e)
     {
         ExitStamp( );
@@ -199,12 +192,84 @@ public partial class MainWindow
         CanvasNext.Strokes.Clear( );
     }
 
-    private void MainWindowKeyUp(object o, KeyEventArgs e)
+    private void HelpClick(object o, RoutedEventArgs e)
     {
-        if (e.Key == Key.Escape)
+        using TaskDialog dialog = new( )
         {
-            ExitStamp( );
+            WindowTitle = "轻白板 - 帮助",
+            MainInstruction = "轻白板 - 帮助",
+            MainIcon = TaskDialogIcon.Information,
+            Content =
+            """
+            - 绘图
+                - 单指绘图，两指平移缩放，三/四指平移，五指及以上橡皮擦。
+                - 所有手指间最大距离超过阈值 -> 多指书写。
+            - 主工具栏
+                - 所有按钮再次点击可取消
+                - 第一行
+                    - 切换颜色（选中即绘图）
+                    - 荧光笔（仅黄色）
+                    - 橡皮
+                    - X 号 -> 清屏
+                    - 撤销重做
+                    - 点击三个点 -> 展开第二行
+                - 第二行
+                    - 各个实心圆 -> 调粗细
+                    - 直线/圆 -> 几何工具
+                    - 选择
+                    - 粘贴 -> 选中后在点击位置图章，再次点击取消
+            - 左工具栏
+                - 关闭、最小化
+                - 文件操作菜单
+                - 切换背景
+                - 切换到 Microsoft Edge 窗口
+            - 右工具栏
+                - 收起工具栏
+                - 其他功能菜单
+                - 上一页
+                - 页码，点击显示页面预览
+                - 下一页/新页面
+            - 选中笔画后
+                - 复制、剪切、删除
+                - 克隆 -> 选中后在点击位置图章，再次点击取消
+            """,
+        };
+        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+        dialog.ShowDialog( );
+    }
+
+    // 工具（擦除/选择）与形状（线/圆）是同一排他单选组（EditGroup）：
+    // 点选即激活；再点当前已激活的选项回退到画笔
+    private void ModeRadioChecked(object o, RoutedEventArgs e)
+    {
+        if (o is not RadioButton radio)
+        {
+            return;
         }
+
+        ExitStamp( );
+
+        // 记录点击前的模式：用于识别"再点当前已激活的模式"（回退到画笔）。
+        // 不能在退出高亮后再判断：从高亮态点模式 radio 属于新勾选，radio 也会被选中。
+        var wasMode = Mode;
+
+        if (wasMode == InkCanvasNextMode.Highlighter)
+        {
+            ExitHighlighter( );
+        }
+
+        var mode = radio.Tag switch
+        {
+            "\uE73C" => InkCanvasNextMode.Line,
+            "\uEA3A" => InkCanvasNextMode.Circle,
+            "\uED60" => InkCanvasNextMode.EraseArea,
+            "\uED61" => InkCanvasNextMode.EraseStroke,
+            "\uEF20" => InkCanvasNextMode.Select,
+            _ => InkCanvasNextMode.Ink
+        };
+
+        Mode = wasMode == mode ? InkCanvasNextMode.Ink : mode;
+        SyncToolState( );
     }
 
     private void MoreToggleClick(object o, RoutedEventArgs e)
@@ -249,43 +314,17 @@ public partial class MainWindow
             ExitStamp( );
         }
     }
+
     private void RedoButtonClick(object o, RoutedEventArgs e)
     {
         CanvasNext.Redo( );
     }
 
-    // 工具（擦除/选择）与形状（线/圆）是同一排他单选组（EditGroup）：
-    // 点选即激活；再点当前已激活的选项回退到画笔
-    private void ModeRadioChecked(object o, RoutedEventArgs e)
+    private void SettingsClick(object o, RoutedEventArgs e)
     {
-        if (o is not RadioButton radio)
-        {
-            return;
-        }
-
-        ExitStamp( );
-
-        // 记录点击前的模式：用于识别"再点当前已激活的模式"（回退到画笔）。
-        // 不能在退出高亮后再判断：从高亮态点模式 radio 属于新勾选，radio 也会被选中。
-        var wasMode = Mode;
-
-        if (wasMode == InkCanvasNextMode.Highlighter)
-        {
-            ExitHighlighter( );
-        }
-
-        var mode = radio.Tag switch
-        {
-            "\uE73C" => InkCanvasNextMode.Line,
-            "\uEA3A" => InkCanvasNextMode.Circle,
-            "\uED60" => InkCanvasNextMode.EraseArea,
-            "\uED61" => InkCanvasNextMode.EraseStroke,
-            "\uEF20" => InkCanvasNextMode.Select,
-            _ => InkCanvasNextMode.Ink
-        };
-
-        Mode = wasMode == mode ? InkCanvasNextMode.Ink : mode;
-        SyncToolState( );
+        var dialog = new Settings { Owner = this };
+        dialog.ShowDialog( );
+        ApplySettings( );
     }
 
     private void ThicknessRadioClick(object o, RoutedEventArgs e)
@@ -320,29 +359,16 @@ public partial class MainWindow
         SyncToolState( );
     }
 
-    private static readonly Brush ContainerBrush = (Application.Current.FindResource("ContainerBrush") as Brush)!;
-    private static readonly Brush ContainerBrushSolid = (Application.Current.FindResource("ContainerBrushSolid") as Brush)!;
-    private static readonly Brush MajorGridBrush = (Application.Current.FindResource("MajorGridBrush") as Brush)!;
-
-    private void BackgroundRadioClick(object o, RoutedEventArgs e)
+    private void TimerMenuClick(object o, RoutedEventArgs e)
     {
-        if (o is not RadioButton { IsChecked: true })
+        if (timerWindow?.IsLoaded == true)
         {
+            timerWindow.Activate( );
             return;
         }
 
-        ApplyBackground(ReferenceEquals(o, TransparentBackgroundRadio));
-    }
-
-    private void ApplyBackground(bool transparent)
-    {
-        CanvasNext.Background = transparent ? Brushes.Transparent : MajorGridBrush;
-        TimeText.Visibility = transparent || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
-        LeftBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
-        CenterBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
-        RightBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
-        PassThroughBorder.Visibility = transparent ? Visibility.Visible : Visibility.Collapsed;
-        Topmost = transparent;
+        timerWindow = new TimerWindow( );
+        timerWindow.Show( );
     }
 
     private void UndoButtonClick(object o, RoutedEventArgs e)

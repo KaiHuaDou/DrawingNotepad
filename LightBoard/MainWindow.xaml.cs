@@ -1,8 +1,11 @@
 using System;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+
+using InkCanvasNext;
 
 using LightBoard.External;
 
@@ -10,6 +13,8 @@ namespace LightBoard;
 
 public partial class MainWindow : Window
 {
+    internal readonly InkCanvasNext.InkCanvasNext CanvasNext;
+
 #if DEBUG
     private const string SwitchOutProcessName = "thorium";
 #else
@@ -20,13 +25,12 @@ public partial class MainWindow : Window
 
     private TimerWindow? timerWindow;
 
-    internal readonly InkCanvasNext.InkCanvasNext CanvasNext;
-
     public MainWindow( )
     {
         InitializeComponent( );
 
-        RefreshSwitchOutIcon( );
+        // 图标提取要枚举进程并调 Shell，放到窗口显示后再取
+        Loaded += (_, _) => Dispatcher.InvokeAsync(RefreshSwitchOutIcon, DispatcherPriority.Background);
 
         if (Resources["MajorGridBrush"] is DrawingBrush gridBrush)
         {
@@ -51,9 +55,10 @@ public partial class MainWindow : Window
         App.InitializePages( );
         App.PageChanged += OnPageChanged;
 
-        if (App.PendingOpen is not null)
+        if (App.PendingOpen is { } pendingOpen)
         {
-            OpenFile(App.PendingOpen);
+            // 构造期打开会把读盘与背景注册压在首帧之前
+            Loaded += (_, _) => Dispatcher.InvokeAsync(( ) => RequestOpenFile(pendingOpen), DispatcherPriority.Background);
         }
 
         OnPageChanged(this, EventArgs.Empty);
@@ -72,9 +77,68 @@ public partial class MainWindow : Window
         timeTimer.Start( );
     }
 
+    private void ApplySettings( )
+    {
+        var data = Settings.Data;
+        CanvasNext.AutoScrollHorizontalThreshold = data.AutoScroll ? InkCanvasNext.InkCanvasNext.AutoScrollHorizontalDefaultThreshold : 0;
+        CanvasNext.AutoScrollVerticalThreshold = data.AutoScroll ? InkCanvasNext.InkCanvasNext.AutoScrollVerticalDefaultThreshold : 0;
+        var touch = Math.Clamp(data.TouchDisplacementThreshold, Settings.ThresholdMin, Settings.ThresholdMax);
+        var panZoom = Math.Clamp(data.PanZoomDisplaceThreshold, Settings.ThresholdMin, Settings.ThresholdMax);
+        var pinch = Math.Clamp(data.PinchLockDistance, Settings.ThresholdMin, Settings.ThresholdMax);
+        CanvasNext.TouchDisplacementThreshold2 = touch * touch;
+        CanvasNext.PanZoomDisplaceThreshold2 = panZoom * panZoom;
+        CanvasNext.PinchLockDistance2 = pinch * pinch;
+        CanvasNext.SetMaxHistoryCount(Math.Clamp(data.MaxHistoryCount, Settings.HistoryMin, Settings.HistoryMax));
+    }
+
+    private void CanvasNextCanRedoChanged(object? o, DependencyPropertyChangedEventArgs e)
+    {
+        RedoButton.IsEnabled = CanvasNext.CanRedo;
+    }
+
+    private void CanvasNextCanUndoChanged(object? o, DependencyPropertyChangedEventArgs e)
+    {
+        UndoButton.IsEnabled = CanvasNext.CanUndo;
+    }
+
+    private void CanvasNextSelectionChanged(object? o, EventArgs e)
+    {
+        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
+        {
+            SelectionBorder.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        SelectionBorder.Visibility = Visibility.Visible;
+        UpdateSelectionBorderPosition( );
+    }
+
+    private void CanvasNextStrokesChanged(object? o, InkCanvasStrokesChangedEventArgs e)
+    {
+        Dirty = true;
+        App.BoardRevision++;
+        App.CurrentPage.InvalidatePreview( );
+
+        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
+        {
+            SelectionBorder.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        UpdateSelectionBorderPosition( );
+    }
+
     private void CloseWindowClick(object o, RoutedEventArgs e)
     {
         Close( );
+    }
+
+    private void MainWindowKeyUp(object o, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            ExitStamp( );
+        }
     }
 
     private void MinimizeWindowClick(object o, RoutedEventArgs e)
@@ -82,28 +146,15 @@ public partial class MainWindow : Window
         WindowState = WindowState.Minimized;
     }
 
-    private void SwitchOutClick(object o, RoutedEventArgs e)
-    {
-        NativeMethods.SwitchTo(SwitchOutProcessName);
-        RefreshSwitchOutIcon( );
-    }
-
     private void RefreshSwitchOutIcon( )
     {
         SwitchOutButton.Content = ProgramIcon.FromProcess(SwitchOutProcessName, 48);
     }
 
-    private void WindowDeactivated(object o, EventArgs e)
+    private void SwitchOutClick(object o, RoutedEventArgs e)
     {
-        CanvasNext.ResetTouchState( );
-    }
-
-    private void WindowSourceInitialized(object o, EventArgs e)
-    {
-        PassThroughBorder.LayoutUpdated += (_, _) => UpdateWindowRegion( );
-        LocationChanged += (_, _) => UpdateWindowRegion( );
-        SizeChanged += (_, _) => UpdateWindowRegion( );
-        Loaded += (_, _) => UpdateWindowRegion( );
+        NativeMethods.SwitchTo(SwitchOutProcessName);
+        RefreshSwitchOutIcon( );
     }
 
     private void UpdateWindowRegion( )
@@ -131,42 +182,16 @@ public partial class MainWindow : Window
         NativeMethods.SetWindowRegion(hWnd, ActualWidth, ActualHeight, dpi, borderRect);
     }
 
-    private void DebugLayerClick(object o, RoutedEventArgs e)
+    private void WindowDeactivated(object o, EventArgs e)
     {
-        var isChecked = DebugLayerMenu.IsChecked;
-        DebugLayer.Visibility = isChecked ? Visibility.Visible : Visibility.Collapsed;
+        CanvasNext.ResetTouchState( );
     }
 
-    private void SettingsClick(object o, RoutedEventArgs e)
+    private void WindowSourceInitialized(object o, EventArgs e)
     {
-        var dialog = new Settings { Owner = this };
-        dialog.ShowDialog( );
-        ApplySettings( );
-    }
-
-    private void ApplySettings( )
-    {
-        var data = Settings.Data;
-        CanvasNext.AutoScrollHorizontalThreshold = data.AutoScroll ? InkCanvasNext.InkCanvasNext.AutoScrollHorizontalDefaultThreshold : 0;
-        CanvasNext.AutoScrollVerticalThreshold = data.AutoScroll ? InkCanvasNext.InkCanvasNext.AutoScrollVerticalDefaultThreshold : 0;
-        var touch = Math.Clamp(data.TouchDisplacementThreshold, Settings.ThresholdMin, Settings.ThresholdMax);
-        var panZoom = Math.Clamp(data.PanZoomDisplaceThreshold, Settings.ThresholdMin, Settings.ThresholdMax);
-        var pinch = Math.Clamp(data.PinchLockDistance, Settings.ThresholdMin, Settings.ThresholdMax);
-        CanvasNext.TouchDisplacementThreshold2 = touch * touch;
-        CanvasNext.PanZoomDisplaceThreshold2 = panZoom * panZoom;
-        CanvasNext.PinchLockDistance2 = pinch * pinch;
-        CanvasNext.SetMaxHistoryCount(Math.Clamp(data.MaxHistoryCount, Settings.HistoryMin, Settings.HistoryMax));
-    }
-
-    private void TimerMenuClick(object o, RoutedEventArgs e)
-    {
-        if (timerWindow?.IsLoaded == true)
-        {
-            timerWindow.Activate( );
-            return;
-        }
-
-        timerWindow = new TimerWindow( );
-        timerWindow.Show( );
+        PassThroughBorder.LayoutUpdated += (_, _) => UpdateWindowRegion( );
+        LocationChanged += (_, _) => UpdateWindowRegion( );
+        SizeChanged += (_, _) => UpdateWindowRegion( );
+        Loaded += (_, _) => UpdateWindowRegion( );
     }
 }
