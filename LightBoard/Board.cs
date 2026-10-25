@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows;
 using System.Windows.Ink;
 
 namespace LightBoard;
@@ -12,10 +13,15 @@ internal sealed record BoardPage(
     StrokeCollection Strokes,
     double Scale,
     double OffsetX,
-    double OffsetY
+    double OffsetY,
+    DocumentBackground? Background = null
 );
 
-internal sealed record BoardContent(int Version, IReadOnlyList<BoardPage> Pages);
+internal sealed record BoardContent(
+    int Version,
+    IReadOnlyList<BoardPage> Pages,
+    IReadOnlyList<string> InvalidBackgrounds
+);
 
 internal sealed class BoardManifest(int version, IReadOnlyList<BoardPageInfo> pages)
 {
@@ -23,22 +29,31 @@ internal sealed class BoardManifest(int version, IReadOnlyList<BoardPageInfo> pa
     public IReadOnlyList<BoardPageInfo> Pages { get; set; } = pages;
 }
 
-internal sealed class BoardPageInfo(double scale, double offsetX, double offsetY)
+internal sealed class BoardPageInfo(
+    double scale,
+    double offsetX,
+    double offsetY,
+    string? background,
+    BoardBox? backgroundBox)
 {
     public double Scale { get; set; } = scale;
     public double OffsetX { get; set; } = offsetX;
     public double OffsetY { get; set; } = offsetY;
+    public string? Background { get; set; } = background;
+    public BoardBox? BackgroundBox { get; set; } = backgroundBox;
 }
+
+internal sealed record BoardBox(double X, double Y, double Width, double Height);
 
 internal static class Board
 {
     public const string Ext = ".lbf";
 
+    internal const int CurrentVersion = 2;
+
     private const string Manifest = "manifest.json";
 
     private const string PagePrefix = "pages/";
-
-    private const int CurrentVersion = 1;
 
     public static BoardContent Read(string path)
     {
@@ -61,6 +76,7 @@ internal static class Board
             throw new InvalidDataException("文件没有任何页面");
         }
 
+        var invalidBackgrounds = new List<string>( );
         var pages = new List<BoardPage>(manifest.Pages.Count);
         for (var i = 0; i < manifest.Pages.Count; i++)
         {
@@ -75,10 +91,15 @@ internal static class Board
             using var pageBuffer = new MemoryStream( );
             pageStream.CopyTo(pageBuffer);
             pageBuffer.Position = 0;
-            pages.Add(new BoardPage([with(pageBuffer)], info.Scale, info.OffsetX, info.OffsetY));
+            pages.Add(new BoardPage(
+                [with(pageBuffer)],
+                info.Scale,
+                info.OffsetX,
+                info.OffsetY,
+                ReadBackground(info, i, invalidBackgrounds)));
         }
 
-        return new BoardContent(manifest.Version, pages);
+        return new BoardContent(manifest.Version, pages, invalidBackgrounds);
     }
 
     public static void Write(string path, IReadOnlyList<BoardPage> pages)
@@ -96,9 +117,7 @@ internal static class Board
             // 归档必须在 File.Move 之前关闭，否则临时文件句柄仍被占用
             using (var zip = ZipFile.Open(tempPath, ZipArchiveMode.Create))
             {
-                var manifest = new BoardManifest(
-                    CurrentVersion,
-                    [.. pages.Select(p => new BoardPageInfo(p.Scale, p.OffsetX, p.OffsetY))]);
+                var manifest = new BoardManifest(CurrentVersion, [.. pages.Select(ToPageInfo)]);
 
                 var manifestEntry = zip.CreateEntry(Manifest);
                 // 流必须在后续 CreateEntry 之前关闭，ZipArchive 不允许多个条目同时处于打开状态
@@ -124,7 +143,42 @@ internal static class Board
             throw;
         }
     }
+
+    private static BoardPageInfo ToPageInfo(BoardPage page)
+    {
+        var background = page.Background;
+        var box = background is null
+            ? null
+            : new BoardBox(background.Box.X, background.Box.Y, background.Box.Width, background.Box.Height);
+
+        return new BoardPageInfo(page.Scale, page.OffsetX, page.OffsetY, background?.ToString( ), box);
+    }
+
+    private static DocumentBackground? ReadBackground(BoardPageInfo info, int index, List<string> invalid)
+    {
+        if (info.Background is not { } spec)
+        {
+            return null;
+        }
+
+        if (info.BackgroundBox is { } box
+            && double.IsFinite(box.X)
+            && double.IsFinite(box.Y)
+            && double.IsFinite(box.Width)
+            && double.IsFinite(box.Height)
+            && box.Width > 0
+            && box.Height > 0
+            && DocumentBackground.TryParse(spec, new Rect(box.X, box.Y, box.Width, box.Height), out var background))
+        {
+            return background;
+        }
+
+        invalid.Add($"第 {index + 1} 页：{spec}");
+
+        return null;
+    }
 }
 
+[JsonSourceGenerationOptions(DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(BoardManifest))]
-internal sealed partial class BoardSerializerContext : System.Text.Json.Serialization.JsonSerializerContext;
+internal sealed partial class BoardSerializerContext : JsonSerializerContext;

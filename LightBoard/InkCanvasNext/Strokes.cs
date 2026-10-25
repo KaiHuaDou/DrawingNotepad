@@ -169,9 +169,9 @@ internal static partial class StrokeCollectionExtension
     {
         var ratio = scale / 100.0;
         var bounds = strokes.GetBounds( );
-        if (background is not null)
+        if (background is not null && box is { } fitBox)
         {
-            bounds.Union(BackgroundRect(box!.Value, background));
+            bounds.Union(BackgroundRect(fitBox, background));
         }
 
         if (bounds.IsEmpty)
@@ -224,9 +224,9 @@ internal static partial class StrokeCollectionExtension
         Rect? box = null)
     {
         var bounds = strokes.GetBounds( );
-        if (background is not null)
+        if (background is not null && box is { } fitBox)
         {
-            bounds.Union(BackgroundRect(box!.Value, background));
+            bounds.Union(BackgroundRect(fitBox, background));
         }
 
         var matrix = Matrix.Identity;
@@ -265,13 +265,13 @@ internal static partial class StrokeCollectionExtension
         using (var context = visual.RenderOpen( ))
         {
             context.DrawRectangle(background, null, bounds);
-            if (image is not null)
+            if (image is not null && box is { } fitBox)
             {
                 // 背景按世界坐标矩形绘制，与墨迹共用同一变换，保证叠加位置一致。
                 context.PushTransform(new MatrixTransform(transform));
                 try
                 {
-                    context.DrawImage(image, BackgroundRect(box!.Value, image));
+                    context.DrawImage(image, BackgroundRect(fitBox, image));
                 }
                 finally
                 {
@@ -291,7 +291,7 @@ internal static partial class StrokeCollectionExtension
     }
 
     // 文档背景在世界坐标中的矩形：显示尺寸为图像 DPI 折算的 DIP 尺寸等比装进盒子、位置在盒子内居中
-    // （与 SetDocumentPage 的布局适配同一公式）。背景与盒子成对提供（App.Document 与 App.DocumentBox 同步赋值）。
+    // （与 SetDocumentPage 的布局适配同一公式）。
     private static Rect BackgroundRect(Rect box, ImageSource image)
     {
         var bitmap = (BitmapSource) image;

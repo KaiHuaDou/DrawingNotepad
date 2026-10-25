@@ -288,7 +288,7 @@ public partial class InkCanvasNext : UserControl
     /// <summary>
     /// 设置文档背景页面；页面为 null 或盒子无效时移除页面。
     /// fitBox 为背景页在内容坐标中的 Uniform 适配盒子，决定 DocumentHost 的位置与尺寸，页面由布局居中等比适配；
-    /// 页面与盒子成对提供（App.Document 与 App.DocumentBox 同步赋值）。
+    /// 页面与盒子成对提供，均取自同一页的背景引用。
     /// </summary>
     public void SetDocumentPage(ImageSource? page, Rect? fitBox)
     {

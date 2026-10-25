@@ -21,20 +21,23 @@ public partial class MainWindow
         set;
     }
 
-    private void AttachBoard(string fileName)
+    private async Task AttachBoard(string fileName)
     {
-        // 空白板（无页）不切换，避免跳到既有末页
         var first = App.Pages.Count;
-        App.AttachBoard(fileName);
+        var invalid = await RunWithLoading("正在附加", ( ) => App.AttachBoard(fileName));
+
+        // 空白板（无页）不切换，避免跳到既有末页
         if (first < App.Pages.Count)
         {
             SaveCurrentViewToPage( );
             App.SwitchPage(first);
             Dirty = true;
         }
+
+        ShowInvalidBackgrounds(invalid);
     }
 
-    private void AttachClick(object o, RoutedEventArgs e)
+    private async void AttachClick(object o, RoutedEventArgs e)
     {
         OpenFileDialog dialog = new( ) { Filter = FileFilter };
         if (dialog.ShowDialog( ) != true)
@@ -48,7 +51,7 @@ public partial class MainWindow
 
             if (IsBoardFile(fileName))
             {
-                AttachBoard(fileName);
+                await AttachBoard(fileName);
             }
             else if (IsInkFile(fileName))
             {
@@ -56,7 +59,7 @@ public partial class MainWindow
             }
             else
             {
-                AttachDocument(fileName);
+                await AttachDocument(fileName);
             }
         }
         catch (Exception ex)
@@ -66,11 +69,11 @@ public partial class MainWindow
         }
     }
 
-    private async void AttachDocument(string fileName)
+    private async Task AttachDocument(string fileName)
     {
-        if (App.Document is not null)
+        if (App.HasBackground)
         {
-            // 已有文档时附加等价于替换式打开，先走保存确认
+            // 已有背景时附加等价于替换式打开，先走保存确认
             if (WhetherCloseFile( ))
             {
                 return;
@@ -80,32 +83,19 @@ public partial class MainWindow
             return;
         }
 
-        CanvasNext.IsEnabled = false;
-        ShowLoading("正在附加文档");
-
         try
         {
-            var document = await App.AttachDocument(fileName);
+            await RunWithLoading("正在附加文档", ( ) => App.AttachDocument(fileName));
 
-            // 不走 OnPageChanged：ApplyStrokes 会清空撤销历史。文档盒已落在附加时的可见内容区域内，
+            // 不走 OnPageChanged：ApplyStrokes 会清空撤销历史。新页的背景盒取附加时的可见内容区域，
             // 画布视图无需移动；页视图已在 AttachDocument 中与画布视图同步
-            CanvasNext.SetDocumentPage(document.GetPage(App.PageIndex), App.DocumentBox);
-
-            // 背景页对所有页生效，缩略图整体置脏
-            foreach (var page in App.Pages)
-            {
-                page.InvalidatePreview( );
-            }
+            var page = App.CurrentPage;
+            CanvasNext.SetDocumentPage(App.BackgroundImage(page.Background), page.Background?.Box);
         }
         catch (Exception ex)
         {
             App.LogException(ex);
             App.ShowDetailedInfo("无法附加文档", ex.Message, $"{ex.Message}\n{ex.StackTrace}");
-        }
-        finally
-        {
-            CanvasNext.IsEnabled = true;
-            HideLoading( );
         }
     }
 
@@ -125,9 +115,7 @@ public partial class MainWindow
         // 先清空页面视图再释放 XPS，否则已渲染的页面会失效。
         CanvasNext.SetDocumentPage(null, null);
 
-        App.Document?.Dispose( );
-        App.Document = null;
-        App.DocumentBox = null;
+        App.CloseDocuments( );
     }
 
     private void NewFileClick(object o, RoutedEventArgs e)
@@ -216,18 +204,24 @@ public partial class App
     /// </summary>
     private static int RecoverRevision { get; set; }
 
-    public static void AttachBoard(string path)
+    public static async Task<IReadOnlyList<string>> AttachBoard(string path)
     {
         var content = Board.Read(path);
+        await RegisterBackgroundsAsync(content.Pages);
+
         foreach (var p in content.Pages)
         {
             AddBoardPage(p);
         }
+
+        return content.InvalidBackgrounds;
     }
 
-    public static void LoadBoard(string path)
+    // 背景服务先注册完再动 Pages：OpenFile 在 await 处提前返回时，Pages 不能停在半空状态。
+    public static async Task<IReadOnlyList<string>> LoadBoard(string path)
     {
         var content = Board.Read(path);
+        await RegisterBackgroundsAsync(content.Pages);
 
         Pages.Clear( );
         foreach (var p in content.Pages)
@@ -236,6 +230,8 @@ public partial class App
         }
 
         PageIndex = 0;
+
+        return content.InvalidBackgrounds;
     }
 
     internal static BoardPage[] SnapshotPages(bool cloneStrokes)
@@ -246,7 +242,8 @@ public partial class App
                 cloneStrokes ? [.. page.Strokes.Select(s => s.Clone( ))] : page.Strokes,
                 page.Scale,
                 page.OffsetX,
-                page.OffsetY)),
+                page.OffsetY,
+                page.Background)),
         ];
     }
 
@@ -259,7 +256,13 @@ public partial class App
             Scale = p.Scale,
             OffsetX = p.OffsetX,
             OffsetY = p.OffsetY,
+            Background = p.Background,
         };
+
+        if (p.Background is not null)
+        {
+            page.InvalidatePreview( );
+        }
 
         Pages.Add(page);
         BoardRevision++;

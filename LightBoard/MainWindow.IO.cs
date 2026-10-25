@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,6 +13,8 @@ namespace LightBoard;
 
 public partial class MainWindow
 {
+    private bool opening;
+
     private const string FileFilter =
         "可打开的文件|*.lbf;*.isf;*.pptx;*.ppt;*.docx;*.doc;*.xps;*.pdf;*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|轻白板文件|*.lbf|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|XPS 文档|*.xps|PDF 文档|*.pdf|图片|*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|所有文件|*.*";
 
@@ -43,13 +46,19 @@ public partial class MainWindow
 
     private async void OpenFile(string fileName)
     {
+        if (opening)
+        {
+            return;
+        }
+
+        opening = true;
         try
         {
             CloseDocumentViewer( );
 
             if (IsBoardFile(fileName))
             {
-                App.LoadBoard(fileName);
+                await LoadBoard(fileName);
             }
             else if (IsInkFile(fileName))
             {
@@ -63,18 +72,7 @@ public partial class MainWindow
             }
             else
             {
-                CanvasNext.IsEnabled = false;
-                ShowLoading("正在打开文档");
-
-                try
-                {
-                    await App.OpenDocument(fileName);
-                }
-                finally
-                {
-                    CanvasNext.IsEnabled = true;
-                    HideLoading( );
-                }
+                await RunWithLoading("正在打开文档", ( ) => App.OpenDocument(fileName));
             }
 
             Dirty = false;
@@ -86,8 +84,52 @@ public partial class MainWindow
         }
         finally
         {
+            opening = false;
             HideLoading( );
         }
+    }
+
+    private async Task LoadBoard(string fileName)
+    {
+        var invalid = await RunWithLoading("正在打开", ( ) => App.LoadBoard(fileName));
+
+        ShowInvalidBackgrounds(invalid);
+    }
+
+    private async Task RunWithLoading(string tip, Func<Task> action)
+    {
+        await RunWithLoading(tip, async ( ) =>
+        {
+            await action( );
+            return true;
+        });
+    }
+
+    // 背景加载可能触发 Office 转换，期间禁用画布
+    private async Task<T> RunWithLoading<T>(string tip, Func<Task<T>> action)
+    {
+        CanvasNext.IsEnabled = false;
+        ShowLoading(tip);
+
+        try
+        {
+            return await action( );
+        }
+        finally
+        {
+            CanvasNext.IsEnabled = true;
+            HideLoading( );
+        }
+    }
+
+    private static void ShowInvalidBackgrounds(IReadOnlyList<string> invalid)
+    {
+        if (invalid.Count == 0)
+        {
+            return;
+        }
+
+        App.ShowInfo("部分页的背景引用无效，已忽略", string.Join("\n", invalid));
     }
 
     private static bool IsBoardFile(string fileName)
@@ -201,7 +243,7 @@ public partial class MainWindow
 
     private void ExportPdfClick(object o, RoutedEventArgs e)
     {
-        if (App.IsBoardEmpty( ) && App.Document is null)
+        if (App.IsBoardEmpty( ) && !App.HasBackground)
         {
             App.ShowInfo("没有可以导出的内容");
             return;

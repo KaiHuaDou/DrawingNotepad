@@ -58,15 +58,18 @@ public partial class Page
         previewRendering = true;
         var version = previewVersion;
 
-        // 快照必须在 UI 线程取：渲染期间画布仍可被编辑（选区变换会就地改触点）。
+        // 快照必须在 UI 线程取：渲染期间画布仍可被编辑（选区变换会就地改触点）；背景图同理。
         var strokes = new StrokeCollection([.. Strokes.Select(s => s.Clone( ))]);
+        var background = Background;
+        var image = background is null ? null : App.BackgroundImage(background);
+        var box = background?.Box;
 
         Task.Run(( ) =>
         {
-            ImageSource? image = null;
+            ImageSource? rendered = null;
             try
             {
-                image = strokes.Preview(BackgroundPage( ), App.DocumentBox);
+                rendered = strokes.Preview(image, box);
             }
             catch (Exception e)
             {
@@ -76,9 +79,9 @@ public partial class Page
             // 失败时同样要复位 previewRendering，否则这一页的缩略图此后再无重建机会
             Application.Current.Dispatcher.BeginInvoke(( ) =>
             {
-                if (image is not null)
+                if (rendered is not null)
                 {
-                    Preview = image;
+                    Preview = rendered;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Preview)));
                 }
 
@@ -86,18 +89,5 @@ public partial class Page
                 PreviewStale = previewVersion != version;
             });
         });
-    }
-
-    /// <summary>
-    /// 文档背景页：XPS 页树有线程亲和性，只能在 UI 线程取（结果已冻结，可跨线程绘制）。
-    /// </summary>
-    private ImageSource? BackgroundPage( )
-    {
-        if (App.Document is null)
-        {
-            return null;
-        }
-
-        return Application.Current.Dispatcher.Invoke(( ) => App.Document.GetPage(Number - 1));
     }
 }

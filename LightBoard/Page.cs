@@ -22,6 +22,7 @@ public partial class Page : INotifyPropertyChanged
     public double OffsetX { get; set; } = App.InitialOffset.X;
     public double OffsetY { get; set; } = App.InitialOffset.Y;
     public HistorySnapshot? History { get; set; }
+    internal DocumentBackground? Background { get; set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -35,9 +36,9 @@ public partial class Page : INotifyPropertyChanged
         App.BoardRevision++;
     }
 
-    public void ExportStrokes(string fileName, DpiScale dpi, int scale, ImageSource? background = null)
+    public void ExportStrokes(string fileName, DpiScale dpi, int scale, ImageSource? background, Rect? box)
     {
-        var image = Strokes.Render(dpi, scale, background: background, box: App.DocumentBox);
+        var image = Strokes.Render(dpi, scale, background: background, box: box);
         var encoder = new PngBitmapEncoder( );
         encoder.Frames.Add(BitmapFrame.Create(image));
 
@@ -111,13 +112,14 @@ public partial class App
                 var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.png");
 
                 // XPS 页树具有线程亲和性，背景统一派发到 UI 线程渲染（结果已冻结），再回后台线程合成。
+                var source = page.Background;
                 ImageSource? background = null;
-                if (Document is not null)
+                if (source is not null)
                 {
-                    background = Current.Dispatcher.Invoke(( ) => Document.GetPage(page.Number - 1));
+                    background = Current.Dispatcher.Invoke(( ) => BackgroundImage(source));
                 }
 
-                page.ExportStrokes(fileName, dpi, scale, background);
+                page.ExportStrokes(fileName, dpi, scale, background, source?.Box);
             }
 
             progress?.Report(new(tip, i + 1, count));

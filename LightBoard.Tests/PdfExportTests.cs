@@ -28,7 +28,7 @@ public class PdfExportTests
         var path = Path.Join(Path.GetTempPath( ), $"lb-test-{Guid.NewGuid( ):N}.pdf");
         try
         {
-            PdfWriter.Export(path, pages, null, new DpiScale(1, 1), 100);
+            PdfWriter.Export(path, pages, new DpiScale(1, 1), 100);
 
             Assert.True(File.Exists(path));
             Assert.True(new FileInfo(path).Length > 0);

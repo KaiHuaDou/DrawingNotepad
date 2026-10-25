@@ -138,6 +138,8 @@ public partial class TimerWindow
     {
         var content = (FrameworkElement) Content;
 
+        // 约束相同时 Measure 可能命中缓存拿回旧 DesiredSize，先作废脏标记再量
+        content.InvalidateMeasure( );
         content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
 
         return content.DesiredSize;

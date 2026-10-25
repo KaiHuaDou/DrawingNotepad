@@ -18,7 +18,7 @@ public partial class App
 {
     public static void ExportAllPdf(string fileName, DpiScale dpi, int scale, IProgress<ExportProgress>? progress = null)
     {
-        PdfWriter.Export(fileName, Pages, Document, dpi, scale, progress);
+        PdfWriter.Export(fileName, Pages, dpi, scale, progress);
     }
 }
 
@@ -29,7 +29,7 @@ internal static class PdfWriter
         fpdfview.FPDF_InitLibrary( );
     }
 
-    public static void Export(string path, IList<Page> pages, DocumentService? document, DpiScale dpi, int scale, IProgress<ExportProgress>? progress = null)
+    public static void Export(string path, IList<Page> pages, DpiScale dpi, int scale, IProgress<ExportProgress>? progress = null)
     {
         const string pageTip = "正在导出 PDF";
         const string saveTip = "正在写入 PDF";
@@ -44,7 +44,7 @@ internal static class PdfWriter
             {
                 for (var i = 0; i < count; i++)
                 {
-                    var bitmap = AddPage(pdf, i, pages[i], FetchBackground(document, i), dpi, scale);
+                    var bitmap = AddPage(pdf, i, pages[i], FetchBackground(pages[i].Background), dpi, scale);
                     bitmaps.Add(bitmap);
                     progress?.Report(new(pageTip, i + 1, count));
                 }
@@ -70,7 +70,7 @@ internal static class PdfWriter
 
     private static FpdfBitmapT AddPage(FpdfDocumentT pdf, int index, Page page, ImageSource? background, DpiScale dpi, int scale)
     {
-        var content = page.Strokes.Render(dpi, scale, Brushes.White, background, App.DocumentBox);
+        var content = page.Strokes.Render(dpi, scale, Brushes.White, background, page.Background?.Box);
         var ptW = content.PixelWidth * 72d / dpi.PixelsPerInchX;
         var ptH = content.PixelHeight * 72d / dpi.PixelsPerInchY;
 
@@ -163,16 +163,16 @@ internal static class PdfWriter
         }
     }
 
-    private static ImageSource? FetchBackground(DocumentService? document, int index)
+    private static ImageSource? FetchBackground(DocumentBackground? background)
     {
-        if (document is null)
+        if (background is null)
         {
             return null;
         }
 
         return Application.Current.Dispatcher.Invoke(( ) =>
         {
-            var page = document.GetPage(index);
+            var page = App.BackgroundImage(background);
             if (page?.CanFreeze == true)
             {
                 page.Freeze( );

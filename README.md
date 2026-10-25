@@ -40,7 +40,7 @@
     - 页面列表缩略图按需生成（显示时后台渲染）
 - 墨迹管理
     - 复制 / 粘贴 / 克隆 / 删除选中墨迹（可跨应用粘贴）
-    - `*.lbf` 轻白板文件（zip 容器，可解压获得单页 ISF；带版本校验与完整性检查）
+    - `*.lbf` 轻白板文件（zip 容器，可解压获得单页 ISF；带版本校验与完整性检查；每页记录背景来源与位置，打开时重新加载源 PDF / XPS / Office 文档 / 图片）
     - `*.isf` Windows 墨迹文件
     - 自动备份当前墨迹（每分钟一次，内容未变化时跳过；写入 `recover/`），崩溃后可用「打开」载入该目录中的文件恢复
     - 快速保存：一键写入 `fastsave/` 目录，无需文件对话框
@@ -148,8 +148,8 @@ LightBoard/               # 主程序
 │  ├─ Shapes.cs           # 直线/圆形形状绘制
 │  ├─ Geometry.cs         # 几何工具
 │  └─ RingBuffer.cs       # 定容环形缓冲（撤销栈）
-├─ Document/              # 渲染源：XpsSource / PdfSource / ImagePageSource / PdfExport；文档服务：DocumentService（转换与缓存）
-├─ Documents.cs           # 文档打开/附加：页集合装配与文档盒捕获
+├─ Document/              # 渲染源：XpsSource / PdfSource / ImagePageSource / PdfExport；背景引用：Backgrounds；文档服务：DocumentService（转换与缓存）
+├─ Documents.cs           # 文档打开/附加：页集合装配与背景盒捕获
 ├─ Page.cs                # 页面模型与页集合管理
 ├─ Page.Preview.cs        # 页面缩略图按需生成
 ├─ Board.cs               # 多页整体存档（.lbf）与自动恢复

@@ -87,13 +87,15 @@ public partial class MainWindow
         SelectionBorder.Visibility = Visibility.Collapsed;
 
         CanvasNext.ResetTouchState( );
-        CanvasNext.Strokes = App.CurrentPage.Strokes;
-        CanvasNext.CurrentScale = App.CurrentPage.Scale;
-        CanvasNext.OffsetX = App.CurrentPage.OffsetX;
-        CanvasNext.OffsetY = App.CurrentPage.OffsetY;
-        CanvasNext.SwapHistory(out _, App.CurrentPage.History);
 
-        CanvasNext.SetDocumentPage(App.Document?.GetPage(target), App.DocumentBox);
+        var page = App.CurrentPage;
+
+        CanvasNext.Strokes = page.Strokes;
+        CanvasNext.CurrentScale = page.Scale;
+        CanvasNext.OffsetX = page.OffsetX;
+        CanvasNext.OffsetY = page.OffsetY;
+        CanvasNext.SwapHistory(out _, page.History);
+        CanvasNext.SetDocumentPage(App.BackgroundImage(page.Background), page.Background?.Box);
     }
 
     private void PagePreviewsBoxSelectionChanged(object o, SelectionChangedEventArgs e)

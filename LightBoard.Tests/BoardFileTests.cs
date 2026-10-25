@@ -1,6 +1,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Text.Json;
+using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Input;
 
@@ -14,7 +15,7 @@ public class BoardFileTests
         return Path.Join(Path.GetTempPath( ), $"lb-board-{Guid.NewGuid( ):N}.lbf");
     }
 
-    private static BoardPage MakePage(double scale, double offsetX, double offsetY, bool withStroke)
+    private static BoardPage MakePage(double scale, double offsetX, double offsetY, bool withStroke, DocumentBackground? background = null)
     {
         var strokes = new StrokeCollection( );
         if (withStroke)
@@ -24,7 +25,7 @@ public class BoardFileTests
                 new DrawingAttributes( )));
         }
 
-        return new BoardPage(strokes, scale, offsetX, offsetY);
+        return new BoardPage(strokes, scale, offsetX, offsetY, background);
     }
 
     [Fact]
@@ -40,6 +41,12 @@ public class BoardFileTests
         try
         {
             Board.Write(path, pages);
+
+            using (var zip = ZipFile.OpenRead(path))
+            using (var reader = new StreamReader(zip.GetEntry("manifest.json")!.Open( )))
+            {
+                Assert.DoesNotContain("Background", reader.ReadToEnd( ));
+            }
 
             var content = Board.Read(path);
 
@@ -63,7 +70,7 @@ public class BoardFileTests
         try
         {
             Board.Write(path, [MakePage(1.0, 0, 0, withStroke: false)]);
-            RewriteManifestVersion(path, 2);
+            RewriteManifestVersion(path, Board.CurrentVersion + 1);
 
             Assert.Throws<InvalidDataException>(( ) => Board.Read(path));
         }
@@ -110,7 +117,7 @@ public class BoardFileTests
             {
                 var entry = zip.CreateEntry("manifest.json");
                 using var stream = entry.Open( );
-                JsonSerializer.Serialize(stream, new BoardManifest(1, []), BoardSerializerContext.Default.BoardManifest);
+                JsonSerializer.Serialize(stream, new BoardManifest(Board.CurrentVersion, []), BoardSerializerContext.Default.BoardManifest);
             }
 
             Assert.Throws<InvalidDataException>(( ) => Board.Read(path));
@@ -181,6 +188,105 @@ public class BoardFileTests
         finally
         {
             File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Write_Read_RoundTrip_Background( )
+    {
+        var box = new Rect(10, 20, 300, 400);
+        var background = new DocumentBackground(@"C:\docs\a b.pdf", 12, box);
+
+        var path = TempPath( );
+        try
+        {
+            Board.Write(path, [MakePage(1.0, 0, 0, withStroke: false, background)]);
+
+            using (var zip = ZipFile.OpenRead(path))
+            using (var reader = new StreamReader(zip.GetEntry("manifest.json")!.Open( )))
+            {
+                Assert.Contains(@"C:\\docs\\a b.pdf::12", reader.ReadToEnd( ));
+            }
+
+            var content = Board.Read(path);
+
+            var read = content.Pages[0].Background;
+            Assert.NotNull(read);
+            Assert.Equal(@"C:\docs\a b.pdf", read!.Path);
+            Assert.Equal(12, read.PageNumber);
+            Assert.Equal(box, read.Box);
+            Assert.Empty(content.InvalidBackgrounds);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    // v1 文件的页信息只有三个 double，缺 Background / BackgroundBox 时按无背景处理。
+    [Fact]
+    public void Read_ManifestV1_NoBackground( )
+    {
+        var path = TempPath( );
+        try
+        {
+            WriteRawBoard(path, new BoardManifest(1, [new BoardPageInfo(1.0, 0, 0, null, null)]));
+
+            var content = Board.Read(path);
+
+            Assert.Null(content.Pages[0].Background);
+            Assert.Empty(content.InvalidBackgrounds);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    // 背景串写坏只影响该页：按无背景打开，损坏项交给界面提示。
+    [Fact]
+    public void Read_InvalidBackground_ReportsAndIgnores( )
+    {
+        BoardManifest manifest = new(Board.CurrentVersion,
+        [
+            new BoardPageInfo(1.0, 0, 0, @"C:\a.pdf::0", new BoardBox(0, 0, 100, 100)),
+            new BoardPageInfo(1.0, 0, 0, @"C:\a.pdf", new BoardBox(0, 0, 100, 100)),
+            new BoardPageInfo(1.0, 0, 0, @"C:\a.pdf::1", null),
+            new BoardPageInfo(1.0, 0, 0, @"C:\a.pdf::1", new BoardBox(0, 0, 0, 100)),
+        ]);
+
+        var path = TempPath( );
+        try
+        {
+            WriteRawBoard(path, manifest);
+
+            var content = Board.Read(path);
+
+            Assert.All(content.Pages, page => Assert.Null(page.Background));
+            Assert.Equal(4, content.InvalidBackgrounds.Count);
+            Assert.Contains("第 1 页", content.InvalidBackgrounds[0]);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    private static void WriteRawBoard(string path, BoardManifest manifest)
+    {
+        using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
+
+        var manifestEntry = zip.CreateEntry("manifest.json");
+        using (var stream = manifestEntry.Open( ))
+        {
+            JsonSerializer.Serialize(stream, manifest, BoardSerializerContext.Default.BoardManifest);
+        }
+
+        for (var i = 0; i < manifest.Pages.Count; i++)
+        {
+            var entry = zip.CreateEntry($"pages/{i + 1:D3}.isf");
+            using var stream = entry.Open( );
+            new StrokeCollection( ).Save(stream, true);
         }
     }
 
