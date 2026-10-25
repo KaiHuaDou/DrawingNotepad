@@ -67,6 +67,7 @@ public partial class MainWindow : Window
 
         CanvasNext.ViewOrSelectionChanged += (_, _) => UpdateSelectionBorderPosition( );
         DebugLayer.Children.Add(new DebugVisual(CanvasNext));
+        HelpLayer.Children.Add(CreateHelpVisual( ));
 
         timeTimer = new(
             TimeSpan.FromSeconds(1),

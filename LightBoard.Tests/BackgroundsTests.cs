@@ -30,7 +30,7 @@ public class BackgroundsTests
     [InlineData(@"C:\a.pdf::")]
     [InlineData(@"C:\a.pdf::x")]
     [InlineData(@"C:\a.pdf::-1")]
-    [InlineData(@"::1")]
+    [InlineData("::1")]
     public void Parse_Invalid_ReturnsFalse(string spec)
     {
         Assert.False(DocumentBackground.TryParse(spec, new Rect(0, 0, 10, 10), out _));

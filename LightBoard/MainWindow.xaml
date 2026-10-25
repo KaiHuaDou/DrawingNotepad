@@ -28,6 +28,13 @@
                        FontSize="32"
                        Text="调试模式" />
         </Grid>
+        <Grid x:Name="HelpLayer" IsHitTestVisible="False" Visibility="Collapsed">
+            <Rectangle Fill="#40000000" />
+            <TextBlock Margin="0,50,0,0" HorizontalAlignment="Center" VerticalAlignment="Top"
+                       Foreground="#AAEEEEEE"
+                       FontSize="32"
+                       Text="帮助" />
+        </Grid>
         <Border x:Name="LeftBorder"
                 Margin="5,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
@@ -230,7 +237,8 @@
                     <RadioButton x:Name="EraseAreaRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED60;" />
-                    <Button Style="{StaticResource ButtonStyle}"
+                    <Button x:Name="EraseAllButton"
+                            Style="{StaticResource ButtonStyle}"
                             Foreground="#F25767"
                             Click="EraseAll" Tag="&#xE894;" />
                     <Button x:Name="UndoButton"
@@ -361,7 +369,9 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE713;" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="帮助" Style="{StaticResource MenuItemStyle}" Click="HelpClick">
+                    <MenuItem x:Name="HelpMenu" Header="帮助"
+                              Style="{StaticResource MenuItemStyle}"
+                              Click="HelpClick" IsCheckable="True">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE897;" />
                         </MenuItem.Icon>
@@ -413,9 +423,9 @@
                 BorderThickness="1"
                 CornerRadius="8">
             <StackPanel Orientation="Horizontal">
-                <Button Style="{StaticResource ButtonStyle}" Click="CopyClick" Tag="&#xE8C8;" />
-                <Button Style="{StaticResource ButtonStyle}" Click="CutClick" Tag="&#xE8C6;" />
-                <Button Style="{StaticResource ButtonStyle}" Click="DeleteClick" Tag="&#xE74D;" />
+                <Button x:Name="CopyButton" Style="{StaticResource ButtonStyle}" Click="CopyClick" Tag="&#xE8C8;" />
+                <Button x:Name="CutButton" Style="{StaticResource ButtonStyle}" Click="CutClick" Tag="&#xE8C6;" />
+                <Button x:Name="DeleteButton" Style="{StaticResource ButtonStyle}" Click="DeleteClick" Tag="&#xE74D;" />
                 <ToggleButton x:Name="CloneButton"
                               Style="{StaticResource ToggleStyle}"
                               Click="CloneClick" Tag="&#xF413;" />

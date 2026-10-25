@@ -36,7 +36,7 @@ internal sealed record DocumentBackground(string Path, int PageNumber, Rect Box)
 
 public partial class App
 {
-    private static readonly Dictionary<string, DocumentService> OpenedDocuments = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, DocumentService> OpenedDocuments = [with(StringComparer.OrdinalIgnoreCase)];
 
     internal static bool HasBackground => Pages.Any(p => p.Background is not null);
 

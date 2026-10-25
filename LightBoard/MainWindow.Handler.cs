@@ -192,52 +192,6 @@ public partial class MainWindow
         CanvasNext.Strokes.Clear( );
     }
 
-    private void HelpClick(object o, RoutedEventArgs e)
-    {
-        using TaskDialog dialog = new( )
-        {
-            WindowTitle = "轻白板 - 帮助",
-            MainInstruction = "轻白板 - 帮助",
-            MainIcon = TaskDialogIcon.Information,
-            Content =
-            """
-            - 绘图
-                - 单指绘图，两指平移缩放，三/四指平移，五指及以上橡皮擦。
-                - 所有手指间最大距离超过阈值 -> 多指书写。
-            - 主工具栏
-                - 所有按钮再次点击可取消
-                - 第一行
-                    - 切换颜色（选中即绘图）
-                    - 荧光笔（仅黄色）
-                    - 橡皮
-                    - X 号 -> 清屏
-                    - 撤销重做
-                    - 点击三个点 -> 展开第二行
-                - 第二行
-                    - 各个实心圆 -> 调粗细
-                    - 直线/圆 -> 几何工具
-                    - 选择
-                    - 粘贴 -> 选中后在点击位置图章，再次点击取消
-            - 左工具栏
-                - 关闭、最小化
-                - 文件操作菜单
-                - 切换背景
-                - 切换到 Microsoft Edge 窗口
-            - 右工具栏
-                - 收起工具栏
-                - 其他功能菜单
-                - 上一页
-                - 页码，点击显示页面预览
-                - 下一页/新页面
-            - 选中笔画后
-                - 复制、剪切、删除
-                - 克隆 -> 选中后在点击位置图章，再次点击取消
-            """,
-        };
-        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
-        dialog.ShowDialog( );
-    }
-
     // 工具（擦除/选择）与形状（线/圆）是同一排他单选组（EditGroup）：
     // 点选即激活；再点当前已激活的选项回退到画笔
     private void ModeRadioChecked(object o, RoutedEventArgs e)
@@ -274,14 +228,19 @@ public partial class MainWindow
 
     private void MoreToggleClick(object o, RoutedEventArgs e)
     {
-        var isChecked = MoreToggle.IsChecked == true;
+        ApplyMoreToggle(MoreToggle.IsChecked == true);
+    }
+
+    private void ApplyMoreToggle(bool expanded)
+    {
+        MoreToggle.IsChecked = expanded;
 
         var heightAnimation = new DoubleAnimation
         {
             From = CenterBorder.ActualHeight,
-            To = isChecked ? (CenterBorder.ActualHeight - 10) * 2 + 10 : (CenterBorder.ActualHeight - 10) / 2 + 10,
+            To = expanded ? (CenterBorder.ActualHeight - 10) * 2 + 10 : (CenterBorder.ActualHeight - 10) / 2 + 10,
             Duration = TimeSpan.FromSeconds(0.1),
-            EasingFunction = new CubicEase( ) { EasingMode = isChecked ? EasingMode.EaseIn : EasingMode.EaseOut }
+            EasingFunction = new CubicEase( ) { EasingMode = expanded ? EasingMode.EaseIn : EasingMode.EaseOut }
         };
 
         CenterBorder.BeginAnimation(HeightProperty, heightAnimation);
