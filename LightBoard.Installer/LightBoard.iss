@@ -46,7 +46,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppDisplayName}
 UninstallDisplayIcon={app}\{#AppName}.exe
 OutputDir=Output
-OutputBaseFilename=LightBoard-Setup{#VariantSuffix}-{#AppVersion}
+OutputBaseFilename=LightBoard-Installer{#VariantSuffix}-{#AppVersion}
 WizardStyle=modern
 ; x64 安装器：{pf} 等路径不经过 WOW64 重定向，与 win-x64 应用匹配
 SetupArchitecture=x64

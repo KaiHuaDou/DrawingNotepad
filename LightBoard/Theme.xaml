@@ -44,7 +44,7 @@
     <Style x:Key="IconTextStyle" TargetType="TextBlock">
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalAlignment" Value="Center" />
-        <Setter Property="FontFamily" Value="Segoe Fluent Icons" />
+        <Setter Property="FontFamily" Value="pack://application:,,,/LightBoard;component/#Segoe Fluent Icons" />
         <Setter Property="FontSize" Value="25" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{StaticResource IconBrush}" />

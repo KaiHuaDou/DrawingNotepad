@@ -17,13 +17,11 @@
                          Margin="0,0,10,0"
                          IsChecked="True"
                          Style="{StaticResource LabelledRadioStyle}"
-                         Click="ModeClick" Content="倒计时" GroupName="TimeModeRadio"
-                         Tag="&#xE917;" />
+                         Click="ModeClick" Content="倒计时" GroupName="TimeModeRadio" />
             <RadioButton x:Name="CountupRadio"
                          Margin="10,0,0,0"
                          Style="{StaticResource LabelledRadioStyle}"
-                         Click="ModeClick" Content="计时器" GroupName="TimeModeRadio"
-                         Tag="&#xE917;" />
+                         Click="ModeClick" Content="计时器" GroupName="TimeModeRadio" />
             <Button x:Name="ResetButton"
                     Style="{StaticResource ButtonStyle}"
                     Click="ResetClick" Tag="&#xE72C;" />

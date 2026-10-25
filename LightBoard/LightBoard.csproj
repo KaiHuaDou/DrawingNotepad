@@ -23,6 +23,9 @@
         <DebugType>none</DebugType>
     </PropertyGroup>
     <ItemGroup>
+        <Resource Include="Segoe Fluent Icons.ttf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Resource>
         <Folder Include="Properties\" />
         <None Include="..\LICENSE">
             <Pack>True</Pack>

@@ -6,13 +6,6 @@
         SizeToContent="WidthAndHeight">
     <StackPanel>
         <StackPanel Margin="25,20,25,20">
-            <StackPanel Margin="0,0,0,15" Orientation="Horizontal">
-                <TextBlock Margin="0,4,10,0"
-                           Foreground="#0066CC"
-                           FontFamily="Segoe Fluent Icons" FontSize="28"
-                           Text="&#xE713;" />
-                <TextBlock Foreground="#0066CC" FontSize="28" Text="设置" />
-            </StackPanel>
             <StackPanel>
                 <CheckBox x:Name="HandEraserBox"
                           Margin="0,5,0,5"
