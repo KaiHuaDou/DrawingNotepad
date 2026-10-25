@@ -43,6 +43,7 @@
                         Style="{StaticResource ButtonStyle}"
                         Click="MinimizeWindowClick" Tag="&#xE921;" />
                 <ToggleButton x:Name="MoreButton" Style="{StaticResource ToggleStyle}" Tag="&#xE700;" />
+                <ToggleButton x:Name="BackgroundButton" Style="{StaticResource ToggleStyle}" Tag="&#xEF1F;" />
                 <Button x:Name="SwitchOutButton"
                         Style="{StaticResource ImageButtonStyle}"
                         Click="SwitchOutClick" Tag="&#xE8AB;" />
@@ -68,24 +69,6 @@
                             <StackPanel Orientation="Vertical" />
                         </ItemsPanelTemplate>
                     </Menu.ItemsPanel>
-                    <MenuItem Header="关于" Style="{StaticResource MenuItemStyle}" Click="AboutClick">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE946;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="设置" Style="{StaticResource MenuItemStyle}" Click="SettingsClick">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE713;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem x:Name="DebugLayerMenu" Header="调试"
-                              Style="{StaticResource MenuItemStyle}"
-                              Click="DebugLayerClick" IsCheckable="True">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEBE8;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
                     <MenuItem Header="新建" Style="{StaticResource MenuItemStyle}" Click="NewFileClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE7C3;" />
@@ -99,19 +82,6 @@
                     <MenuItem Header="附加" Style="{StaticResource MenuItemStyle}" Click="AttachClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE723;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                    <MenuItem x:Name="TransparentModeMenu" Header="透明模式"
-                              Style="{StaticResource MenuItemStyle}"
-                              Click="TransparentModeClick" IsCheckable="True">
-                        <MenuItem.Icon>
-                            <TextBlock x:Name="TransparentModeIcon" Style="{StaticResource IconTextStyle}" Text="&#xE729;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="视频展台" IsEnabled="False" Style="{StaticResource MenuItemStyle}">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE722;" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator Style="{StaticResource MenuSeparatorStyle}" />
@@ -135,6 +105,41 @@
                         </MenuItem.Icon>
                     </MenuItem>
                 </Menu>
+            </Border>
+        </Popup>
+        <Popup x:Name="BackgroundPopup"
+               AllowsTransparency="True"
+               IsOpen="{Binding IsChecked, ElementName=BackgroundButton, Mode=TwoWay}"
+               Placement="Top"
+               PlacementTarget="{Binding ElementName=BackgroundButton}"
+               PopupAnimation="Slide" StaysOpen="False">
+            <Border Margin="0,0,0,8" Padding="6"
+                    Background="#FB2B2C31" BorderBrush="#33FFFFFF" BorderThickness="1"
+                    CornerRadius="12">
+                <Border.Effect>
+                    <DropShadowEffect Opacity="0.5"
+                                      BlurRadius="16" Direction="270" ShadowDepth="5"
+                                      Color="#000000" />
+                </Border.Effect>
+                <StackPanel Orientation="Vertical">
+                    <RadioButton x:Name="DefaultBackgroundRadio"
+                                 IsChecked="True"
+                                 Style="{StaticResource LabelledRadioStyle}"
+                                 Click="BackgroundRadioClick" Content=" 默认" GroupName="BackgroundGroup"
+                                 Tag="&#xE71D;" />
+                    <!--TODO 颜色选择-->
+                    <RadioButton IsEnabled="False"
+                                 Style="{StaticResource LabelledRadioStyle}"
+                                 Content=" 颜色..." Tag="&#xE790;" />
+                    <RadioButton x:Name="TransparentBackgroundRadio"
+                                 Style="{StaticResource LabelledRadioStyle}"
+                                 Click="BackgroundRadioClick" Content=" 透明" GroupName="BackgroundGroup"
+                                 Tag="&#xE7A1;" />
+                    <!--TODO 视频背景-->
+                    <RadioButton IsEnabled="False"
+                                 Style="{StaticResource LabelledRadioStyle}"
+                                 Content=" 视频" Tag="&#xE714;" />
+                </StackPanel>
             </Border>
         </Popup>
         <Border x:Name="CenterBorder"
@@ -176,18 +181,18 @@
                     <RadioButton x:Name="CircleRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEA3A;" />
-                    <Border Width="71" Visibility="Hidden" />
+                    <Border Width="75" Visibility="Hidden" />
                     <RadioButton x:Name="EraseStrokeRadio"
                                  Visibility="Collapsed"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED61;" />
                     <RadioButton x:Name="SelectRadio"
                                  Style="{StaticResource LabelledRadioStyle}"
-                                 Click="ModeRadioChecked" Content="选择" GroupName="EditGroup"
+                                 Click="ModeRadioChecked" Content=" 选择" GroupName="EditGroup"
                                  Tag="&#xEF20;" />
                     <ToggleButton x:Name="PasteButton"
                                   Style="{StaticResource LabelledToggleStyle}"
-                                  Click="PasteClick" Content="粘贴" Tag="&#xE77F;" />
+                                  Click="PasteClick" Content=" 粘贴" Tag="&#xE77F;" />
                 </StackPanel>
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
@@ -257,6 +262,7 @@
                     <ToggleButton x:Name="CollapseExpandButton"
                                   Style="{StaticResource ToggleStyle}"
                                   Click="CollapseExpandClick" Tag="&#xE70D;" />
+                    <ToggleButton x:Name="MenuButton" Style="{StaticResource ToggleStyle}" Tag="&#xE700;" />
                     <Button x:Name="PrevPageButton"
                             IsEnabled="False"
                             Style="{StaticResource ButtonStyle}"
@@ -325,6 +331,52 @@
                 </ListView>
             </DockPanel>
         </Border>
+        <Popup x:Name="MenuPopup"
+               AllowsTransparency="True"
+               IsOpen="{Binding IsChecked, ElementName=MenuButton, Mode=TwoWay}"
+               Placement="Top"
+               PlacementTarget="{Binding ElementName=MenuButton}"
+               PopupAnimation="Slide" StaysOpen="False">
+            <Border Margin="0,0,0,8" Padding="6"
+                    Background="#FB2B2C31" BorderBrush="#33FFFFFF" BorderThickness="1"
+                    CornerRadius="12">
+                <Border.Effect>
+                    <DropShadowEffect Opacity="0.5"
+                                      BlurRadius="16" Direction="270" ShadowDepth="5"
+                                      Color="#000000" />
+                </Border.Effect>
+                <Menu Background="Transparent">
+                    <Menu.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Vertical" />
+                        </ItemsPanelTemplate>
+                    </Menu.ItemsPanel>
+                    <MenuItem Header="关于" Style="{StaticResource MenuItemStyle}" Click="AboutClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE946;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="设置" Style="{StaticResource MenuItemStyle}" Click="SettingsClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE713;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="DebugLayerMenu" Header="调试"
+                              Style="{StaticResource MenuItemStyle}"
+                              Click="DebugLayerClick" IsCheckable="True">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEBE8;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                    <MenuItem Header="计时" Style="{StaticResource MenuItemStyle}" Click="TimerMenuClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE917;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </Menu>
+            </Border>
+        </Popup>
         <TextBlock x:Name="TimeText"
                    Margin="0,20,25,0" HorizontalAlignment="Right" VerticalAlignment="Top"
                    Panel.ZIndex="16"

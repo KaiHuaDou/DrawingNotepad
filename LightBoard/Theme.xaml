@@ -73,11 +73,15 @@
                                    Text="&#xE73E;" />
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Width" Value="33" />
                             <Setter TargetName="PART_Border" Property="Height" Value="33" />
                             <Setter TargetName="PART_Border" Property="CornerRadius" Value="8" />
-                        </Trigger>
+                        </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Width" Value="30" />
                             <Setter TargetName="PART_Border" Property="Height" Value="30" />
@@ -87,27 +91,8 @@
                         <Trigger Property="MinWidth" Value="1">
                             <Setter TargetName="PART_CheckMark" Property="Foreground" Value="#DD111111" />
                         </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="ToolButtonTemplateBase" TargetType="Control">
-        <Setter Property="Width" Value="36" />
-        <Setter Property="Height" Value="36" />
-        <Setter Property="Margin" Value="3" />
-        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Control">
-                    <Border x:Name="PART_Border" Background="Transparent" CornerRadius="5">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -115,7 +100,15 @@
         </Setter>
     </Style>
 
-    <Style x:Key="RadioStyle" BasedOn="{StaticResource ToolButtonTemplateBase}" TargetType="{x:Type RadioButton}">
+    <Style x:Key="ToolButtonBaseStyle" TargetType="Control">
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Margin" Value="3" />
+        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <Style x:Key="RadioStyle" BasedOn="{StaticResource ToolButtonBaseStyle}" TargetType="{x:Type RadioButton}">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -129,12 +122,19 @@
                                    Text="{TemplateBinding Tag}" />
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
-                        </Trigger>
+                        </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -142,7 +142,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="SelectiveRadioStyle" BasedOn="{StaticResource ToolButtonTemplateBase}" TargetType="{x:Type RadioButton}">
+    <Style x:Key="SelectiveRadioStyle" BasedOn="{StaticResource ToolButtonBaseStyle}" TargetType="{x:Type RadioButton}">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -155,12 +155,19 @@
                                  Fill="{StaticResource IconBrush}" />
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
-                        </Trigger>
+                        </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -168,7 +175,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="ToggleStyle" BasedOn="{StaticResource ToolButtonTemplateBase}" TargetType="{x:Type ToggleButton}">
+    <Style x:Key="ToggleStyle" BasedOn="{StaticResource ToolButtonBaseStyle}" TargetType="{x:Type ToggleButton}">
         <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
         <Setter Property="Template">
             <Setter.Value>
@@ -182,12 +189,19 @@
                                    Text="{TemplateBinding Tag}" />
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
-                        </Trigger>
+                        </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -195,7 +209,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="ButtonStyle" BasedOn="{StaticResource ToolButtonTemplateBase}" TargetType="{x:Type Button}">
+    <Style x:Key="ButtonStyle" BasedOn="{StaticResource ToolButtonBaseStyle}" TargetType="{x:Type Button}">
         <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
         <Setter Property="Template">
             <Setter.Value>
@@ -208,12 +222,20 @@
                                    Text="{TemplateBinding Tag}" />
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
-                        </Trigger>
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.75" />
                             <Setter TargetName="PART_IconText" Property="Foreground" Value="#AAAAAA" />
@@ -224,6 +246,46 @@
         </Setter>
     </Style>
 
+    <Style x:Key="TextButtonStyle" TargetType="{x:Type Button}">
+        <Setter Property="Margin" Value="2,0" />
+        <Setter Property="Padding" Value="8,5" />
+        <Setter Property="FontSize" Value="19" />
+        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="PART_Border"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="5">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                        </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--Content 为空时退化为 Tag 字形-->
     <Style x:Key="ImageButtonStyle" TargetType="{x:Type Button}">
         <Setter Property="Height" Value="36" />
         <Setter Property="Margin" Value="3" />
@@ -255,12 +317,20 @@
                             <Setter TargetName="PART_IconText" Property="Visibility" Value="Visible" />
                             <Setter TargetName="PART_Icon" Property="Visibility" Value="Collapsed" />
                         </Trigger>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
-                        </Trigger>
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.75" />
                             <Setter TargetName="PART_IconText" Property="Foreground" Value="#AAAAAA" />
@@ -294,12 +364,19 @@
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
-                        </Trigger>
+                        </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -359,40 +436,6 @@
         </Setter>
     </Style>
 
-    <Style x:Key="LabelledRadioStyle" BasedOn="{StaticResource RadioStyle}" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="Auto" />
-        <Setter Property="Height" Value="38" />
-        <Setter Property="Padding" Value="10,0,10,0" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="PART_Border"
-                            Padding="{TemplateBinding Padding}"
-                            Background="Transparent" BorderThickness="1"
-                            CornerRadius="5">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock VerticalAlignment="Center"
-                                       Style="{StaticResource IconTextStyle}"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       FontSize="19"
-                                       Text="{TemplateBinding Tag}" />
-                            <ContentPresenter Margin="5,0,0,0" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
-                        </StackPanel>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
-                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <Style x:Key="LabelledToggleStyle" BasedOn="{StaticResource ToggleStyle}" TargetType="{x:Type ToggleButton}">
         <Setter Property="Width" Value="Auto" />
         <Setter Property="Height" Value="38" />
@@ -409,20 +452,30 @@
                                        Style="{StaticResource IconTextStyle}"
                                        Foreground="{TemplateBinding Foreground}"
                                        Text="{TemplateBinding Tag}" />
-                            <ContentPresenter Margin="5,0,0,0" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
+                            <ContentPresenter VerticalAlignment="Center" TextElement.FontSize="19" TextElement.Foreground="{TemplateBinding Foreground}" />
                         </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
-                        </Trigger>
+                        </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!--RadioButton 继承自 ToggleButton，模板与状态触发器全部取自 LabelledToggleStyle-->
+    <Style x:Key="LabelledRadioStyle" BasedOn="{StaticResource LabelledToggleStyle}" TargetType="{x:Type RadioButton}" />
 </ResourceDictionary>

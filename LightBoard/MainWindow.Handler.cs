@@ -323,20 +323,26 @@ public partial class MainWindow
     private static readonly Brush ContainerBrush = (Application.Current.FindResource("ContainerBrush") as Brush)!;
     private static readonly Brush ContainerBrushSolid = (Application.Current.FindResource("ContainerBrushSolid") as Brush)!;
     private static readonly Brush MajorGridBrush = (Application.Current.FindResource("MajorGridBrush") as Brush)!;
-    private static readonly Brush CanvasNextBackgroundBrush = MajorGridBrush;
 
-    private void TransparentModeClick(object o, RoutedEventArgs e)
+    private void BackgroundRadioClick(object o, RoutedEventArgs e)
     {
-        var mode = TransparentModeMenu.IsChecked;
+        if (o is not RadioButton { IsChecked: true })
+        {
+            return;
+        }
 
-        CanvasNext.Background = mode ? Brushes.Transparent : CanvasNextBackgroundBrush;
-        TimeText.Visibility = mode || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
-        LeftBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
-        CenterBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
-        RightBorder.Background = mode ? ContainerBrushSolid : ContainerBrush;
-        PassThroughBorder.Visibility = mode ? Visibility.Visible : Visibility.Collapsed;
-        TransparentModeIcon.Text = mode ? "\uE7C3" : "\uE729";
-        Topmost = mode;
+        ApplyBackground(ReferenceEquals(o, TransparentBackgroundRadio));
+    }
+
+    private void ApplyBackground(bool transparent)
+    {
+        CanvasNext.Background = transparent ? Brushes.Transparent : MajorGridBrush;
+        TimeText.Visibility = transparent || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
+        LeftBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
+        CenterBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
+        RightBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
+        PassThroughBorder.Visibility = transparent ? Visibility.Visible : Visibility.Collapsed;
+        Topmost = transparent;
     }
 
     private void UndoButtonClick(object o, RoutedEventArgs e)

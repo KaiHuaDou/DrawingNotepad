@@ -167,6 +167,9 @@ internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
 
     internal StrokeChanges End( )
     {
+        // EvalDraw 只显示橡皮不开擦除周期：隐藏不依赖 Active，否则圈内残留到下一次擦除态
+        feedback.Visibility = Visibility.Collapsed;
+
         if (!Active)
         {
             return new StrokeChanges([], []);
@@ -175,7 +178,6 @@ internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
         Active = false;
         hitTester?.EndHitTesting( );
         hitTester = null;
-        feedback.Visibility = Visibility.Collapsed;
 
         var change = new StrokeChanges([.. StrokeChanges.Added], [.. StrokeChanges.Removed]);
         StrokeChanges.Added.Clear( );

@@ -210,8 +210,10 @@ public partial class InkCanvasNext : UserControl
     {
         if (State != TouchState.Idle)
         {
-            // 手势接管期间切换工具：放弃进行中的形状，避免抬手时把过时形状提交
+            // 手势接管期间切换工具：放弃进行中的形状，避免抬手时把过时形状提交；
+            // 橡皮反馈平时只在触摸尾声刷新，工具变化必须立即按新判定隐藏
             CancelShape( );
+            UpdateAreaEraser( );
             return;
         }
 

@@ -93,13 +93,12 @@
     - 需要已激活版本。部分绿色版本需确认相关 COM 组件已注册
     - Office 2010 及更新版本
     - Office 2007 需安装插件 [Microsoft Save as PDF or XPS](https://legacyupdate.net/download-center/download/7/2007-microsoft-office-add-in-microsoft-save-as-pdf-or-xps)
-- [Segoe Fluent Icons 字体](https://learn.microsoft.com/zh-cn/windows/apps/design/style/segoe-fluent-icons-font)
+- [**Segoe Fluent Icons** 字体 v1.56+](https://learn.microsoft.com/zh-cn/windows/apps/design/style/segoe-fluent-icons-font)
 
 ## 开发与构建
 
 - IDE：Visual Studio Community 2026 或更新版本
     - 工作负载：C# 桌面开发
-    - 预览功能：使用 .NET SDK 预览版
 
 - .NET **10.0** SDK 或更新版本（此时 C# `preview` >= 14）
 

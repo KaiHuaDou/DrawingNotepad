@@ -555,6 +555,83 @@ public class SpecialModeGestureTests
         });
     }
 
+    /// <summary>面积擦单指（EvalDraw）显示橡皮期间切换为墨水工具：橡皮立即隐藏，不等下次触摸或抬手。</summary>
+    [Fact]
+    public void EraseArea_EvalDraw_SwitchTool_HidesEraserImmediately( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+
+            host.Device( ).Down(host.Target, P1);
+            Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
+            Assert.Equal(Visibility.Visible, host.Canvas.EraserFeedback.Visibility);
+
+            host.Canvas.Mode = InkCanvasNextMode.Ink;
+
+            Assert.Equal(Visibility.Collapsed, host.Canvas.EraserFeedback.Visibility);
+        });
+    }
+
+    /// <summary>面积擦持续擦除（Draw）中切换为高亮工具：橡皮周期立即结束结算，橡皮圈与继续擦除一并终止。</summary>
+    [Fact]
+    public void EraseArea_Draw_SwitchTool_EndsCycle( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            var radius = host.Canvas.EraserDiameter / 2;
+            var startPoint = new Point(165, 100);
+            var drawPoint = TestPoints.BeyondDisplacement(host, startPoint);
+            host.Canvas.Strokes.Add(MakeStroke(
+                new Point(drawPoint.X - radius * 0.6, 100),
+                new Point(drawPoint.X + radius * 0.6, 100)));
+
+            var finger = host.Device( );
+            finger.Down(host.Target, startPoint);
+            finger.Move(host.Target, drawPoint); // 越过位移阈值进入 Draw 才开始擦除
+            Assert.Equal(TouchState.Draw, host.Canvas.State);
+            Assert.Empty(host.Canvas.Strokes);
+
+            host.Canvas.Mode = InkCanvasNextMode.Highlighter;
+
+            Assert.Equal(Visibility.Collapsed, host.Canvas.EraserFeedback.Visibility);
+        });
+    }
+
+    /// <summary>掌擦是手势不是工具：进行中切换工具橡皮保持显示，抬手才结算隐藏。</summary>
+    [Fact]
+    public void PalmErase_SwitchTool_FeedbackKeepsUntilLift( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var cluster = TestPoints.CloseCluster(host, P1, 5);
+            var fingers = new MockTouchDevice[cluster.Length];
+
+            for (var i = 0; i < cluster.Length; i++)
+            {
+                fingers[i] = host.Device( );
+                fingers[i].Down(host.Target, cluster[i]);
+            }
+
+            Assert.Equal(TouchState.Eraser, host.Canvas.State);
+
+            host.Canvas.Mode = InkCanvasNextMode.Highlighter;
+            Assert.Equal(Visibility.Visible, host.Canvas.EraserFeedback.Visibility);
+
+            for (var i = 0; i < cluster.Length; i++)
+            {
+                fingers[i].Up(host.Target, cluster[i]);
+            }
+
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.Equal(Visibility.Collapsed, host.Canvas.EraserFeedback.Visibility);
+        });
+    }
+
     // ---------- 盖章模式 ----------
 
     /// <summary>盖章期间迁入 MultiDraw：多指不创建笔画、抬手不落章。</summary>

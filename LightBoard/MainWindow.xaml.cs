@@ -18,6 +18,8 @@ public partial class MainWindow : Window
 
     private readonly DispatcherTimer timeTimer;
 
+    private TimerWindow? timerWindow;
+
     internal readonly InkCanvasNext.InkCanvasNext CanvasNext;
 
     public MainWindow( )
@@ -154,5 +156,17 @@ public partial class MainWindow : Window
         CanvasNext.PanZoomDisplaceThreshold2 = panZoom * panZoom;
         CanvasNext.PinchLockDistance2 = pinch * pinch;
         CanvasNext.SetMaxHistoryCount(Math.Clamp(data.MaxHistoryCount, Settings.HistoryMin, Settings.HistoryMax));
+    }
+
+    private void TimerMenuClick(object o, RoutedEventArgs e)
+    {
+        if (timerWindow?.IsLoaded == true)
+        {
+            timerWindow.Activate( );
+            return;
+        }
+
+        timerWindow = new TimerWindow( );
+        timerWindow.Show( );
     }
 }
