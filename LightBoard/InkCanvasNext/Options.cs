@@ -6,7 +6,7 @@ namespace InkCanvasNext;
 public sealed record InkCanvasNextOptions
 {
     /// <summary>
-    /// 触点数量达到此值时掌心擦除，取值 4 或 5。
+    /// 触点数量达到此值时掌擦，取值 4 或 5。
     /// </summary>
     public int PalmEraseFingers { get; init; } = InkCanvasNext.PalmEraseFingersDefault;
 

@@ -67,7 +67,7 @@ public partial class InkCanvasNext
 
     public const float DefaultPressure = 0.5f;
 
-    // ---------- 掌心擦除 ----------
+    // ---------- 掌擦 ----------
 
     /// <summary>
     /// 掌擦触点数的可选范围与默认值
@@ -77,7 +77,7 @@ public partial class InkCanvasNext
     public const int PalmEraseFingersDefault = PalmEraseFingersMax;
 
     /// <summary>
-    /// 触点数量达到此值即掌心擦除，构造期固定
+    /// 触点数量达到此值即掌擦，构造期固定
     /// </summary>
     internal readonly int palmEraseFingers;
 

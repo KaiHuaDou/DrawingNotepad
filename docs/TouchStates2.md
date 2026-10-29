@@ -28,7 +28,7 @@
 - 选区入口仅在 `count ∈ {1, 2}` 且 `Mode == Select && StampAction == None` 时考虑；3+ 指不进入选区。
 - 优先级（自上而下，即 switch 臂顺序）：`Idle` 与 `EvalDraw` 中选区、单指先于手势态（例：`Idle` 下 `count == 1` 且选区候选成立 → `Selection`；`count == 2` 同理压过 `PanZoom`）；掌擦臂先于平移臂；`MultiDraw` 由 `d > l` 把关，排在其后。
     - 掌擦与平移的触点区间随 `p` 重叠（`p = 4` 时四指两者都满足），顺序决定结果。
-- `Selection` 内部不做 `d`/`l` 分析（`count ∈ {1,2}` 时维持选区手势）；`count == 0` 回 `Idle`。附加手指触发画布级手势：`count >= p` 且 `d <= l` → `Eraser`（掌心擦除）；其余 `count >= 3` 且 `d <= l` → `Pan`（Select 模式下附加手指平移画布，退出时 `EndSelectionTouch` 提交当前变换）。
+- `Selection` 内部不做 `d`/`l` 分析（`count ∈ {1,2}` 时维持选区手势）；`count == 0` 回 `Idle`。附加手指触发画布级手势：`count >= p` 且 `d <= l` → `Eraser`（掌擦）；其余 `count >= 3` 且 `d <= l` → `Pan`（Select 模式下附加手指平移画布，退出时 `EndSelectionTouch` 提交当前变换）。
 - 擦除工具（`Mode ∈ {EraseArea, EraseStroke}`，`Tool.IsErase`）的多指手势与普通模式同款（并拢判定：2 指 → `PanZoom`、3 指及以上（不足 `p`）→ `Pan`），差异：`count >= p` 无论间距均迁 `Eraser`（手掌压屏常呈张开）；多指张开（`d > l`）不迁 `MultiDraw` 起笔画，保持当前擦除上下文。
 - `PanZoom` 中 `count >= p` 且 `d <= l` 直接迁 `Eraser`（先于平移臂：状态机只在触点数变化时重评，误入 `Pan` 后不再判掌擦）；减为单指（`count == 1`）迁入 `Pan`，此后落下第二指也停在 `Pan`（`Pan` 无回 `PanZoom` 的迁移），需全部抬起重新开始双指手势。
 - `Eraser` 中 `count > p` 且 `d > l` 迁 `MultiDraw`（仅非擦除工具）：手掌张开超过掌擦触点数即视为多指书写。

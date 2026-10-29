@@ -63,9 +63,8 @@ public partial class InkCanvasNext
     }
 }
 
-internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameters parameters)
+internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameters parameters)
 {
-    private readonly double minLogicalDiameter = parameters.MinLogicalDiameter;
     private readonly double rebuildThreshold = parameters.RebuildThreshold;
     private readonly StrokeChanges strokeChanges = new([], []);
 
@@ -82,7 +81,7 @@ internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback, EraserP
 
     internal bool Active { get; private set; }
 
-    private double LogicalDiameter => Math.Max(Diameter / Scale, minLogicalDiameter);
+    private double LogicalDiameter { get => Math.Max(Diameter / Scale, field); } = parameters.MinLogicalDiameter;
 
     internal void Show(Point screenPosition)
     {

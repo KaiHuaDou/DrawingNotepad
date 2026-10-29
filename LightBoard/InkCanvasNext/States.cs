@@ -51,7 +51,7 @@ internal readonly record struct ToolSnapshot(InkCanvasNextMode Mode, StampAction
 /// </summary>
 /// <param name="BlocksNativeInput">事件全程接管（Down/Move/Up 均 Handled），原生不再收笔/移动选区。</param>
 /// <param name="OverridesEditing">持有画布级手势：进入时把原生编辑模式压为 None，退出时恢复。</param>
-/// <param name="PalmErase">掌心擦除态：触点包络作为橡皮实时擦除。</param>
+/// <param name="PalmErase">掌擦态：触点包络作为橡皮实时擦除。</param>
 /// <param name="AreaEraseHost">面积擦宿主：EraseArea 工具在这些绘制上下文中持续擦除。</param>
 internal readonly record struct StateTraits(
     bool BlocksNativeInput = false,
@@ -178,7 +178,7 @@ public partial class InkCanvasNext
             TouchState.Selection => count switch
             {
                 0 => TouchState.Idle,
-                // 选区手势中附加手指：并拢平移画布、达到掌擦触点数切换为掌心擦除（与 Idle 入口优先级一致）
+                // 选区手势中附加手指：并拢平移画布、达到掌擦触点数切换为掌擦（与 Idle 入口优先级一致）
                 >= 3 when palm && d2 <= l2 => TouchState.Eraser,
                 >= 3 when d2 <= l2 => TouchState.Pan,
                 _ => TouchState.Selection,
