@@ -97,13 +97,16 @@ public partial class InkCanvasNext : UserControl
     {
         InitializeComponent( );
 
-        var canvasOptions = options ?? new InkCanvasNextOptions( );
-        palmEraseFingers = canvasOptions.PalmEraseFingers == PalmEraseFingersMin ? PalmEraseFingersMin : PalmEraseFingersMax;
+        var settings = options ?? new InkCanvasNextOptions( );
+        palmEraseFingers = settings.PalmEraseFingers;
+        eraserPalmExtra = settings.Eraser.PalmExtra;
 
         InnerCanvas.Width = canvasSize.Width;
         InnerCanvas.Height = canvasSize.Height;
 
-        eraser = new Eraser(InnerCanvas, EraserFeedback);
+        eraser = new Eraser(InnerCanvas, EraserFeedback, settings.Eraser);
+        EraserDiameter = settings.Eraser.Diameter;
+
         MousePointer = new MouseTouchDevice(this);
 
         CanvasGrid.LayoutTransform = canvasScaleTransform;

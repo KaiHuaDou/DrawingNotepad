@@ -456,8 +456,31 @@ public class SpecialModeGestureTests
             Assert.Equal(TouchState.Eraser, host.Canvas.State);
 
             // 5 指横向均布：包络直径 = 4 倍指间距（Spacing/8 × 4）
-            var expected = TestPoints.Spacing(host) / 2 + Eraser.EraserPalmExtra;
+            var expected = TestPoints.Spacing(host) / 2 + host.Canvas.eraserPalmExtra;
             Assert.Equal(expected, host.Canvas.EraserFeedback.Width, 9);
+        });
+    }
+
+    /// <summary>构造期选项写入画布：面积擦直径与掌擦外扩按设置取值。</summary>
+    [Fact]
+    public void EraserOptions_SetAtConstruction_ApplyToCanvas( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost(options: new( ) { Eraser = new( ) { Diameter = 80, PalmExtra = 20 } });
+            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+
+            Assert.Equal(80, host.Canvas.EraserDiameter);
+            Assert.Equal(20, host.Canvas.eraserPalmExtra);
+
+            var cluster = TestPoints.CloseCluster(host, P1, 5);
+            foreach (var point in cluster)
+            {
+                host.Device( ).Down(host.Target, point);
+            }
+
+            Assert.Equal(TouchState.Eraser, host.Canvas.State);
+            Assert.Equal(TestPoints.Spacing(host) / 2 + 20, host.Canvas.EraserFeedback.Width, 9);
         });
     }
 

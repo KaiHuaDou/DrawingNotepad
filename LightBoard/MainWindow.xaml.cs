@@ -37,13 +37,10 @@ public partial class MainWindow : Window
             gridBrush.Freeze( );
         }
 
-        // 构造期设置（掌擦触点数等）要在建画布前读入
+        // 构造期设置（橡皮参数）要在建画布前读入
         Settings.LoadSettings( );
 
-        CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset, new( )
-        {
-            PalmEraseFingers = Settings.Data.PalmEraseFingers
-        })
+        CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset, Settings.Data.CanvasOptions)
         {
             Background = MajorGridBrush
         };
@@ -88,13 +85,10 @@ public partial class MainWindow : Window
         var data = Settings.Data;
         CanvasNext.AutoScrollHorizontalThreshold = data.AutoScroll ? InkCanvasNext.InkCanvasNext.AutoScrollHorizontalDefaultThreshold : 0;
         CanvasNext.AutoScrollVerticalThreshold = data.AutoScroll ? InkCanvasNext.InkCanvasNext.AutoScrollVerticalDefaultThreshold : 0;
-        var touch = Math.Clamp(data.TouchDisplacementThreshold, Settings.ThresholdMin, Settings.ThresholdMax);
-        var panZoom = Math.Clamp(data.PanZoomDisplaceThreshold, Settings.ThresholdMin, Settings.ThresholdMax);
-        var pinch = Math.Clamp(data.PinchLockDistance, Settings.ThresholdMin, Settings.ThresholdMax);
-        CanvasNext.TouchDisplacementThreshold2 = touch * touch;
-        CanvasNext.PanZoomDisplaceThreshold2 = panZoom * panZoom;
-        CanvasNext.PinchLockDistance2 = pinch * pinch;
-        CanvasNext.SetMaxHistoryCount(Math.Clamp(data.MaxHistoryCount, Settings.HistoryMin, Settings.HistoryMax));
+        CanvasNext.TouchDisplacementThreshold2 = data.TouchDisplacementThreshold * data.TouchDisplacementThreshold;
+        CanvasNext.PanZoomDisplaceThreshold2 = data.PanZoomDisplaceThreshold * data.PanZoomDisplaceThreshold;
+        CanvasNext.PinchLockDistance2 = data.PinchLockDistance * data.PinchLockDistance;
+        CanvasNext.SetMaxHistoryCount(data.MaxHistoryCount);
     }
 
     private void CanvasNextCanRedoChanged(object? o, DependencyPropertyChangedEventArgs e)

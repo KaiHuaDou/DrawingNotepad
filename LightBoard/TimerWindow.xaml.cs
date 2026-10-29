@@ -217,7 +217,11 @@ public partial class TimerWindow : Window
         SecondText.FontSize = fontSize;
 
         var adjustable = mode == TimerMode.Countdown && idle && !fullscreen;
-        var adjustVisibility = adjustable ? Visibility.Visible : Visibility.Collapsed;
+
+        // 非全屏时调整区隐藏也占位，开始与暂停不改变窗口尺寸；全屏窗口尺寸固定，收起让数字垂直居中
+        var adjustVisibility = adjustable
+            ? Visibility.Visible
+            : fullscreen ? Visibility.Collapsed : Visibility.Hidden;
 
         HourUpButton.Visibility = adjustVisibility;
         HourDownButton.Visibility = adjustVisibility;

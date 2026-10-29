@@ -81,6 +81,33 @@ public partial class InkCanvasNext
     /// </summary>
     internal readonly int palmEraseFingers;
 
+    // ---------- 橡皮 ----------
+
+    /// <summary>
+    /// 面积擦直径默认值，视口 DIP
+    /// </summary>
+    public const double EraserDiameterDefault = 50;
+
+    /// <summary>
+    /// 掌擦圆在触点包络直径之外的外扩量默认值，视口 DIP
+    /// </summary>
+    public const double EraserPalmExtraDefault = 8;
+
+    /// <summary>
+    /// 缩放后逻辑直径的下限默认值，内容 DIP
+    /// </summary>
+    public const double EraserMinLogicalDiameterDefault = 1;
+
+    /// <summary>
+    /// 命中测试器重建阈值默认值，内容 DIP，逻辑直径变化超过此值才重建
+    /// </summary>
+    public const double EraserRebuildThresholdDefault = 0.5;
+
+    /// <summary>
+    /// 掌擦圆外扩量，构造期固定，视口 DIP
+    /// </summary>
+    internal readonly double eraserPalmExtra;
+
     // ---------- 边缘自动滚动 ----------
 
     /// <summary>
@@ -176,14 +203,6 @@ internal sealed partial class SelectionVisual
         brush.Freeze( );
         return brush;
     }
-}
-
-internal sealed partial class Eraser
-{
-    internal const double DefaultDiameter = 50.0; // 视口 DIP
-    internal const double MinLogicalDiameter = 1.0; // 内容 DIP
-    internal const double RebuildThreshold = 0.5; // 内容 DIP，逻辑直径变化超过此值才重建命中测试器
-    internal const double EraserPalmExtra = 8; // 视口 DIP，掌擦圆在触点包络直径之外的外扩量
 }
 
 internal sealed partial class StrokeVisual

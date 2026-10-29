@@ -147,22 +147,23 @@ internal sealed class DebugVisual : FrameworkElement
         CountRight(dc, "", $"{RenderOptions.ProcessRenderMode}", right, mid + 3.5 * CountRowHeight, dip);
     }
 
-    private static void DrawRadii(DrawingContext dc, double dip)
+    private void DrawRadii(DrawingContext dc, double dip)
     {
+        var eraserRadius = canvas.EraserDiameter / 2;
         var center = new Point(120, 180);
-        dc.DrawLine(ThinPen, new Point(center.X, center.Y), new Point(center.X + Eraser.DefaultDiameter / 2, center.Y));
+        dc.DrawLine(ThinPen, new Point(center.X, center.Y), new Point(center.X + eraserRadius, center.Y));
         Circle(dc, center, SelectionVisual.HandleRadius, RowPens[0]);
         Circle(dc, center, SelectionVisual.RotateScreenRadius, RowPens[1]);
         Circle(dc, center, HandleHitRadius, RowPens[2]);
         Circle(dc, center, RotateHitScreenRadius, RowPens[3]);
-        Circle(dc, center, Eraser.DefaultDiameter / 2, RowPens[4]);
+        Circle(dc, center, eraserRadius, RowPens[4]);
         dc.DrawEllipse(TextBrush, null, center, 2, 2);
 
         Legend(dc, 0, $"HandleRadius = {SelectionVisual.HandleRadius:0.#} DIP", 96, dip);
         Legend(dc, 1, $"RotateScreenRadius = {SelectionVisual.RotateScreenRadius:0.#} DIP", 122, dip);
         Legend(dc, 2, $"HandleHitRadius = {HandleHitRadius:0.#} DIP", 148, dip);
         Legend(dc, 3, $"RotateHitScreenRadius = {RotateHitScreenRadius:0.#} DIP", 174, dip);
-        Legend(dc, 4, $"DefaultDiameter/2 = {Eraser.DefaultDiameter / 2:0.#} DIP", 200, dip);
+        Legend(dc, 4, $"EraserDiameter/2 = {eraserRadius:0.#} DIP", 200, dip);
     }
 
     private void DrawDistances(DrawingContext dc, double dip)

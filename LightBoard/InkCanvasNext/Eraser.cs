@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
-using System.Windows.Input;
 using System.Windows.Shapes;
 
 namespace InkCanvasNext;
@@ -38,12 +36,10 @@ public partial class InkCanvasNext
             return;
         }
 
-        eraser.Scale = CurrentScale;
-
         if (State == TouchState.Eraser)
         {
-            (var screenCenter, var radius) = Eraser.GetCircle(touches);
-            eraser.Diameter = radius * 2 + Eraser.EraserPalmExtra;
+            (var screenCenter, var radius) = GetEnvelopeCircle(touches);
+            eraser.Diameter = radius * 2 + eraserPalmExtra;
 
             var canvasCenter = GetCanvasCenter(touches);
             eraser.Show(screenCenter);
@@ -65,41 +61,28 @@ public partial class InkCanvasNext
             }
         }
     }
-
-    private Point GetCanvasCenter(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches)
-    {
-        if (touches.Count == 0)
-        {
-            return default;
-        }
-
-        double sumX = 0, sumY = 0;
-        foreach (var kv in touches)
-        {
-            var pos = kv.Value.Device.GetTouchPoint(InnerCanvas).Position;
-            sumX += pos.X;
-            sumY += pos.Y;
-        }
-
-        return new Point(sumX / touches.Count, sumY / touches.Count);
-    }
 }
 
-internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
+internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameters parameters)
 {
-    internal StrokeChanges StrokeChanges { get; } = new([], []);
-
-    internal double Diameter { get; set; } = DefaultDiameter;
-
-    internal double Scale { get; set; } = 1.0;
-
-    internal bool Active { get; private set; }
-
-    private double LogicalDiameter => Math.Max(Diameter / Scale, MinLogicalDiameter);
+    private readonly double minLogicalDiameter = parameters.MinLogicalDiameter;
+    private readonly double rebuildThreshold = parameters.RebuildThreshold;
+    private readonly StrokeChanges strokeChanges = new([], []);
 
     private IncrementalStrokeHitTester? hitTester;
 
     private double hitTesterDiameter;
+
+    internal double Diameter { get; set; } = parameters.Diameter;
+
+    /// <summary>
+    /// 画布缩放，由 CurrentScale 写入，用于视口直径与内容直径换算
+    /// </summary>
+    internal double Scale { get; set; } = 1.0;
+
+    internal bool Active { get; private set; }
+
+    private double LogicalDiameter => Math.Max(Diameter / Scale, minLogicalDiameter);
 
     internal void Show(Point screenPosition)
     {
@@ -110,7 +93,7 @@ internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
         feedback.Visibility = Visibility.Visible;
     }
 
-    internal void Start(Point canvasPosition)
+    private void Start(Point canvasPosition)
     {
         if (Active)
         {
@@ -118,13 +101,13 @@ internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
         }
 
         Active = true;
-        StrokeChanges.Added.Clear( );
-        StrokeChanges.Removed.Clear( );
+        strokeChanges.Added.Clear( );
+        strokeChanges.Removed.Clear( );
         CreateHitTester(canvasPosition);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    internal void Move(Point canvasPosition)
+    private void Move(Point canvasPosition)
     {
         if (!Active)
         {
@@ -154,7 +137,7 @@ internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
             return;
         }
 
-        if (Math.Abs(LogicalDiameter - hitTesterDiameter) < RebuildThreshold)
+        if (Math.Abs(LogicalDiameter - hitTesterDiameter) < rebuildThreshold)
         {
             return;
         }
@@ -179,9 +162,9 @@ internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
         hitTester?.EndHitTesting( );
         hitTester = null;
 
-        var change = new StrokeChanges([.. StrokeChanges.Added], [.. StrokeChanges.Removed]);
-        StrokeChanges.Added.Clear( );
-        StrokeChanges.Removed.Clear( );
+        var change = new StrokeChanges([.. strokeChanges.Added], [.. strokeChanges.Removed]);
+        strokeChanges.Added.Clear( );
+        strokeChanges.Removed.Clear( );
         return change;
     }
 
@@ -216,48 +199,17 @@ internal sealed partial class Eraser(InkCanvas canvas, Ellipse feedback)
 
     private void TrackAdded(Stroke stroke)
     {
-        if (!StrokeChanges.Removed.Remove(stroke))
+        if (!strokeChanges.Removed.Remove(stroke))
         {
-            StrokeChanges.Added.Add(stroke);
+            strokeChanges.Added.Add(stroke);
         }
     }
 
     private void TrackRemoved(Stroke stroke)
     {
-        if (!StrokeChanges.Added.Remove(stroke))
+        if (!strokeChanges.Added.Remove(stroke))
         {
-            StrokeChanges.Removed.Add(stroke);
+            strokeChanges.Removed.Add(stroke);
         }
-    }
-
-    internal static (Point center, double radius) GetCircle(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches)
-    {
-        var count = touches.Count;
-        if (count == 0)
-        {
-            return (default, 1);
-        }
-
-        double sumX = 0, sumY = 0;
-        foreach (var kv in touches)
-        {
-            var pos = kv.Value.Position;
-            sumX += pos.X;
-            sumY += pos.Y;
-        }
-
-        var center = new Point(sumX / count, sumY / count);
-
-        double max = 0;
-        foreach (var kv in touches)
-        {
-            var distance2 = Geometry.Distance2(kv.Value.Position, center);
-            if (distance2 > max)
-            {
-                max = distance2;
-            }
-        }
-
-        return (center, Math.Sqrt(max));
     }
 }

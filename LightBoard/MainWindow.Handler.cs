@@ -38,9 +38,15 @@ public partial class MainWindow
         dialog.ShowDialog( );
     }
 
-    private void ApplyBackground(bool transparent)
+    private void ApplyBackground( )
     {
-        CanvasNext.Background = transparent ? Brushes.Transparent : MajorGridBrush;
+        var transparent = TransparentBackgroundRadio.IsChecked == true;
+
+        CanvasNext.Background = WhiteBackgroundRadio.IsChecked == true ? Brushes.White
+            : BlackBackgroundRadio.IsChecked == true ? Brushes.Black
+            : transparent ? Brushes.Transparent
+            : MajorGridBrush;
+
         TimeText.Visibility = transparent || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
         SwitchOutButton.Visibility = transparent ? Visibility.Collapsed : Visibility.Visible;
         LeftBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
@@ -52,12 +58,10 @@ public partial class MainWindow
 
     private void BackgroundRadioClick(object o, RoutedEventArgs e)
     {
-        if (o is not RadioButton { IsChecked: true })
+        if (o is RadioButton { IsChecked: true })
         {
-            return;
+            ApplyBackground( );
         }
-
-        ApplyBackground(ReferenceEquals(o, TransparentBackgroundRadio));
     }
 
     private void CloneClick(object o, RoutedEventArgs e)

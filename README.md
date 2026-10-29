@@ -38,7 +38,7 @@
 
 ### 界面
 
-- 左工具栏：关闭、最小化、文件菜单、背景（默认网格 / 透明）、切换到浏览器窗口
+- 左工具栏：关闭、最小化、文件菜单、背景（默认网格 / 纯白 / 纯黑 / 透明）、切换到浏览器窗口
 - 主工具栏：下排为颜色、荧光笔、橡皮、清屏、撤销、重做与展开按钮；点展开后显示上排的粗细、直线、圆、选择、粘贴
 - 右工具栏：收起工具栏、菜单、上一页、页码、下一页
 - 右上角时间（HH:mm）
@@ -56,6 +56,7 @@
 - 三个手势阈值：单指起笔位移、双指平移锁定、双指捏合锁定间距（1~200 视口 DIP）
 - 撤销历史条数（10~1000，默认 200）
 - 橡皮触点数量：四指及以上或五指及以上进入掌心擦除（默认五指）。画布创建时读取，修改后重启生效
+- 橡皮参数（画布创建时读取，修改后重启生效）：直径（1~400 视口 DIP，默认 50）、掌擦外扩（0~100 视口 DIP，默认 8）、最小逻辑直径（0.1~10 内容 DIP，默认 1）、命中重建阈值（0.01~10 内容 DIP，默认 0.5）
 
 ## 触摸手势
 
@@ -240,7 +241,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | --------------- | ------------------------------------------ |
 | `canvasSize`    | 内层墨迹画布尺寸，文档背景页定位在此画布内 |
 | `initialOffset` | 初始视口左上角在画布内容坐标中的位置       |
-| `options`       | 构造期选项（`PalmEraseFingers`：掌擦触点数量，4 或 5），`null` 取默认值 |
+| `options`       | 构造期选项：`PalmEraseFingers`（掌擦触点数量，4 或 5）、`Eraser`（`EraserParameters`：直径、掌擦外扩、最小逻辑直径、重建阈值），`null` 取默认值 |
 
 #### 依赖属性
 
@@ -250,7 +251,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `CanUndo`                  | `bool`              | 只读，是否可以撤销                                |
 | `DefaultDrawingAttributes` | `DrawingAttributes` | 默认笔触属性（颜色 / 粗细 / 荧光笔均在此表达）    |
 | `Mode`                     | `InkCanvasNextMode` | 当前编辑模式，默认 `Ink`                          |
-| `EraserDiameter`           | `double`            | 面积擦直径，默认 `50.0`                           |
+| `EraserDiameter`           | `double`            | 面积擦直径，初值由构造期选项决定（默认 `50.0`）   |
 | `MouseWheelAction`         | `MouseWheelAction`  | 滚轮交互：滚动 / 缩放 / 不接管，默认滚动          |
 | `StampAction`              | `StampAction`       | 当前盖章模式（克隆 / 粘贴），默认 `None`          |
 | `Strokes`                  | `StrokeCollection`  | 墨迹集合，赋值会替换墨迹、清空选区与盖章状态并清空历史 |

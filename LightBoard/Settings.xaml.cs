@@ -5,25 +5,58 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
 
+using InkCanvasNext;
+
 using Ookii.Dialogs.Wpf;
+
+using static InkCanvasNext.InkCanvasNext;
 
 namespace LightBoard;
 
 public record LightBoardSettings(
     bool AutoScroll = true,
-    double TouchDisplacementThreshold = InkCanvasNext.InkCanvasNext.TouchDisplacementThresholdDefault,
-    double PanZoomDisplaceThreshold = InkCanvasNext.InkCanvasNext.PanZoomDisplaceThresholdDefault,
-    double PinchLockDistance = InkCanvasNext.InkCanvasNext.PinchLockDistanceDefault,
-    int MaxHistoryCount = InkCanvasNext.InkCanvasNext.MaxHistoryCount,
-    int PalmEraseFingers = InkCanvasNext.InkCanvasNext.PalmEraseFingersDefault
-);
+    double TouchDisplacementThreshold = TouchDisplacementThresholdDefault,
+    double PanZoomDisplaceThreshold = PanZoomDisplaceThresholdDefault,
+    double PinchLockDistance = PinchLockDistanceDefault,
+    int MaxHistoryCount = MaxHistoryCount,
+    int PalmEraseFingers = PalmEraseFingersDefault,
+    double EraserDiameter = EraserDiameterDefault,
+    double EraserPalmExtra = EraserPalmExtraDefault,
+    double EraserMinLogicalDiameter = EraserMinLogicalDiameterDefault,
+    double EraserRebuildThreshold = EraserRebuildThresholdDefault
+)
+{
+    /// <summary>
+    /// 创建画布时读取的选项，改动需重启。
+    /// </summary>
+    [JsonIgnore]
+    public InkCanvasNextOptions CanvasOptions => new( )
+    {
+        PalmEraseFingers = PalmEraseFingers,
+        Eraser = new( )
+        {
+            Diameter = EraserDiameter,
+            PalmExtra = EraserPalmExtra,
+            MinLogicalDiameter = EraserMinLogicalDiameter,
+            RebuildThreshold = EraserRebuildThreshold
+        }
+    };
+}
 
 public partial class Settings : Window
 {
-    public const double ThresholdMin = 1;
-    public const double ThresholdMax = 200;
-    public const int HistoryMin = 10;
-    public const int HistoryMax = 1000;
+    private const double ThresholdMin = 1;
+    private const double ThresholdMax = 200;
+    private const int HistoryMin = 10;
+    private const int HistoryMax = 1000;
+    private const double EraserDiameterMin = 1;
+    private const double EraserDiameterMax = 400;
+    private const double PalmExtraMin = 0;
+    private const double PalmExtraMax = 100;
+    private const double LogicalDiameterMin = 0.1;
+    private const double LogicalDiameterMax = 10;
+    private const double RebuildThresholdMin = 0.01;
+    private const double RebuildThresholdMax = 10;
 
     private static readonly string SettingsJson = Path.Join(App.AppPath, "settings.json");
     private static readonly string SettingsJsonTemp = $"{SettingsJson}.tmp";
@@ -38,8 +71,12 @@ public partial class Settings : Window
         PanZoomDisplaceBox.Text = Data.PanZoomDisplaceThreshold.ToString(CultureInfo.InvariantCulture);
         PinchLockBox.Text = Data.PinchLockDistance.ToString(CultureInfo.InvariantCulture);
         MaxHistoryBox.Text = Data.MaxHistoryCount.ToString(CultureInfo.InvariantCulture);
-        FourFingerEraserRadio.IsChecked = Data.PalmEraseFingers == InkCanvasNext.InkCanvasNext.PalmEraseFingersMin;
-        FiveFingerEraserRadio.IsChecked = Data.PalmEraseFingers != InkCanvasNext.InkCanvasNext.PalmEraseFingersMin;
+        FourFingerEraserRadio.IsChecked = Data.PalmEraseFingers == PalmEraseFingersMin;
+        FiveFingerEraserRadio.IsChecked = Data.PalmEraseFingers != PalmEraseFingersMin;
+        EraserDiameterBox.Text = Data.EraserDiameter.ToString(CultureInfo.InvariantCulture);
+        EraserPalmExtraBox.Text = Data.EraserPalmExtra.ToString(CultureInfo.InvariantCulture);
+        EraserMinDiameterBox.Text = Data.EraserMinLogicalDiameter.ToString(CultureInfo.InvariantCulture);
+        EraserRebuildBox.Text = Data.EraserRebuildThreshold.ToString(CultureInfo.InvariantCulture);
     }
 
     public static void LoadSettings( )
@@ -47,7 +84,7 @@ public partial class Settings : Window
         try
         {
             using var stream = new FileStream(SettingsJson, FileMode.Open, FileAccess.Read);
-            Data = JsonSerializer.Deserialize(stream, SettingsSerializerContext.Default.LightBoardSettings) ?? Data;
+            Data = Normalize(JsonSerializer.Deserialize(stream, SettingsSerializerContext.Default.LightBoardSettings) ?? Data);
         }
         catch (FileNotFoundException)
         {
@@ -59,6 +96,25 @@ public partial class Settings : Window
         }
     }
 
+    /// <summary>
+    /// 把手工改过的越界值收进可选范围：设置窗口与画布都按 Data 的值工作。
+    /// </summary>
+    internal static LightBoardSettings Normalize(LightBoardSettings data)
+    {
+        return data with
+        {
+            TouchDisplacementThreshold = Math.Clamp(data.TouchDisplacementThreshold, ThresholdMin, ThresholdMax),
+            PanZoomDisplaceThreshold = Math.Clamp(data.PanZoomDisplaceThreshold, ThresholdMin, ThresholdMax),
+            PinchLockDistance = Math.Clamp(data.PinchLockDistance, ThresholdMin, ThresholdMax),
+            MaxHistoryCount = Math.Clamp(data.MaxHistoryCount, HistoryMin, HistoryMax),
+            PalmEraseFingers = Math.Clamp(data.PalmEraseFingers, PalmEraseFingersMin, PalmEraseFingersMax),
+            EraserDiameter = Math.Clamp(data.EraserDiameter, EraserDiameterMin, EraserDiameterMax),
+            EraserPalmExtra = Math.Clamp(data.EraserPalmExtra, PalmExtraMin, PalmExtraMax),
+            EraserMinLogicalDiameter = Math.Clamp(data.EraserMinLogicalDiameter, LogicalDiameterMin, LogicalDiameterMax),
+            EraserRebuildThreshold = Math.Clamp(data.EraserRebuildThreshold, RebuildThresholdMin, RebuildThresholdMax)
+        };
+    }
+
     private void CancelClick(object o, RoutedEventArgs e)
     {
         Close( );
@@ -66,10 +122,14 @@ public partial class Settings : Window
 
     private void OkClick(object o, RoutedEventArgs e)
     {
-        if (!TryReadThreshold(TouchDisplacementBox.Text, out var touch) ||
-            !TryReadThreshold(PanZoomDisplaceBox.Text, out var panZoom) ||
-            !TryReadThreshold(PinchLockBox.Text, out var pinch) ||
-            !TryReadHistory(MaxHistoryBox.Text, out var maxHistory))
+        if (!TryReadRange(TouchDisplacementBox.Text, ThresholdMin, ThresholdMax, out var touch) ||
+            !TryReadRange(PanZoomDisplaceBox.Text, ThresholdMin, ThresholdMax, out var panZoom) ||
+            !TryReadRange(PinchLockBox.Text, ThresholdMin, ThresholdMax, out var pinch) ||
+            !TryReadHistory(MaxHistoryBox.Text, out var maxHistory) ||
+            !TryReadRange(EraserDiameterBox.Text, EraserDiameterMin, EraserDiameterMax, out var eraserDiameter) ||
+            !TryReadRange(EraserPalmExtraBox.Text, PalmExtraMin, PalmExtraMax, out var palmExtra) ||
+            !TryReadRange(EraserMinDiameterBox.Text, LogicalDiameterMin, LogicalDiameterMax, out var logicalDiameter) ||
+            !TryReadRange(EraserRebuildBox.Text, RebuildThresholdMin, RebuildThresholdMax, out var rebuildThreshold))
         {
             ShowInvalidInput( );
             return;
@@ -82,9 +142,11 @@ public partial class Settings : Window
             PanZoomDisplaceThreshold = panZoom,
             PinchLockDistance = pinch,
             MaxHistoryCount = maxHistory,
-            PalmEraseFingers = FourFingerEraserRadio.IsChecked == true
-                ? InkCanvasNext.InkCanvasNext.PalmEraseFingersMin
-                : InkCanvasNext.InkCanvasNext.PalmEraseFingersMax
+            PalmEraseFingers = FourFingerEraserRadio.IsChecked == true ? PalmEraseFingersMin : PalmEraseFingersMax,
+            EraserDiameter = eraserDiameter,
+            EraserPalmExtra = palmExtra,
+            EraserMinLogicalDiameter = logicalDiameter,
+            EraserRebuildThreshold = rebuildThreshold
         };
         try
         {
@@ -102,10 +164,10 @@ public partial class Settings : Window
             return;
         }
 
-        var eraseFingersChanged = updated.PalmEraseFingers != Data.PalmEraseFingers;
+        var restartRequired = updated.CanvasOptions != Data.CanvasOptions;
         Data = updated;
 
-        if (eraseFingersChanged)
+        if (restartRequired)
         {
             ShowRestartNotice( );
         }
@@ -113,10 +175,10 @@ public partial class Settings : Window
         Close( );
     }
 
-    private static bool TryReadThreshold(string text, out double value)
+    private static bool TryReadRange(string text, double min, double max, out double value)
     {
         return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value)
-               && value >= ThresholdMin && value <= ThresholdMax;
+               && value >= min && value <= max;
     }
 
     private static bool TryReadHistory(string text, out int value)
@@ -132,7 +194,11 @@ public partial class Settings : Window
             WindowTitle = "轻白板",
             MainInstruction = "参数输入无效",
             MainIcon = TaskDialogIcon.Warning,
-            Content = $"三个手势阈值需为 {ThresholdMin}~{ThresholdMax} 的数字（视口 DIP），撤销历史条数需为 {HistoryMin}~{HistoryMax} 的整数。",
+            Content = $"""
+                手势阈值需为 {ThresholdMin}~{ThresholdMax} 的视口 DIP 数值，撤销历史条数为 {HistoryMin}~{HistoryMax} 的整数；
+                橡皮直径 {EraserDiameterMin}~{EraserDiameterMax}、掌擦外扩 {PalmExtraMin}~{PalmExtraMax}（视口 DIP）；
+                最小逻辑直径 {LogicalDiameterMin}~{LogicalDiameterMax}、命中重建阈值 {RebuildThresholdMin}~{RebuildThresholdMax}（内容 DIP）。
+                """,
         };
         dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
         dialog.ShowDialog( );
@@ -143,9 +209,9 @@ public partial class Settings : Window
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
-            MainInstruction = "橡皮触点数量已修改",
+            MainInstruction = "橡皮参数已修改",
             MainIcon = TaskDialogIcon.Information,
-            Content = "该项在创建画布时读取，重启轻白板后生效。",
+            Content = "这些参数在创建画布时读取，重启轻白板后生效。",
         };
         dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
         dialog.ShowDialog( );

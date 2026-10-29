@@ -14,7 +14,7 @@ namespace InkCanvasNext;
 [DependencyProperty<InkCanvasNextMode>("Mode", DefaultValue = InkCanvasNextMode.Ink)]
 [DependencyProperty<double>(
     "EraserDiameter",
-    DefaultValueExpression = "Eraser.DefaultDiameter",
+    DefaultValueExpression = "EraserDiameterDefault",
     PropertyXmlDocumentation =
     """
     <summary>

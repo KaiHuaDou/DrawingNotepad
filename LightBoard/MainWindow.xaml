@@ -134,10 +134,14 @@
                                  Style="{StaticResource LabelledRadioStyle}"
                                  Click="BackgroundRadioClick" Content=" 默认" GroupName="BackgroundGroup"
                                  Tag="&#xE71D;" />
-                    <!--TODO 颜色选择-->
-                    <RadioButton IsEnabled="False"
+                    <RadioButton x:Name="WhiteBackgroundRadio"
                                  Style="{StaticResource LabelledRadioStyle}"
-                                 Content=" 颜色..." Tag="&#xE790;" />
+                                 Click="BackgroundRadioClick" Content=" 纯白" GroupName="BackgroundGroup"
+                                 Tag="&#xE706;" />
+                    <RadioButton x:Name="BlackBackgroundRadio"
+                                 Style="{StaticResource LabelledRadioStyle}"
+                                 Click="BackgroundRadioClick" Content=" 纯黑" GroupName="BackgroundGroup"
+                                 Tag="&#xE708;" />
                     <RadioButton x:Name="TransparentBackgroundRadio"
                                  Style="{StaticResource LabelledRadioStyle}"
                                  Click="BackgroundRadioClick" Content=" 透明" GroupName="BackgroundGroup"
