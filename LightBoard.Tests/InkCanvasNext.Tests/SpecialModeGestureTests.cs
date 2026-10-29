@@ -480,6 +480,25 @@ public class SpecialModeGestureTests
         });
     }
 
+    /// <summary>面积擦 4 指张开 + 掌擦触点数四：擦除工具不看间距，直接迁入掌擦。</summary>
+    [Fact]
+    public void EraseAreaMode_FourSpreadFingers_PalmFingersFour_EntersEraser( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost(options: new( ) { PalmEraseFingers = 4 });
+            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+
+            var step = TestPoints.Spacing(host) + 1;
+            for (var i = 0; i < 4; i++)
+            {
+                host.Device( ).Down(host.Target, new Point(P1.X + i * step, P1.Y));
+            }
+
+            Assert.Equal(TouchState.Eraser, host.Canvas.State);
+        });
+    }
+
     /// <summary>笔画擦 5 指张开：同样迁入掌擦而非多指画笔。</summary>
     [Fact]
     public void EraseStrokeMode_FiveSpreadFingers_EntersEraser( )

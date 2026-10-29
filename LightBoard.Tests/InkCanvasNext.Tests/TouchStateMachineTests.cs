@@ -160,6 +160,122 @@ public class TouchStateMachineTests
         });
     }
 
+    // ---------- 掌擦触点数（设置项：四指 / 五指） ----------
+
+    /// <summary>默认掌擦触点数五：四指并拢仍是平移。</summary>
+    [Fact]
+    public void Idle_FourCloseFingers_DefaultPalmFingers_EntersPan( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var cluster = TestPoints.CloseCluster(host, P1, 4);
+
+            foreach (var point in cluster)
+            {
+                host.Device( ).Down(host.Target, point);
+            }
+
+            Assert.Equal(TouchState.Pan, host.Canvas.State);
+        });
+    }
+
+    /// <summary>掌擦触点数为四：三指并拢仍是平移。</summary>
+    [Fact]
+    public void Idle_ThreeCloseFingers_PalmFingersFour_EntersPan( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost(options: new( ) { PalmEraseFingers = 4 });
+            var cluster = TestPoints.CloseCluster(host, P1, 3);
+
+            foreach (var point in cluster)
+            {
+                host.Device( ).Down(host.Target, point);
+            }
+
+            Assert.Equal(TouchState.Pan, host.Canvas.State);
+        });
+    }
+
+    /// <summary>掌擦触点数为四：四指并拢直接掌擦。</summary>
+    [Fact]
+    public void Idle_FourCloseFingers_PalmFingersFour_EntersEraser( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost(options: new( ) { PalmEraseFingers = 4 });
+            var cluster = TestPoints.CloseCluster(host, P1, 4);
+
+            foreach (var point in cluster)
+            {
+                host.Device( ).Down(host.Target, point);
+            }
+
+            Assert.Equal(TouchState.Eraser, host.Canvas.State);
+        });
+    }
+
+    /// <summary>掌擦触点数为四：四指张开仍按间距判为多指书写。</summary>
+    [Fact]
+    public void Idle_FourSpreadFingers_PalmFingersFour_EntersMultiDraw( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost(options: new( ) { PalmEraseFingers = 4 });
+            var step = TestPoints.Spacing(host) + 1;
+
+            for (var i = 0; i < 4; i++)
+            {
+                host.Device( ).Down(host.Target, new Point(P1.X + i * step, P1.Y));
+            }
+
+            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
+        });
+    }
+
+    /// <summary>掌擦触点数为四：双指缩放中并拢落到四指即掌擦（不再先进平移）。</summary>
+    [Fact]
+    public void PanZoom_TwoMoreCloseFingers_PalmFingersFour_EntersEraser( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost(options: new( ) { PalmEraseFingers = 4 });
+            var cluster = TestPoints.CloseCluster(host, P1, 4);
+
+            host.Device( ).Down(host.Target, cluster[0]);
+            host.Device( ).Down(host.Target, cluster[1]);
+            Assert.Equal(TouchState.PanZoom, host.Canvas.State);
+
+            host.Device( ).Down(host.Target, cluster[2]);
+            host.Device( ).Down(host.Target, cluster[3]);
+
+            Assert.Equal(TouchState.Eraser, host.Canvas.State);
+        });
+    }
+
+    /// <summary>掌擦触点数为四：掌擦中张开并超出触点数，非擦除工具转多指书写。</summary>
+    [Fact]
+    public void Eraser_SpreadBeyondPalmFingers_EntersMultiDraw( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost(options: new( ) { PalmEraseFingers = 4 });
+            var cluster = TestPoints.CloseCluster(host, P1, 4);
+
+            foreach (var point in cluster)
+            {
+                host.Device( ).Down(host.Target, point);
+            }
+
+            Assert.Equal(TouchState.Eraser, host.Canvas.State);
+
+            host.Device( ).Down(host.Target, TestPoints.FarFrom(host, P1));
+
+            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
+        });
+    }
+
     [Fact]
     public void Idle_SelectMode_OneFinger_EntersSelection( )
     {

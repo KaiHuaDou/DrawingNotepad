@@ -37,7 +37,13 @@ public partial class MainWindow : Window
             gridBrush.Freeze( );
         }
 
-        CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset)
+        // 构造期设置（掌擦触点数等）要在建画布前读入
+        Settings.LoadSettings( );
+
+        CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset, new( )
+        {
+            PalmEraseFingers = Settings.Data.PalmEraseFingers
+        })
         {
             Background = MajorGridBrush
         };
@@ -47,7 +53,6 @@ public partial class MainWindow : Window
         CanvasNext.StrokesChanged += CanvasNextStrokesChanged;
         MainGrid.Children.Insert(0, CanvasNext);
 
-        Settings.LoadSettings( );
         ApplySettings( );
 
         colorRadio ??= DefaultColorRadio;

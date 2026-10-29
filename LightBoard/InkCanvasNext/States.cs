@@ -94,8 +94,8 @@ public partial class InkCanvasNext
 
     /// <summary>
     /// 触点数变化（Down/Up），或 EvalDraw 状态下 Move 时重评迁移。
-    /// 守卫内联写死：switch 臂自上而下即优先级（选区 > MultiDraw > 单指 > 平移，见 docs/TouchStates2.md）；
-    /// d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态。
+    /// 守卫内联写死：switch 臂自上而下即优先级（见 docs/TouchStates2.md）；
+    /// 掌擦触点数 palmEraseFingers 构造期固定；d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态。
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void UpdateState( )
@@ -106,6 +106,7 @@ public partial class InkCanvasNext
         var c2 = TouchDisplacementThreshold2;
         var x2 = Get1stFingerDispl2( );
         var tool = Tool;
+        var palm = count >= palmEraseFingers;
 
         var newState = State switch
         {
@@ -116,8 +117,8 @@ public partial class InkCanvasNext
                 1 or 2 when tool.IsSelectionEntry => TouchState.Selection,
                 1 => TouchState.EvalDraw,
                 2 when d2 <= l2 => TouchState.PanZoom,
-                3 or 4 when d2 <= l2 => TouchState.Pan,
-                >= 5 when d2 <= l2 => TouchState.Eraser,
+                >= 3 when palm && d2 <= l2 => TouchState.Eraser,
+                >= 3 when d2 <= l2 => TouchState.Pan,
                 >= 2 when d2 > l2 => TouchState.MultiDraw,
                 _ => State,
             },
@@ -126,11 +127,11 @@ public partial class InkCanvasNext
             {
                 0 => TouchState.Idle,
                 1 when x2 > c2 => TouchState.Draw,
-                // 擦除工具多指手势与普通模式同款（并拢判定），差异：5+ 指无论间距均掌擦（手掌压屏常呈张开），
+                // 擦除工具多指手势与普通模式同款（并拢判定），差异：掌擦触点数起无论间距均掌擦（手掌压屏常呈张开），
                 // 多指张开不迁多指画笔、保持擦除上下文
-                >= 5 when d2 <= l2 || tool.IsErase => TouchState.Eraser,
+                >= 3 when palm && (d2 <= l2 || tool.IsErase) => TouchState.Eraser,
                 2 when d2 <= l2 => TouchState.PanZoom,
-                3 or 4 when d2 <= l2 => TouchState.Pan,
+                >= 3 when d2 <= l2 => TouchState.Pan,
                 >= 2 when d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => State,
             },
@@ -138,7 +139,7 @@ public partial class InkCanvasNext
             TouchState.Draw => count switch
             {
                 0 => TouchState.Idle,
-                >= 5 when tool.IsErase => TouchState.Eraser,
+                >= 3 when palm && tool.IsErase => TouchState.Eraser,
                 >= 2 when tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => State,
             },
@@ -161,7 +162,7 @@ public partial class InkCanvasNext
             TouchState.Pan => count switch
             {
                 0 => TouchState.Idle,
-                >= 5 when d2 <= l2 || tool.IsErase => TouchState.Eraser,
+                >= 3 when palm && (d2 <= l2 || tool.IsErase) => TouchState.Eraser,
                 > 3 when d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => State,
             },
@@ -170,16 +171,16 @@ public partial class InkCanvasNext
             {
                 0 => TouchState.Idle,
                 // 擦除工具多指全程掌擦，不迁多指画笔
-                > 5 when d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
+                _ when count > palmEraseFingers && d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => State,
             },
 
             TouchState.Selection => count switch
             {
                 0 => TouchState.Idle,
-                // 选区手势中附加手指：3/4 指并拢平移画布、5 指及以上切换为掌心擦除（与 Idle 入口优先级一致）
-                3 or 4 when d2 <= l2 => TouchState.Pan,
-                >= 5 when d2 <= l2 => TouchState.Eraser,
+                // 选区手势中附加手指：并拢平移画布、达到掌擦触点数切换为掌心擦除（与 Idle 入口优先级一致）
+                >= 3 when palm && d2 <= l2 => TouchState.Eraser,
+                >= 3 when d2 <= l2 => TouchState.Pan,
                 _ => TouchState.Selection,
             },
 

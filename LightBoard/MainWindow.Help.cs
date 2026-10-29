@@ -8,6 +8,11 @@ public partial class MainWindow
 
     private HelpVisual CreateHelpVisual( )
     {
+        // 掌擦触点数在设置中二选一：并拢平移的可用指位与掌擦起点随之变化
+        var (panText, eraseText) = Settings.Data.PalmEraseFingers == InkCanvasNext.InkCanvasNext.PalmEraseFingersMin
+            ? ("三指", "四指")
+            : ("三/四指", "五指");
+
         return new HelpVisual(
             MainGrid,
             [
@@ -48,8 +53,8 @@ public partial class MainWindow
                 ],
             ],
             [
-                "单指绘图，两指平移缩放，三/四指平移",
-                "五指及以上橡皮擦；手指间最大距离超过阈值时转多指书写",
+                $"单指绘图，两指平移缩放，{panText}平移",
+                $"{eraseText}及以上橡皮擦；手指间最大距离超过阈值时转多指书写",
                 "已选中的按钮再次点击可取消",
             ]
         );

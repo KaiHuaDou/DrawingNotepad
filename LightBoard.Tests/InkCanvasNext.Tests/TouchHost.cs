@@ -19,9 +19,9 @@ internal sealed class TouchHost : IDisposable
     /// <summary>触摸事件处理目标（内部墨迹画布）。</summary>
     public UIElement Target => Canvas.InnerCanvasElement;
 
-    public TouchHost(double width = 1280, double height = 800)
+    public TouchHost(double width = 1280, double height = 800, InkCanvasNextOptions? options = null)
     {
-        Canvas = new InkCanvasNext(App.CanvasSize, App.InitialOffset);
+        Canvas = new InkCanvasNext(App.CanvasSize, App.InitialOffset, options);
 
         var parameters = new HwndSourceParameters("InkCanvasNext.Tests")
         {

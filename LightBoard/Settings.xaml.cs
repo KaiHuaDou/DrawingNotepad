@@ -14,7 +14,8 @@ public record LightBoardSettings(
     double TouchDisplacementThreshold = InkCanvasNext.InkCanvasNext.TouchDisplacementThresholdDefault,
     double PanZoomDisplaceThreshold = InkCanvasNext.InkCanvasNext.PanZoomDisplaceThresholdDefault,
     double PinchLockDistance = InkCanvasNext.InkCanvasNext.PinchLockDistanceDefault,
-    int MaxHistoryCount = InkCanvasNext.InkCanvasNext.MaxHistoryCount
+    int MaxHistoryCount = InkCanvasNext.InkCanvasNext.MaxHistoryCount,
+    int PalmEraseFingers = InkCanvasNext.InkCanvasNext.PalmEraseFingersDefault
 );
 
 public partial class Settings : Window
@@ -37,6 +38,8 @@ public partial class Settings : Window
         PanZoomDisplaceBox.Text = Data.PanZoomDisplaceThreshold.ToString(CultureInfo.InvariantCulture);
         PinchLockBox.Text = Data.PinchLockDistance.ToString(CultureInfo.InvariantCulture);
         MaxHistoryBox.Text = Data.MaxHistoryCount.ToString(CultureInfo.InvariantCulture);
+        FourFingerEraserRadio.IsChecked = Data.PalmEraseFingers == InkCanvasNext.InkCanvasNext.PalmEraseFingersMin;
+        FiveFingerEraserRadio.IsChecked = Data.PalmEraseFingers != InkCanvasNext.InkCanvasNext.PalmEraseFingersMin;
     }
 
     public static void LoadSettings( )
@@ -78,7 +81,10 @@ public partial class Settings : Window
             TouchDisplacementThreshold = touch,
             PanZoomDisplaceThreshold = panZoom,
             PinchLockDistance = pinch,
-            MaxHistoryCount = maxHistory
+            MaxHistoryCount = maxHistory,
+            PalmEraseFingers = FourFingerEraserRadio.IsChecked == true
+                ? InkCanvasNext.InkCanvasNext.PalmEraseFingersMin
+                : InkCanvasNext.InkCanvasNext.PalmEraseFingersMax
         };
         try
         {
@@ -96,7 +102,14 @@ public partial class Settings : Window
             return;
         }
 
+        var eraseFingersChanged = updated.PalmEraseFingers != Data.PalmEraseFingers;
         Data = updated;
+
+        if (eraseFingersChanged)
+        {
+            ShowRestartNotice( );
+        }
+
         Close( );
     }
 
@@ -120,6 +133,19 @@ public partial class Settings : Window
             MainInstruction = "参数输入无效",
             MainIcon = TaskDialogIcon.Warning,
             Content = $"三个手势阈值需为 {ThresholdMin}~{ThresholdMax} 的数字（视口 DIP），撤销历史条数需为 {HistoryMin}~{HistoryMax} 的整数。",
+        };
+        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+        dialog.ShowDialog( );
+    }
+
+    private static void ShowRestartNotice( )
+    {
+        using TaskDialog dialog = new( )
+        {
+            WindowTitle = "轻白板",
+            MainInstruction = "橡皮触点数量已修改",
+            MainIcon = TaskDialogIcon.Information,
+            Content = "该项在创建画布时读取，重启轻白板后生效。",
         };
         dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
         dialog.ShowDialog( );

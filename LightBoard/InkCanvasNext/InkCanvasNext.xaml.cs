@@ -92,9 +92,13 @@ public partial class InkCanvasNext : UserControl
     /// </summary>
     /// <param name="canvasSize">内层墨迹画布尺寸；文档背景页定位在此画布内。</param>
     /// <param name="initialOffset">初始视口左上角相对内容原点的偏移（视口单位）。</param>
-    public InkCanvasNext(Size canvasSize, Point initialOffset)
+    /// <param name="options">构造期选项；为 null 时取默认值。</param>
+    public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions? options = null)
     {
         InitializeComponent( );
+
+        var canvasOptions = options ?? new InkCanvasNextOptions( );
+        palmEraseFingers = canvasOptions.PalmEraseFingers == PalmEraseFingersMin ? PalmEraseFingersMin : PalmEraseFingersMax;
 
         InnerCanvas.Width = canvasSize.Width;
         InnerCanvas.Height = canvasSize.Height;
