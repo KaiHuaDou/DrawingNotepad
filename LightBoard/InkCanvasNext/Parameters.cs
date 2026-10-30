@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Media;
 
 namespace InkCanvasNext;
@@ -86,7 +87,7 @@ public partial class InkCanvasNext
     /// <summary>
     /// 面积擦直径默认值，视口 DIP
     /// </summary>
-    public const double EraserDiameterDefault = 50;
+    public const double EraserDiameterDefault = 75;
 
     /// <summary>
     /// 掌擦圆在触点包络直径之外的外扩量默认值，视口 DIP
@@ -108,20 +109,91 @@ public partial class InkCanvasNext
     /// </summary>
     internal readonly double eraserPalmExtra;
 
-    // ---------- 边缘自动滚动 ----------
+    // ---------- 边缘墨迹滚动提示 ----------
 
     /// <summary>
-    /// 视口 DIP，抬手落点距上/下边缘小于此值即触发
+    /// 视口 DIP，墨迹进入距该边缘此宽度的热区即显示提示按钮
     /// </summary>
-    public const double AutoScrollVerticalDefaultThreshold = 192;
+    public const double EdgeScrollTopDefaultThreshold = 64;
+    public const double EdgeScrollBottomDefaultThreshold = 192;
+    public const double EdgeScrollLeftDefaultThreshold = 64;
+    public const double EdgeScrollRightDefaultThreshold = 96;
 
     /// <summary>
-    /// 视口 DIP，抬手落点距左/右边缘小于此值即触发
+    /// 提示按钮距视口四边的间距默认值，视口 DIP
     /// </summary>
-    public const double AutoScrollHorizontalDefaultThreshold = 192;
+    public const double EdgeHintMarginDefault = 8;
 
-    public double AutoScrollVerticalThreshold { get; set; } = AutoScrollVerticalDefaultThreshold; // 视口 DIP，抬手落点距上/下边缘小于此值即触发
-    public double AutoScrollHorizontalThreshold { get; set; } = AutoScrollHorizontalDefaultThreshold; // 视口 DIP，抬手落点距左/右边缘小于此值即触发
+    private double edgeScrollTopThreshold = EdgeScrollTopDefaultThreshold;
+    private double edgeScrollBottomThreshold = EdgeScrollBottomDefaultThreshold;
+    private double edgeScrollLeftThreshold = EdgeScrollLeftDefaultThreshold;
+    private double edgeScrollRightThreshold = EdgeScrollRightDefaultThreshold;
+    private Thickness edgeHintMargin = new(EdgeHintMarginDefault);
+
+    /// <summary>
+    /// 提示按钮距视口四边的间距，视口 DIP；宿主用它在工具栏等常驻界面上方留出位置。
+    /// </summary>
+    public Thickness EdgeHintMargin
+    {
+        get => edgeHintMargin;
+        set
+        {
+            if (value == edgeHintMargin)
+            {
+                return;
+            }
+
+            edgeHintMargin = value;
+            UpdateEdgeHints( );
+        }
+    }
+
+    /// <summary>
+    /// 置 0 关闭该侧提示；写入立即刷新按钮。
+    /// </summary>
+    public double EdgeScrollTopThreshold
+    {
+        get => edgeScrollTopThreshold;
+        set => SetEdgeScrollThreshold(ref edgeScrollTopThreshold, value);
+    }
+
+    /// <summary>
+    /// 置 0 关闭该侧提示；写入立即刷新按钮。
+    /// </summary>
+    public double EdgeScrollBottomThreshold
+    {
+        get => edgeScrollBottomThreshold;
+        set => SetEdgeScrollThreshold(ref edgeScrollBottomThreshold, value);
+    }
+
+    /// <summary>
+    /// 置 0 关闭该侧提示；写入立即刷新按钮。
+    /// </summary>
+    public double EdgeScrollLeftThreshold
+    {
+        get => edgeScrollLeftThreshold;
+        set => SetEdgeScrollThreshold(ref edgeScrollLeftThreshold, value);
+    }
+
+    /// <summary>
+    /// 置 0 关闭该侧提示；写入立即刷新按钮。
+    /// </summary>
+    public double EdgeScrollRightThreshold
+    {
+        get => edgeScrollRightThreshold;
+        set => SetEdgeScrollThreshold(ref edgeScrollRightThreshold, value);
+    }
+
+    private void SetEdgeScrollThreshold(ref double field, double value)
+    {
+        if (value == field)
+        {
+            return;
+        }
+
+        field = value;
+        UpdateEdgeHints( );
+    }
 
     // ---------- 选区 ----------
 

@@ -9,6 +9,10 @@ public class SettingsTests
     {
         var data = new LightBoardSettings
         {
+            EdgeScrollTopThreshold = 64,
+            EdgeScrollBottomThreshold = 240,
+            EdgeScrollLeftThreshold = 120,
+            EdgeScrollRightThreshold = 8,
             PalmEraseFingers = 4,
             EraserDiameter = 80,
             EraserPalmExtra = 12,
@@ -26,10 +30,14 @@ public class SettingsTests
     [Fact]
     public void Deserialize_MissingFields_UseDefaults( )
     {
-        var data = JsonSerializer.Deserialize("""{"AutoScroll": false}""", SettingsSerializerContext.Default.LightBoardSettings);
+        var data = JsonSerializer.Deserialize("""{"EdgeScrollHint": false}""", SettingsSerializerContext.Default.LightBoardSettings);
 
         Assert.NotNull(data);
-        Assert.False(data.AutoScroll);
+        Assert.False(data.EdgeScrollHint);
+        Assert.Equal(InkCanvasNext.InkCanvasNext.EdgeScrollTopDefaultThreshold, data.EdgeScrollTopThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNext.EdgeScrollBottomDefaultThreshold, data.EdgeScrollBottomThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNext.EdgeScrollLeftDefaultThreshold, data.EdgeScrollLeftThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNext.EdgeScrollRightDefaultThreshold, data.EdgeScrollRightThreshold);
         Assert.Equal(InkCanvasNext.InkCanvasNext.PalmEraseFingersDefault, data.PalmEraseFingers);
         Assert.Equal(InkCanvasNext.InkCanvasNext.EraserDiameterDefault, data.EraserDiameter);
         Assert.Equal(InkCanvasNext.InkCanvasNext.EraserPalmExtraDefault, data.EraserPalmExtra);
@@ -52,6 +60,8 @@ public class SettingsTests
     {
         var data = new LightBoardSettings
         {
+            EdgeScrollTopThreshold = -5,
+            EdgeScrollBottomThreshold = 5000,
             TouchDisplacementThreshold = 0,
             MaxHistoryCount = 5,
             PalmEraseFingers = 9,
@@ -63,6 +73,8 @@ public class SettingsTests
 
         var normalized = Settings.Normalize(data);
 
+        Assert.Equal(0, normalized.EdgeScrollTopThreshold);
+        Assert.Equal(1000, normalized.EdgeScrollBottomThreshold);
         Assert.Equal(1, normalized.TouchDisplacementThreshold);
         Assert.Equal(10, normalized.MaxHistoryCount);
         Assert.Equal(InkCanvasNext.InkCanvasNext.PalmEraseFingersMax, normalized.PalmEraseFingers);

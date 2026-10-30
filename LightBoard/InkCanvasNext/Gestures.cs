@@ -37,6 +37,7 @@ public partial class InkCanvasNext
     {
         base.OnRenderSizeChanged(sizeInfo);
         viewportOrigin = CanvasScroll.TranslatePoint(new Point(0, 0), this);
+        UpdateEdgeHints( );
     }
 
     private void InitGesture( )

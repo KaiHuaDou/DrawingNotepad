@@ -288,7 +288,6 @@ public partial class MainWindow
     {
         var dialog = new Settings { Owner = this };
         dialog.ShowDialog( );
-        ApplySettings( );
     }
 
     private void ThicknessRadioClick(object o, RoutedEventArgs e)

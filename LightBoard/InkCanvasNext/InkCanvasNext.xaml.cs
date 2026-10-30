@@ -127,6 +127,9 @@ public partial class InkCanvasNext : UserControl
         CanvasScroll.ScrollChanged += (_, _) => RaiseViewOrSelectionChanged( );
         canvasScaleTransform.Changed += (_, _) => RaiseViewOrSelectionChanged( );
 
+        edgeScrollTimer.Interval = TimeSpan.FromMilliseconds(EdgeScrollTickMilliseconds);
+        edgeScrollTimer.Tick += EdgeScrollTick;
+
         InnerCanvas.Children.Add(multiTouchCanvas);
     }
 
@@ -140,6 +143,7 @@ public partial class InkCanvasNext : UserControl
 
     internal void RaiseViewOrSelectionChanged( )
     {
+        UpdateEdgeHints( );
         ViewOrSelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -279,6 +283,8 @@ public partial class InkCanvasNext : UserControl
     {
         var newStrokes = strokes ?? [];
 
+        CancelEdgeScroll( );
+
         InnerCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
         InnerCanvas.Strokes = newStrokes;
         InnerCanvas.Strokes.StrokesChanged += OnStrokesChanged;
@@ -290,6 +296,7 @@ public partial class InkCanvasNext : UserControl
 
         ClearHistory( );
         EnsureStrokesFit( );
+        UpdateEdgeHints( );
     }
 
     /// <summary>

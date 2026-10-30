@@ -137,6 +137,8 @@ public partial class InkCanvasNext
             selection.Prune(InnerCanvas.Strokes);
         }
 
+        UpdateEdgeHints( );
+
         if (applyingUndoRedo || eraser.Active || (e.Added.Count == 0 && e.Removed.Count == 0))
         {
             return;

@@ -39,7 +39,7 @@ internal sealed class DebugVisual : FrameworkElement
 
     private static readonly Pen ThinPen = MakePen(MakeBrush("#66FFFFFF"), 1);
     private static readonly Pen DashPen = MakePen(MakeBrush("#CCFFFFFF"), 2, new DashStyle([4, 3], 0));
-    private static readonly Pen AutoScrollPen = MakePen(MakeBrush("#E0FF3B30"), 1.5, new DashStyle([6, 4], 0));
+    private static readonly Pen EdgeScrollPen = MakePen(MakeBrush("#E0FF3B30"), 1.5, new DashStyle([6, 4], 0));
     private static readonly Pen[] RowPens =
     [
         MakePen(Palette[0], 2),
@@ -108,7 +108,7 @@ internal sealed class DebugVisual : FrameworkElement
         dc.Pop( );
 
         // 热区线在视口坐标系绘制，不参与面板平移
-        DrawAutoScrollZones(dc);
+        DrawEdgeScrollZones(dc);
 
         DrawCounts(dc, dip);
     }
@@ -176,8 +176,8 @@ internal sealed class DebugVisual : FrameworkElement
         DistanceRow(dc, 5, 226, "DistanceThreshold", ThresholdText(canvas.distanceThreshold2), ThresholdLength(canvas.distanceThreshold2), ThresholdApproximate(canvas.distanceThreshold2) || ThresholdDisabled(canvas.distanceThreshold2), dip);
     }
 
-    // 边缘自动滚动热区：在视口上下左右各阈值距离处画红色虚线
-    private void DrawAutoScrollZones(DrawingContext dc)
+    // 边缘热区：在视口上下左右各阈值距离处画红色虚线
+    private void DrawEdgeScrollZones(DrawingContext dc)
     {
         var viewport = canvas.ViewportSize;
         if (viewport.Width <= 0 || viewport.Height <= 0)
@@ -185,12 +185,14 @@ internal sealed class DebugVisual : FrameworkElement
             return;
         }
 
-        var v = canvas.AutoScrollVerticalThreshold;
-        var h = canvas.AutoScrollHorizontalThreshold;
-        dc.DrawLine(AutoScrollPen, new Point(0, v), new Point(viewport.Width, v));
-        dc.DrawLine(AutoScrollPen, new Point(0, viewport.Height - v), new Point(viewport.Width, viewport.Height - v));
-        dc.DrawLine(AutoScrollPen, new Point(h, 0), new Point(h, viewport.Height));
-        dc.DrawLine(AutoScrollPen, new Point(viewport.Width - h, 0), new Point(viewport.Width - h, viewport.Height));
+        var top = canvas.EdgeScrollTopThreshold;
+        var bottom = canvas.EdgeScrollBottomThreshold;
+        var left = canvas.EdgeScrollLeftThreshold;
+        var right = canvas.EdgeScrollRightThreshold;
+        dc.DrawLine(EdgeScrollPen, new Point(0, top), new Point(viewport.Width, top));
+        dc.DrawLine(EdgeScrollPen, new Point(0, viewport.Height - bottom), new Point(viewport.Width, viewport.Height - bottom));
+        dc.DrawLine(EdgeScrollPen, new Point(left, 0), new Point(left, viewport.Height));
+        dc.DrawLine(EdgeScrollPen, new Point(viewport.Width - right, 0), new Point(viewport.Width - right, viewport.Height));
     }
 
     private static void Circle(DrawingContext dc, Point center, double radius, Pen pen)

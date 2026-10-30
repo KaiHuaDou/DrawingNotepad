@@ -14,7 +14,11 @@ using static InkCanvasNext.InkCanvasNext;
 namespace LightBoard;
 
 public record LightBoardSettings(
-    bool AutoScroll = true,
+    bool EdgeScrollHint = true,
+    double EdgeScrollTopThreshold = EdgeScrollTopDefaultThreshold,
+    double EdgeScrollBottomThreshold = EdgeScrollBottomDefaultThreshold,
+    double EdgeScrollLeftThreshold = EdgeScrollLeftDefaultThreshold,
+    double EdgeScrollRightThreshold = EdgeScrollRightDefaultThreshold,
     double TouchDisplacementThreshold = TouchDisplacementThresholdDefault,
     double PanZoomDisplaceThreshold = PanZoomDisplaceThresholdDefault,
     double PinchLockDistance = PinchLockDistanceDefault,
@@ -47,6 +51,8 @@ public partial class Settings : Window
 {
     private const double ThresholdMin = 1;
     private const double ThresholdMax = 200;
+    private const double EdgeScrollMin = 0;
+    private const double EdgeScrollMax = 1000;
     private const int HistoryMin = 10;
     private const int HistoryMax = 1000;
     private const double EraserDiameterMin = 1;
@@ -66,7 +72,11 @@ public partial class Settings : Window
     public Settings( )
     {
         InitializeComponent( );
-        AutoScrollBox.IsChecked = Data.AutoScroll;
+        EdgeScrollHintBox.IsChecked = Data.EdgeScrollHint;
+        EdgeScrollTopBox.Text = Data.EdgeScrollTopThreshold.ToString(CultureInfo.InvariantCulture);
+        EdgeScrollBottomBox.Text = Data.EdgeScrollBottomThreshold.ToString(CultureInfo.InvariantCulture);
+        EdgeScrollLeftBox.Text = Data.EdgeScrollLeftThreshold.ToString(CultureInfo.InvariantCulture);
+        EdgeScrollRightBox.Text = Data.EdgeScrollRightThreshold.ToString(CultureInfo.InvariantCulture);
         TouchDisplacementBox.Text = Data.TouchDisplacementThreshold.ToString(CultureInfo.InvariantCulture);
         PanZoomDisplaceBox.Text = Data.PanZoomDisplaceThreshold.ToString(CultureInfo.InvariantCulture);
         PinchLockBox.Text = Data.PinchLockDistance.ToString(CultureInfo.InvariantCulture);
@@ -103,6 +113,10 @@ public partial class Settings : Window
     {
         return data with
         {
+            EdgeScrollTopThreshold = Math.Clamp(data.EdgeScrollTopThreshold, EdgeScrollMin, EdgeScrollMax),
+            EdgeScrollBottomThreshold = Math.Clamp(data.EdgeScrollBottomThreshold, EdgeScrollMin, EdgeScrollMax),
+            EdgeScrollLeftThreshold = Math.Clamp(data.EdgeScrollLeftThreshold, EdgeScrollMin, EdgeScrollMax),
+            EdgeScrollRightThreshold = Math.Clamp(data.EdgeScrollRightThreshold, EdgeScrollMin, EdgeScrollMax),
             TouchDisplacementThreshold = Math.Clamp(data.TouchDisplacementThreshold, ThresholdMin, ThresholdMax),
             PanZoomDisplaceThreshold = Math.Clamp(data.PanZoomDisplaceThreshold, ThresholdMin, ThresholdMax),
             PinchLockDistance = Math.Clamp(data.PinchLockDistance, ThresholdMin, ThresholdMax),
@@ -122,7 +136,11 @@ public partial class Settings : Window
 
     private void OkClick(object o, RoutedEventArgs e)
     {
-        if (!TryReadRange(TouchDisplacementBox.Text, ThresholdMin, ThresholdMax, out var touch) ||
+        if (!TryReadRange(EdgeScrollTopBox.Text, EdgeScrollMin, EdgeScrollMax, out var edgeTop) ||
+            !TryReadRange(EdgeScrollBottomBox.Text, EdgeScrollMin, EdgeScrollMax, out var edgeBottom) ||
+            !TryReadRange(EdgeScrollLeftBox.Text, EdgeScrollMin, EdgeScrollMax, out var edgeLeft) ||
+            !TryReadRange(EdgeScrollRightBox.Text, EdgeScrollMin, EdgeScrollMax, out var edgeRight) ||
+            !TryReadRange(TouchDisplacementBox.Text, ThresholdMin, ThresholdMax, out var touch) ||
             !TryReadRange(PanZoomDisplaceBox.Text, ThresholdMin, ThresholdMax, out var panZoom) ||
             !TryReadRange(PinchLockBox.Text, ThresholdMin, ThresholdMax, out var pinch) ||
             !TryReadHistory(MaxHistoryBox.Text, out var maxHistory) ||
@@ -137,7 +155,11 @@ public partial class Settings : Window
 
         var updated = Data with
         {
-            AutoScroll = AutoScrollBox.IsChecked == true,
+            EdgeScrollHint = EdgeScrollHintBox.IsChecked == true,
+            EdgeScrollTopThreshold = edgeTop,
+            EdgeScrollBottomThreshold = edgeBottom,
+            EdgeScrollLeftThreshold = edgeLeft,
+            EdgeScrollRightThreshold = edgeRight,
             TouchDisplacementThreshold = touch,
             PanZoomDisplaceThreshold = panZoom,
             PinchLockDistance = pinch,
@@ -164,10 +186,10 @@ public partial class Settings : Window
             return;
         }
 
-        var restartRequired = updated.CanvasOptions != Data.CanvasOptions;
+        var changed = updated != Data;
         Data = updated;
 
-        if (restartRequired)
+        if (changed)
         {
             ShowRestartNotice( );
         }
@@ -196,6 +218,7 @@ public partial class Settings : Window
             MainIcon = TaskDialogIcon.Warning,
             Content = $"""
                 手势阈值需为 {ThresholdMin}~{ThresholdMax} 的视口 DIP 数值，撤销历史条数为 {HistoryMin}~{HistoryMax} 的整数；
+                边缘热区宽度 {EdgeScrollMin}~{EdgeScrollMax}（视口 DIP，0 关闭该侧）；
                 橡皮直径 {EraserDiameterMin}~{EraserDiameterMax}、掌擦外扩 {PalmExtraMin}~{PalmExtraMax}（视口 DIP）；
                 最小逻辑直径 {LogicalDiameterMin}~{LogicalDiameterMax}、命中重建阈值 {RebuildThresholdMin}~{RebuildThresholdMax}（内容 DIP）。
                 """,
@@ -209,9 +232,9 @@ public partial class Settings : Window
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
-            MainInstruction = "橡皮参数已修改",
+            MainInstruction = "设置已保存",
             MainIcon = TaskDialogIcon.Information,
-            Content = "这些参数在创建画布时读取，重启轻白板后生效。",
+            Content = "重启轻白板后按新设置运行。",
         };
         dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
         dialog.ShowDialog( );

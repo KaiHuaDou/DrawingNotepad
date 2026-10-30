@@ -92,6 +92,8 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseDown(object o, MouseButtonEventArgs e)
     {
+        CancelEdgeScroll( );
+
         if (e.StylusDevice != null || !Tool.IsCustomTool)
         {
             return;
@@ -126,19 +128,8 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseUp(object o, MouseButtonEventArgs e)
     {
-        if (e.StylusDevice != null)
+        if (e.StylusDevice != null || !MousePointer.IsDown)
         {
-            return;
-        }
-
-        // 原生工具：鼠标未走合成触点，抬手贴边滚动与触摸抬手同款（仅左键，排除右键菜单）
-        if (!MousePointer.IsDown)
-        {
-            if (e.ChangedButton == MouseButton.Left)
-            {
-                AutoScrollFromEdge(e.GetPosition(CanvasScroll));
-            }
-
             return;
         }
 
@@ -160,6 +151,8 @@ public partial class InkCanvasNext
         }
 
         e.Handled = true;
+
+        CancelEdgeScroll( );
 
         if (MouseWheelAction == MouseWheelAction.Zoom || Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
         {

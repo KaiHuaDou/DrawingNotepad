@@ -1,10 +1,7 @@
-using System.Diagnostics;
-using System.Threading;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Threading;
 
 namespace InkCanvasNext.Tests;
 
@@ -17,61 +14,6 @@ namespace InkCanvasNext.Tests;
 public class MouseMachineTests
 {
     private static readonly Point P1 = new(100, 100);
-
-    // ---------- 抬手贴边自动滚动 ----------
-
-    /// <summary>贴下边抬手：0.1 秒动画后视口向下滚动（合成触点与触摸同款）。
-    /// 坐标用控件根坐标系（真实鼠标语义）：自动滚动读取的是视口坐标。</summary>
-    [Fact]
-    public void Mouse_UpAtBottomEdge_AutoScrolls( )
-    {
-        StaTest.Run(( ) =>
-        {
-            using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
-            var pointer = host.Canvas.MousePointer;
-            var before = host.Canvas.OffsetY;
-            var bottom = host.Canvas.ActualHeight - 40;
-
-            pointer.Down(new Point(640, 300));
-            pointer.Up(new Point(640, bottom));
-
-            PumpAnimation( );
-
-            Assert.True(host.Canvas.OffsetY > before, $"贴下边抬手应向下滚动：before={before} after={host.Canvas.OffsetY}");
-        });
-    }
-
-    /// <summary>视口中部抬手：不触发滚动。</summary>
-    [Fact]
-    public void Mouse_UpMidCanvas_DoesNotAutoScroll( )
-    {
-        StaTest.Run(( ) =>
-        {
-            using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
-            var pointer = host.Canvas.MousePointer;
-            var before = host.Canvas.OffsetY;
-
-            pointer.Down(new Point(640, host.Canvas.ActualHeight / 2));
-            pointer.Up(new Point(640, host.Canvas.ActualHeight / 2));
-
-            PumpAnimation( );
-
-            Assert.Equal(before, host.Canvas.OffsetY);
-        });
-    }
-
-    /// <summary>推帧驱动 0.1 秒自动滚动动画至完成。</summary>
-    private static void PumpAnimation( )
-    {
-        var clock = Stopwatch.StartNew( );
-        while (clock.ElapsedMilliseconds < 400)
-        {
-            Dispatcher.CurrentDispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
-            Thread.Sleep(10);
-        }
-    }
 
     // ---------- 翻译层冒烟 ----------
 

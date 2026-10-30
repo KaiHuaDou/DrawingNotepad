@@ -6,12 +6,15 @@
         SizeToContent="WidthAndHeight">
     <StackPanel>
         <StackPanel Margin="25,20,25,20">
+            <TextBlock Margin="0,0,0,8"
+                       Foreground="#666666"
+                       Text="所有设置保存后重启轻白板生效。" />
             <StackPanel>
                 <CheckBox x:Name="HandEraserBox"
                           Margin="0,5,0,5"
                           IsEnabled="False"
                           Content="最小触点距离小于阈值 -&gt; 激活手掌擦" />
-                <CheckBox x:Name="AutoScrollBox" Margin="0,5,0,5" Content="抬笔在边缘 -&gt; 自动滚动" />
+                <CheckBox x:Name="EdgeScrollHintBox" Margin="0,5,0,5" Content="边缘热区内有墨迹 -&gt; 显示滚动按钮" />
             </StackPanel>
             <Grid Margin="3,5,0,0">
                 <Grid.ColumnDefinitions>
@@ -20,6 +23,10 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -71,13 +78,52 @@
                          Margin="0,5,0,5" />
                 <Separator Grid.Row="4" Grid.ColumnSpan="3"
                            Margin="0,15,0,10" Background="#AAA0A0A0" />
-                <TextBlock Grid.Row="5" Grid.ColumnSpan="3"
-                           FontWeight="SemiBold"
-                           Text="重启后生效" />
+                <TextBlock Grid.Row="5" Grid.Column="0"
+                           Margin="0,5,10,5" VerticalAlignment="Center"
+                           Text="上边缘热区" />
+                <TextBox x:Name="EdgeScrollTopBox"
+                         Grid.Row="5" Grid.Column="1"
+                         MinWidth="120"
+                         Margin="0,5,0,5" />
+                <TextBlock Grid.Row="5" Grid.Column="2"
+                           Margin="5,5,0,5" VerticalAlignment="Center"
+                           Text="DIP" />
                 <TextBlock Grid.Row="6" Grid.Column="0"
                            Margin="0,5,10,5" VerticalAlignment="Center"
+                           Text="下边缘热区" />
+                <TextBox x:Name="EdgeScrollBottomBox"
+                         Grid.Row="6" Grid.Column="1"
+                         MinWidth="120"
+                         Margin="0,5,0,5" />
+                <TextBlock Grid.Row="6" Grid.Column="2"
+                           Margin="5,5,0,5" VerticalAlignment="Center"
+                           Text="DIP" />
+                <TextBlock Grid.Row="7" Grid.Column="0"
+                           Margin="0,5,10,5" VerticalAlignment="Center"
+                           Text="左边缘热区" />
+                <TextBox x:Name="EdgeScrollLeftBox"
+                         Grid.Row="7" Grid.Column="1"
+                         MinWidth="120"
+                         Margin="0,5,0,5" />
+                <TextBlock Grid.Row="7" Grid.Column="2"
+                           Margin="5,5,0,5" VerticalAlignment="Center"
+                           Text="DIP" />
+                <TextBlock Grid.Row="8" Grid.Column="0"
+                           Margin="0,5,10,5" VerticalAlignment="Center"
+                           Text="右边缘热区" />
+                <TextBox x:Name="EdgeScrollRightBox"
+                         Grid.Row="8" Grid.Column="1"
+                         MinWidth="120"
+                         Margin="0,5,0,5" />
+                <TextBlock Grid.Row="8" Grid.Column="2"
+                           Margin="5,5,0,5" VerticalAlignment="Center"
+                           Text="DIP" />
+                <Separator Grid.Row="9" Grid.ColumnSpan="3"
+                           Margin="0,15,0,10" Background="#AAA0A0A0" />
+                <TextBlock Grid.Row="10" Grid.Column="0"
+                           Margin="0,5,10,5" VerticalAlignment="Center"
                            Text="橡皮触点数量" />
-                <StackPanel Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                <StackPanel Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2"
                             Margin="0,5,0,5" Orientation="Horizontal">
                     <RadioButton x:Name="FourFingerEraserRadio"
                                  Margin="0,0,20,0"
@@ -87,44 +133,44 @@
                                  GroupName="PalmErase"
                                  Content="五指及以上" />
                 </StackPanel>
-                <TextBlock Grid.Row="7" Grid.Column="0"
+                <TextBlock Grid.Row="11" Grid.Column="0"
                            Margin="0,5,10,5" VerticalAlignment="Center"
                            Text="橡皮直径" />
                 <TextBox x:Name="EraserDiameterBox"
-                         Grid.Row="7" Grid.Column="1"
+                         Grid.Row="11" Grid.Column="1"
                          MinWidth="120"
                          Margin="0,5,0,5" />
-                <TextBlock Grid.Row="7" Grid.Column="2"
+                <TextBlock Grid.Row="11" Grid.Column="2"
                            Margin="5,5,0,5" VerticalAlignment="Center"
                            Text="DIP" />
-                <TextBlock Grid.Row="8" Grid.Column="0"
+                <TextBlock Grid.Row="12" Grid.Column="0"
                            Margin="0,5,10,5" VerticalAlignment="Center"
                            Text="掌擦外扩" />
                 <TextBox x:Name="EraserPalmExtraBox"
-                         Grid.Row="8" Grid.Column="1"
+                         Grid.Row="12" Grid.Column="1"
                          MinWidth="120"
                          Margin="0,5,0,5" />
-                <TextBlock Grid.Row="8" Grid.Column="2"
+                <TextBlock Grid.Row="12" Grid.Column="2"
                            Margin="5,5,0,5" VerticalAlignment="Center"
                            Text="DIP" />
-                <TextBlock Grid.Row="9" Grid.Column="0"
+                <TextBlock Grid.Row="13" Grid.Column="0"
                            Margin="0,5,10,5" VerticalAlignment="Center"
                            Text="最小逻辑直径" />
                 <TextBox x:Name="EraserMinDiameterBox"
-                         Grid.Row="9" Grid.Column="1"
+                         Grid.Row="13" Grid.Column="1"
                          MinWidth="120"
                          Margin="0,5,0,5" />
-                <TextBlock Grid.Row="9" Grid.Column="2"
+                <TextBlock Grid.Row="13" Grid.Column="2"
                            Margin="5,5,0,5" VerticalAlignment="Center"
                            Text="DIP" />
-                <TextBlock Grid.Row="10" Grid.Column="0"
+                <TextBlock Grid.Row="14" Grid.Column="0"
                            Margin="0,5,10,5" VerticalAlignment="Center"
                            Text="命中重建阈值" />
                 <TextBox x:Name="EraserRebuildBox"
-                         Grid.Row="10" Grid.Column="1"
+                         Grid.Row="14" Grid.Column="1"
                          MinWidth="120"
                          Margin="0,5,0,5" />
-                <TextBlock Grid.Row="10" Grid.Column="2"
+                <TextBlock Grid.Row="14" Grid.Column="2"
                            Margin="5,5,0,5" VerticalAlignment="Center"
                            Text="DIP" />
             </Grid>
