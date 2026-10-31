@@ -50,7 +50,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        // touches 保插入序：手势起始指在存活期间恒为 First()，抬起后由剩余手指自然接替
+        // touches 保插入序：手势起始指在存活期间始终为 First()，抬起后由剩余手指自然接替
         var canvasPos = GetFirstCanvasPoint( );
         selectionStartPoint = canvasPos;
 

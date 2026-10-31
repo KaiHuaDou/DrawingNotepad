@@ -82,7 +82,7 @@ internal sealed class MockTouchDevice : TouchDevice
             active = true;
         }
 
-        // 预先捕获到目标元素：CaptureMode.Element 下 DirectlyOver 恒为目标，跳过命中测试，
+        // 预先捕获到目标元素：CaptureMode.Element 下 DirectlyOver 始终为目标，跳过命中测试，
         // 使上报坐标无需落在视口内（测试可任意放大间距以覆盖 d > l 的 MultiDraw 判定）。
         Capture(target);
     }

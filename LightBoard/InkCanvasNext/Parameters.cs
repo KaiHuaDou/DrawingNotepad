@@ -291,7 +291,6 @@ internal static partial class StrokeCollectionExtension
     internal const double FallbackCanvasHeight = 1080;
 
     internal const double RenderPadding = 64; // 内容 DIP
-    internal const double PreviewContentFill = 1;
 
     private static readonly SolidColorBrush Background = new(Color.FromRgb(0x1E, 0x1E, 0x1E));
 

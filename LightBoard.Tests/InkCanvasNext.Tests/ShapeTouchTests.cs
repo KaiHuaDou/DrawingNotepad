@@ -44,7 +44,7 @@ public class ShapeTouchTests
             finger1.Up(host.Target, End1);
 
             // 形状笔画（P1 -> TestPoints.BeyondDisplacement(host, P1)）先提交；f2 抬起提交其多指笔画并迁回 Draw，
-            // EndMultiTouch 把 f1 未续画的多指笔画按现有点位一并收尾，f1 后续移动不再产生笔画
+            // EndMultiTouch 把 f1 未续画的多指笔画按现有点位一并收尾，f1 后续移动不会产生笔画
             Assert.Equal(3, host.Canvas.Strokes.Count);
             Assert.Equal(P1, host.Canvas.Strokes[0].StylusPoints[0].ToPoint( ));
             Assert.Equal(TestPoints.BeyondDisplacement(host, P1), EndOf(host.Canvas.Strokes[0]));

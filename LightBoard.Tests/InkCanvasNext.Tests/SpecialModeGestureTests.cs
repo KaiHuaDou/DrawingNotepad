@@ -310,7 +310,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>缩放手柄拖过锚点（对侧中点）不再翻转选区：单轴因子钳在 MinSelectionScale，
+    /// <summary>缩放手柄拖过锚点（对侧中点）不翻转选区：单轴因子钳在 MinSelectionScale，
     /// 笔画停在被压缩的一侧而非镜像到锚点另一侧（x 不越过锚点、y 不变）。
     /// 手柄与锚点由包围盒推导，GetBounds 含笔画半宽外扩，期望值在手势前按真实包围盒捕获。</summary>
     [Fact]
@@ -854,7 +854,7 @@ public class SpecialModeGestureTests
     }
 
     /// <summary>手柄命中半径为视口 DIP：缩放 2x 后内容半径减半，距角柄 HandleHitRadius/2 之外、
-    /// 选区之内的落点不再命中手柄，单指拖动表现为整体移动（纯平移）而非缩放。</summary>
+    /// 选区之内的按下点不会命中手柄，单指拖动表现为整体移动（纯平移）而非缩放。</summary>
     [Fact]
     public void SelectMode_HandleHitRadius_IsScreenAbsolute( )
     {

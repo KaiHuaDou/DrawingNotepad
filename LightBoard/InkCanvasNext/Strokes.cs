@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Media;
@@ -26,34 +27,42 @@ public partial class InkCanvasNext
     public bool HasSelection => selection.HasSelection;
 
     /// <summary>
-    /// 复制选中笔画到剪贴板。
+    /// 复制选中笔画到剪贴板，返回是否写入成功。
     /// </summary>
-    public void CopySelected( )
+    public bool CopySelected( )
     {
         if (!HasSelection)
         {
-            return;
+            return false;
         }
 
-        var copy = new StrokeCollection([.. selection.SelectedStrokes.Select(s => s.Clone( ))]);
-        using var stream = new MemoryStream( );
-        copy.Save(stream);
-        var data = new DataObject(StrokeCollection.InkSerializedFormat, stream);
-        Clipboard.SetDataObject(data, true);
+        try
+        {
+            var copy = new StrokeCollection([.. selection.SelectedStrokes.Select(s => s.Clone( ))]);
+            using var stream = new MemoryStream( );
+            copy.Save(stream);
+            var data = new DataObject(StrokeCollection.InkSerializedFormat, stream);
+            Clipboard.SetDataObject(data, true);
+            return true;
+        }
+        catch (ExternalException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
-    /// 剪切选中笔画到剪贴板并从画布删除。
+    /// 剪切选中笔画到剪贴板并从画布删除，返回是否写入成功。
     /// </summary>
-    public void CutSelected( )
+    public bool CutSelected( )
     {
-        if (!HasSelection)
+        if (!HasSelection || !CopySelected( ))
         {
-            return;
+            return false;
         }
 
-        CopySelected( );
         DeleteSelected( );
+        return true;
     }
 
     /// <summary>
@@ -84,28 +93,42 @@ public partial class InkCanvasNext
         var clone = new StrokeCollection([.. selection.SelectedStrokes.Select(s => s.Clone( ))]);
         CenterAt(clone, point);
         InnerCanvas.Strokes.Add(clone);
+        EnsureStrokesFit( );
     }
 
     /// <summary>
-    /// 在指定位置粘贴剪贴板中的墨迹笔画。
+    /// 在指定位置粘贴剪贴板中的墨迹笔画，返回是否粘贴成功。
     /// </summary>
-    public void StampPasteAt(Point point)
+    public bool StampPasteAt(Point point)
     {
-        if (!Clipboard.ContainsData(StrokeCollection.InkSerializedFormat))
+        try
         {
-            return;
-        }
+            if (!Clipboard.ContainsData(StrokeCollection.InkSerializedFormat))
+            {
+                return false;
+            }
 
-        var data = Clipboard.GetData(StrokeCollection.InkSerializedFormat);
-        if (data is not MemoryStream ms)
+            var data = Clipboard.GetData(StrokeCollection.InkSerializedFormat);
+            if (data is not MemoryStream ms)
+            {
+                return false;
+            }
+
+            ms.Position = 0;
+            var strokes = new StrokeCollection(ms);
+            CenterAt(strokes, point);
+            InnerCanvas.Strokes.Add(strokes);
+            EnsureStrokesFit( );
+            return true;
+        }
+        catch (ExternalException)
         {
-            return;
+            return false;
         }
-
-        ms.Position = 0;
-        var strokes = new StrokeCollection(ms);
-        CenterAt(strokes, point);
-        InnerCanvas.Strokes.Add(strokes);
+        catch (ArgumentException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -204,12 +227,12 @@ internal static partial class StrokeCollectionExtension
         return image;
     }
 
-    internal static RenderTargetBitmap PreviewEmpty( )
+    internal static RenderTargetBitmap PreviewEmpty(Brush? canvas = null)
     {
         var visual = new DrawingVisual( );
         using (var context = visual.RenderOpen( ))
         {
-            context.DrawRectangle(Background, null, new Rect(0, 0, PreviewWidth, PreviewHeight));
+            context.DrawRectangle(canvas ?? Background, null, new Rect(0, 0, PreviewWidth, PreviewHeight));
         }
 
         var bitmap = new RenderTargetBitmap(PreviewWidth, PreviewHeight, 96, 96, PixelFormats.Pbgra32);
@@ -221,7 +244,8 @@ internal static partial class StrokeCollectionExtension
     internal static RenderTargetBitmap Preview(
         this StrokeCollection strokes,
         ImageSource? background = null,
-        Rect? box = null)
+        Rect? box = null,
+        Brush? canvas = null)
     {
         var bounds = strokes.GetBounds( );
         if (background is not null && box is { } fitBox)
@@ -235,7 +259,7 @@ internal static partial class StrokeCollectionExtension
         {
             var scaleX = PreviewWidth / bounds.Width;
             var scaleY = PreviewHeight / bounds.Height;
-            var scale = Math.Min(scaleX, scaleY) * PreviewContentFill;
+            var scale = Math.Min(scaleX, scaleY);
 
             var centerX = bounds.Left + bounds.Width / 2;
             var centerY = bounds.Top + bounds.Height / 2;
@@ -245,7 +269,7 @@ internal static partial class StrokeCollectionExtension
         }
 
         var visual = strokes.CreateVisual(
-            new Rect(0, 0, PreviewWidth, PreviewHeight), matrix, Background, background, box);
+            new Rect(0, 0, PreviewWidth, PreviewHeight), matrix, canvas ?? Background, background, box);
 
         var render = new RenderTargetBitmap(PreviewWidth, PreviewHeight, 96, 96, PixelFormats.Pbgra32);
         render.Render(visual);

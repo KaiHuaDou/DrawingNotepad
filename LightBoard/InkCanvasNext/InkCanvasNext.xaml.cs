@@ -131,6 +131,14 @@ public partial class InkCanvasNext : UserControl
         edgeScrollTimer.Tick += EdgeScrollTick;
 
         InnerCanvas.Children.Add(multiTouchCanvas);
+
+        Unloaded += InkCanvasNextUnloaded;
+    }
+
+    private void InkCanvasNextUnloaded(object o, RoutedEventArgs e)
+    {
+        ResetTouchState( );
+        UnhookMultiTouchFrame( );
     }
 
     /// <summary>
@@ -190,6 +198,11 @@ public partial class InkCanvasNext : UserControl
         }
     }
 
+    private static object CoerceDefaultDrawingAttributes(DependencyObject d, object value)
+    {
+        return value is DrawingAttributes ? value : d.GetValue(DefaultDrawingAttributesProperty);
+    }
+
     private static void OnDefaultDrawingAttributesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (e.NewValue is DrawingAttributes attributes)
@@ -233,7 +246,7 @@ public partial class InkCanvasNext : UserControl
 
     private void ApplyModeToEditing(InkCanvasNextMode mode)
     {
-        // 切换工具即中断形状绘制（鼠标路径 state 恒为 Idle，形状取消依赖此处）
+        // 切换工具即中断形状绘制（鼠标路径同样经过状态机，形状取消依赖此处）
         CancelShape( );
 
         // 盖章期间单指只落章：原生收笔一律关闭（触屏上仅 Handled 掉触摸事件压不住手写笔管线）

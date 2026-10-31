@@ -15,7 +15,7 @@ public partial class InkCanvasNext
 
     // ---------- 套索 ----------
 
-    /// <summary>空白处按下（鼠标/触摸共用）：清空当前选型，以落点为起点开始增量套索测试。</summary>
+    /// <summary>空白处按下（鼠标/触摸共用）：清空当前选型，以按下点为起点开始增量套索测试。</summary>
     private void BeginLasso(Point p)
     {
         selection.Clear( );

@@ -14,6 +14,8 @@ public partial class InkCanvasNext
     private Point shapeStart;
     private Point shapeEnd;
     private bool shapeActive;
+    private SolidColorBrush? shapeBrush;
+    private Color shapeBrushColor;
 
     private Point GetShapeEndPoint( )
     {
@@ -64,7 +66,7 @@ public partial class InkCanvasNext
         shapeEnd = end;
 
         var attrs = DefaultDrawingAttributes;
-        var brush = new SolidColorBrush(attrs.Color);
+        var brush = ShapeBrush(attrs.Color);
         var width = Math.Max(attrs.Width, ShapeMinStrokeWidth);
 
         if (Tool.IsCircle)
@@ -86,6 +88,18 @@ public partial class InkCanvasNext
             ShapePreviewLine.Stroke = brush;
             ShapePreviewLine.StrokeThickness = width;
         }
+    }
+
+    private SolidColorBrush ShapeBrush(Color color)
+    {
+        if (shapeBrush is null || shapeBrushColor != color)
+        {
+            shapeBrush = new SolidColorBrush(color);
+            shapeBrush.Freeze( );
+            shapeBrushColor = color;
+        }
+
+        return shapeBrush;
     }
 
     private static Point ConstrainLine(Point start, Point end)

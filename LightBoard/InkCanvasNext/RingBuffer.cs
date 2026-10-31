@@ -26,6 +26,11 @@ internal sealed class RingBuffer<T>(int capacity)
 
     internal void Enqueue(T item)
     {
+        if (Capacity == 0)
+        {
+            return;
+        }
+
         if (Count == Capacity)
         {
             buffer[head] = item;

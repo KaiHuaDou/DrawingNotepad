@@ -171,8 +171,10 @@ public partial class MainWindow
     {
         ExitStamp( );
 
-        CanvasNext.CutSelected( );
-        SelectionBorder.Visibility = Visibility.Collapsed;
+        if (CanvasNext.CutSelected( ))
+        {
+            SelectionBorder.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void DebugLayerClick(object o, RoutedEventArgs e)

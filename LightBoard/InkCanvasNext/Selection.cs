@@ -56,7 +56,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
     internal void RecomputeBounds( )
     {
         // Rect 是结构体：经由属性调用实例方法 Union 只会修改 getter 返回的临时副本（静默丢弃），
-        // 必须用局部变量累计后一次性赋回属性，否则 Bounds 恒为 Rect.Empty、选择框/手柄永不渲染
+        // 必须用局部变量累计后一次性赋回属性，否则 Bounds 始终为 Rect.Empty、选择框/手柄永不渲染
         var result = Rect.Empty;
         foreach (var s in selectedStrokes)
         {

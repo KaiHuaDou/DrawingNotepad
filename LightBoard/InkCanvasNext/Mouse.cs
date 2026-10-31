@@ -39,7 +39,7 @@ internal sealed class MouseTouchDevice : TouchDevice
     {
         if (IsDown)
         {
-            return;
+            Reset( );
         }
 
         if (!active)
@@ -76,6 +76,22 @@ internal sealed class MouseTouchDevice : TouchDevice
         Position = rootPosition;
         IsDown = false;
         ReportUp( );
+
+        active = false;
+        Deactivate( );
+    }
+
+    /// <summary>
+    /// 清掉没有收到抬起事件的序列（窗口失活、捕获被抢走），下次按下才能重新开始。
+    /// </summary>
+    internal void Reset( )
+    {
+        IsDown = false;
+
+        if (!active)
+        {
+            return;
+        }
 
         active = false;
         Deactivate( );

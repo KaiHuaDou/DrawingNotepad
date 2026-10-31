@@ -34,6 +34,7 @@ public partial class InkCanvasNext
 
             touches.Clear( );
             touchStarts.Clear( );
+            MousePointer.Reset( );
             SetState(TouchState.Idle);
             CancelSelectionGesture( );
             CancelShape( );
@@ -60,6 +61,12 @@ public partial class InkCanvasNext
         }
 
         RemoveDevice(e.TouchDevice);
+
+        if (e.TouchDevice == MousePointer)
+        {
+            MousePointer.Reset( );
+        }
+
         TouchEpilogue( );
     }
 

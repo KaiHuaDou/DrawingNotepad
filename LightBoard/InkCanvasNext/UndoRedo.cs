@@ -94,10 +94,12 @@ public partial class InkCanvasNext
     internal int RedoDepth => history.Count - Position;
 
     /// <summary>
-    /// 调整撤销历史容量：顺序搬移现有条目，容量缩小时丢弃最旧条目，Position 平移保持指向同一条目
+    /// 调整撤销历史容量：顺序搬移现有条目，容量缩小时丢弃最旧条目，Position 平移保持指向同一条目；0 表示不记录历史，负值按 0 处理
     /// </summary>
     public void SetMaxHistoryCount(int max)
     {
+        max = Math.Max(0, max);
+
         if (max == history.Capacity)
         {
             return;
@@ -165,7 +167,7 @@ public partial class InkCanvasNext
         }
         finally
         {
-            // 无论 Revert 成败都复位，否则后续变更会永远不再入栈（静默失去撤销能力）
+            // 无论 Revert 成败都复位，否则后续变更不会入栈（静默失去撤销能力）
             applyingUndoRedo = false;
         }
 
@@ -245,9 +247,11 @@ public partial class InkCanvasNext
                 history.Enqueue(@new.Changes[i]);
             }
 
-            Position = @new.Position;
+            // 快照条目超出当前容量时头部被丢弃，指针按丢弃条数前移
+            Position = @new.Position - (@new.Changes.Count - history.Count);
         }
 
+        Position = Math.Clamp(Position, 0, history.Count);
         UpdateCanUndoRedo( );
     }
 }

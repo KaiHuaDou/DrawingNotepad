@@ -37,13 +37,13 @@ namespace InkCanvasNext;
 public partial class InkCanvasNext
 {
     // 生成器对无默认值的引用类型一律追加 ?，与 Strokes、DefaultDrawingAttributes
-    // “构造后必非空”的对外契约不符，二者保持手工注册
+    // “构造后必非空”的对外声明不符，二者保持手工注册
     public static readonly DependencyProperty DefaultDrawingAttributesProperty =
         DependencyProperty.Register(
             nameof(DefaultDrawingAttributes),
             typeof(DrawingAttributes),
             typeof(InkCanvasNext),
-            new PropertyMetadata(OnDefaultDrawingAttributesChanged));
+            new PropertyMetadata(null, OnDefaultDrawingAttributesChanged, CoerceDefaultDrawingAttributes));
 
     public static readonly DependencyProperty StrokesProperty =
         DependencyProperty.Register(
@@ -65,6 +65,9 @@ public partial class InkCanvasNext
     /// </summary>
     public event EventHandler? ViewOrSelectionChanged;
 
+    /// <summary>
+    /// 获取或设置默认笔触属性；赋 null 时保留当前值。
+    /// </summary>
     public DrawingAttributes DefaultDrawingAttributes
     {
         get => (DrawingAttributes) GetValue(DefaultDrawingAttributesProperty);
