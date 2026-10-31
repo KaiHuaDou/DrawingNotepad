@@ -9,7 +9,7 @@
 - `count`: 当前按下触点数。
 - `d`: 触点间的最大两两距离（`GetMaxDistance2`）。
 - `l`: 距离阈值。`l = DistanceThresholdFactor * WorkArea.Width`，其中 `DistanceThresholdFactor` 在 DEBUG 下为 `0.9`、RELEASE 下为 `0.1`（注意：与 v1 的 `0.6 * ActualWidth` 不同）。
-- `c`: 位移阈值，默认 `20` 视口 DIP（`TouchDisplacementThreshold2`，可写）。
+- `c`: 位移阈值，默认 `20` 视口 DIP，构造期由 `InkCanvasNextOptions.TouchDisplacementThreshold` 设定。
 - `x`: 首指相对按下点的位移（`Get1stFingerDispl2`）。
 - `p`: 掌擦触点数，设置中二选一（4 或 5，默认 5），画布构造时固定（`palmEraseFingers`）。
 - 比较均用**平方距离**（免 `sqrt`）：`d2 <= l2`、`x2 > c2`；每次重评 `d2`/`x2` 只计算一次。
@@ -32,6 +32,7 @@
 - 擦除工具（`Mode ∈ {EraseArea, EraseStroke}`，`Tool.IsErase`）的多指手势与普通模式同款（并拢判定：2 指 → `PanZoom`、3 指及以上（不足 `p`）→ `Pan`），差异：`count >= p` 无论间距均迁 `Eraser`（手掌压屏常呈张开）；多指张开（`d > l`）不迁 `MultiDraw` 起笔画，保持当前擦除上下文。
 - `PanZoom` 中 `count >= p` 且 `d <= l` 先迁 `Pan`，下一指落下时再由 `Pan` 迁 `Eraser`（代码没有 `PanZoom → Eraser` 一臂）；减为单指（`count == 1`）迁入 `Pan`，此后落下第二指也停在 `Pan`（`Pan` 无回 `PanZoom` 的迁移），需全部抬起重新开始双指手势。
 - `Eraser` 中 `count > p` 且 `d > l` 迁 `MultiDraw`（仅非擦除工具）：手掌张开超过掌擦触点数即视为多指书写。
+- `MultiDraw` 中抬到单指仍保持 `MultiDraw`，剩下的人继续画；`count == 0` 才回 `Idle`。
 
 ## 要求（副作用）
 
@@ -93,7 +94,6 @@ stateDiagram-v2
     Draw --> MultiDraw: count >= 2 and not IsErase
 
     MultiDraw --> Idle: count == 0
-    MultiDraw --> Draw: count == 1
 
     PanZoom --> Idle: count == 0
     PanZoom --> Pan: (count == 1 or count >= 3) and d <= l

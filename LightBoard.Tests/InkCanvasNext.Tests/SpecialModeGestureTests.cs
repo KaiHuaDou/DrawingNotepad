@@ -791,7 +791,7 @@ public class SpecialModeGestureTests
 
             // 逐指上报时中间帧只有一指到位：初始间距需保证中间帧跨度落在 Smooth 死区
             // （不产生缩放）、中间帧中点位移低于平移锁死阈值，末帧中点位移才触发锁死
-            var displace = Math.Sqrt(host.Canvas.PanZoomDisplaceThreshold2);
+            var displace = Math.Sqrt(host.Canvas.panZoomDisplaceThreshold2);
             var dy = displace * 1.05 + 1;
             var spacing = Math.Max(TestPoints.PinchSpacing(host), dy * 1.7);
             var baseA = P1;
@@ -825,7 +825,7 @@ public class SpecialModeGestureTests
             using var host = new TouchHost( );
 
             var spacing = TestPoints.PinchSpacing(host);
-            var pinch = Math.Sqrt(host.Canvas.PinchLockDistance2);
+            var pinch = Math.Sqrt(host.Canvas.pinchLockDistance2);
             var baseA = P1;
             var baseB = new Point(P1.X + spacing, P1.Y);
 

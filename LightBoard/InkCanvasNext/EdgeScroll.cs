@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Windows;
 
@@ -18,7 +17,7 @@ internal enum EdgeScrollSide
 public partial class InkCanvasNext
 {
     /// <summary>
-    /// 热区在内容坐标中的矩形：深度按视口 DIP 折算，随缩放变化。
+    /// 热区在内容坐标中的矩形：深度按视口 DIP 折算，随缩放变化
     /// </summary>
     internal static Rect EdgeBandContentRect(View view, Size viewport, double threshold, EdgeScrollSide side)
     {
@@ -43,7 +42,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 包围盒与热区严格相交，边界相接不算。
+    /// 包围盒与热区严格相交，边界相接不算
     /// </summary>
     internal static bool BandHasInk(IReadOnlyList<Rect> bounds, Rect band)
     {
@@ -59,8 +58,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 沿该侧方向把热区移到无墨迹处所需的最小内容位移，0 表示热区本来就空。
-    /// 只统计在另一轴上与热区相交的包围盒：上下热区横跨视口宽度，视口左右之外的笔画不参与。
+    /// 沿该侧方向把热区移到无墨迹处所需的最小内容位移，0 表示热区本来就空/ 只统计在另一轴上与热区相交的包围盒：上下热区横跨视口宽度，视口左右之外的笔画不参与
     /// </summary>
     internal static double BandClearDelta(IReadOnlyList<Rect> bounds, Rect band, EdgeScrollSide side)
     {

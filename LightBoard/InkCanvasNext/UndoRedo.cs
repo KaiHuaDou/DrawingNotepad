@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Media;
@@ -16,21 +17,37 @@ internal interface IHistoryChange
     void Revert(InkCanvasNext owner);
 }
 
-internal sealed class StrokeChanges(StrokeCollection added, StrokeCollection removed) : IHistoryChange
+internal sealed class StrokeChanges(Stroke[] added, Stroke[] removed) : IHistoryChange
 {
-    internal StrokeCollection Added { get; } = added;
-    internal StrokeCollection Removed { get; } = removed;
+    internal Stroke[] Added { get; } = added;
+    internal Stroke[] Removed { get; } = removed;
 
     void IHistoryChange.Apply(InkCanvasNext owner)
     {
-        owner.InnerCanvas.Strokes.Remove(Removed);
-        owner.InnerCanvas.Strokes.Add(Added);
+        Remove(owner, Removed);
+        Add(owner, Added);
     }
 
     void IHistoryChange.Revert(InkCanvasNext owner)
     {
-        owner.InnerCanvas.Strokes.Remove(Added);
-        owner.InnerCanvas.Strokes.Add(Removed);
+        Remove(owner, Added);
+        Add(owner, Removed);
+    }
+
+    private static void Remove(InkCanvasNext owner, Stroke[] strokes)
+    {
+        if (strokes.Length > 0)
+        {
+            owner.InnerCanvas.Strokes.Remove([with(strokes)]);
+        }
+    }
+
+    private static void Add(InkCanvasNext owner, Stroke[] strokes)
+    {
+        if (strokes.Length > 0)
+        {
+            owner.InnerCanvas.Strokes.Add([with(strokes)]);
+        }
     }
 }
 
@@ -57,16 +74,18 @@ internal sealed class TransformChanges(StrokeCollection target, Matrix delta) : 
 /// </summary>
 public sealed class InkCanvasStrokesChangedEventArgs : EventArgs
 {
-    internal InkCanvasStrokesChangedEventArgs(StrokeCollection added, StrokeCollection removed, bool transformOnly)
+    private static new readonly IReadOnlyList<Stroke> Empty = Array.AsReadOnly(Array.Empty<Stroke>( ));
+
+    internal InkCanvasStrokesChangedEventArgs(Stroke[] added, Stroke[] removed, bool transformOnly)
     {
-        Added = added;
-        Removed = removed;
+        Added = added.Length == 0 ? Empty : Array.AsReadOnly(added);
+        Removed = removed.Length == 0 ? Empty : Array.AsReadOnly(removed);
         TransformOnly = transformOnly;
     }
 
-    public StrokeCollection Added { get; }
+    public IReadOnlyList<Stroke> Added { get; }
 
-    public StrokeCollection Removed { get; }
+    public IReadOnlyList<Stroke> Removed { get; }
 
     public bool TransformOnly { get; }
 }
@@ -86,35 +105,12 @@ public sealed class HistorySnapshot
 
 public partial class InkCanvasNext
 {
-    private RingBuffer<IHistoryChange> history = new(MaxHistoryCount);
+    private readonly RingBuffer<IHistoryChange> history;
     private bool applyingUndoRedo;
 
     internal int Position { get; private set; }
 
     internal int RedoDepth => history.Count - Position;
-
-    /// <summary>
-    /// 调整撤销历史容量：顺序搬移现有条目，容量缩小时丢弃最旧条目，Position 平移保持指向同一条目；0 表示不记录历史，负值按 0 处理
-    /// </summary>
-    public void SetMaxHistoryCount(int max)
-    {
-        max = Math.Max(0, max);
-
-        if (max == history.Capacity)
-        {
-            return;
-        }
-
-        var next = new RingBuffer<IHistoryChange>(max);
-        for (var i = 0; i < history.Count; i++)
-        {
-            next.Enqueue(history[i]);
-        }
-
-        Position = Math.Max(0, Position - (history.Count - next.Count));
-        history = next;
-        UpdateCanUndoRedo( );
-    }
 
     private void PushChange(IHistoryChange change)
     {
@@ -130,27 +126,33 @@ public partial class InkCanvasNext
 
     private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
     {
-        StrokesChanged?.Invoke(
-            this,
-            new InkCanvasStrokesChangedEventArgs(e.Added, e.Removed, transformOnly: false));
+        selection.ApplyCanvasChanges(e.Added, e.Removed);
 
         if (e.Removed.Count > 0)
         {
-            selection.Prune(InnerCanvas.Strokes);
+            selection.Prune( );
+        }
+
+        var shouldPush = !applyingUndoRedo && !eraser.Active && history.Capacity > 0
+            && (e.Added.Count > 0 || e.Removed.Count > 0);
+
+        if (StrokesChanged is not null || shouldPush)
+        {
+            var added = e.Added.ToArray( );
+            var removed = e.Removed.ToArray( );
+            StrokesChanged?.Invoke(this, new InkCanvasStrokesChangedEventArgs(added, removed, transformOnly: false));
+
+            if (shouldPush)
+            {
+                PushChange(new StrokeChanges(added, removed));
+            }
         }
 
         UpdateEdgeHints( );
-
-        if (applyingUndoRedo || eraser.Active || (e.Added.Count == 0 && e.Removed.Count == 0))
-        {
-            return;
-        }
-
-        PushChange(new StrokeChanges(e.Added, e.Removed));
     }
 
     /// <summary>
-    /// 撤销上一步操作。
+    /// 撤销上一步操作
     /// </summary>
     public void Undo( )
     {
@@ -175,7 +177,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 重做已撤销的操作。
+    /// 重做已撤销的操作
     /// </summary>
     public void Redo( )
     {
@@ -232,7 +234,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 导出当前历史快照到 <paramref name="old"/>，并用 <paramref name="new"/> 替换现有历史。
+    /// 导出当前历史快照到 <paramref name="old"/>，并用 <paramref name="new"/> 替换现有历史
     /// </summary>
     public void SwapHistory(out HistorySnapshot? old, HistorySnapshot? @new)
     {

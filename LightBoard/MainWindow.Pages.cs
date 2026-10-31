@@ -4,6 +4,8 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Animation;
 
+using InkCanvasNext;
+
 namespace LightBoard;
 
 public partial class MainWindow
@@ -91,9 +93,7 @@ public partial class MainWindow
         var page = App.CurrentPage;
 
         CanvasNext.Strokes = page.Strokes;
-        CanvasNext.CurrentScale = page.Scale;
-        CanvasNext.OffsetX = page.OffsetX;
-        CanvasNext.OffsetY = page.OffsetY;
+        CanvasNext.CurrentView = new View(page.Scale, page.OffsetX, page.OffsetY);
         CanvasNext.SwapHistory(out _, page.History);
         CanvasNext.SetDocumentPage(App.BackgroundImage(page.Background), page.Background?.Box);
     }

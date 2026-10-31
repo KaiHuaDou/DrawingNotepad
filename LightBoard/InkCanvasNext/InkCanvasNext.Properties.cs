@@ -11,6 +11,8 @@ namespace InkCanvasNext;
 /// </summary>
 [DependencyProperty<bool>("CanRedo", IsReadOnly = true)]
 [DependencyProperty<bool>("CanUndo", IsReadOnly = true)]
+[DependencyProperty<bool>("IsReadOnly")]
+[DependencyProperty<bool>("UseDefaultCommands")]
 [DependencyProperty<InkCanvasNextMode>("Mode", DefaultValue = InkCanvasNextMode.Ink)]
 [DependencyProperty<double>(
     "EraserDiameter",
@@ -22,7 +24,6 @@ namespace InkCanvasNext;
     </summary>
     """
 )]
-[DependencyProperty<MouseWheelAction>("MouseWheelAction", DefaultValue = MouseWheelAction.Scroll)]
 [DependencyProperty<StampAction>(
     "StampAction",
     DefaultValue = StampAction.None,
@@ -36,6 +37,11 @@ namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
+    /// <summary>
+    /// 选区工具栏与选区之间的间距，视口 DIP。
+    /// </summary>
+    public const double SelectionToolbarGap = 8;
+
     // 生成器对无默认值的引用类型一律追加 ?，与 Strokes、DefaultDrawingAttributes
     // “构造后必非空”的对外声明不符，二者保持手工注册
     public static readonly DependencyProperty DefaultDrawingAttributesProperty =
@@ -50,7 +56,7 @@ public partial class InkCanvasNext
             nameof(Strokes),
             typeof(StrokeCollection),
             typeof(InkCanvasNext),
-            new PropertyMetadata(OnStrokesPropertyChanged));
+            new PropertyMetadata(null, OnStrokesPropertyChanged, CoerceStrokes));
 
     public event EventHandler<DependencyPropertyChangedEventArgs>? CanRedoChanged;
 
@@ -74,6 +80,9 @@ public partial class InkCanvasNext
         set => SetValue(DefaultDrawingAttributesProperty, value);
     }
 
+    /// <summary>
+    /// 获取或设置墨迹集合；赋 null 时替换为空集合。
+    /// </summary>
     public StrokeCollection Strokes
     {
         get => (StrokeCollection) GetValue(StrokesProperty);
@@ -88,6 +97,11 @@ public partial class InkCanvasNext
         get => CurrentView.Scale;
         set
         {
+            if (!double.IsFinite(value))
+            {
+                return;
+            }
+
             var scale = Math.Clamp(value, MinScale, MaxScale);
             canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = scale;
             eraser.Scale = scale;

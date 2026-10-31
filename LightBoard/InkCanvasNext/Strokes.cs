@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace InkCanvasNext;
 
@@ -17,9 +17,9 @@ public partial class InkCanvasNext
     public int SelectedCount => selection.SelectedStrokes.Count;
 
     /// <summary>
-    /// 获取当前选中的笔画集合副本。
+    /// 获取当前选中的笔画快照；笔画实例与画布共享。
     /// </summary>
-    public StrokeCollection SelectedStrokes => [with(selection.SelectedStrokes)];
+    public IReadOnlyList<Stroke> SelectedStrokes => Array.AsReadOnly(selection.SelectedStrokes.ToArray( ));
 
     /// <summary>
     /// 获取是否存在选中笔画。
@@ -75,7 +75,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        InnerCanvas.Strokes.Remove(SelectedStrokes);
+        InnerCanvas.Strokes.Remove([with([.. selection.SelectedStrokes])]);
         selection.Clear( );
     }
 
@@ -116,6 +116,11 @@ public partial class InkCanvasNext
 
             ms.Position = 0;
             var strokes = new StrokeCollection(ms);
+            if (strokes.Count == 0)
+            {
+                return false;
+            }
+
             CenterAt(strokes, point);
             InnerCanvas.Strokes.Add(strokes);
             EnsureStrokesFit( );
@@ -177,154 +182,5 @@ public partial class InkCanvasNext
         {
             stroke.Transform(matrix, false);
         }
-    }
-}
-
-internal static partial class StrokeCollectionExtension
-{
-    internal static RenderTargetBitmap Render(
-        this StrokeCollection strokes,
-        DpiScale dpi,
-        int scale = 100,
-        Brush? canvas = null,
-        ImageSource? background = null,
-        Rect? box = null)
-    {
-        var ratio = scale / 100.0;
-        var bounds = strokes.GetBounds( );
-        if (background is not null && box is { } fitBox)
-        {
-            bounds.Union(BackgroundRect(fitBox, background));
-        }
-
-        if (bounds.IsEmpty)
-        {
-            bounds = new Rect(0, 0, FallbackCanvasWidth, FallbackCanvasHeight);
-        }
-
-        bounds.Inflate(RenderPadding, RenderPadding);
-
-        var matrix = new Matrix(ratio, 0, 0, ratio,
-            -bounds.X * ratio,
-            -bounds.Y * ratio);
-        var visual = strokes.CreateVisual(
-            new Rect(0, 0, bounds.Width * ratio, bounds.Height * ratio),
-            matrix,
-            canvas ?? Background,
-            background,
-            box);
-
-        var pixelWidth = Math.Max(1, (int) Math.Ceiling(bounds.Width * ratio * dpi.DpiScaleX));
-        var pixelHeight = Math.Max(1, (int) Math.Ceiling(bounds.Height * ratio * dpi.DpiScaleY));
-
-        var image = new RenderTargetBitmap(
-            pixelWidth, pixelHeight,
-            dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32
-        );
-        image.Render(visual);
-        image.Freeze( );
-
-        return image;
-    }
-
-    internal static RenderTargetBitmap PreviewEmpty(Brush? canvas = null)
-    {
-        var visual = new DrawingVisual( );
-        using (var context = visual.RenderOpen( ))
-        {
-            context.DrawRectangle(canvas ?? Background, null, new Rect(0, 0, PreviewWidth, PreviewHeight));
-        }
-
-        var bitmap = new RenderTargetBitmap(PreviewWidth, PreviewHeight, 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(visual);
-        bitmap.Freeze( );
-        return bitmap;
-    }
-
-    internal static RenderTargetBitmap Preview(
-        this StrokeCollection strokes,
-        ImageSource? background = null,
-        Rect? box = null,
-        Brush? canvas = null)
-    {
-        var bounds = strokes.GetBounds( );
-        if (background is not null && box is { } fitBox)
-        {
-            bounds.Union(BackgroundRect(fitBox, background));
-        }
-
-        var matrix = Matrix.Identity;
-
-        if (!bounds.IsEmpty)
-        {
-            var scaleX = PreviewWidth / bounds.Width;
-            var scaleY = PreviewHeight / bounds.Height;
-            var scale = Math.Min(scaleX, scaleY);
-
-            var centerX = bounds.Left + bounds.Width / 2;
-            var centerY = bounds.Top + bounds.Height / 2;
-            matrix = new Matrix(scale, 0, 0, scale,
-                PreviewWidth / 2 - centerX * scale,
-                PreviewHeight / 2 - centerY * scale);
-        }
-
-        var visual = strokes.CreateVisual(
-            new Rect(0, 0, PreviewWidth, PreviewHeight), matrix, canvas ?? Background, background, box);
-
-        var render = new RenderTargetBitmap(PreviewWidth, PreviewHeight, 96, 96, PixelFormats.Pbgra32);
-        render.Render(visual);
-        render.Freeze( );
-        return render;
-    }
-
-    private static DrawingVisual CreateVisual(
-        this StrokeCollection strokes,
-        Rect bounds,
-        Matrix transform,
-        Brush background,
-        ImageSource? image = null,
-        Rect? box = null)
-    {
-        var visual = new DrawingVisual( );
-        using (var context = visual.RenderOpen( ))
-        {
-            context.DrawRectangle(background, null, bounds);
-            if (image is not null && box is { } fitBox)
-            {
-                // 背景按世界坐标矩形绘制，与墨迹共用同一变换，保证叠加位置一致。
-                context.PushTransform(new MatrixTransform(transform));
-                try
-                {
-                    context.DrawImage(image, BackgroundRect(fitBox, image));
-                }
-                finally
-                {
-                    context.Pop( );
-                }
-            }
-
-            foreach (var stroke in strokes)
-            {
-                var copy = stroke.Clone( );
-                copy.Transform(transform, true);
-                copy.Draw(context);
-            }
-        }
-
-        return visual;
-    }
-
-    // 文档背景在世界坐标中的矩形：显示尺寸为图像 DPI 折算的 DIP 尺寸等比装进盒子、位置在盒子内居中
-    // （与 SetDocumentPage 的布局适配同一公式）。
-    private static Rect BackgroundRect(Rect box, ImageSource image)
-    {
-        var bitmap = (BitmapSource) image;
-        var width = bitmap.PixelWidth * 96.0 / bitmap.DpiX;
-        var height = bitmap.PixelHeight * 96.0 / bitmap.DpiY;
-        var k = Math.Min(box.Width / width, box.Height / height);
-        width *= k;
-        height *= k;
-
-        return new Rect(box.X + (box.Width - width) / 2, box.Y + (box.Height - height) / 2, width, height);
     }
 }

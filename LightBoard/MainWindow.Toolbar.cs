@@ -153,8 +153,7 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// 把选区工具栏吸附到选区包围盒左下角（旋转手柄绘于选区正上方）；下方放不下则移到选区上方。
-    /// 随拖动/平移/缩放/滚动实时更新。选区完全移出可视区时隐藏；位置双向夹紧到可视区。
+    /// 把选区工具栏吸附到选区包围盒左下角（旋转手柄绘于选区正上方）；下方放不下则移到选区上方/ 随拖动/平移/缩放/滚动实时更新。选区完全移出可视区时隐藏；位置双向夹紧到可视区
     /// </summary>
     private void UpdateSelectionBorderPosition( )
     {
@@ -196,10 +195,10 @@ public partial class MainWindow
 
             // 吸附到选区可见部分左下角；下方放不下则移到选区上方
             var x = visible.Left;
-            var y = visible.Bottom + SelectionVisual.ToolbarGapFromSelection;
+            var y = visible.Bottom + InkCanvasNext.InkCanvasNext.SelectionToolbarGap;
             if (y + h > vp.Bottom)
             {
-                y = visible.Top - h - SelectionVisual.ToolbarGapFromSelection;
+                y = visible.Top - h - InkCanvasNext.InkCanvasNext.SelectionToolbarGap;
             }
 
             // 双向夹紧到可视区，保证工具栏完全可见

@@ -52,7 +52,63 @@ public class SettingsTests
         var b = new LightBoardSettings( ).CanvasOptions;
 
         Assert.Equal(a, b);
-        Assert.NotEqual(a, (new LightBoardSettings { EraserPalmExtra = 9 }).CanvasOptions);
+        Assert.NotEqual(a, new LightBoardSettings { EraserPalmExtra = 9 }.CanvasOptions);
+    }
+
+    [Fact]
+    public void CanvasOptions_MapsAllFields( )
+    {
+        var data = new LightBoardSettings
+        {
+            EdgeScrollHint = false,
+            EdgeScrollTopThreshold = 65,
+            EdgeScrollBottomThreshold = 193,
+            EdgeScrollLeftThreshold = 65,
+            EdgeScrollRightThreshold = 97,
+            TouchDisplacementThreshold = 21,
+            PanZoomDisplaceThreshold = 31,
+            PinchLockDistance = 25,
+            MaxHistoryCount = 201,
+            PalmEraseFingers = 4,
+            EraserDiameter = 80,
+            EraserPalmExtra = 12,
+            EraserMinLogicalDiameter = 2,
+            EraserRebuildThreshold = 0.25
+        };
+
+        var options = data.CanvasOptions;
+
+        Assert.Equal(4, options.PalmEraseFingers);
+        Assert.Equal(21, options.TouchDisplacementThreshold);
+        Assert.Equal(31, options.PanZoomDisplaceThreshold);
+        Assert.Equal(25, options.PinchLockDistance);
+        Assert.Equal(0, options.EdgeScrollTopThreshold);
+        Assert.Equal(0, options.EdgeScrollBottomThreshold);
+        Assert.Equal(0, options.EdgeScrollLeftThreshold);
+        Assert.Equal(0, options.EdgeScrollRightThreshold);
+        Assert.Equal(201, options.MaxHistoryCount);
+        Assert.Equal(80, options.Eraser.Diameter);
+        Assert.Equal(12, options.Eraser.PalmExtra);
+        Assert.Equal(2, options.Eraser.MinLogicalDiameter);
+        Assert.Equal(0.25, options.Eraser.RebuildThreshold);
+    }
+
+    [Fact]
+    public void CanvasOptions_EdgeScrollEnabled_PassesThresholds( )
+    {
+        var options = new LightBoardSettings
+        {
+            EdgeScrollHint = true,
+            EdgeScrollTopThreshold = 65,
+            EdgeScrollBottomThreshold = 193,
+            EdgeScrollLeftThreshold = 65,
+            EdgeScrollRightThreshold = 97
+        }.CanvasOptions;
+
+        Assert.Equal(65, options.EdgeScrollTopThreshold);
+        Assert.Equal(193, options.EdgeScrollBottomThreshold);
+        Assert.Equal(65, options.EdgeScrollLeftThreshold);
+        Assert.Equal(97, options.EdgeScrollRightThreshold);
     }
 
     [Fact]

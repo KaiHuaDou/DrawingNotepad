@@ -8,7 +8,7 @@ namespace InkCanvasNext.Tests;
 /// </summary>
 internal static class TestPoints
 {
-    /// <summary>状态机使用的触点间距阈值 l（视口 DIP），与画布构造取值同源。</summary>
+    /// <summary>状态机使用的触点间距阈值 l（视口 DIP），与画布构造取值一致。</summary>
     public static double Spacing(TouchHost host)
     {
         return Math.Sqrt(host.Canvas.distanceThreshold2);
@@ -17,13 +17,13 @@ internal static class TestPoints
     /// <summary>单指起笔位移阈值 c（视口 DIP）。</summary>
     public static double Displacement(TouchHost host)
     {
-        return Math.Sqrt(host.Canvas.TouchDisplacementThreshold2);
+        return Math.Sqrt(host.Canvas.touchDisplacementThreshold2);
     }
 
     /// <summary>双指捏合测试的初始间距：捏合锁死阈值的 2 倍，保证初始不触发距离锁死，且不超过指距阈值 l。</summary>
     public static double PinchSpacing(TouchHost host)
     {
-        return Math.Sqrt(host.Canvas.PinchLockDistance2) * 2;
+        return Math.Sqrt(host.Canvas.pinchLockDistance2) * 2;
     }
 
     /// <summary>p 右侧的近距点：与 p 间距 l/8，满足 d ≤ l 的捏合/平移判定。</summary>
@@ -32,7 +32,7 @@ internal static class TestPoints
         return new Point(p.X + Spacing(host) / 8, p.Y);
     }
 
-    /// <summary>从 p 起每隔 l/8 横向排布 count 个近距点：任意两点间距不超过 (count-1)·l/8，count ≤ 9 时恒有 d ≤ l。</summary>
+    /// <summary>从 p 起每隔 l/8 横向排布 count 个近距点：任意两点间距不超过 (count-1)·l/8，count ≤ 9 时必有 d ≤ l。</summary>
     public static Point[] CloseCluster(TouchHost host, Point p, int count)
     {
         var step = Spacing(host) / 8;

@@ -36,7 +36,7 @@ public partial class InkCanvasNext
     private SelectionHandle selectionHandle = SelectionHandle.None;
 
     /// <summary>
-    /// 旋转手势中手柄的轨道位置（内容坐标，绕选区中心等半径跟随鼠标角度）；空闲为 null。
+    /// 旋转手势中手柄的轨道位置（内容坐标，绕选区中心等半径跟随鼠标角度）；空闲为 null
     /// </summary>
     internal Point? RotateHandleLive { get; private set; }
 
@@ -107,7 +107,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 单指起点判定：命中手柄 → 缩放手柄/旋转手柄；选区内 → 移动；选区外 → 清空选型并套索。
+    /// 单指起点判定：命中手柄 → 缩放手柄/旋转手柄；选区内 → 移动；选区外 → 清空选型并套索
     /// </summary>
     private void BeginHandleOrMove(Point canvasPos)
     {

@@ -139,6 +139,49 @@ public class MouseMachineTests
         });
     }
 
+    [Fact]
+    public void MouseSequence_ResetTouchState_AllowsNextDown( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.Mode = InkCanvasNextMode.Line;
+            var start = new Point(100, 100);
+
+            host.Canvas.MousePointer.Down(start);
+            Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
+
+            host.Canvas.ResetTouchState( );
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+
+            host.Canvas.MousePointer.Down(start);
+            Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
+            host.Canvas.MousePointer.Up(start);
+        });
+    }
+
+    [Fact]
+    public void MouseSequence_LostTouchCapture_ResetsDevice( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.Mode = InkCanvasNextMode.Line;
+            var pointer = host.Canvas.MousePointer;
+            var start = new Point(100, 100);
+
+            pointer.Down(start);
+            Assert.True(pointer.IsDown);
+
+            Assert.True(host.Target.ReleaseTouchCapture(pointer));
+            Assert.False(pointer.IsDown);
+
+            pointer.Down(start);
+            Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
+            pointer.Up(start);
+        });
+    }
+
     /// <summary>用单指套索选中一条经过 (150,100)-(360,400) 区域的笔画。</summary>
     private static void LassoSelectStroke(TouchHost host, MouseTouchDevice pointer)
     {

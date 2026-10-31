@@ -37,6 +37,14 @@ public record LightBoardSettings(
     public InkCanvasNextOptions CanvasOptions => new( )
     {
         PalmEraseFingers = PalmEraseFingers,
+        TouchDisplacementThreshold = TouchDisplacementThreshold,
+        PanZoomDisplaceThreshold = PanZoomDisplaceThreshold,
+        PinchLockDistance = PinchLockDistance,
+        EdgeScrollTopThreshold = EdgeScrollHint ? EdgeScrollTopThreshold : 0,
+        EdgeScrollBottomThreshold = EdgeScrollHint ? EdgeScrollBottomThreshold : 0,
+        EdgeScrollLeftThreshold = EdgeScrollHint ? EdgeScrollLeftThreshold : 0,
+        EdgeScrollRightThreshold = EdgeScrollHint ? EdgeScrollRightThreshold : 0,
+        MaxHistoryCount = MaxHistoryCount,
         Eraser = new( )
         {
             Diameter = EraserDiameter,

@@ -96,16 +96,35 @@ public partial class InkCanvasNext : UserControl
     public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions? options = null)
     {
         InitializeComponent( );
+        InitializeCommands( );
 
         var settings = options ?? new InkCanvasNextOptions( );
-        palmEraseFingers = settings.PalmEraseFingers;
-        eraserPalmExtra = settings.Eraser.PalmExtra;
+        var eraserOptions = settings.Eraser ?? new EraserParameters( );
+
+        palmEraseFingers = Math.Clamp(settings.PalmEraseFingers, PalmEraseFingersMin, PalmEraseFingersMax);
+        eraserPalmExtra = NonNegative(eraserOptions.PalmExtra);
+        touchDisplacementThreshold2 = Square(NonNegative(settings.TouchDisplacementThreshold));
+        panZoomDisplaceThreshold2 = Square(NonNegative(settings.PanZoomDisplaceThreshold));
+        pinchLockDistance2 = Square(NonNegative(settings.PinchLockDistance));
+        edgeScrollTopThreshold = NonNegative(settings.EdgeScrollTopThreshold);
+        edgeScrollBottomThreshold = NonNegative(settings.EdgeScrollBottomThreshold);
+        edgeScrollLeftThreshold = NonNegative(settings.EdgeScrollLeftThreshold);
+        edgeScrollRightThreshold = NonNegative(settings.EdgeScrollRightThreshold);
+        mouseWheelAction = Enum.IsDefined(settings.WheelAction) ? settings.WheelAction : MouseWheelAction.Scroll;
+        history = new RingBuffer<IHistoryChange>(Math.Max(0, settings.MaxHistoryCount));
+
+        var spacing = double.IsFinite(settings.TouchSpacingThreshold) && settings.TouchSpacingThreshold > 0
+            ? settings.TouchSpacingThreshold
+            : DistanceThresholdFactor * SystemParameters.WorkArea.Width;
+        distanceThreshold2 = spacing * spacing;
 
         InnerCanvas.Width = canvasSize.Width;
         InnerCanvas.Height = canvasSize.Height;
+        CanvasGrid.Width = canvasSize.Width;
+        CanvasGrid.Height = canvasSize.Height;
 
-        eraser = new Eraser(InnerCanvas, EraserFeedback, settings.Eraser);
-        EraserDiameter = settings.Eraser.Diameter;
+        eraser = new Eraser(InnerCanvas, EraserFeedback, eraserOptions);
+        EraserDiameter = eraserOptions.Diameter;
 
         MousePointer = new MouseTouchDevice(this);
 
@@ -118,9 +137,6 @@ public partial class InkCanvasNext : UserControl
 
         Strokes = InnerCanvas.Strokes;
         DefaultDrawingAttributes = InnerCanvas.DefaultDrawingAttributes;
-
-        var distanceThreshold = DistanceThresholdFactor * SystemParameters.WorkArea.Width;
-        distanceThreshold2 = distanceThreshold * distanceThreshold;
 
         CurrentView = new View(1.0, initialOffset.X, initialOffset.Y);
 
@@ -216,9 +232,25 @@ public partial class InkCanvasNext : UserControl
         ApplyEditingMode(newValue);
     }
 
+    partial void OnIsReadOnlyChanged(bool oldValue, bool newValue)
+    {
+        ResetTouchState( );
+        ApplyEditingMode(Mode);
+    }
+
+    partial void OnUseDefaultCommandsChanged(bool oldValue, bool newValue)
+    {
+        Focusable = newValue;
+    }
+
+    private static object CoerceStrokes(DependencyObject d, object value)
+    {
+        return value ?? new StrokeCollection( );
+    }
+
     private static void OnStrokesPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        (d as InkCanvasNext)?.ApplyStrokes(e.NewValue as StrokeCollection);
+        (d as InkCanvasNext)?.ApplyStrokes((StrokeCollection) e.NewValue);
     }
 
     partial void OnStampActionChanged(StampAction oldValue, StampAction newValue)
@@ -248,6 +280,13 @@ public partial class InkCanvasNext : UserControl
     {
         // 切换工具即中断形状绘制（鼠标路径同样经过状态机，形状取消依赖此处）
         CancelShape( );
+
+        if (IsReadOnly)
+        {
+            InnerCanvas.EditingMode = InkCanvasEditingMode.None;
+            ConfigureSelectMode(false);
+            return;
+        }
 
         // 盖章期间单指只落章：原生收笔一律关闭（触屏上仅 Handled 掉触摸事件压不住手写笔管线）
         if (Tool.IsStamp)
@@ -292,18 +331,15 @@ public partial class InkCanvasNext : UserControl
         }
     }
 
-    private void ApplyStrokes(StrokeCollection? strokes)
+    private void ApplyStrokes(StrokeCollection strokes)
     {
-        var newStrokes = strokes ?? [];
-
         CancelEdgeScroll( );
 
         InnerCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
-        InnerCanvas.Strokes = newStrokes;
+        InnerCanvas.Strokes = strokes;
         InnerCanvas.Strokes.StrokesChanged += OnStrokesChanged;
 
-        Strokes = newStrokes;
-
+        selection.SyncCanvasStrokes(strokes);
         selection.Clear( );
         StampAction = StampAction.None;
 
@@ -331,5 +367,8 @@ public partial class InkCanvasNext : UserControl
         DocumentHost.Height = fitBox.Value.Height;
         DocumentHost.Child = new Image { Source = page, Stretch = Stretch.Uniform };
         DocumentHost.Visibility = Visibility.Visible;
+
+        // 页面盒可能大于画布：先扩展画布，避免固定尺寸的 CanvasGrid 把墨迹层挤到中间
+        ExtendCanvas(fitBox.Value.Right - InnerCanvas.Width, fitBox.Value.Bottom - InnerCanvas.Height);
     }
 }

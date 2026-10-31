@@ -18,6 +18,9 @@ internal sealed partial class SelectionVisual
     private bool drawHalo;
     private double zoom = 1.0;
     private Point? rotateHandlePosition;
+    private Pen? borderPen;
+    private Pen? lassoPen;
+    private double penZoom = double.NaN;
 
     internal SelectionVisual(Canvas layer, Size canvasSize)
     {
@@ -31,7 +34,7 @@ internal sealed partial class SelectionVisual
     }
 
     /// <summary>
-    /// 画布扩展后同步覆盖层尺寸，维持覆盖整个墨迹画布。
+    /// 画布扩展后同步覆盖层尺寸，维持覆盖整个墨迹画布
     /// </summary>
     internal void Resize(Size canvasSize)
     {
@@ -76,53 +79,68 @@ internal sealed partial class SelectionVisual
         }
 
         // 覆盖层位于内容坐标系：视口 DIP 的线宽、手柄与虚线尺寸一律除以缩放，保持屏幕绝对大小
-        var borderPen = new Pen(BorderBrush, BorderWidth / zoom);
+        EnsurePens( );
         if (!bounds.IsEmpty)
         {
-            dc.DrawRectangle(null, borderPen, bounds);
-            DrawHandles(dc, bounds, borderPen, zoom, rotateHandlePosition);
+            dc.DrawRectangle(null, borderPen!, bounds);
+            DrawHandles(dc, bounds, borderPen!, zoom, rotateHandlePosition);
         }
 
         if (lasso is { Count: >= 2 })
         {
-            var lassoPen = new Pen(LassoBrush, LassoWidth / zoom)
-            {
-                DashStyle = new DashStyle([.. LassoDashPattern.Select(d => d / zoom)], 0)
-            };
             var figure = new PathFigure { StartPoint = lasso[0], IsClosed = true, IsFilled = false };
-            for (var i = 1; i < lasso.Count; i++)
-            {
-                figure.Segments.Add(new LineSegment(lasso[i], true));
-            }
+            figure.Segments.Add(new PolyLineSegment(lasso, true));
 
             var geometry = new PathGeometry( );
             geometry.Figures.Add(figure);
-            dc.DrawGeometry(null, lassoPen, geometry);
+            dc.DrawGeometry(null, lassoPen!, geometry);
         }
+    }
+
+    private void EnsurePens( )
+    {
+        if (borderPen is not null && penZoom == zoom)
+        {
+            return;
+        }
+
+        borderPen = new Pen(BorderBrush, BorderWidth / zoom);
+        borderPen.Freeze( );
+
+        lassoPen = new Pen(LassoBrush, LassoWidth / zoom)
+        {
+            DashStyle = new DashStyle([.. LassoDashPattern.Select(d => d / zoom)], 0)
+        };
+        lassoPen.Freeze( );
+
+        penZoom = zoom;
     }
 
     private static void DrawHandles(DrawingContext dc, Rect b, Pen pen, double zoom, Point? rotateHandlePosition)
     {
         var handleRadius = HandleRadius / zoom;
-        var white = Brushes.White;
-        var pts = new[]
-        {
-            b.TopLeft, b.TopRight, b.BottomLeft, b.BottomRight,
-            new Point(b.Left + b.Width / 2, b.Top),
-            new Point(b.Left + b.Width / 2, b.Bottom),
-            new Point(b.Left, b.Top + b.Height / 2),
-            new Point(b.Right, b.Top + b.Height / 2)
-        };
 
-        foreach (var p in pts)
-        {
-            dc.DrawRectangle(white, pen, new Rect(p.X - handleRadius, p.Y - handleRadius, handleRadius * 2, handleRadius * 2));
-        }
+        DrawHandle(dc, b.TopLeft, handleRadius, pen);
+        DrawHandle(dc, b.TopRight, handleRadius, pen);
+        DrawHandle(dc, b.BottomLeft, handleRadius, pen);
+        DrawHandle(dc, b.BottomRight, handleRadius, pen);
+        DrawHandle(dc, new Point(b.Left + b.Width / 2, b.Top), handleRadius, pen);
+        DrawHandle(dc, new Point(b.Left + b.Width / 2, b.Bottom), handleRadius, pen);
+        DrawHandle(dc, new Point(b.Left, b.Top + b.Height / 2), handleRadius, pen);
+        DrawHandle(dc, new Point(b.Right, b.Top + b.Height / 2), handleRadius, pen);
 
         // 旋转手柄：默认浮于选区正上方；旋转手势中沿鼠标角度绕选区中心等半径跟随（rotateHandlePosition）
         var rotateCenter = rotateHandlePosition ?? RotateHandleCenter(b, zoom);
         var rr = RotateScreenRadius / zoom;
         dc.DrawEllipse(Brushes.White, pen, rotateCenter, rr, rr);
+    }
+
+    private static void DrawHandle(DrawingContext dc, Point point, double radius, Pen pen)
+    {
+        dc.DrawRectangle(
+            Brushes.White,
+            pen,
+            new Rect(point.X - radius, point.Y - radius, radius * 2, radius * 2));
     }
 }
 

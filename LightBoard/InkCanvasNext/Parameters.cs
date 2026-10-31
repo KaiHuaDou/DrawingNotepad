@@ -47,19 +47,19 @@ public partial class InkCanvasNext
     public const double PinchLockDistanceDefault = 24;
 
     /// <summary>
-    /// 视口 DIP^2
+    /// 视口 DIP²，构造期固定
     /// </summary>
-    public double TouchDisplacementThreshold2 { get; set; } = TouchDisplacementThresholdDefault * TouchDisplacementThresholdDefault;
+    internal readonly double touchDisplacementThreshold2;
 
     /// <summary>
-    /// 视口 DIP^2
+    /// 视口 DIP²，构造期固定
     /// </summary>
-    public double PanZoomDisplaceThreshold2 { get; set; } = PanZoomDisplaceThresholdDefault * PanZoomDisplaceThresholdDefault;
+    internal readonly double panZoomDisplaceThreshold2;
 
     /// <summary>
-    /// 视口 DIP^2，两指间距低于此值即锁定缩放
+    /// 视口 DIP²，两指间距低于此值即锁定缩放，构造期固定
     /// </summary>
-    public double PinchLockDistance2 { get; set; } = PinchLockDistanceDefault * PinchLockDistanceDefault;
+    internal readonly double pinchLockDistance2;
 
     // Smooth 缩放曲线：|k - 1| ≤ T 时输出 1，≥ Q 时原样输出，S 为过渡段指数
     public const double T = 0.2;
@@ -124,10 +124,14 @@ public partial class InkCanvasNext
     /// </summary>
     public const double EdgeHintMarginDefault = 8;
 
-    private double edgeScrollTopThreshold = EdgeScrollTopDefaultThreshold;
-    private double edgeScrollBottomThreshold = EdgeScrollBottomDefaultThreshold;
-    private double edgeScrollLeftThreshold = EdgeScrollLeftDefaultThreshold;
-    private double edgeScrollRightThreshold = EdgeScrollRightDefaultThreshold;
+    /// <summary>
+    /// 视口 DIP，0 关闭该侧提示，构造期固定
+    /// </summary>
+    internal readonly double edgeScrollTopThreshold;
+    internal readonly double edgeScrollBottomThreshold;
+    internal readonly double edgeScrollLeftThreshold;
+    internal readonly double edgeScrollRightThreshold;
+
     private Thickness edgeHintMargin = new(EdgeHintMarginDefault);
 
     /// <summary>
@@ -148,51 +152,14 @@ public partial class InkCanvasNext
         }
     }
 
-    /// <summary>
-    /// 置 0 关闭该侧提示；写入立即刷新按钮。
-    /// </summary>
-    public double EdgeScrollTopThreshold
+    private static double NonNegative(double value)
     {
-        get => edgeScrollTopThreshold;
-        set => SetEdgeScrollThreshold(ref edgeScrollTopThreshold, value);
+        return double.IsFinite(value) && value > 0 ? value : 0;
     }
 
-    /// <summary>
-    /// 置 0 关闭该侧提示；写入立即刷新按钮。
-    /// </summary>
-    public double EdgeScrollBottomThreshold
+    private static double Square(double value)
     {
-        get => edgeScrollBottomThreshold;
-        set => SetEdgeScrollThreshold(ref edgeScrollBottomThreshold, value);
-    }
-
-    /// <summary>
-    /// 置 0 关闭该侧提示；写入立即刷新按钮。
-    /// </summary>
-    public double EdgeScrollLeftThreshold
-    {
-        get => edgeScrollLeftThreshold;
-        set => SetEdgeScrollThreshold(ref edgeScrollLeftThreshold, value);
-    }
-
-    /// <summary>
-    /// 置 0 关闭该侧提示；写入立即刷新按钮。
-    /// </summary>
-    public double EdgeScrollRightThreshold
-    {
-        get => edgeScrollRightThreshold;
-        set => SetEdgeScrollThreshold(ref edgeScrollRightThreshold, value);
-    }
-
-    private void SetEdgeScrollThreshold(ref double field, double value)
-    {
-        if (value == field)
-        {
-            return;
-        }
-
-        field = value;
-        UpdateEdgeHints( );
+        return value * value;
     }
 
     // ---------- 选区 ----------
@@ -254,7 +221,6 @@ internal sealed partial class SelectionVisual
 
     internal const double RotateScreenRadius = 8; // 视口 DIP
     internal const double RotateGapAboveSelection = 32; // 视口 DIP，使用时除以缩放转内容
-    internal const double ToolbarGapFromSelection = 8; // 视口 DIP
 
     internal const double HaloWidthFactor = 2.4;
     internal const byte HaloAlpha = 120; // 0~255
@@ -280,22 +246,4 @@ internal sealed partial class SelectionVisual
 internal sealed partial class StrokeVisual
 {
     internal const double HighlighterOpacity = 0.5;
-}
-
-internal static partial class StrokeCollectionExtension
-{
-    internal const int PreviewWidth = 300; // 位图像素
-    internal const int PreviewHeight = PreviewWidth / 16 * 9;
-
-    internal const double FallbackCanvasWidth = 1920; // 内容 DIP
-    internal const double FallbackCanvasHeight = 1080;
-
-    internal const double RenderPadding = 64; // 内容 DIP
-
-    private static readonly SolidColorBrush Background = new(Color.FromRgb(0x1E, 0x1E, 0x1E));
-
-    static StrokeCollectionExtension( )
-    {
-        Background.Freeze( );
-    }
 }

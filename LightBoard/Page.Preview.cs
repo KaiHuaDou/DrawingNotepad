@@ -79,6 +79,7 @@ public partial class Page
             ImageSource? rendered = null;
             try
             {
+                // TODO: 缩略图底色跟随「纯白／纯黑」背景；Preview 在后台线程执行，底色以 Color 传递
                 rendered = strokes.Preview(image, box);
             }
             catch (Exception e)

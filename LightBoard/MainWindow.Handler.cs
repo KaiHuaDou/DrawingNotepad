@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
@@ -210,8 +209,7 @@ public partial class MainWindow
 
         ExitStamp( );
 
-        // 记录点击前的模式：用于识别"再点当前已激活的模式"（回退到画笔）。
-        // 不能在退出高亮后再判断：从高亮态点模式 radio 属于新勾选，radio 也会被选中。
+        // 记录点击前的模式：用于识别"再点当前已激活的模式"（回退到画笔） 不能在退出高亮后再判断：从高亮态点模式 radio 属于新勾选，radio 也会被选中。
         var wasMode = Mode;
 
         if (wasMode == InkCanvasNextMode.Highlighter)

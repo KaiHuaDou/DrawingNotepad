@@ -27,7 +27,10 @@
 - `InkCanvasNextMode`：编辑模式
 - `StampAction`：盖章开关（克隆 / 粘贴）
 - `MouseWheelAction`：滚轮交互方式
-- `InkCanvasStrokesChangedEventArgs`：`StrokesChanged` 的载荷（Added / Removed；选区整体变换时 `TransformOnly` 为 true）
+- `View`：视口值（缩放与两个偏移）
+- `InkCanvasNextCommands`：默认命令（撤销、重做、删除、复制、剪切、粘贴、取消）
+- `StrokeCollectionExtension`：墨迹导出与缩略图渲染
+- `InkCanvasStrokesChangedEventArgs`：`StrokesChanged` 的载荷（只读的 Added / Removed 列表；选区整体变换时 `TransformOnly` 为 true）
 - `HistorySnapshot`：撤销 / 重做历史栈快照，`Position` 为当前指针（`SwapHistory` 使用）
 
 ```csharp
@@ -60,6 +63,13 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | 字段                 | 默认   | 说明                       |
 | -------------------- | ------ | -------------------------- |
 | `PalmEraseFingers`   | 5      | 掌擦触点数量，取值 4 或 5  |
+| `TouchDisplacementThreshold` | 20 | 单指起笔位移阈值，视口 DIP |
+| `PanZoomDisplaceThreshold` | 30 | 双指平移锁定阈值，视口 DIP |
+| `PinchLockDistance` | 24 | 双指捏合锁定间距，视口 DIP |
+| `TouchSpacingThreshold` | NaN | 触点间距阈值，视口 DIP；NaN 表示按主屏工作区宽度派生 |
+| `EdgeScrollTopThreshold` / `EdgeScrollBottomThreshold` / `EdgeScrollLeftThreshold` / `EdgeScrollRightThreshold` | 64 / 192 / 64 / 96 | 四侧热区宽度，视口 DIP；0 关闭该侧 |
+| `MaxHistoryCount` | 200 | 撤销历史容量；0 关闭历史 |
+| `WheelAction` | `Scroll` | 滚轮行为：滚动 / 缩放 / 不接管（枚举类型 `MouseWheelAction`） |
 | `Eraser.Diameter`    | 75     | 面积擦直径，视口 DIP       |
 | `Eraser.PalmExtra`   | 8      | 掌擦圆在触点包络外的外扩量，视口 DIP |
 | `Eraser.MinLogicalDiameter` | 1 | 缩放后逻辑直径的下限，内容 DIP |
@@ -74,7 +84,8 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `DefaultDrawingAttributes` | `DrawingAttributes` | 默认笔触属性（颜色 / 粗细 / 荧光笔均在此表达）    |
 | `Mode`                     | `InkCanvasNextMode` | 当前编辑模式，默认 `Ink`                          |
 | `EraserDiameter`           | `double`            | 面积擦直径，初值取自构造期选项（默认 75）         |
-| `MouseWheelAction`         | `MouseWheelAction`  | 滚轮交互：滚动 / 缩放 / 不接管，默认滚动          |
+| `IsReadOnly`               | `bool`              | 只读模式：输入不改墨迹与选区，平移缩放仍可用      |
+| `UseDefaultCommands`       | `bool`              | 启用内置键盘命令并让控件可聚焦，默认 `false`      |
 | `StampAction`              | `StampAction`       | 当前盖章模式（克隆 / 粘贴），默认 `None`          |
 | `Strokes`                  | `StrokeCollection`  | 墨迹集合，赋值会替换墨迹、清空选区与盖章状态并清空历史 |
 
@@ -84,7 +95,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | ------------------------ | -------------------------------------------------- | ------------------------------------------------ |
 | `CanRedoChanged`         | `EventHandler<DependencyPropertyChangedEventArgs>` | `CanRedo` 变化时触发                             |
 | `CanUndoChanged`         | `EventHandler<DependencyPropertyChangedEventArgs>` | `CanUndo` 变化时触发                             |
-| `StrokesChanged`         | `EventHandler<InkCanvasStrokesChangedEventArgs>`   | 墨迹增删或选区整体变换时触发，载荷带 Added / Removed |
+| `StrokesChanged`         | `EventHandler<InkCanvasStrokesChangedEventArgs>`   | 墨迹增删或选区整体变换时触发，载荷为只读的 Added / Removed 列表 |
 | `SelectionChanged`       | `EventHandler`                                     | 选中内容变化时触发                               |
 | `ViewOrSelectionChanged` | `EventHandler`                                     | 视口（滚动 / 缩放）或选区包围盒变化，供工具栏跟随 |
 
@@ -92,21 +103,18 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 
 | 属性                     | 类型               | 说明                                      |
 | ------------------------ | ------------------ | ----------------------------------------- |
-| `SelectedStrokes`        | `StrokeCollection` | 当前选中墨迹的快照副本（访问即拷贝）      |
+| `SelectedStrokes`        | `IReadOnlyList<Stroke>` | 当前选中墨迹的快照，笔画实例与画布共享 |
 | `SelectedCount`          | `int`              | 当前选中笔触数                            |
 | `HasSelection`           | `bool`             | 是否有选中的墨迹                          |
+| `CurrentView`            | `View`             | 当前视口；赋值时校验、夹取并写入缩放与偏移 |
 | `CurrentScale`           | `double`           | 当前缩放比例，范围 0.1~10                 |
 | `OffsetX` / `OffsetY`    | `double`           | 画布滚动偏移（视口单位）                  |
 | `ViewportSize`           | `Size`             | 当前视口尺寸（DIP），布局完成前为 0       |
-| `TouchDisplacementThreshold2` | `double`      | 单指起笔位移阈值，平方值（默认对应 20 视口 DIP） |
-| `PanZoomDisplaceThreshold2`   | `double`      | 双指平移锁定阈值，平方值（默认对应 30 视口 DIP） |
-| `PinchLockDistance2`          | `double`      | 双指捏合锁定间距，平方值（默认对应 24 视口 DIP） |
-| `EdgeScrollTopThreshold` / `EdgeScrollBottomThreshold` / `EdgeScrollLeftThreshold` / `EdgeScrollRightThreshold` | `double` | 对应侧热区的宽度（视口 DIP），默认 64 / 192 / 64 / 96；置 0 关闭该侧提示 |
 | `EdgeHintMargin` | `Thickness` | 提示按钮距视口四边的间距，默认 8；宿主用它让开工具栏等常驻界面，可随界面变化更新 |
 
 ## 边缘墨迹滚动提示
 
-视口四边各有一条热区，宽度取对应侧的 `EdgeScroll*Threshold`。热区内有笔画包围盒时，该侧显示一个箭头按钮：贴视口边缘、沿该侧居中，尺寸与外观同工具栏按钮（36×36、圆角 5）。点击后画布沿该侧平移到热区内没有笔画为止，过渡 0.18 秒。
+视口四边各有一条热区，宽度取构造期选项里对应侧的 `EdgeScroll*Threshold`。热区内有笔画包围盒时，该侧显示一个箭头按钮：贴视口边缘、沿该侧居中，尺寸与外观同工具栏按钮（36×36、圆角 5）。点击后画布沿该侧平移到热区内没有笔画为止，过渡 0.18 秒。
 
 - 按钮随 `EdgeHintMargin` 贴边摆放，宿主可把某条边距加大以让开常驻界面。
 - 按钮模板与颜色写在控件内（`EdgeHintStyle`），不引用宿主资源。
@@ -121,12 +129,13 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | -------------------------------- | ------------------------------------------- |
 | `Undo()`                         | 撤销上一步墨迹变更                          |
 | `Redo()`                         | 重做上一步墨迹变更                          |
-| `SetMaxHistoryCount(int)`        | 按新容量重建撤销历史，超出部分丢弃          |
-| `CopySelected()`                 | 复制选中的墨迹到剪贴板                      |
-| `CutSelected()`                  | 剪切选中的墨迹到剪贴板                      |
+| `CopySelected()`                 | 复制选中的墨迹到剪贴板，返回是否成功        |
+| `CutSelected()`                  | 剪切选中的墨迹到剪贴板，返回是否成功        |
 | `DeleteSelected()`               | 删除选中的墨迹                              |
 | `StampCloneAt(Point)`            | 以点击点为副本包围盒中心，克隆盖章当前选区  |
-| `StampPasteAt(Point)`            | 以点击点为副本包围盒中心，粘贴剪贴板墨迹    |
+| `StampPasteAt(Point)`            | 以点击点为副本包围盒中心，粘贴剪贴板墨迹，返回是否成功 |
+| `ZoomTo(double, Point?)`         | 缩放到指定比例，锚点默认视口中心            |
+| `FitToView(Rect, double)`        | 把内容矩形等比装进视口并居中，第二参数为视口 DIP 边距 |
 | `GetSelectionScreenBounds(Visual)` | 选区包围盒在指定坐标系下的矩形（无选区返回 null） |
 | `GetCanvasViewportBounds(UIElement)` | 可见视口在指定坐标系下的矩形             |
 | `EnsureStrokesFit()`             | 笔画越出画布右 / 下边界时扩展画布           |
@@ -142,7 +151,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | --- | --- | --- |
 | `MinScale` / `MaxScale` | 0.1 / 10 | 缩放范围 |
 | `WheelZoomFactor` | 1.1 | 滚轮每格缩放倍数 |
-| `ScrollStep` | 25 | 滚轮滚动一步的内容 DIP，乘缩放后为视口位移 |
+| `ScrollStep` | 25 | 滚轮横滚一步的内容 DIP，乘缩放后为视口位移 |
 | `TouchDisplacementThresholdDefault` | 20 | 单指起笔位移，视口 DIP |
 | `PanZoomDisplaceThresholdDefault` | 30 | 双指平移锁定位移，视口 DIP |
 | `PinchLockDistanceDefault` | 24 | 双指捏合锁定间距，视口 DIP |
@@ -157,7 +166,11 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 
 ## 使用注意
 
-- `Strokes` 赋值是替换集合：清空选区、盖章状态与撤销历史，并把画布扩展到容纳全部笔画。
-- `OffsetX` / `OffsetY` 的写入是延迟命令（`ScrollViewer.ScrollTo*Offset`），布局完成后才反映到读取值；一次设置整幅视图时先写 `CurrentScale`，再写偏移。
+- 手势阈值、四侧热区、历史容量与滚轮行为只在构造时读取；`PalmEraseFingers`、橡皮参数同理。改动需重建画布。
+- `Strokes` 赋值是替换集合：清空选区、盖章状态与撤销历史，并把画布扩展到容纳全部笔画；赋 null 会变成空集合。
+- `OffsetX` / `OffsetY` 的写入是延迟命令（`ScrollViewer.ScrollTo*Offset`），布局完成后才反映到读取值；一次设置整幅视图用 `CurrentView = new View(...)`。
+- 普通滚轮交给内层 `ScrollViewer`；Ctrl+滚轮缩放，Alt+滚轮横滚。`WheelAction` 为 `Zoom` 时普通滚轮缩放，`None` 下不接管。
 - `Mode` 在触摸手势进行中切换时，进行中的形状被放弃、橡皮反馈按新工具刷新；离开选择模式时选区清空。
+- `IsReadOnly` 只挡输入：单指不落笔、不选框、不盖章，五指按平移处理；`Undo` 等公共方法仍可调用。
+- `UseDefaultCommands` 为 true 时控件可聚焦并启用默认命令；绑定在构造期注册，撤销、重做、删除、复制、剪切、粘贴、取消。
 - `SwapHistory` 用于在多页之间保存与恢复撤销历史，`HistorySnapshot.Position` 表示当前指针位置。

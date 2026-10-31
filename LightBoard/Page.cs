@@ -38,6 +38,7 @@ public partial class Page : INotifyPropertyChanged
 
     public void ExportStrokes(string fileName, DpiScale dpi, int scale, ImageSource? background, Rect? box)
     {
+        // TODO: PNG 导出的默认底色是深色，是否跟随页面背景待定
         var image = Strokes.Render(dpi, scale, background: background, box: box);
         var encoder = new PngBitmapEncoder( );
         encoder.Frames.Add(BitmapFrame.Create(image));

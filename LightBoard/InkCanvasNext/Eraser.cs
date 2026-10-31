@@ -14,9 +14,7 @@ public partial class InkCanvasNext
 
     private void EndEraserCycle( )
     {
-        var change = eraser.End( );
-
-        if (change.Added.Count > 0 || change.Removed.Count > 0)
+        if (eraser.End( ) is { } change)
         {
             PushChange(change);
         }
@@ -66,7 +64,8 @@ public partial class InkCanvasNext
 internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameters parameters)
 {
     private readonly double rebuildThreshold = parameters.RebuildThreshold;
-    private readonly StrokeChanges strokeChanges = new([], []);
+    private readonly StrokeCollection added = [];
+    private readonly StrokeCollection removed = [];
 
     private IncrementalStrokeHitTester? hitTester;
 
@@ -100,8 +99,8 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
         }
 
         Active = true;
-        strokeChanges.Added.Clear( );
-        strokeChanges.Removed.Clear( );
+        added.Clear( );
+        removed.Clear( );
         CreateHitTester(canvasPosition);
     }
 
@@ -147,23 +146,28 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
         CreateHitTester(canvasPosition);
     }
 
-    internal StrokeChanges End( )
+    internal StrokeChanges? End( )
     {
         // EvalDraw 只显示橡皮不开擦除周期：隐藏不依赖 Active，否则圈内残留到下一次擦除态
         feedback.Visibility = Visibility.Collapsed;
 
         if (!Active)
         {
-            return new StrokeChanges([], []);
+            return null;
         }
 
         Active = false;
         hitTester?.EndHitTesting( );
         hitTester = null;
 
-        var change = new StrokeChanges([.. strokeChanges.Added], [.. strokeChanges.Removed]);
-        strokeChanges.Added.Clear( );
-        strokeChanges.Removed.Clear( );
+        if (added.Count == 0 && removed.Count == 0)
+        {
+            return null;
+        }
+
+        var change = new StrokeChanges([.. added], [.. removed]);
+        added.Clear( );
+        removed.Clear( );
         return change;
     }
 
@@ -198,17 +202,17 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
 
     private void TrackAdded(Stroke stroke)
     {
-        if (!strokeChanges.Removed.Remove(stroke))
+        if (!removed.Remove(stroke))
         {
-            strokeChanges.Added.Add(stroke);
+            added.Add(stroke);
         }
     }
 
     private void TrackRemoved(Stroke stroke)
     {
-        if (!strokeChanges.Added.Remove(stroke))
+        if (!added.Remove(stroke))
         {
-            strokeChanges.Removed.Add(stroke);
+            removed.Add(stroke);
         }
     }
 }

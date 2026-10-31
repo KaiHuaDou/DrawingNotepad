@@ -58,7 +58,7 @@ internal static class NativeMethods
     }
 
     /// <summary>
-    /// 同名进程中第一个有可见主窗口的进程；没有时返回 null。调用方负责释放。
+    /// 同名进程中第一个有可见主窗口的进程；没有时返回 null。调用方负责释放
     /// </summary>
     public static Process? VisibleProcess(string processName)
     {
@@ -81,7 +81,7 @@ internal static class NativeMethods
     /// </summary>
     private static void RestoreWindow(HWND window)
     {
-        var placement = new WINDOWPLACEMENT { length = (uint) Marshal.SizeOf<WINDOWPLACEMENT>() };
+        var placement = new WINDOWPLACEMENT { length = (uint) Marshal.SizeOf<WINDOWPLACEMENT>( ) };
 
         if (!PInvoke.GetWindowPlacement(window, ref placement))
         {

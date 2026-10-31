@@ -19,7 +19,7 @@ public partial class InkCanvasNext
     internal int ActiveTouchCount => touches.Count;
 
     /// <summary>
-    /// 重置触摸输入状态：释放全部触摸捕获、清空触点并取消进行中的手势。
+    /// 重置触摸输入状态：释放全部触摸捕获、清空触点并取消进行中的手势
     /// </summary>
     public void ResetTouchState( )
     {
@@ -177,8 +177,7 @@ public partial class InkCanvasNext
         }
 
         // 形状只允许在单指绘制上下文（EvalDraw/Draw）存活：仅当手势未被状态机接管
-        // （未迁入平移/缩放/多指等）时才提交，否则由 SetState 已取消、此处直接跳过。
-        // 形状只由插入序第一指驱动：其余手指的移动与抬起均忽略，第一指抬起时按其触点提交
+        // （未迁入平移/缩放/多指等）时才提交，否则由 SetState 已取消、此处直接跳过 形状只由插入序第一指驱动：其余手指的移动与抬起均忽略，第一指抬起时按其触点提交
         if (shapeActive && State is TouchState.EvalDraw or TouchState.Draw && IsFirstTouch(e.TouchDevice.Id))
         {
             UpdateShape(e.GetTouchPoint(InnerCanvas).Position);

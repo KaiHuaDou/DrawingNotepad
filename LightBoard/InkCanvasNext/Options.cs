@@ -14,6 +14,56 @@ public sealed record InkCanvasNextOptions
     /// 橡皮参数。
     /// </summary>
     public EraserParameters Eraser { get; init; } = new( );
+
+    /// <summary>
+    /// 单指起笔位移阈值，视口 DIP。
+    /// </summary>
+    public double TouchDisplacementThreshold { get; init; } = InkCanvasNext.TouchDisplacementThresholdDefault;
+
+    /// <summary>
+    /// 双指平移锁定阈值，视口 DIP。
+    /// </summary>
+    public double PanZoomDisplaceThreshold { get; init; } = InkCanvasNext.PanZoomDisplaceThresholdDefault;
+
+    /// <summary>
+    /// 双指捏合锁定间距，视口 DIP。
+    /// </summary>
+    public double PinchLockDistance { get; init; } = InkCanvasNext.PinchLockDistanceDefault;
+
+    /// <summary>
+    /// 触点间距阈值，视口 DIP；NaN 表示按主屏工作区宽度派生。
+    /// </summary>
+    public double TouchSpacingThreshold { get; init; } = double.NaN;
+
+    /// <summary>
+    /// 上侧热区宽度，视口 DIP；0 关闭该侧提示。
+    /// </summary>
+    public double EdgeScrollTopThreshold { get; init; } = InkCanvasNext.EdgeScrollTopDefaultThreshold;
+
+    /// <summary>
+    /// 下侧热区宽度，视口 DIP；0 关闭该侧提示。
+    /// </summary>
+    public double EdgeScrollBottomThreshold { get; init; } = InkCanvasNext.EdgeScrollBottomDefaultThreshold;
+
+    /// <summary>
+    /// 左侧热区宽度，视口 DIP；0 关闭该侧提示。
+    /// </summary>
+    public double EdgeScrollLeftThreshold { get; init; } = InkCanvasNext.EdgeScrollLeftDefaultThreshold;
+
+    /// <summary>
+    /// 右侧热区宽度，视口 DIP；0 关闭该侧提示。
+    /// </summary>
+    public double EdgeScrollRightThreshold { get; init; } = InkCanvasNext.EdgeScrollRightDefaultThreshold;
+
+    /// <summary>
+    /// 撤销历史容量；0 表示不记录历史。
+    /// </summary>
+    public int MaxHistoryCount { get; init; } = InkCanvasNext.MaxHistoryCount;
+
+    /// <summary>
+    /// 鼠标滚轮行为。
+    /// </summary>
+    public MouseWheelAction WheelAction { get; init; } = MouseWheelAction.Scroll;
 }
 
 /// <summary>

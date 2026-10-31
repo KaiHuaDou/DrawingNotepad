@@ -194,12 +194,12 @@ public partial class MainWindow
 public partial class App
 {
     /// <summary>
-    /// 板子内容（墨迹或页集合）变化的版本号；自动备份据此跳过内容未变化的分钟。
+    /// 板子内容（墨迹或页集合）变化的版本号；自动备份据此跳过内容未变化的分钟
     /// </summary>
     internal static int BoardRevision { get; set; }
 
     /// <summary>
-    /// 已写入备份的内容版本；等于 <see cref="BoardRevision"/> 时本次备份跳过。
+    /// 已写入备份的内容版本；等于 <see cref="BoardRevision"/> 时本次备份跳过
     /// </summary>
     private static int RecoverRevision { get; set; }
 
@@ -268,7 +268,7 @@ public partial class App
     }
 
     /// <summary>
-    /// 进程即将退出（未处理异常）时同步写完，不能等后台任务。
+    /// 进程即将退出（未处理异常）时同步写完，不能等后台任务
     /// </summary>
     private static void SaveRecover( )
     {
@@ -283,7 +283,7 @@ public partial class App
     }
 
     /// <summary>
-    /// 定时备份：内容未变化时跳过，写盘放到后台。
+    /// 定时备份：内容未变化时跳过，写盘放到后台
     /// </summary>
     private static void SaveRecoverInBackground( )
     {

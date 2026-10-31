@@ -23,7 +23,7 @@ public partial class InkCanvasNext
     internal bool IsEdgeScrolling => edgeScrollTimer.IsEnabled;
 
     /// <summary>
-    /// 按当前视图与笔画刷新四个提示按钮：热区有墨迹且该方向可平移才显示，按钮贴视口边缘。
+    /// 按当前视图与笔画刷新四个提示按钮：热区有墨迹且该方向可平移才显示，按钮贴视口边缘
     /// </summary>
     private void UpdateEdgeHints( )
     {
@@ -60,7 +60,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 上/左没有负方向余量，位移超出当前偏移时按钮点了也没有效果；下/右在点击时按需扩展画布。
+    /// 上/左没有负方向余量，位移超出当前偏移时按钮点了也没有效果；下/右在点击时按需扩展画布
     /// </summary>
     private bool HasEdgeScrollRoom(EdgeScrollSide side, View view, Rect band)
     {
@@ -74,7 +74,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 按钮贴视口四边摆放，沿该侧居中；边距由 <see cref="EdgeHintMargin"/> 给出，供宿主让开常驻界面。
+    /// 按钮贴视口四边摆放，沿该侧居中；边距由 <see cref="EdgeHintMargin"/> 给出，供宿主让开常驻界面
     /// </summary>
     private void PlaceEdgeHint(EdgeScrollSide side, FrameworkElement button, Size viewport)
     {
@@ -111,18 +111,18 @@ public partial class InkCanvasNext
 
     private bool EdgeHintsEnabled( )
     {
-        return EdgeScrollTopThreshold > 0 || EdgeScrollBottomThreshold > 0
-            || EdgeScrollLeftThreshold > 0 || EdgeScrollRightThreshold > 0;
+        return edgeScrollTopThreshold > 0 || edgeScrollBottomThreshold > 0
+            || edgeScrollLeftThreshold > 0 || edgeScrollRightThreshold > 0;
     }
 
     private double EdgeThreshold(EdgeScrollSide side)
     {
         return side switch
         {
-            EdgeScrollSide.Top => EdgeScrollTopThreshold,
-            EdgeScrollSide.Bottom => EdgeScrollBottomThreshold,
-            EdgeScrollSide.Left => EdgeScrollLeftThreshold,
-            _ => EdgeScrollRightThreshold,
+            EdgeScrollSide.Top => edgeScrollTopThreshold,
+            EdgeScrollSide.Bottom => edgeScrollBottomThreshold,
+            EdgeScrollSide.Left => edgeScrollLeftThreshold,
+            _ => edgeScrollRightThreshold,
         };
     }
 
@@ -166,7 +166,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 平移画布直到该侧热区内没有墨迹；没有可平移的余量时不动。
+    /// 平移画布直到该侧热区内没有墨迹；没有可平移的余量时不动
     /// </summary>
     private void ScrollEdgeClear(EdgeScrollSide side)
     {
@@ -213,7 +213,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 下/右的目标偏移超出画布时先把画布沿该轴扩展到够用，再夹到有效范围。
+    /// 下/右的目标偏移超出画布时先把画布沿该轴扩展到够用，再夹到有效范围
     /// </summary>
     private View ReachEdgeScrollTarget(View target, Size viewport, EdgeScrollSide side)
     {

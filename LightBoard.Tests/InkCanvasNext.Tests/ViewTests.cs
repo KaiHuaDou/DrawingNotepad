@@ -103,9 +103,31 @@ public class ViewTests
         Assert.Equal(2.5, actual.Scale, 12);
     }
 
+    [Fact]
+    public void Clamp_ContentAndViewport_ClampsScaleAndOffsets( )
+    {
+        var actual = new View(20, 5000, -100)
+            .Clamp(new Size(1000, 500), new Size(400, 300), 0.1, 4);
+
+        Assert.Equal(4, actual.Scale, 12);
+        Assert.Equal(3600, actual.OffsetX, 12);
+        Assert.Equal(0, actual.OffsetY, 12);
+    }
+
+    [Fact]
+    public void Clamp_EmptyViewport_OnlyClampsScale( )
+    {
+        var actual = new View(20, 123, 456)
+            .Clamp(new Size(1000, 500), Size.Empty, 0.1, 4);
+
+        Assert.Equal(4, actual.Scale, 12);
+        Assert.Equal(123, actual.OffsetX, 12);
+        Assert.Equal(456, actual.OffsetY, 12);
+    }
+
     /// <summary>
     /// 双指手势的闭式解：以基线指位为锚点缩放、再按本帧指位平移，
-    /// 等价于 offset' = s · (offset + baseline) − current（s = targetScale / scale）。
+    /// 等价于 offset' = s · (offset + baseline) − current（s = targetScale / scale）
     /// </summary>
     [Theory]
     [InlineData(1.0, 200, 100, 150, 90, 2.0)]
@@ -129,7 +151,7 @@ public class ViewTests
 
     /// <summary>
     /// 光标锚定缩放的闭式解：offset' = k · (offset + cursor) − cursor = k · offset + cursor · (k − 1)
-    /// （k = targetScale / scale）。
+    /// （k = targetScale / scale）
     /// </summary>
     [Theory]
     [InlineData(1.0, 300, 1000, 640, 360, 2.0)]
@@ -166,8 +188,8 @@ public class ViewTests
     }
 
     /// <summary>
-    /// 模型必须与载体的真实映射一致：载体是 LayoutTransform 承载缩放、ScrollViewer offset 承载平移，
-    /// offset 因此以视口 DIP 计。
+    /// 模型必须与宿主的真实映射一致：LayoutTransform 负责缩放、ScrollViewer 偏移负责平移，
+    /// offset 因此以视口 DIP 计
     /// </summary>
     [Theory]
     [InlineData(1.0, 0, 0)]

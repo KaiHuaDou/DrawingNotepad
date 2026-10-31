@@ -10,10 +10,10 @@ namespace InkCanvasNext;
 /// <param name="Scale">内容到视口的缩放倍数。</param>
 /// <param name="OffsetX">视口左边缘相对内容原点的偏移。</param>
 /// <param name="OffsetY">视口上边缘相对内容原点的偏移。</param>
-internal readonly record struct View(double Scale, double OffsetX, double OffsetY)
+public readonly record struct View(double Scale, double OffsetX, double OffsetY)
 {
     /// <summary>
-    /// 内容坐标转视口坐标。
+    /// 内容坐标转视口坐标
     /// </summary>
     public Point ToViewport(Point content)
     {
@@ -21,7 +21,7 @@ internal readonly record struct View(double Scale, double OffsetX, double Offset
     }
 
     /// <summary>
-    /// 视口坐标转内容坐标。
+    /// 视口坐标转内容坐标
     /// </summary>
     public Point ToContent(Point viewport)
     {
@@ -29,7 +29,7 @@ internal readonly record struct View(double Scale, double OffsetX, double Offset
     }
 
     /// <summary>
-    /// 以视口锚点缩放：锚点下的内容点在视口中的位置不变。
+    /// 以视口锚点缩放：锚点下的内容点在视口中的位置不变
     /// </summary>
     public View ZoomAt(Point viewportAnchor, double scale)
     {
@@ -38,7 +38,7 @@ internal readonly record struct View(double Scale, double OffsetX, double Offset
     }
 
     /// <summary>
-    /// 视口窗口沿视口移动：偏移量增加 delta，内容在屏幕上反向移动 delta。
+    /// 视口窗口沿视口移动：偏移量增加 delta，内容在屏幕上反向移动 delta
     /// </summary>
     public View Pan(Vector offsetDelta)
     {
@@ -46,8 +46,23 @@ internal readonly record struct View(double Scale, double OffsetX, double Offset
     }
 
     /// <summary>
-    /// 把偏移夹取到 [0, 上限]。上限由载体给出：当前为 ScrollViewer 的 ScrollableWidth/Height
-    /// （等价于内容尺寸 × Scale − 视口尺寸），上限为负时按 0 处理。
+    /// 同时夹取缩放与偏移：缩放夹到 [minScale, maxScale]，偏移上限按内容尺寸乘缩放减视口尺寸计算/ 视口为空表示布局尚未完成，只夹缩放，偏移保持原值
+    /// </summary>
+    public View Clamp(Size contentSize, Size viewport, double minScale, double maxScale)
+    {
+        var scale = Math.Clamp(Scale, minScale, maxScale);
+        if (viewport.Width <= 0 || viewport.Height <= 0)
+        {
+            return this with { Scale = scale };
+        }
+
+        return new View(scale, OffsetX, OffsetY).Clamp(
+            contentSize.Width * scale - viewport.Width,
+            contentSize.Height * scale - viewport.Height);
+    }
+
+    /// <summary>
+    /// 把偏移夹取到 [0, 上限]。上限由调用方给出，上限为负时按 0 处理
     /// </summary>
     public View Clamp(double maxOffsetX, double maxOffsetY)
     {

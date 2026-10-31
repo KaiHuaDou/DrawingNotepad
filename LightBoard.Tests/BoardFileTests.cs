@@ -145,8 +145,7 @@ public class BoardFileTests
     }
 
     // 单页 ISF 超过 WPF 内部 4096 拷贝缓冲：旧实现把非 seekable 的 ZIP 条目流直接交给
-    // StrokeCollection，deflate 短读被当作流结束，数据被静默截断后 DecodeISF 失败。
-    // 截断的偏差量级在数十以上，ISF 往返的固有噪声远小于此（FitToCurve 关闭后几何为折线）。
+    // StrokeCollection，deflate 短读被当作流结束，数据被静默截断后 DecodeISF 失败 截断的偏差量级在数十以上，ISF 往返的固有噪声远小于此（FitToCurve 关闭后几何为折线）。
     [Fact]
     public void Write_Read_RoundTrip_LargeInkNotTruncated( )
     {

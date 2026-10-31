@@ -29,7 +29,7 @@ public class AppPagesTests
                 changed++;
             }
 
-            App.PageChanged +=  counter;
+            App.PageChanged += counter;
             try
             {
                 App.SwitchPage(-1);
@@ -41,7 +41,7 @@ public class AppPagesTests
             }
             finally
             {
-                App.PageChanged -=  counter;
+                App.PageChanged -= counter;
             }
         });
     }

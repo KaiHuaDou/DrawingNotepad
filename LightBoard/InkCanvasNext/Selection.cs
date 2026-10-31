@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
 using System.Windows.Ink;
 
@@ -14,6 +13,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
     private readonly InkCanvasNext owner = owner;
     private readonly SelectionVisual visual = visual;
     private readonly HashSet<Stroke> selectedStrokes = [];
+    private readonly HashSet<Stroke> canvasStrokes = [];
 
     internal IReadOnlyCollection<Stroke> SelectedStrokes => selectedStrokes;
 
@@ -21,15 +21,34 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
 
     internal Rect Bounds { get; private set; } = Rect.Empty;
 
+    internal void SyncCanvasStrokes(StrokeCollection strokes)
+    {
+        canvasStrokes.Clear( );
+        foreach (var stroke in strokes)
+        {
+            canvasStrokes.Add(stroke);
+        }
+    }
+
+    internal void ApplyCanvasChanges(IEnumerable<Stroke> added, IEnumerable<Stroke> removed)
+    {
+        foreach (var stroke in added)
+        {
+            canvasStrokes.Add(stroke);
+        }
+
+        foreach (var stroke in removed)
+        {
+            canvasStrokes.Remove(stroke);
+        }
+    }
+
     internal void SetStrokes(IEnumerable<Stroke> strokes)
     {
-        // StrokeCollection.Contains 是线性扫描，先建哈希集把逐笔命中降为 O(1)
-        var existing = owner.InnerCanvas.Strokes.ToHashSet( );
-
         selectedStrokes.Clear( );
         foreach (var s in strokes)
         {
-            if (existing.Contains(s))
+            if (canvasStrokes.Contains(s))
             {
                 selectedStrokes.Add(s);
             }
@@ -66,16 +85,15 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         Bounds = result;
     }
 
-    internal void Prune(StrokeCollection canvasStrokes)
+    internal void Prune( )
     {
         if (selectedStrokes.Count == 0)
         {
             return;
         }
 
-        var existing = canvasStrokes.ToHashSet( );
         var before = selectedStrokes.Count;
-        selectedStrokes.RemoveWhere(s => !existing.Contains(s));
+        selectedStrokes.RemoveWhere(s => !canvasStrokes.Contains(s));
 
         if (selectedStrokes.Count == before)
         {

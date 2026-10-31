@@ -2,8 +2,6 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 
-using InkCanvasNext;
-
 namespace LightBoard;
 
 public partial class App

@@ -22,8 +22,8 @@ public partial class InkCanvasNext
 
     private void StartMultiTouchStroke(int touchId, Point canvasPoint)
     {
-        // 盖章期间 MultiDraw 被排除：多指落笔不创建笔画
-        if (Tool.IsStamp)
+        // 盖章不落多指笔画；擦除工具与只读模式不进入多指书写
+        if (Tool.IsStamp || !Tool.AllowsMultiDraw)
         {
             return;
         }
@@ -40,7 +40,7 @@ public partial class InkCanvasNext
     /// <summary>
     /// 迁入 MultiDraw 前保住原生在绘笔画：InkCanvas 对中途切换编辑模式的在绘笔画只做丢弃
     /// （InkCollectionBehavior 对非 Ink 目标一律 Commit(commit: false)），对捕获丢失则整笔提交，
-    /// 故先释放捕获触发提交，多指笔画随后从当前触点续接。
+    /// 故先释放捕获触发提交，多指笔画随后从当前触点续接
     /// </summary>
     private void HandOffDrawingStroke( )
     {
@@ -108,7 +108,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 清空所有进行中的多指笔画视觉（已提交 + 未提交段）。
+    /// 清空所有进行中的多指笔画视觉（已提交 + 未提交段）
     /// </summary>
     public void ClearMultiTouchVisuals( )
     {
@@ -145,7 +145,7 @@ public partial class InkCanvasNext
 
     /// <summary>
     /// 帧节拍：一帧内到达的触点合并成一次几何重建。没有脏笔画时退订：订阅本身会持续排帧，
-    /// 手指按住不动期间不该让 WPF 一直逐帧渲染。
+    /// 手指按住不动期间不该让 WPF 一直逐帧渲染
     /// </summary>
     private void MultiTouchFrame(object? o, EventArgs e)
     {
@@ -169,14 +169,12 @@ public partial class InkCanvasNext
     }
 }
 
+/// <summary>
+/// 多指笔画的预览层：与原生墨迹一致使用默认抗锯齿。
+/// </summary>
 internal sealed class VisualCanvas : FrameworkElement
 {
     private readonly List<DrawingVisual> visuals = [];
-
-    internal VisualCanvas( )
-    {
-        RenderOptions.SetEdgeMode(this, EdgeMode.Aliased);
-    }
 
     internal int VisualCount => visuals.Count;
 

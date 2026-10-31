@@ -48,7 +48,7 @@ internal sealed class FrameRateMeter
     }
 
     /// <summary>
-    /// 由调用方按固定节拍调用，<paramref name="intervalMs"/> 为该节拍的名义间隔（用于累计无帧时长）。
+    /// 由调用方按固定节拍调用，<paramref name="intervalMs"/> 为该节拍的名义间隔（用于累计无帧时长）
     /// </summary>
     internal void Sample(double intervalMs)
     {

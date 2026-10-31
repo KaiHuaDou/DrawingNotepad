@@ -14,7 +14,7 @@ internal sealed class LruCache(int capacity)
     private readonly Lock gate = new( );
 
     /// <summary>
-    /// 命中则返回图像并置为最近使用；未命中返回 null。
+    /// 命中则返回图像并置为最近使用；未命中返回 null
     /// </summary>
     internal ImageSource? Take(int index)
     {
@@ -38,7 +38,7 @@ internal sealed class LruCache(int capacity)
     }
 
     /// <summary>
-    /// 加入缓存，超出容量时淘汰最久未使用者。
+    /// 加入缓存，超出容量时淘汰最久未使用者
     /// </summary>
     internal void Put(int index, ImageSource image)
     {

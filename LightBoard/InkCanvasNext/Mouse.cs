@@ -4,6 +4,13 @@ using System.Windows.Input;
 
 namespace InkCanvasNext;
 
+internal enum WheelCommand
+{
+    None,
+    Zoom,
+    Horizontal
+}
+
 /// <summary>
 /// 真实鼠标的合成触点设备：自定义工具（形状/选区/面积擦/盖章）下，把鼠标按下-移动-抬起上报为触摸序列，
 /// 与触摸共用状态机、事件答复与资产结算。原生工具（墨迹/按笔擦）不激活，鼠标维持 InkCanvas 原生收笔。
@@ -76,9 +83,7 @@ internal sealed class MouseTouchDevice : TouchDevice
         Position = rootPosition;
         IsDown = false;
         ReportUp( );
-
-        active = false;
-        Deactivate( );
+        Release( );
     }
 
     /// <summary>
@@ -87,7 +92,11 @@ internal sealed class MouseTouchDevice : TouchDevice
     internal void Reset( )
     {
         IsDown = false;
+        Release( );
+    }
 
+    private void Release( )
+    {
         if (!active)
         {
             return;
@@ -100,15 +109,22 @@ internal sealed class MouseTouchDevice : TouchDevice
 
 /// <summary>
 /// 鼠标输入路径：自定义工具下经 <see cref="MouseTouchDevice"/> 进入触摸状态机，
-/// 原生工具下放行给 InkCanvas，另有滚轮缩放/滚动。落章统一在抬手位置发生（与触摸一致）。
+/// 原生工具下放行给 InkCanvas，另有滚轮缩放与横滚。落章统一在抬手位置发生（与触摸一致）。
 /// </summary>
 public partial class InkCanvasNext
 {
+    private readonly MouseWheelAction mouseWheelAction;
+
     internal MouseTouchDevice MousePointer { get; }
 
     private void CanvasPreviewMouseDown(object o, MouseButtonEventArgs e)
     {
         CancelEdgeScroll( );
+
+        if (UseDefaultCommands)
+        {
+            Focus( );
+        }
 
         if (e.StylusDevice != null || !Tool.IsCustomTool)
         {
@@ -161,25 +177,52 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseWheel(object o, MouseWheelEventArgs e)
     {
-        if (MouseWheelAction == MouseWheelAction.None)
+        var command = ResolveWheel(mouseWheelAction, Keyboard.Modifiers);
+
+        if (command == WheelCommand.None)
         {
+            // 普通滚轮交给内层 ScrollViewer；仍要中断边缘过渡
+            CancelEdgeScroll( );
             return;
         }
 
         e.Handled = true;
-
         CancelEdgeScroll( );
 
-        if (MouseWheelAction == MouseWheelAction.Zoom || Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        if (command == WheelCommand.Zoom)
         {
             ZoomAtCursor(e);
             return;
         }
 
+        ScrollHorizontally(e.Delta);
+    }
+
+    private void ScrollHorizontally(int delta)
+    {
         var step = ScrollStep * CurrentScale;
-        CurrentView = CurrentView
-            .Pan(new Vector(0, e.Delta > 0 ? -step : step))
-            .Clamp(CanvasScroll.ScrollableWidth, CanvasScroll.ScrollableHeight);
+        var x = CanvasScroll.HorizontalOffset + (delta > 0 ? -step : step);
+        CurrentView = new View(CurrentScale, x, CanvasScroll.VerticalOffset);
+    }
+
+    internal static WheelCommand ResolveWheel(MouseWheelAction action, ModifierKeys modifiers)
+    {
+        if (action == MouseWheelAction.None)
+        {
+            return WheelCommand.None;
+        }
+
+        if (modifiers.HasFlag(ModifierKeys.Control))
+        {
+            return WheelCommand.Zoom;
+        }
+
+        if (modifiers.HasFlag(ModifierKeys.Alt))
+        {
+            return WheelCommand.Horizontal;
+        }
+
+        return action == MouseWheelAction.Zoom ? WheelCommand.Zoom : WheelCommand.None;
     }
 
     /// <summary>在指定位置落章（克隆/粘贴），返回是否处于盖章模式（调用方据此 Handled）。

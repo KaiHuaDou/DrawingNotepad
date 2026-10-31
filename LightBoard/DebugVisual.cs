@@ -169,9 +169,9 @@ internal sealed class DebugVisual : FrameworkElement
     private void DrawDistances(DrawingContext dc, double dip)
     {
         DistanceRow(dc, 0, 96, "LassoPointDistance", $"{Math.Sqrt(LassoPointDistance2):0.#} DIP", Math.Sqrt(LassoPointDistance2), false, dip);
-        DistanceRow(dc, 1, 122, "ToolbarGapFromSelection", $"{SelectionVisual.ToolbarGapFromSelection:0.#} DIP", SelectionVisual.ToolbarGapFromSelection, false, dip);
-        DistanceRow(dc, 2, 148, "PinchLockDistance", ThresholdText(canvas.PinchLockDistance2), ThresholdLength(canvas.PinchLockDistance2), ThresholdDisabled(canvas.PinchLockDistance2), dip);
-        DistanceRow(dc, 3, 174, "PanZoomDisplaceThreshold", ThresholdText(canvas.PanZoomDisplaceThreshold2), ThresholdLength(canvas.PanZoomDisplaceThreshold2), ThresholdDisabled(canvas.PanZoomDisplaceThreshold2), dip);
+        DistanceRow(dc, 1, 122, "SelectionToolbarGap", $"{SelectionToolbarGap:0.#} DIP", SelectionToolbarGap, false, dip);
+        DistanceRow(dc, 2, 148, "PinchLockDistance", ThresholdText(canvas.pinchLockDistance2), ThresholdLength(canvas.pinchLockDistance2), ThresholdDisabled(canvas.pinchLockDistance2), dip);
+        DistanceRow(dc, 3, 174, "PanZoomDisplaceThreshold", ThresholdText(canvas.panZoomDisplaceThreshold2), ThresholdLength(canvas.panZoomDisplaceThreshold2), ThresholdDisabled(canvas.panZoomDisplaceThreshold2), dip);
         DistanceRow(dc, 4, 200, "RotateGapAboveSelection", $"{SelectionVisual.RotateGapAboveSelection:0.#} DIP", SelectionVisual.RotateGapAboveSelection, false, dip);
         DistanceRow(dc, 5, 226, "DistanceThreshold", ThresholdText(canvas.distanceThreshold2), ThresholdLength(canvas.distanceThreshold2), ThresholdApproximate(canvas.distanceThreshold2) || ThresholdDisabled(canvas.distanceThreshold2), dip);
     }
@@ -185,10 +185,10 @@ internal sealed class DebugVisual : FrameworkElement
             return;
         }
 
-        var top = canvas.EdgeScrollTopThreshold;
-        var bottom = canvas.EdgeScrollBottomThreshold;
-        var left = canvas.EdgeScrollLeftThreshold;
-        var right = canvas.EdgeScrollRightThreshold;
+        var top = canvas.edgeScrollTopThreshold;
+        var bottom = canvas.edgeScrollBottomThreshold;
+        var left = canvas.edgeScrollLeftThreshold;
+        var right = canvas.edgeScrollRightThreshold;
         dc.DrawLine(EdgeScrollPen, new Point(0, top), new Point(viewport.Width, top));
         dc.DrawLine(EdgeScrollPen, new Point(0, viewport.Height - bottom), new Point(viewport.Width, viewport.Height - bottom));
         dc.DrawLine(EdgeScrollPen, new Point(left, 0), new Point(left, viewport.Height));

@@ -475,8 +475,9 @@ public class TouchStateMachineTests
 
     // ---------- MultiDraw ----------
 
+    /// <summary>多指书写抬到单指后仍留在 MultiDraw，剩下的人继续画。</summary>
     [Fact]
-    public void MultiDraw_ReleaseToOneFinger_EntersDraw( )
+    public void MultiDraw_ReleaseToOneFinger_StaysMultiDraw( )
     {
         StaTest.Run(( ) =>
         {
@@ -489,13 +490,13 @@ public class TouchStateMachineTests
             Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
 
             b.Up(host.Target, TestPoints.FarFrom(host, P1));
-            Assert.Equal(TouchState.Draw, host.Canvas.State);
+            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
         });
     }
 
-    /// <summary>MultiDraw 抬到单指后剩余手指停在 Draw，但原生管线没有收到它的按下，移动不产生墨迹。</summary>
+    /// <summary>MultiDraw 抬到单指后，剩余手指的笔画不被截断，继续追加点直到抬手提交。</summary>
     [Fact]
-    public void MultiDraw_ReleaseToOneFinger_DoesNotDraw( )
+    public void MultiDraw_ReleaseToOneFinger_ContinuesDrawing( )
     {
         StaTest.Run(( ) =>
         {
@@ -510,14 +511,15 @@ public class TouchStateMachineTests
             Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
 
             b.Up(host.Target, farPoint);
-            Assert.Equal(TouchState.Draw, host.Canvas.State);
+            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
 
             var committed = host.Canvas.Strokes.Count;
             a.Move(host.Target, new Point(P1.X + 60, P1.Y));
             Assert.Equal(committed, host.Canvas.Strokes.Count);
 
             a.Up(host.Target, new Point(P1.X + 60, P1.Y));
-            Assert.Equal(committed, host.Canvas.Strokes.Count);
+            Assert.Equal(committed + 1, host.Canvas.Strokes.Count);
+            Assert.True(host.Canvas.Strokes[^1].StylusPoints.Count >= 3);
         });
     }
 
@@ -536,6 +538,23 @@ public class TouchStateMachineTests
 
             a.Up(host.Target, P1);
             b.Up(host.Target, TestPoints.FarFrom(host, P1));
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+        });
+    }
+
+    /// <summary>控件卸载：在途触摸复位，多指笔画按抬手提交。</summary>
+    [Fact]
+    public void Unloaded_ResetsTouchState( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var finger = host.Device( );
+            finger.Down(host.Target, new Point(100, 100));
+            Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
+
+            host.Canvas.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+
             Assert.Equal(TouchState.Idle, host.Canvas.State);
         });
     }
@@ -569,7 +588,7 @@ public class TouchStateMachineTests
 
     /// <summary>MultiDraw --> Draw：迁出覆盖编辑模式的接管态时，把编辑模式恢复为当前工具。</summary>
     [Fact]
-    public void MultiDraw_ReleaseToOneFinger_RestoresEditingMode( )
+    public void MultiDraw_ReleaseToOneFinger_KeepsEditingModeNone( )
     {
         StaTest.Run(( ) =>
         {
@@ -584,11 +603,12 @@ public class TouchStateMachineTests
             Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
 
             b.Up(host.Target, farPoint);
-            Assert.Equal(TouchState.Draw, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
 
             a.Up(host.Target, P1);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
         });
     }
 

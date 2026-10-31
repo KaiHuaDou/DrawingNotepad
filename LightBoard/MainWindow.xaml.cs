@@ -50,11 +50,9 @@ public partial class MainWindow : Window
         CanvasNext.StrokesChanged += CanvasNextStrokesChanged;
         MainGrid.Children.Insert(0, CanvasNext);
 
-        var edgeHintMargin = InkCanvasNext.InkCanvasNext.EdgeHintMarginDefault;
+        const double edgeHintMargin = InkCanvasNext.InkCanvasNext.EdgeHintMarginDefault;
         CanvasNext.EdgeHintMargin = new Thickness(edgeHintMargin, edgeHintMargin, edgeHintMargin, EdgeHintBottomMargin( ));
         CenterBorder.SizeChanged += CenterBorderSizeChanged;
-
-        ApplySettings( );
 
         colorRadio ??= DefaultColorRadio;
         thicknessRadio ??= DefaultThicknessRadio;
@@ -84,21 +82,8 @@ public partial class MainWindow : Window
         timeTimer.Start( );
     }
 
-    private void ApplySettings( )
-    {
-        var data = Settings.Data;
-        CanvasNext.EdgeScrollTopThreshold = data.EdgeScrollHint ? data.EdgeScrollTopThreshold : 0;
-        CanvasNext.EdgeScrollBottomThreshold = data.EdgeScrollHint ? data.EdgeScrollBottomThreshold : 0;
-        CanvasNext.EdgeScrollLeftThreshold = data.EdgeScrollHint ? data.EdgeScrollLeftThreshold : 0;
-        CanvasNext.EdgeScrollRightThreshold = data.EdgeScrollHint ? data.EdgeScrollRightThreshold : 0;
-        CanvasNext.TouchDisplacementThreshold2 = data.TouchDisplacementThreshold * data.TouchDisplacementThreshold;
-        CanvasNext.PanZoomDisplaceThreshold2 = data.PanZoomDisplaceThreshold * data.PanZoomDisplaceThreshold;
-        CanvasNext.PinchLockDistance2 = data.PinchLockDistance * data.PinchLockDistance;
-        CanvasNext.SetMaxHistoryCount(data.MaxHistoryCount);
-    }
-
     /// <summary>
-    /// 底侧提示按钮让开主工具栏：收起与展开的高度都由 Border 实际高度给出，另加外边距与 9 DIP 间隙。
+    /// 底侧提示按钮让开主工具栏：收起与展开的高度都由 Border 实际高度给出，另加外边距与 9 DIP 间隙
     /// </summary>
     private double EdgeHintBottomMargin( )
     {
@@ -107,7 +92,7 @@ public partial class MainWindow : Window
 
     private void CenterBorderSizeChanged(object o, SizeChangedEventArgs e)
     {
-        var edge = InkCanvasNext.InkCanvasNext.EdgeHintMarginDefault;
+        const double edge = InkCanvasNext.InkCanvasNext.EdgeHintMarginDefault;
         CanvasNext.EdgeHintMargin = new Thickness(edge, edge, edge, EdgeHintBottomMargin( ));
     }
 

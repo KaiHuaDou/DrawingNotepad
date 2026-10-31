@@ -1,4 +1,3 @@
-using System;
 using System.Windows;
 using System.Windows.Ink;
 
@@ -12,7 +11,7 @@ namespace InkCanvasNext.Tests;
 public class ShapeTouchTests
 {
     private static readonly Point P1 = new(100, 100);
-    private static readonly Point End1 = new(500, 320);        // 第一指的结束点
+    private static readonly Point End1 = new(500, 500);        // 第一指的结束点：与 P1 成 45°，Shift 约束不影响结果
     private static readonly Point Stray2 = new(260, 560);      // 附加指位置
 
     private static Point EndOf(Stroke stroke)
@@ -43,14 +42,14 @@ public class ShapeTouchTests
             finger1.Move(host.Target, End1);
             finger1.Up(host.Target, End1);
 
-            // 形状笔画（P1 -> TestPoints.BeyondDisplacement(host, P1)）先提交；f2 抬起提交其多指笔画并迁回 Draw，
-            // EndMultiTouch 把 f1 未续画的多指笔画按现有点位一并收尾，f1 后续移动不会产生笔画
+            // 形状笔画（P1 -> TestPoints.BeyondDisplacement(host, P1)）先提交；f2 抬起后仍留在 MultiDraw，
+            // f1 继续画到 End1，抬手时提交自己的多指笔画
             Assert.Equal(3, host.Canvas.Strokes.Count);
             Assert.Equal(P1, host.Canvas.Strokes[0].StylusPoints[0].ToPoint( ));
             Assert.Equal(TestPoints.BeyondDisplacement(host, P1), EndOf(host.Canvas.Strokes[0]));
             Assert.Equal(TestPoints.CloseTo(host, P1), host.Canvas.Strokes[1].StylusPoints[0].ToPoint( ));
             Assert.Equal(Stray2, EndOf(host.Canvas.Strokes[1]));
-            Assert.Equal(TestPoints.BeyondDisplacement(host, P1), EndOf(host.Canvas.Strokes[2]));
+            Assert.Equal(End1, EndOf(host.Canvas.Strokes[2]));
             Assert.Equal(TouchState.Idle, host.Canvas.State);
         });
     }

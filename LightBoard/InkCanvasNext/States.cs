@@ -15,23 +15,23 @@ internal enum TouchState
     Selection
 }
 
-internal readonly record struct ToolSnapshot(InkCanvasNextMode Mode, StampAction Stamp)
+internal readonly record struct ToolSnapshot(InkCanvasNextMode Mode, StampAction Stamp, bool IsReadOnly)
 {
-    internal bool IsStamp => Stamp != StampAction.None;
+    internal bool IsStamp => !IsReadOnly && Stamp != StampAction.None;
 
-    internal bool IsSelectionEntry => Mode == InkCanvasNextMode.Select && !IsStamp;
+    internal bool IsSelectionEntry => !IsReadOnly && Mode == InkCanvasNextMode.Select && !IsStamp;
 
-    internal bool IsSelect => Mode == InkCanvasNextMode.Select;
+    internal bool IsSelect => !IsReadOnly && Mode == InkCanvasNextMode.Select;
 
-    internal bool IsAreaErase => Mode == InkCanvasNextMode.EraseArea;
+    internal bool IsAreaErase => !IsReadOnly && Mode == InkCanvasNextMode.EraseArea;
 
-    internal bool IsShape => Mode is InkCanvasNextMode.Line or InkCanvasNextMode.Circle;
+    internal bool IsShape => !IsReadOnly && Mode is InkCanvasNextMode.Line or InkCanvasNextMode.Circle;
 
-    internal bool IsCircle => Mode == InkCanvasNextMode.Circle;
+    internal bool IsCircle => !IsReadOnly && Mode == InkCanvasNextMode.Circle;
 
-    internal bool IsErase => Mode is InkCanvasNextMode.EraseArea or InkCanvasNextMode.EraseStroke;
+    internal bool IsErase => !IsReadOnly && Mode is InkCanvasNextMode.EraseArea or InkCanvasNextMode.EraseStroke;
 
-    internal bool AllowsMultiDraw => !IsErase;
+    internal bool AllowsMultiDraw => !IsReadOnly && !IsErase;
 
     /// <summary>
     /// 自定义工具：鼠标经合成触点进入状态机；原生工具（墨迹/按笔擦）维持原生鼠标路径
@@ -63,16 +63,16 @@ internal readonly record struct StateTraits(
 public partial class InkCanvasNext
 {
     /// <summary>
-    /// 盖章武装标记：本次触摸序列在盖章模式下以单指 EvalDraw 开始，且尚未升级为任何手势接管态。
+    /// 盖章武装标记：本次触摸序列在盖章模式下以单指 EvalDraw 开始，且尚未升级为任何手势接管态
     /// </summary>
     private bool stampArmed;
 
     internal TouchState State { get; private set; } = TouchState.Idle;
 
     /// <summary>
-    /// 当前工具快照，工具差异判定的唯一读取入口。
+    /// 当前工具快照，工具差异判定的唯一读取入口
     /// </summary>
-    internal ToolSnapshot Tool => new(Mode, StampAction);
+    internal ToolSnapshot Tool => new(Mode, StampAction, IsReadOnly);
 
     private static StateTraits Traits(TouchState state)
     {
@@ -93,9 +93,8 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 触点数变化（Down/Up），或 EvalDraw 状态下 Move 时重评迁移。
-    /// 守卫内联写死：switch 臂自上而下即优先级（见 docs/TouchStates2.md）；
-    /// 掌擦触点数 palmEraseFingers 构造期固定；d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态。
+    /// 触点数变化（Down/Up），或 EvalDraw 状态下 Move 时重评迁移/ 守卫内联写死：switch 臂自上而下即优先级（见 docs/TouchStates2.md）；
+    /// 掌擦触点数 palmEraseFingers 构造期固定；d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void UpdateState( )
@@ -103,10 +102,10 @@ public partial class InkCanvasNext
         var count = touches.Count;
         var d2 = GetMaxDistance2( );
         var l2 = distanceThreshold2;
-        var c2 = TouchDisplacementThreshold2;
+        var c2 = touchDisplacementThreshold2;
         var x2 = Get1stFingerDispl2( );
         var tool = Tool;
-        var palm = count >= palmEraseFingers;
+        var palm = !tool.IsReadOnly && count >= palmEraseFingers;
 
         var newState = State switch
         {
@@ -119,7 +118,7 @@ public partial class InkCanvasNext
                 2 when d2 <= l2 => TouchState.PanZoom,
                 >= 3 when palm && d2 <= l2 => TouchState.Eraser,
                 >= 3 when d2 <= l2 => TouchState.Pan,
-                >= 2 when d2 > l2 => TouchState.MultiDraw,
+                >= 2 when d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => State,
             },
 
@@ -147,7 +146,6 @@ public partial class InkCanvasNext
             TouchState.MultiDraw => count switch
             {
                 0 => TouchState.Idle,
-                1 => TouchState.Draw,
                 _ => State,
             },
 
@@ -191,8 +189,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 状态切换：先按迁出状态结算（提交/取消/补余量），再按迁入状态建立（捕获/基线/编辑模式）。
-    /// State 在两侧结算完成后才更新，迁入规则据此仍可读到迁出状态。
+    /// 状态切换：先按迁出状态结算（提交/取消/补余量），再按迁入状态建立（捕获/基线/编辑模式）/ State 在两侧结算完成后才更新，迁入规则据此仍可读到迁出状态
     /// </summary>
     private void SetState(TouchState newState)
     {
@@ -253,8 +250,7 @@ public partial class InkCanvasNext
             }
         }
 
-        // 盖章只由未升级为手势的单指序列触发：迁入任何手势接管态（含 MultiDraw）即解除。
-        // 解除不依赖盖章仍激活，避免中途退出盖章后残留脏标记
+        // 盖章只由未升级为手势的单指序列触发：迁入任何手势接管态（含 MultiDraw）即解除 解除不依赖盖章仍激活，避免中途退出盖章后残留脏标记
         if (to is not (TouchState.EvalDraw or TouchState.Draw))
         {
             stampArmed = false;
