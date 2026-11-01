@@ -100,26 +100,27 @@ public partial class MainWindow
             + CollapseExpandButton.Margin.Left + CollapseExpandButton.ActualWidth
             + PrevPageButton.Margin.Left + PrevPageButton.ActualWidth
             + RightBorder.Padding.Right + RightBorder.BorderThickness.Right;
+        // 三个目标值取自本地空间（工具栏被 LayoutTransform 放大前的尺寸），位移本身按屏幕像素生效
         // From 取 Transform 当前值:快速连点时上一动画仍在 Hold,读端点值会造成跳变
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
         var animationLeft = new DoubleAnimation
         {
             From = LeftTransform.X,
-            To = flag ? -LeftBorder.ActualWidth : 0,
+            To = flag ? -LeftBorder.ActualWidth * toolbarScale : 0,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = ease
         };
         var animationCenter = new DoubleAnimation
         {
             From = CenterTransform.Y,
-            To = flag ? CenterBorder.ActualHeight : 0,
+            To = flag ? CenterBorder.ActualHeight * toolbarScale : 0,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = ease
         };
         var animationRight = new DoubleAnimation
         {
             From = RightTransform.X,
-            To = flag ? PageButtonsRow.ActualWidth + chrome - keptWidth : 0,
+            To = flag ? (PageButtonsRow.ActualWidth + chrome - keptWidth) * toolbarScale : 0,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = ease
         };
@@ -258,7 +259,7 @@ public partial class MainWindow
 
     private void SettingsClick(object o, RoutedEventArgs e)
     {
-        var dialog = new Settings { Owner = this };
+        var dialog = new SettingsWindow { Owner = this };
         dialog.ShowDialog( );
     }
 

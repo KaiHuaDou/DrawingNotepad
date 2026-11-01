@@ -17,7 +17,8 @@ public class SettingsTests
             EraserDiameter = 80,
             EraserPalmExtra = 12,
             EraserMinLogicalDiameter = 2,
-            EraserRebuildThreshold = 0.25
+            EraserRebuildThreshold = 0.25,
+            ToolbarScale = 1.25
         };
 
         var json = JsonSerializer.Serialize(data, SettingsSerializerContext.Default.LightBoardSettings);
@@ -43,6 +44,7 @@ public class SettingsTests
         Assert.Equal(InkCanvasNext.InkCanvasNext.EraserPalmExtraDefault, data.EraserPalmExtra);
         Assert.Equal(InkCanvasNext.InkCanvasNext.EraserMinLogicalDiameterDefault, data.EraserMinLogicalDiameter);
         Assert.Equal(InkCanvasNext.InkCanvasNext.EraserRebuildThresholdDefault, data.EraserRebuildThreshold);
+        Assert.Equal(LightBoardSettings.ToolbarScaleDefault, data.ToolbarScale);
     }
 
     [Fact]
@@ -124,10 +126,11 @@ public class SettingsTests
             EraserDiameter = 0,
             EraserPalmExtra = -3,
             EraserMinLogicalDiameter = 0,
-            EraserRebuildThreshold = 99
+            EraserRebuildThreshold = 99,
+            ToolbarScale = 0
         };
 
-        var normalized = Settings.Normalize(data);
+        var normalized = LightBoardSettings.Normalize(data);
 
         Assert.Equal(0, normalized.EdgeScrollTopThreshold);
         Assert.Equal(1000, normalized.EdgeScrollBottomThreshold);
@@ -138,5 +141,14 @@ public class SettingsTests
         Assert.Equal(0, normalized.EraserPalmExtra);
         Assert.Equal(0.1, normalized.EraserMinLogicalDiameter);
         Assert.Equal(10, normalized.EraserRebuildThreshold);
+        Assert.Equal(0.75, normalized.ToolbarScale);
+        Assert.Equal(1.5, LightBoardSettings.Normalize(data with { ToolbarScale = 99 }).ToolbarScale);
+    }
+
+    [Fact]
+    public void EdgeHintGap_ScalesBarHeight( )
+    {
+        Assert.Equal(95, MainWindow.EdgeHintGap(54, 5, 1.5));
+        Assert.Equal(68, MainWindow.EdgeHintGap(54, 5, 1));
     }
 }

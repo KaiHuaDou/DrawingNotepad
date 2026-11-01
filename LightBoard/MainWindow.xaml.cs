@@ -15,12 +15,6 @@ public partial class MainWindow : Window
 {
     internal readonly InkCanvasNext.InkCanvasNext CanvasNext;
 
-#if DEBUG
-    private const string SwitchOutProcessName = "thorium";
-#else
-    private const string SwitchOutProcessName = "msedge";
-#endif
-
     private readonly DispatcherTimer timeTimer;
 
     private TimerWindow? timerWindow;
@@ -38,9 +32,10 @@ public partial class MainWindow : Window
         }
 
         // 构造期设置（橡皮参数）要在建画布前读入
-        Settings.LoadSettings( );
+        SettingsStore.Load( );
+        ApplyToolbarScale( );
 
-        CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset, Settings.Data.CanvasOptions)
+        CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset, SettingsStore.Current.CanvasOptions)
         {
             Background = MajorGridBrush
         };
@@ -82,11 +77,11 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// 底侧提示按钮让开主工具栏：收起与展开的高度都由 Border 实际高度给出，另加外边距与 9 DIP 间隙
+    /// 底侧提示按钮让开主工具栏：收起与展开的高度都取 Border 本地高度乘倍率，另加外边距与 9 DIP 间隙
     /// </summary>
     private double EdgeHintBottomMargin( )
     {
-        return CenterBorder.ActualHeight + CenterBorder.Margin.Bottom + 9;
+        return EdgeHintGap(CenterBorder.ActualHeight, CenterBorder.Margin.Bottom, toolbarScale);
     }
 
     private void CanvasNextSelectionChanged(object? o, EventArgs e)
@@ -136,12 +131,12 @@ public partial class MainWindow : Window
 
     private void RefreshSwitchOutIcon( )
     {
-        SwitchOutButton.Content = ProgramIcon.FromProcess(SwitchOutProcessName, 48);
+        SwitchOutButton.Content = ProgramIcon.FromProcess(SettingsStore.Current.SwitchOutProcessName, 48);
     }
 
     private void SwitchOutClick(object o, RoutedEventArgs e)
     {
-        NativeMethods.SwitchTo(SwitchOutProcessName);
+        NativeMethods.SwitchTo(SettingsStore.Current.SwitchOutProcessName);
         RefreshSwitchOutIcon( );
     }
 

@@ -108,14 +108,15 @@ public partial class MainWindow
     {
         SelectionBorder.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         var size = SelectionBorder.DesiredSize;
+        // DesiredSize 已含倍率；ActualWidth/ActualHeight 是放大前的尺寸，需补偿到父空间
         if (size.Width <= 0)
         {
-            size.Width = SelectionBorder.ActualWidth;
+            size.Width = SelectionBorder.ActualWidth * toolbarScale;
         }
 
         if (size.Height <= 0)
         {
-            size.Height = SelectionBorder.ActualHeight;
+            size.Height = SelectionBorder.ActualHeight * toolbarScale;
         }
 
         return size;
