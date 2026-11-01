@@ -2,7 +2,7 @@ using System.Windows.Input;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>内置命令的启用开关与可执行状态。</summary>
+/// <summary>内置命令的启用开关与可执行状态</summary>
 public class CommandTests
 {
     [Fact]

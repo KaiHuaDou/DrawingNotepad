@@ -5,8 +5,8 @@ namespace InkCanvasNext.Tests;
 
 /// <summary>
 /// 形状绘制的多指行为：形状只在单指上下文（EvalDraw/Draw）存活；
-/// Draw 落第二指在擦除模式外升级 MultiDraw 并按当前预览提交形状，EvalDraw 落第二指捏合缩放优先、仍放弃形状。
-/// 所有测试体在 STA 线程上执行（WPF 控件与触摸输入管线要求）。
+/// Draw 落第二指在擦除模式外升级 MultiDraw 并按当前预览提交形状，EvalDraw 落第二指捏合缩放优先、仍放弃形状
+/// 所有测试体在 STA 线程上执行（WPF 控件与触摸输入管线要求）
 /// </summary>
 public class ShapeTouchTests
 {

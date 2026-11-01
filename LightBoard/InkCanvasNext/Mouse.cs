@@ -13,8 +13,8 @@ internal enum WheelCommand
 
 /// <summary>
 /// 真实鼠标的合成触点设备：自定义工具（形状/选区/面积擦/盖章）下，把鼠标按下-移动-抬起上报为触摸序列，
-/// 与触摸共用状态机、事件答复与资产结算。原生工具（墨迹/按笔擦）不激活，鼠标维持 InkCanvas 原生收笔。
-/// 位置以控件根（InkCanvasNext）坐标系存储，GetTouchPoint 按布局变换与滚动平移换算到目标元素。
+/// 与触摸共用状态机、事件答复与资产结算。原生工具（墨迹/按笔擦）不激活，鼠标维持 InkCanvas 原生收笔
+/// 位置以控件根（InkCanvasNext）坐标系存储，GetTouchPoint 按布局变换与滚动平移换算到目标元素
 /// </summary>
 internal sealed class MouseTouchDevice : TouchDevice
 {
@@ -87,7 +87,7 @@ internal sealed class MouseTouchDevice : TouchDevice
     }
 
     /// <summary>
-    /// 清掉没有收到抬起事件的序列（窗口失活、捕获被抢走），下次按下才能重新开始。
+    /// 清掉没有收到抬起事件的序列（窗口失活、捕获被抢走），下次按下才能重新开始
     /// </summary>
     internal void Reset( )
     {
@@ -109,7 +109,7 @@ internal sealed class MouseTouchDevice : TouchDevice
 
 /// <summary>
 /// 鼠标输入路径：自定义工具下经 <see cref="MouseTouchDevice"/> 进入触摸状态机，
-/// 原生工具下放行给 InkCanvas，另有滚轮缩放与横滚。落章统一在抬手位置发生（与触摸一致）。
+/// 原生工具下放行给 InkCanvas，另有滚轮缩放与横滚。落章统一在抬手位置发生（与触摸一致）
 /// </summary>
 public partial class InkCanvasNext
 {
@@ -225,8 +225,8 @@ public partial class InkCanvasNext
         return action == MouseWheelAction.Zoom ? WheelCommand.Zoom : WheelCommand.None;
     }
 
-    /// <summary>在指定位置落章（克隆/粘贴），返回是否处于盖章模式（调用方据此 Handled）。
-    /// 触摸与合流后的鼠标均由未升级为手势的单指序列在抬手位置落章（CanvasPreviewTouchUp）。</summary>
+    /// <summary>在指定位置落章（克隆/粘贴），返回是否处于盖章模式（调用方据此 Handled）
+    /// 触摸与合流后的鼠标均由未升级为手势的单指序列在抬手位置落章（CanvasPreviewTouchUp）</summary>
     private bool TryStamp(Point point)
     {
         if (!Tool.IsStamp)

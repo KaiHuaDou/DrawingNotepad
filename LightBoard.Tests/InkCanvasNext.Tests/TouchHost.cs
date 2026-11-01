@@ -6,8 +6,8 @@ using LightBoard;
 namespace InkCanvasNext.Tests;
 
 /// <summary>
-/// 宿主：在不可见 HwndSource 中装配 InkCanvasNext 并完成布局。
-/// 触摸事件处理目标为内部墨迹画布（InnerCanvasElement）。
+/// 宿主：在不可见 HwndSource 中装配 InkCanvasNext 并完成布局
+/// 触摸事件处理目标为内部墨迹画布（InnerCanvasElement）
 /// </summary>
 internal sealed class TouchHost : IDisposable
 {
@@ -16,7 +16,7 @@ internal sealed class TouchHost : IDisposable
 
     public InkCanvasNext Canvas { get; }
 
-    /// <summary>触摸事件处理目标（内部墨迹画布）。</summary>
+    /// <summary>触摸事件处理目标（内部墨迹画布）</summary>
     public UIElement Target => Canvas.InnerCanvasElement;
 
     public TouchHost(double width = 1280, double height = 800, InkCanvasNextOptions? options = null)

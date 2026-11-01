@@ -13,10 +13,10 @@ public partial class InkCanvasNext
     private Point selectionAnchor;
     private Point selectionCenter;
 
-    /// <summary>段内上一帧的绝对变换；本帧增量 = inv(selectionAbs) × 本帧绝对变换。</summary>
+    /// <summary>段内上一帧的绝对变换；本帧增量 = inv(selectionAbs) × 本帧绝对变换</summary>
     private Matrix selectionAbs = Matrix.Identity;
 
-    /// <summary>整段手势累计施加的增量之积，作为单个撤销单元提交。</summary>
+    /// <summary>整段手势累计施加的增量之积，作为单个撤销单元提交</summary>
     private Matrix selectionTotal = Matrix.Identity;
 
     private StrokeCollection? selectionTarget;
@@ -80,9 +80,9 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 以绝对矩阵为基准施加相对上一帧的增量变换。
+    /// 以绝对矩阵为基准施加相对上一帧的增量变换
     /// 增量必须左乘旧基线：作用于笔画的是"先撤销上一帧、再施加本帧"，
-    /// 右乘得到的是旧基线对本帧绝对矩阵的共轭，只有两帧矩阵可交换（同族平移、同心缩放、同心旋转）时才等价。
+    /// 右乘得到的是旧基线对本帧绝对矩阵的共轭，只有两帧矩阵可交换（同族平移、同心缩放、同心旋转）时才等价
     /// </summary>
     private void ApplyTransformDelta(Matrix newAbs)
     {
@@ -110,7 +110,7 @@ public partial class InkCanvasNext
         RaiseViewOrSelectionChanged( );
     }
 
-    /// <summary>整段手势（含中途重建基线）作为单个撤销单元提交。</summary>
+    /// <summary>整段手势（含中途重建基线）作为单个撤销单元提交</summary>
     private void CommitTransform( )
     {
         if (selectionTarget is { Count: > 0 } && !IsNearIdentity(selectionTotal))
@@ -126,8 +126,8 @@ public partial class InkCanvasNext
     // ---------- 双指 ----------
 
     /// <summary>
-    /// 进入双指手势：以当前两指几何重建基线，并把段基线归零。
-    /// 笔画坐标与触点坐标同处内容坐标系，新段第一帧的增量即该帧绝对变换，段间不产生跳变。
+    /// 进入双指手势：以当前两指几何重建基线，并把段基线归零
+    /// 笔画坐标与触点坐标同处内容坐标系，新段第一帧的增量即该帧绝对变换，段间不产生跳变
     /// </summary>
     private void BeginPinch( )
     {
@@ -139,8 +139,8 @@ public partial class InkCanvasNext
 
     /// <summary>
     /// 触点数变化后重建手势基线（触点数只在 Down/Up 变化，故由 TrackTouchDown/TrackTouchUp 调用）：
-    /// 双指落在单指手势上即升级为双指相似变换，双指手势减为单指即降级为拖动。
-    /// 基线取变化瞬间的触点位置，手势从新的触点组合无缝续接。
+    /// 双指落在单指手势上即升级为双指相似变换，双指手势减为单指即降级为拖动
+    /// 基线取变化瞬间的触点位置，手势从新的触点组合无缝续接
     /// </summary>
     private void RefreshSelectionGesture( )
     {
@@ -155,9 +155,9 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 双指相似变换：把基线两指映射到当前两指，即 平移（中点位移）∘ 绕基线中点等比缩放 k ∘ 绕基线中点旋转 Δθ。
-    /// 缩放与旋转的中心只能是基线两指中点，改用选区中心会让选区绕手指之外的一点转动而脱离手指。
-    /// Matrix 的 RotateAt/ScaleAt/Translate 均为后乘（先调用者先作用于点），故按 R → S → T 构造。
+    /// 双指相似变换：把基线两指映射到当前两指，即 平移（中点位移）∘ 绕基线中点等比缩放 k ∘ 绕基线中点旋转 Δθ
+    /// 缩放与旋转的中心只能是基线两指中点，改用选区中心会让选区绕手指之外的一点转动而脱离手指
+    /// Matrix 的 RotateAt/ScaleAt/Translate 均为后乘（先调用者先作用于点），故按 R → S → T 构造
     /// </summary>
     private void UpdatePinch( )
     {
@@ -187,7 +187,7 @@ public partial class InkCanvasNext
         pinchStartAngle = AngleFrom(c1, c2);
     }
 
-    /// <summary>捏合中抬起一指：以剩余指当前位置为新起点续接拖动，选区不停留在原地。</summary>
+    /// <summary>捏合中抬起一指：以剩余指当前位置为新起点续接拖动，选区不停留在原地</summary>
     private void RebaseToMove( )
     {
         selectionGesture = SelectionGesture.Move;

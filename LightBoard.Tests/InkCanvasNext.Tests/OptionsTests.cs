@@ -2,7 +2,7 @@ using System.Windows;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>构造期选项的字段与派生。</summary>
+/// <summary>构造期选项的字段与派生</summary>
 public class OptionsTests
 {
     [Fact]

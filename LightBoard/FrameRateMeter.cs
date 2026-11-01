@@ -4,10 +4,10 @@ using System.Windows.Media;
 namespace LightBoard;
 
 /// <summary>
-/// 帧率表：订阅 CompositionTarget.Rendering，按时间窗统计帧率与最长帧。
-/// 订阅期间 WPF 会保持逐帧的渲染节拍（静止内容约 30 ms 一帧），因此只在需要读数期间 Start。
+/// 帧率表：订阅 CompositionTarget.Rendering，按时间窗统计帧率与最长帧
+/// 订阅期间 WPF 会保持逐帧的渲染节拍（静止内容约 30 ms 一帧），因此只在需要读数期间 Start
 /// 帧间隔取 RenderingTime 差分（合成时钟，量化到刷新周期），比墙钟更贴近真实帧节拍；
-/// 会话/显示器切换会让时钟跳变，表现为异常大的间隔，统一按 FrameIdleMs 过滤。
+/// 会话/显示器切换会让时钟跳变，表现为异常大的间隔，统一按 FrameIdleMs 过滤
 /// </summary>
 internal sealed class FrameRateMeter
 {
@@ -22,10 +22,10 @@ internal sealed class FrameRateMeter
     private int arrived;
     private double idleMs;
 
-    /// <summary>时间窗内的平均帧率；连续 FrameIdleMs 没有帧时为 0。</summary>
+    /// <summary>时间窗内的平均帧率；连续 FrameIdleMs 没有帧时为 0</summary>
     internal double Rate { get; private set; }
 
-    /// <summary>时间窗内最大的帧间隔（毫秒）。</summary>
+    /// <summary>时间窗内最大的帧间隔（毫秒）</summary>
     internal double LongestFrame { get; private set; }
 
     internal void Start( )

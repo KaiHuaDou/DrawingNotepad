@@ -14,10 +14,10 @@ public partial class InkCanvasNext
     private readonly Dictionary<int, StrokeVisual> multiTouchStrokes = [];
     private readonly VisualCanvas multiTouchCanvas = new( );
 
-    /// <summary>测试接缝：多指笔画是否在等下一帧重绘（等价于帧回调已订阅）。</summary>
+    /// <summary>测试接缝：多指笔画是否在等下一帧重绘（等价于帧回调已订阅）</summary>
     internal bool AwaitsMultiTouchFrame { get; private set; }
 
-    /// <summary>测试接缝：多指笔画挂载的绘制视觉数量（冻结段 + 活动段）。</summary>
+    /// <summary>测试接缝：多指笔画挂载的绘制视觉数量（冻结段 + 活动段）</summary>
     internal int MultiTouchVisualCount => multiTouchCanvas.VisualCount;
 
     private void StartMultiTouchStroke(int touchId, Point canvasPoint)
@@ -38,9 +38,8 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 迁入 MultiDraw 前保住原生在绘笔画：InkCanvas 对中途切换编辑模式的在绘笔画只做丢弃
-    /// （InkCollectionBehavior 对非 Ink 目标一律 Commit(commit: false)），对捕获丢失则整笔提交，
-    /// 故先释放捕获触发提交，多指笔画随后从当前触点续接
+    /// 迁入 MultiDraw 前保住原生在绘笔画
+    /// InkCanvas 切换编辑模式丢弃在绘笔画
     /// </summary>
     private void HandOffDrawingStroke( )
     {
@@ -108,7 +107,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 清空所有进行中的多指笔画视觉（已提交 + 未提交段）
+    /// 清空所有进行中的多指笔画视觉
     /// </summary>
     public void ClearMultiTouchVisuals( )
     {
@@ -144,8 +143,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 帧节拍：一帧内到达的触点合并成一次几何重建。没有脏笔画时退订：订阅本身会持续排帧，
-    /// 手指按住不动期间不该让 WPF 一直逐帧渲染
+    /// 帧节拍：一帧内到达的触点合并成一次几何重建
     /// </summary>
     private void MultiTouchFrame(object? o, EventArgs e)
     {
@@ -170,7 +168,7 @@ public partial class InkCanvasNext
 }
 
 /// <summary>
-/// 多指笔画的预览层：与原生墨迹一致使用默认抗锯齿。
+/// 多指笔画预览层
 /// </summary>
 internal sealed class VisualCanvas : FrameworkElement
 {
@@ -213,12 +211,16 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
     private DrawingVisual? activeVisual;
     private SolidColorBrush? brush;
 
-    /// <summary>已画进冻结段的点数；段与段共享接头点，下一段从这里开始。</summary>
+    /// <summary>
+    /// 已画进冻结段的点数
+    /// </summary>
     private int frozenCount;
 
     internal Stroke Stroke { get; } = new Stroke([initialPoint], drawingAttributes);
 
-    /// <summary>自上次重绘以来有新触点。</summary>
+    /// <summary>
+    /// 自上次重绘以来有新触点
+    /// </summary>
     internal bool NeedsRedraw { get; private set; }
 
     internal void SetVisualCanvas(VisualCanvas visualCanvas)
@@ -248,7 +250,7 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
 
         activeVisual ??= CreateAndAttachVisual( );
 
-        // 只重建活动段（点数不超过 SegmentPoints）；冻结段的几何各自缓存在独立视觉里
+        // 只重建活动段
         using var context = activeVisual.RenderOpen( );
         if (SegmentGeometry(frozenCount, Stroke.StylusPoints.Count) is { } geometry)
         {
@@ -300,7 +302,6 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
         frozenCount = end - 1;
     }
 
-    // 返回值必须写全名：InkCanvasNext 命名空间内有同名的静态工具类 Geometry
     private System.Windows.Media.Geometry? SegmentGeometry(int start, int end)
     {
         if (end <= start)

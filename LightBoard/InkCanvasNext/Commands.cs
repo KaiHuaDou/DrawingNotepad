@@ -4,7 +4,7 @@ using System.Windows.Input;
 namespace InkCanvasNext;
 
 /// <summary>
-/// 控件的默认命令：构造期注册绑定，<see cref="InkCanvasNext.UseDefaultCommands"/> 为 true 时由 CanExecute 启用。
+/// 控件的默认命令：构造期注册绑定，<see cref="InkCanvasNext.UseDefaultCommands"/> 为 true 时由 CanExecute 启用
 /// </summary>
 public static class InkCanvasNextCommands
 {

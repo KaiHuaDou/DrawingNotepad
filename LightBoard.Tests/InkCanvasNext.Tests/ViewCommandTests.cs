@@ -2,7 +2,7 @@ using System.Windows;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>视图操作：CurrentView 属性、FitToView、ZoomTo。</summary>
+/// <summary>视图操作：CurrentView 属性、FitToView、ZoomTo</summary>
 public class ViewCommandTests
 {
     [Fact]

@@ -3,7 +3,7 @@ using System.Windows.Input;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>依赖属性的空值处理。</summary>
+/// <summary>依赖属性的空值处理</summary>
 public class PropertyTests
 {
     [Fact]

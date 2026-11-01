@@ -7,80 +7,80 @@ using System.Windows.Media;
 namespace InkCanvasNext;
 
 /// <summary>
-/// 画布编辑工具模式。
+/// 画布编辑工具模式
 /// </summary>
 public enum InkCanvasNextMode
 {
     /// <summary>
-    /// 使用默认笔触绘制墨迹。
+    /// 使用默认笔触绘制墨迹
     /// </summary>
     Ink,
     /// <summary>
-    /// 按笔画擦除墨迹。
+    /// 按笔画擦除墨迹
     /// </summary>
     EraseStroke,
     /// <summary>
-    /// 按区域擦除墨迹。
+    /// 按区域擦除墨迹
     /// </summary>
     EraseArea,
     /// <summary>
-    /// 选择墨迹笔画。
+    /// 选择墨迹笔画
     /// </summary>
     Select,
     /// <summary>
-    /// 绘制直线。
+    /// 绘制直线
     /// </summary>
     Line,
     /// <summary>
-    /// 绘制圆形。
+    /// 绘制圆形
     /// </summary>
     Circle,
     /// <summary>
-    /// 使用高亮笔触绘制墨迹。
+    /// 使用高亮笔触绘制墨迹
     /// </summary>
     Highlighter
 }
 
 /// <summary>
-/// 盖章动作（克隆选区或粘贴剪贴板墨迹）。
+/// 盖章动作（克隆选区或粘贴剪贴板墨迹）
 /// </summary>
 public enum StampAction
 {
     /// <summary>
-    /// 无盖章动作。
+    /// 无盖章动作
     /// </summary>
     None,
     /// <summary>
-    /// 克隆选区墨迹。
+    /// 克隆选区墨迹
     /// </summary>
     Clone,
     /// <summary>
-    /// 粘贴剪贴板中的墨迹。
+    /// 粘贴剪贴板中的墨迹
     /// </summary>
     Paste
 }
 
 /// <summary>
-/// 鼠标滚轮动作模式。
+/// 鼠标滚轮动作模式
 /// </summary>
 public enum MouseWheelAction
 {
     /// <summary>
-    /// 滚动画布。
+    /// 滚动画布
     /// </summary>
     Scroll,
     /// <summary>
-    /// 缩放画布。
+    /// 缩放画布
     /// </summary>
     Zoom,
     /// <summary>
-    /// 忽略鼠标滚轮。
+    /// 忽略鼠标滚轮
     /// </summary>
     None
 }
 
 /// <summary>
-/// 支持绘制、擦除、选择、直线、圆形、高亮等模式的墨迹画布控件。
+/// 支持绘制、擦除、选择、直线、圆形、高亮等模式的墨迹画布控件
 /// </summary>
 public partial class InkCanvasNext : UserControl
 {
@@ -88,11 +88,11 @@ public partial class InkCanvasNext : UserControl
     private readonly SelectionVisual selectionVisual;
 
     /// <summary>
-    /// 初始化 InkCanvasNext 控件并装配内部画布与选择控制器。
+    /// 初始化 InkCanvasNext 控件并装配内部画布与选择控制器
     /// </summary>
-    /// <param name="canvasSize">内层墨迹画布尺寸；文档背景页定位在此画布内。</param>
-    /// <param name="initialOffset">初始视口左上角相对内容原点的偏移（视口单位）。</param>
-    /// <param name="options">构造期选项；为 null 时取默认值。</param>
+    /// <param name="canvasSize">内层墨迹画布尺寸；文档背景页定位在此画布内</param>
+    /// <param name="initialOffset">初始视口左上角相对内容原点的偏移（视口单位）</param>
+    /// <param name="options">构造期选项；为 null 时取默认值</param>
     public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions? options = null)
     {
         InitializeComponent( );
@@ -158,7 +158,7 @@ public partial class InkCanvasNext : UserControl
     }
 
     /// <summary>
-    /// 供 internal 协作对象（SelectionController 等）回调，外部消费者请订阅对应事件。
+    /// 供 internal 协作对象（SelectionController 等）回调，外部消费者请订阅对应事件
     /// </summary>
     internal void RaiseSelectionChanged( )
     {
@@ -172,8 +172,8 @@ public partial class InkCanvasNext : UserControl
     }
 
     /// <summary>
-    /// 把选区包围盒（内容坐标）变换到 <paramref name="relativeTo"/> 坐标系返回；无选区或不可用返回 null。
-    /// 用于选区工具栏跟随定位。
+    /// 把选区包围盒（内容坐标）变换到 <paramref name="relativeTo"/> 坐标系返回；无选区或不可用返回 null
+    /// 用于选区工具栏跟随定位
     /// </summary>
     public Rect? GetSelectionScreenBounds(Visual relativeTo)
     {
@@ -196,7 +196,7 @@ public partial class InkCanvasNext : UserControl
 
     /// <summary>
     /// 返回画布当前可见视口在 <paramref name="relativeTo"/> 坐标系下的矩形；
-    /// 用于选区工具栏的可见性判断与位置夹紧。
+    /// 用于选区工具栏的可见性判断与位置夹紧
     /// </summary>
     public Rect? GetCanvasViewportBounds(UIElement relativeTo)
     {
@@ -333,7 +333,8 @@ public partial class InkCanvasNext : UserControl
 
     private void ApplyStrokes(StrokeCollection strokes)
     {
-        CancelEdgeScroll( );
+        // 命中测试器挂在旧集合上，手势先在旧集合上结束
+        ResetTouchState( );
 
         InnerCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
         InnerCanvas.Strokes = strokes;
@@ -349,9 +350,9 @@ public partial class InkCanvasNext : UserControl
     }
 
     /// <summary>
-    /// 设置文档背景页面；页面为 null 或盒子无效时移除页面。
+    /// 设置文档背景页面；页面为 null 或盒子无效时移除页面
     /// fitBox 为背景页在内容坐标中的 Uniform 适配盒子，决定 DocumentHost 的位置与尺寸，页面由布局居中等比适配；
-    /// 页面与盒子成对提供，均取自同一页的背景引用。
+    /// 页面与盒子成对提供，均取自同一页的背景引用
     /// </summary>
     public void SetDocumentPage(ImageSource? page, Rect? fitBox)
     {

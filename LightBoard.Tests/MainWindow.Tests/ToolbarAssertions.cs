@@ -6,11 +6,11 @@ using InkCanvasNext;
 namespace LightBoard.Tests.Toolbar;
 
 /// <summary>
-/// 状态机一致性不变量：mode、画布模式、DrawingAttributes、全部控件勾选与 StampAction 必须同构。
+/// 状态机一致性不变量：mode、画布模式、DrawingAttributes、全部控件勾选与 StampAction 必须同构
 /// </summary>
 internal static class ToolbarAssertions
 {
-    /// <summary>stamp 非空时跳过印章清理断言（供印章激活态用例使用）。</summary>
+    /// <summary>stamp 非空时跳过印章清理断言（供印章激活态用例使用）</summary>
     public static void AssertConsistent(MainWindowHost host, StampAction? stamp = null)
     {
         var window = host.Window;

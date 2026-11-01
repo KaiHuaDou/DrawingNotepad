@@ -7,11 +7,11 @@ using System.Windows.Media;
 namespace LightBoard.Tests.Toolbar;
 
 /// <summary>
-/// 模拟真实用户交互：单选组先执行 WPF 的组内互斥再触发 Click；ToggleButton 先翻转状态再触发 Click。
+/// 模拟真实用户交互：单选组先执行 WPF 的组内互斥再触发 Click；ToggleButton 先翻转状态再触发 Click
 /// </summary>
 internal static class ToolDriver
 {
-    /// <summary>模拟点击单选按钮（颜色、粗细、工具）。</summary>
+    /// <summary>模拟点击单选按钮（颜色、粗细、工具）</summary>
     public static void ClickRadio(MainWindowHost host, RadioButton radio)
     {
         if (radio.GroupName.Length > 0)
@@ -28,7 +28,7 @@ internal static class ToolDriver
         radio.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, radio));
     }
 
-    /// <summary>模拟点击 ToggleButton：先翻转勾选，再触发 Click。</summary>
+    /// <summary>模拟点击 ToggleButton：先翻转勾选，再触发 Click</summary>
     public static void Toggle(ToggleButton toggle, bool on)
     {
         toggle.IsChecked = on;

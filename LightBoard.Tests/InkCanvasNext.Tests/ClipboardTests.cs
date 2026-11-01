@@ -6,7 +6,7 @@ using System.Windows.Ink;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>剪贴板的边界路径。会临时改写系统剪贴板，结束后恢复原内容。</summary>
+/// <summary>剪贴板的边界路径。会临时改写系统剪贴板，结束后恢复原内容</summary>
 public class ClipboardTests
 {
     [Fact]

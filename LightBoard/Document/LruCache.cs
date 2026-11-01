@@ -5,8 +5,8 @@ using System.Windows.Media;
 namespace LightBoard;
 
 /// <summary>
-/// 文档页图像的最近使用缓存：翻页来回切换时省掉一次整页光栅化。
-/// 图像必须已冻结（本类型自身加锁，但图像会被跨线程读取）。
+/// 文档页图像的最近使用缓存：翻页来回切换时省掉一次整页光栅化
+/// 图像必须已冻结（本类型自身加锁，但图像会被跨线程读取）
 /// </summary>
 internal sealed class LruCache(int capacity)
 {

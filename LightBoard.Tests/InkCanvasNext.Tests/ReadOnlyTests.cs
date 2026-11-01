@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>只读模式：输入不改墨迹与选区，平移缩放仍可用。</summary>
+/// <summary>只读模式：输入不改墨迹与选区，平移缩放仍可用</summary>
 public class ReadOnlyTests
 {
     [Fact]

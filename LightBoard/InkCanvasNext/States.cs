@@ -47,12 +47,12 @@ internal readonly record struct ToolSnapshot(InkCanvasNextMode Mode, StampAction
 }
 
 /// <summary>
-/// 触摸状态的状态级元数据：每项回答一个独立问题，事件答复与编辑模式覆盖均由本表推导。
+/// 触摸状态的状态级元数据：每项回答一个独立问题，事件答复与编辑模式覆盖均由本表推导
 /// </summary>
-/// <param name="BlocksNativeInput">事件全程接管（Down/Move/Up 均 Handled），原生管线不接管收笔与选区移动。</param>
-/// <param name="OverridesEditing">持有画布级手势：进入时把原生编辑模式压为 None，退出时恢复。</param>
-/// <param name="PalmErase">掌擦态：触点包络作为橡皮实时擦除。</param>
-/// <param name="AreaEraseHost">面积擦宿主：EraseArea 工具在这些绘制上下文中持续擦除。</param>
+/// <param name="BlocksNativeInput">事件全程接管（Down/Move/Up 均 Handled），原生管线不接管收笔与选区移动</param>
+/// <param name="OverridesEditing">持有画布级手势：进入时把原生编辑模式压为 None，退出时恢复</param>
+/// <param name="PalmErase">掌擦态：触点包络作为橡皮实时擦除</param>
+/// <param name="AreaEraseHost">面积擦宿主：EraseArea 工具在这些绘制上下文中持续擦除</param>
 internal readonly record struct StateTraits(
     bool BlocksNativeInput = false,
     bool OverridesEditing = false,
@@ -112,7 +112,7 @@ public partial class InkCanvasNext
             TouchState.Idle => count switch
             {
                 0 => TouchState.Idle,
-                // 选区入口是高优先级候选：仅 count∈{1,2} 时评估（3+ 指不误入）
+                // 选区入口是高优先级候选：仅 count in {1,2} 时评估（3+ 指不误入）
                 1 or 2 when tool.IsSelectionEntry => TouchState.Selection,
                 1 => TouchState.EvalDraw,
                 2 when d2 <= l2 => TouchState.PanZoom,

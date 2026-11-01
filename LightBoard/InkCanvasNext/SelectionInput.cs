@@ -231,7 +231,7 @@ public partial class InkCanvasNext
         }
     }
 
-    /// <summary>取消进行中的鼠标选择手势（不记录变换），并释放捕获。用于离开 Select 模式/重置输入。</summary>
+    /// <summary>取消进行中的鼠标选择手势（不记录变换），并释放捕获。用于离开 Select 模式/重置输入</summary>
     private void CancelSelectionGesture( )
     {
         if (selectionGesture == SelectionGesture.None)

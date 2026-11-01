@@ -3,7 +3,7 @@ using System.Windows;
 namespace InkCanvasNext.Tests;
 
 /// <summary>
-/// 边缘热区的几何：热区矩形按缩放折算、包围盒的严格相交，以及清空热区所需的最小位移。
+/// 边缘热区的几何：热区矩形按缩放折算、包围盒的严格相交，以及清空热区所需的最小位移
 /// </summary>
 public class EdgeScrollTests
 {

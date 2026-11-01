@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>落章靠近画布边缘时的画布扩展。</summary>
+/// <summary>落章靠近画布边缘时的画布扩展</summary>
 public class StampEdgeTests
 {
     [Fact]

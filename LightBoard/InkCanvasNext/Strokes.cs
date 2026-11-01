@@ -12,22 +12,22 @@ namespace InkCanvasNext;
 public partial class InkCanvasNext
 {
     /// <summary>
-    /// 获取当前选中的笔画数量。
+    /// 获取当前选中的笔画数量
     /// </summary>
     public int SelectedCount => selection.SelectedStrokes.Count;
 
     /// <summary>
-    /// 获取当前选中的笔画快照；笔画实例与画布共享。
+    /// 获取当前选中的笔画快照；笔画实例与画布共享
     /// </summary>
     public IReadOnlyList<Stroke> SelectedStrokes => Array.AsReadOnly(selection.SelectedStrokes.ToArray( ));
 
     /// <summary>
-    /// 获取是否存在选中笔画。
+    /// 获取是否存在选中笔画
     /// </summary>
     public bool HasSelection => selection.HasSelection;
 
     /// <summary>
-    /// 复制选中笔画到剪贴板，返回是否写入成功。
+    /// 复制选中笔画到剪贴板，返回是否写入成功
     /// </summary>
     public bool CopySelected( )
     {
@@ -52,7 +52,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 剪切选中笔画到剪贴板并从画布删除，返回是否写入成功。
+    /// 剪切选中笔画到剪贴板并从画布删除，返回是否写入成功
     /// </summary>
     public bool CutSelected( )
     {
@@ -66,7 +66,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 删除选中的笔画。
+    /// 删除选中的笔画
     /// </summary>
     public void DeleteSelected( )
     {
@@ -80,7 +80,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 在指定位置克隆一份选区笔画。
+    /// 在指定位置克隆一份选区笔画
     /// </summary>
     public void StampCloneAt(Point point)
     {
@@ -97,7 +97,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 在指定位置粘贴剪贴板中的墨迹笔画，返回是否粘贴成功。
+    /// 在指定位置粘贴剪贴板中的墨迹笔画，返回是否粘贴成功
     /// </summary>
     public bool StampPasteAt(Point point)
     {
@@ -137,7 +137,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 把笔画落入当前视口：包围盒不完全在可见内容区域内时平移到视口中心，否则按原坐标保留。
+    /// 把笔画落入当前视口：包围盒不完全在可见内容区域内时平移到视口中心，否则按原坐标保留
     /// </summary>
     public void EnsureStrokesVisible(StrokeCollection strokes)
     {

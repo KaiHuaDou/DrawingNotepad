@@ -7,13 +7,13 @@ namespace InkCanvasNext.Tests;
 
 /// <summary>
 /// 特殊模式（Select/EraseArea/EraseStroke/形状/盖章）下手势的可用性：
-/// 手势接管（平移/缩放/擦除）在覆盖工具模式下仍可用，且不产生错误的墨迹/选区副作用。
+/// 手势接管（平移/缩放/擦除）在覆盖工具模式下仍可用，且不产生错误的墨迹/选区副作用
 /// </summary>
 public class SpecialModeGestureTests
 {
     private static readonly Point P1 = new(100, 100);
 
-    /// <summary>双指几何断言用笔画：中间两个触点恰好落在两指基线上。</summary>
+    /// <summary>双指几何断言用笔画：中间两个触点恰好落在两指基线上</summary>
     private static readonly Point[] PinchStrokePoints = [new(180, 96), new(200, 100), new(300, 100), new(320, 104)];
 
     // ---------- Select 模式 ----------
@@ -109,7 +109,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>盖章期间双指并拢：选区入口被压制，双指照常迁入 PanZoom，全程不落章、不产生选区。</summary>
+    /// <summary>盖章期间双指并拢：选区入口被压制，双指照常迁入 PanZoom，全程不落章、不产生选区</summary>
     [Fact]
     public void SelectMode_Stamp_TwoCloseFingers_EntersPanZoom( )
     {
@@ -174,7 +174,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>套索在途时落第三指：迁入 Pan 前结算套索（选区保留），随后三指平移画布。</summary>
+    /// <summary>套索在途时落第三指：迁入 Pan 前结算套索（选区保留），随后三指平移画布</summary>
     [Fact]
     public void SelectMode_LassoThenThirdFinger_EntersPan_KeepsLassoSelection( )
     {
@@ -212,8 +212,8 @@ public class SpecialModeGestureTests
 
     /// <summary>
     /// 双指相似变换：基线两指 (200,100)/(300,100) 移到 (280,10)/(280,210)，
-    /// 即绕基线中点 (250,100) 旋转 90 度、间距放大 2 倍、中点平移到 (280,110)。
-    /// 基线瞬间位于第一指处的笔画触点必须落在第一指终点，其余触点按同一相似变换映射。
+    /// 即绕基线中点 (250,100) 旋转 90 度、间距放大 2 倍、中点平移到 (280,110)
+    /// 基线瞬间位于第一指处的笔画触点必须落在第一指终点，其余触点按同一相似变换映射
     /// </summary>
     [Fact]
     public void SelectMode_Pinch_RotateScaleTranslate_SelectionTracksFingers( )
@@ -240,7 +240,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>捏合中抬起一指后，剩余指继续拖动，位移从抬指瞬间开始累计（不跳变、不吞掉这一帧）。</summary>
+    /// <summary>捏合中抬起一指后，剩余指继续拖动，位移从抬指瞬间开始累计（不跳变、不吞掉这一帧）</summary>
     [Fact]
     public void SelectMode_PinchThenLiftOneFinger_DragContinuesFromRemainingFinger( )
     {
@@ -263,7 +263,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>手柄缩放手势中落下第二指即升级为双指相似变换：随后两指纯平移，选区位移等于平移量。</summary>
+    /// <summary>手柄缩放手势中落下第二指即升级为双指相似变换：随后两指纯平移，选区位移等于平移量</summary>
     [Fact]
     public void SelectMode_HandleGestureThenSecondFinger_BecomesPinch( )
     {
@@ -285,7 +285,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>一次"双指捏合 -> 抬一指 -> 拖动"的手势只产生一条撤销记录。</summary>
+    /// <summary>一次"双指捏合 -> 抬一指 -> 拖动"的手势只产生一条撤销记录</summary>
     [Fact]
     public void SelectMode_PinchWithRebase_UndoRestoresWholeGesture( )
     {
@@ -311,8 +311,8 @@ public class SpecialModeGestureTests
     }
 
     /// <summary>缩放手柄拖过锚点（对侧中点）不翻转选区：单轴因子钳在 MinSelectionScale，
-    /// 笔画停在被压缩的一侧而非镜像到锚点另一侧（x 不越过锚点、y 不变）。
-    /// 手柄与锚点由包围盒推导，GetBounds 含笔画半宽外扩，期望值在手势前按真实包围盒捕获。</summary>
+    /// 笔画停在被压缩的一侧而非镜像到锚点另一侧（x 不越过锚点、y 不变）
+    /// 手柄与锚点由包围盒推导，GetBounds 含笔画半宽外扩，期望值在手势前按真实包围盒捕获</summary>
     [Fact]
     public void SelectMode_ScaleHandlePastAnchor_ClampsToMinScale( )
     {
@@ -344,7 +344,7 @@ public class SpecialModeGestureTests
     }
 
     /// <summary>旋转手柄拖拽：手柄命中（选区正上方 40）、角度换算（弧度差 × RadToDeg）、
-    /// 绕选区中心整体旋转 +90°（手从正上方移到右方同半径处），旋转手柄沿鼠标角度等半径跟随、抬手清空。</summary>
+    /// 绕选区中心整体旋转 +90°（手从正上方移到右方同半径处），旋转手柄沿鼠标角度等半径跟随、抬手清空</summary>
     [Fact]
     public void SelectMode_RotateHandle_NinetyDegrees_RotatesStrokeAroundCenter( )
     {
@@ -401,7 +401,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>擦除模式单指（EvalDraw）落第二指（并拢）：与普通模式同款迁入 PanZoom。</summary>
+    /// <summary>擦除模式单指（EvalDraw）落第二指（并拢）：与普通模式同款迁入 PanZoom</summary>
     [Theory]
     [InlineData(InkCanvasNextMode.EraseArea)]
     [InlineData(InkCanvasNextMode.EraseStroke)]
@@ -418,7 +418,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>面积擦单指（EvalDraw）落第二指（张开）：不迁多指画笔，保持单指擦除上下文。</summary>
+    /// <summary>面积擦单指（EvalDraw）落第二指（张开）：不迁多指画笔，保持单指擦除上下文</summary>
     [Fact]
     public void EraseAreaMode_TwoFarFingers_StaysEvalDraw( )
     {
@@ -438,7 +438,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>面积擦 5 指并拢：与普通模式同款迁入掌擦，橡皮直径 = 触点包络直径 + 掌擦外扩。</summary>
+    /// <summary>面积擦 5 指并拢：与普通模式同款迁入掌擦，橡皮直径 = 触点包络直径 + 掌擦外扩</summary>
     [Fact]
     public void EraseAreaMode_FiveCloseFingers_EntersEraser( )
     {
@@ -461,7 +461,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>构造期选项写入画布：面积擦直径与掌擦外扩按设置取值。</summary>
+    /// <summary>构造期选项写入画布：面积擦直径与掌擦外扩按设置取值</summary>
     [Fact]
     public void EraserOptions_SetAtConstruction_ApplyToCanvas( )
     {
@@ -484,7 +484,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>面积擦 5 指张开：仍迁入掌擦（普通模式此处迁入 MultiDraw 起笔画）。</summary>
+    /// <summary>面积擦 5 指张开：仍迁入掌擦（普通模式此处迁入 MultiDraw 起笔画）</summary>
     [Fact]
     public void EraseAreaMode_FiveSpreadFingers_EntersEraser( )
     {
@@ -503,7 +503,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>面积擦 4 指张开 + 掌擦触点数四：擦除工具不看间距，直接迁入掌擦。</summary>
+    /// <summary>面积擦 4 指张开 + 掌擦触点数四：擦除工具不看间距，直接迁入掌擦</summary>
     [Fact]
     public void EraseAreaMode_FourSpreadFingers_PalmFingersFour_EntersEraser( )
     {
@@ -522,7 +522,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>笔画擦 5 指张开：同样迁入掌擦而非多指画笔。</summary>
+    /// <summary>笔画擦 5 指张开：同样迁入掌擦而非多指画笔</summary>
     [Fact]
     public void EraseStrokeMode_FiveSpreadFingers_EntersEraser( )
     {
@@ -542,7 +542,7 @@ public class SpecialModeGestureTests
     }
 
     /// <summary>擦除模式单指确认（Draw）后落第二指：拒绝迁入多指画笔，保持原地擦除上下文；
-    /// 附加指抬起后仍保持 Draw，首指抬起才回 Idle。</summary>
+    /// 附加指抬起后仍保持 Draw，首指抬起才回 Idle</summary>
     [Theory]
     [InlineData(InkCanvasNextMode.EraseArea)]
     [InlineData(InkCanvasNextMode.EraseStroke)]
@@ -597,7 +597,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>面积擦单指（EvalDraw）显示橡皮期间切换为墨水工具：橡皮立即隐藏，不等下次触摸或抬手。</summary>
+    /// <summary>面积擦单指（EvalDraw）显示橡皮期间切换为墨水工具：橡皮立即隐藏，不等下次触摸或抬手</summary>
     [Fact]
     public void EraseArea_EvalDraw_SwitchTool_HidesEraserImmediately( )
     {
@@ -616,7 +616,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>面积擦持续擦除（Draw）中切换为高亮工具：橡皮周期立即结束结算，橡皮圈与继续擦除一并终止。</summary>
+    /// <summary>面积擦持续擦除（Draw）中切换为高亮工具：橡皮周期立即结束结算，橡皮圈与继续擦除一并终止</summary>
     [Fact]
     public void EraseArea_Draw_SwitchTool_EndsCycle( )
     {
@@ -643,7 +643,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>掌擦是手势不是工具：进行中切换工具橡皮保持显示，抬手才结算隐藏。</summary>
+    /// <summary>掌擦是手势不是工具：进行中切换工具橡皮保持显示，抬手才结算隐藏</summary>
     [Fact]
     public void PalmErase_SwitchTool_FeedbackKeepsUntilLift( )
     {
@@ -676,7 +676,7 @@ public class SpecialModeGestureTests
 
     // ---------- 盖章模式 ----------
 
-    /// <summary>盖章期间迁入 MultiDraw：多指不创建笔画、抬手不落章。</summary>
+    /// <summary>盖章期间迁入 MultiDraw：多指不创建笔画、抬手不落章</summary>
     [Fact]
     public void StampMode_FarFingers_EnterMultiDraw_WithoutStrokesOrStamp( )
     {
@@ -854,7 +854,7 @@ public class SpecialModeGestureTests
     }
 
     /// <summary>手柄命中半径为视口 DIP：缩放 2x 后内容半径减半，距角柄 HandleHitRadius/2 之外、
-    /// 选区之内的按下点不会命中手柄，单指拖动表现为整体移动（纯平移）而非缩放。</summary>
+    /// 选区之内的按下点不会命中手柄，单指拖动表现为整体移动（纯平移）而非缩放</summary>
     [Fact]
     public void SelectMode_HandleHitRadius_IsScreenAbsolute( )
     {
@@ -881,7 +881,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>在 Select 模式下建好宿主，并用单指套索选中一条经过指定触点的笔画。</summary>
+    /// <summary>在 Select 模式下建好宿主，并用单指套索选中一条经过指定触点的笔画</summary>
     private static TouchHost CreateSelectHost(params Point[] strokePoints)
     {
         var host = new TouchHost( );

@@ -2,7 +2,7 @@ using System.Windows.Automation.Peers;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>控件自动化 Peer。</summary>
+/// <summary>控件自动化 Peer</summary>
 public class AutomationTests
 {
     [Fact]

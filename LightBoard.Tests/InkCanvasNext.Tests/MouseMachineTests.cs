@@ -7,9 +7,9 @@ namespace InkCanvasNext.Tests;
 
 /// <summary>
 /// 鼠标路径测试：自定义工具（形状/选区/面积擦/盖章）经合成触点进入触摸状态机，
-/// 原生工具（墨迹/按笔擦）绕过状态机维持原生收笔。
+/// 原生工具（墨迹/按笔擦）绕过状态机维持原生收笔
 /// 翻译层用 RaiseEvent 冒烟（位置取真实光标，仅断言状态与 Handled）；
-/// 状态机行为用 MousePointer 直驱（坐标精确，与触摸测试同约定）。
+/// 状态机行为用 MousePointer 直驱（坐标精确，与触摸测试同约定）
 /// </summary>
 public class MouseMachineTests
 {
@@ -113,7 +113,7 @@ public class MouseMachineTests
         });
     }
 
-    /// <summary>盖章在抬手位置落章（合流后的统一时机）：按下不落，抬手克隆已选笔画。</summary>
+    /// <summary>盖章在抬手位置落章（合流后的统一时机）：按下不落，抬手克隆已选笔画</summary>
     [Fact]
     public void Stamp_Mouse_CommitsAtUp_NotAtDown( )
     {
@@ -182,7 +182,7 @@ public class MouseMachineTests
         });
     }
 
-    /// <summary>用单指套索选中一条经过 (150,100)-(360,400) 区域的笔画。</summary>
+    /// <summary>用单指套索选中一条经过 (150,100)-(360,400) 区域的笔画</summary>
     private static void LassoSelectStroke(TouchHost host, MouseTouchDevice pointer)
     {
         pointer.Down(RootOf(host, new Point(150, 100)));
@@ -196,7 +196,7 @@ public class MouseMachineTests
         Assert.True(host.Canvas.HasSelection);
     }
 
-    /// <summary>合成触点按布局换算坐标：把画布坐标反推为控件根坐标，供设备输入使用。</summary>
+    /// <summary>合成触点按布局换算坐标：把画布坐标反推为控件根坐标，供设备输入使用</summary>
     private static Point RootOf(TouchHost host, Point canvasPoint)
     {
         return host.Canvas.InnerCanvasElement.TranslatePoint(canvasPoint, host.Canvas);

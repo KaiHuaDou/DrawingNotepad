@@ -10,8 +10,8 @@ using System.Windows.Threading;
 namespace InkCanvasNext.Tests;
 
 /// <summary>
-/// 边缘墨迹滚动提示：热区内有墨迹才显示该侧按钮，点击后平移到该侧热区无墨迹。
-/// 坐标一律由控件的当前视图与阈值推导，宿主尺寸变化时测试自动跟随。
+/// 边缘墨迹滚动提示：热区内有墨迹才显示该侧按钮，点击后平移到该侧热区无墨迹
+/// 坐标一律由控件的当前视图与阈值推导，宿主尺寸变化时测试自动跟随
 /// </summary>
 public class EdgeHintTests
 {
@@ -222,7 +222,7 @@ public class EdgeHintTests
         Assert.Equal(Visibility.Collapsed, Hint(host, "RightEdgeHint").Visibility);
     }
 
-    /// <summary>热区中心的内容坐标。</summary>
+    /// <summary>热区中心的内容坐标</summary>
     private static Point BandCenter(TouchHost host, EdgeScrollSide side)
     {
         var canvas = host.Canvas;

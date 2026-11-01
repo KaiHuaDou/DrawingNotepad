@@ -4,7 +4,7 @@ namespace InkCanvasNext.Tests;
 
 /// <summary>
 /// 视图模型：视口与内容坐标的互换、锚定缩放、平移、夹取，
-/// 以及它与载体（LayoutTransform + ScrollViewer offset）实际映射的一致性。
+/// 以及它与载体（LayoutTransform + ScrollViewer offset）实际映射的一致性
 /// </summary>
 public class ViewTests
 {

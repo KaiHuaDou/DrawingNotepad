@@ -7,8 +7,8 @@ using System.Windows.Media;
 namespace InkCanvasNext.Tests;
 
 /// <summary>
-/// 通过自定义 MockTouchDevice 驱动 InkCanvasNext 触摸状态机，断言各状态的迁移。
-/// 所有测试体在 STA 线程上执行（WPF 控件与触摸输入管线要求）。
+/// 通过自定义 MockTouchDevice 驱动 InkCanvasNext 触摸状态机，断言各状态的迁移
+/// 所有测试体在 STA 线程上执行（WPF 控件与触摸输入管线要求）
 /// </summary>
 public class TouchStateMachineTests
 {
@@ -114,7 +114,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>Draw 中落第二指不看间距：并拢的第二指同样结束原生笔画并迁入多指书写。</summary>
+    /// <summary>Draw 中落第二指不看间距：并拢的第二指同样结束原生笔画并迁入多指书写</summary>
     [Fact]
     public void Draw_SecondFingerClose_EntersMultiDraw( )
     {
@@ -182,7 +182,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>掌擦抬起部分手指后仍留在擦除状态：剩余单指继续擦除抬指后落入的笔画。</summary>
+    /// <summary>掌擦抬起部分手指后仍留在擦除状态：剩余单指继续擦除抬指后落入的笔画</summary>
     [Fact]
     public void Eraser_ReleaseToSingleFinger_KeepsErasing( )
     {
@@ -221,7 +221,7 @@ public class TouchStateMachineTests
 
     // ---------- 掌擦触点数（设置项：四指 / 五指） ----------
 
-    /// <summary>默认掌擦触点数五：四指并拢仍是平移。</summary>
+    /// <summary>默认掌擦触点数五：四指并拢仍是平移</summary>
     [Fact]
     public void Idle_FourCloseFingers_DefaultPalmFingers_EntersPan( )
     {
@@ -239,7 +239,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>掌擦触点数为四：三指并拢仍是平移。</summary>
+    /// <summary>掌擦触点数为四：三指并拢仍是平移</summary>
     [Fact]
     public void Idle_ThreeCloseFingers_PalmFingersFour_EntersPan( )
     {
@@ -257,7 +257,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>掌擦触点数为四：四指并拢直接掌擦。</summary>
+    /// <summary>掌擦触点数为四：四指并拢直接掌擦</summary>
     [Fact]
     public void Idle_FourCloseFingers_PalmFingersFour_EntersEraser( )
     {
@@ -275,7 +275,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>掌擦触点数为四：四指张开仍按间距判为多指书写。</summary>
+    /// <summary>掌擦触点数为四：四指张开仍按间距判为多指书写</summary>
     [Fact]
     public void Idle_FourSpreadFingers_PalmFingersFour_EntersMultiDraw( )
     {
@@ -293,7 +293,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>掌擦触点数为四：双指缩放中并拢落下四指，第三指先迁 Pan，第四指由 Pan 迁入掌擦。</summary>
+    /// <summary>掌擦触点数为四：双指缩放中并拢落下四指，第三指先迁 Pan，第四指由 Pan 迁入掌擦</summary>
     [Fact]
     public void PanZoom_TwoMoreCloseFingers_PalmFingersFour_EntersEraser( )
     {
@@ -313,7 +313,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>掌擦触点数为四：掌擦中张开并超出触点数，非擦除工具转多指书写。</summary>
+    /// <summary>掌擦触点数为四：掌擦中张开并超出触点数，非擦除工具转多指书写</summary>
     [Fact]
     public void Eraser_SpreadBeyondPalmFingers_EntersMultiDraw( )
     {
@@ -408,7 +408,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>Pan 没有回 PanZoom 的迁移：抬指后再落第二指仍停在 Pan，需全部抬起重新开始双指手势。</summary>
+    /// <summary>Pan 没有回 PanZoom 的迁移：抬指后再落第二指仍停在 Pan，需全部抬起重新开始双指手势</summary>
     [Fact]
     public void Pan_AddSecondFinger_StaysPan( )
     {
@@ -475,7 +475,7 @@ public class TouchStateMachineTests
 
     // ---------- MultiDraw ----------
 
-    /// <summary>多指书写抬到单指后仍留在 MultiDraw，剩下的人继续画。</summary>
+    /// <summary>多指书写抬到单指后仍留在 MultiDraw，剩下的人继续画</summary>
     [Fact]
     public void MultiDraw_ReleaseToOneFinger_StaysMultiDraw( )
     {
@@ -494,7 +494,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>MultiDraw 抬到单指后，剩余手指的笔画不被截断，继续追加点直到抬手提交。</summary>
+    /// <summary>MultiDraw 抬到单指后，剩余手指的笔画不被截断，继续追加点直到抬手提交</summary>
     [Fact]
     public void MultiDraw_ReleaseToOneFinger_ContinuesDrawing( )
     {
@@ -542,7 +542,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>控件卸载：在途触摸复位，多指笔画按抬手提交。</summary>
+    /// <summary>控件卸载：在途触摸复位，多指笔画按抬手提交</summary>
     [Fact]
     public void Unloaded_ResetsTouchState( )
     {
@@ -559,7 +559,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>多指作画中重置输入（换页/窗口失活路径）：在途笔画按抬手提交，状态回 Idle。</summary>
+    /// <summary>多指作画中重置输入（换页/窗口失活路径）：在途笔画按抬手提交，状态回 Idle</summary>
     [Fact]
     public void MultiDraw_ResetTouchState_CommitsInflightStrokes( )
     {
@@ -586,7 +586,7 @@ public class TouchStateMachineTests
 
     // ---------- 编辑模式的覆盖与恢复（OverridesEditing 元数据） ----------
 
-    /// <summary>MultiDraw --> Draw：迁出覆盖编辑模式的接管态时，把编辑模式恢复为当前工具。</summary>
+    /// <summary>MultiDraw --> Draw：迁出覆盖编辑模式的接管态时，把编辑模式恢复为当前工具</summary>
     [Fact]
     public void MultiDraw_ReleaseToOneFinger_KeepsEditingModeNone( )
     {
@@ -612,7 +612,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>双指手势中切换工具：EditingMode 延迟到迁出路径统一应用为当前模式（取代 prevMode/RestoreMode）。</summary>
+    /// <summary>双指手势中切换工具：EditingMode 延迟到迁出路径统一应用为当前模式（取代 prevMode/RestoreMode）</summary>
     [Fact]
     public void PanZoom_ModeSwitchDuringGesture_AppliesNewModeOnExit( )
     {
@@ -638,7 +638,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>单指按住未起笔时切换工具：迁出 EvalDraw 回 Idle 时应用新模式。</summary>
+    /// <summary>单指按住未起笔时切换工具：迁出 EvalDraw 回 Idle 时应用新模式</summary>
     [Fact]
     public void EvalDraw_ModeSwitchDuringStroke_AppliesNewModeOnRelease( )
     {

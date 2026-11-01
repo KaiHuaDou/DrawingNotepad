@@ -135,7 +135,7 @@ public partial class InkCanvasNext
     private Thickness edgeHintMargin = new(EdgeHintMarginDefault);
 
     /// <summary>
-    /// 提示按钮距视口四边的间距，视口 DIP；宿主用它在工具栏等常驻界面上方留出位置。
+    /// 提示按钮距视口四边的间距，视口 DIP；宿主用它在工具栏等常驻界面上方留出位置
     /// </summary>
     public Thickness EdgeHintMargin
     {

@@ -1,9 +1,23 @@
 # 轻白板 / LightBoard
 
+[![Release](https://img.shields.io/github/v/release/KaiHuaDou/DrawingNotepad)](https://github.com/KaiHuaDou/DrawingNotepad/releases/latest)
+[![Build](https://img.shields.io/github/actions/workflow/status/KaiHuaDou/DrawingNotepad/build.yml?branch=master&label=Build)](https://github.com/KaiHuaDou/DrawingNotepad/actions/workflows/build.yml)
+[![License](https://img.shields.io/github/license/KaiHuaDou/DrawingNotepad)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/10.0)
+[![Platform](https://img.shields.io/badge/Windows-7%20SP1%2B-0078D6)](#系统要求)
+
 基于 .NET 10 和 WPF 的全屏白板，用于课堂书写与课件批注。
 
 - 即开即用
+- 设计经过实地课堂检验，按课堂反馈持续改进
 - 可替代希沃白板 / 希沃轻白板
+
+## 课堂检验
+
+轻白板在真实课堂中日常使用，功能与交互按课堂反馈持续调整。
+
+- 书写与手势面向触控屏教学场景：掌擦防误触、多指同时书写、边缘滚动提示
+- 每分钟自动备份、快速保存与单实例运行防止课堂中意外退出丢失内容
 
 ## 功能
 

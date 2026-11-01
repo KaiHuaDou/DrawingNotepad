@@ -127,7 +127,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 
 | 方法                             | 说明                                        |
 | -------------------------------- | ------------------------------------------- |
-| `Undo()`                         | 撤销上一步墨迹变更                          |
+| `Undo()`                         | 撤销上一步墨迹变更；擦除手势中调用时，已擦除的部分作为独立一步回退 |
 | `Redo()`                         | 重做上一步墨迹变更                          |
 | `CopySelected()`                 | 复制选中的墨迹到剪贴板，返回是否成功        |
 | `CutSelected()`                  | 剪切选中的墨迹到剪贴板，返回是否成功        |
@@ -167,10 +167,11 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 ## 使用注意
 
 - 手势阈值、四侧热区、历史容量与滚轮行为只在构造时读取；`PalmEraseFingers`、橡皮参数同理。改动需重建画布。
-- `Strokes` 赋值是替换集合：清空选区、盖章状态与撤销历史，并把画布扩展到容纳全部笔画；赋 null 会变成空集合。
+- `Strokes` 赋值是替换集合：清空选区、盖章状态与撤销历史，结束进行中的手势，并把画布扩展到容纳全部笔画；赋 null 会变成空集合。
 - `OffsetX` / `OffsetY` 的写入是延迟命令（`ScrollViewer.ScrollTo*Offset`），布局完成后才反映到读取值；一次设置整幅视图用 `CurrentView = new View(...)`。
 - 普通滚轮交给内层 `ScrollViewer`；Ctrl+滚轮缩放，Alt+滚轮横滚。`WheelAction` 为 `Zoom` 时普通滚轮缩放，`None` 下不接管。
 - `Mode` 在触摸手势进行中切换时，进行中的形状被放弃、橡皮反馈按新工具刷新；离开选择模式时选区清空。
 - `IsReadOnly` 只挡输入：单指不落笔、不选框、不盖章，五指按平移处理；`Undo` 等公共方法仍可调用。
 - `UseDefaultCommands` 为 true 时控件可聚焦并启用默认命令；绑定在构造期注册，撤销、重做、删除、复制、剪切、粘贴、取消。
 - `SwapHistory` 用于在多页之间保存与恢复撤销历史，`HistorySnapshot.Position` 表示当前指针位置。
+- 擦除手势按一次手势记一步撤销；手势中发生的清空、粘贴等画布改动各自成为独立的撤销项，次序与发生先后一致。

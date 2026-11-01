@@ -5,11 +5,11 @@ namespace InkCanvasNext;
 
 /// <summary>
 /// 视口与内容坐标系之间的相似变换（等比缩放 + 平移）
-/// Offset 与位置参数一律以视口单位计：内容尺寸乘 Scale 后才是它在视口中的尺寸。
+/// Offset 与位置参数一律以视口单位计：内容尺寸乘 Scale 后才是它在视口中的尺寸
 /// </summary>
-/// <param name="Scale">内容到视口的缩放倍数。</param>
-/// <param name="OffsetX">视口左边缘相对内容原点的偏移。</param>
-/// <param name="OffsetY">视口上边缘相对内容原点的偏移。</param>
+/// <param name="Scale">内容到视口的缩放倍数</param>
+/// <param name="OffsetX">视口左边缘相对内容原点的偏移</param>
+/// <param name="OffsetY">视口上边缘相对内容原点的偏移</param>
 public readonly record struct View(double Scale, double OffsetX, double OffsetY)
 {
     /// <summary>

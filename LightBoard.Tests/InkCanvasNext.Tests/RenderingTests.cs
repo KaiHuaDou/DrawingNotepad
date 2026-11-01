@@ -6,7 +6,7 @@ using System.Windows.Media.Imaging;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>渲染 API 的底色参数与像素输出。</summary>
+/// <summary>渲染 API 的底色参数与像素输出</summary>
 public class RenderingTests
 {
     [Fact]

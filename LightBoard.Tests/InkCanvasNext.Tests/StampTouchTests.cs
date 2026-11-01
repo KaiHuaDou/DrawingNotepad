@@ -7,8 +7,8 @@ namespace InkCanvasNext.Tests;
 
 /// <summary>
 /// 盖章模式的手势路由：多指手势照常（MultiDraw 被排除、不出笔画），
-/// 未升级为手势的单指序列在抬手位置落章，按下时不落章。
-/// 所有测试体在 STA 线程上执行（WPF 控件与触摸输入管线要求）。
+/// 未升级为手势的单指序列在抬手位置落章，按下时不落章
+/// 所有测试体在 STA 线程上执行（WPF 控件与触摸输入管线要求）
 /// </summary>
 public class StampTouchTests
 {
@@ -118,7 +118,7 @@ public class StampTouchTests
         });
     }
 
-    /// <summary>武装随手势解除、随下一单指序列重新武装：捏合手势不落章，其后的单击照常落章。</summary>
+    /// <summary>武装随手势解除、随下一单指序列重新武装：捏合手势不落章，其后的单击照常落章</summary>
     [Fact]
     public void PinchGesture_Disarms_NextTapRestamps( )
     {

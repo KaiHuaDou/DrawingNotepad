@@ -2,7 +2,7 @@ using System.Windows.Input;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>撤销历史容量与快照恢复。</summary>
+/// <summary>撤销历史容量与快照恢复</summary>
 public class HistoryTests
 {
     [Fact]

@@ -2,7 +2,7 @@ using System.Windows.Input;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>滚轮修饰键的组合结果。</summary>
+/// <summary>滚轮修饰键的组合结果</summary>
 public class WheelTests
 {
     [Theory]

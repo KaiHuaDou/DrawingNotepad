@@ -2,7 +2,7 @@ using System.Windows;
 
 namespace InkCanvasNext.Tests;
 
-// 多指笔画的几何重建挂在帧节拍上：触摸事件只追加点，帧回调统一重绘。
+// 多指笔画的几何重建挂在帧节拍上：触摸事件只追加点，帧回调统一重绘
 // 笔画集合清空时必须退订，否则 WPF 会为静止内容持续逐帧渲染。
 public class MultiTouchFrameTests
 {

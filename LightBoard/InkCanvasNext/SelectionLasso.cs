@@ -15,7 +15,7 @@ public partial class InkCanvasNext
 
     // ---------- 套索 ----------
 
-    /// <summary>空白处按下（鼠标/触摸共用）：清空当前选型，以按下点为起点开始增量套索测试。</summary>
+    /// <summary>空白处按下（鼠标/触摸共用）：清空当前选型，以按下点为起点开始增量套索测试</summary>
     private void BeginLasso(Point p)
     {
         selection.Clear( );
@@ -27,7 +27,7 @@ public partial class InkCanvasNext
         lassoTester.AddPoints([ToStylusPoint(p)]);
     }
 
-    /// <summary>套索轨迹追加（鼠标/触摸共用）：去抖后累积路径点并更新命中测试与套索视觉。</summary>
+    /// <summary>套索轨迹追加（鼠标/触摸共用）：去抖后累积路径点并更新命中测试与套索视觉</summary>
     private void UpdateLassoTrack(Point p)
     {
         // 采样间距为视口 DIP：平方距离比较除以缩放平方转内容，保持屏幕绝对大小

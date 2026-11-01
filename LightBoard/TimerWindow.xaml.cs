@@ -148,7 +148,7 @@ public partial class TimerWindow : Window
         }
     }
 
-    /// <summary>当前显示的时长：倒计时为剩余，正计时为累计。</summary>
+    /// <summary>当前显示的时长：倒计时为剩余，正计时为累计</summary>
     private TimeSpan DisplayValue( )
     {
         var used = Elapsed( );
@@ -158,7 +158,7 @@ public partial class TimerWindow : Window
             : Clamp(countupElapsed + used, TimeSpan.Zero, MaxSpan);
     }
 
-    /// <summary>本轮已运行的时长；取单调时钟，不受系统时间调整影响。</summary>
+    /// <summary>本轮已运行的时长；取单调时钟，不受系统时间调整影响</summary>
     private TimeSpan Elapsed( )
     {
         return state == TimerState.Idle ? TimeSpan.Zero : Stopwatch.GetElapsedTime(startedAt);
@@ -169,7 +169,7 @@ public partial class TimerWindow : Window
         return mode == TimerMode.Countup ? countupElapsed < MaxSpan : countdownRemaining > TimeSpan.Zero;
     }
 
-    /// <summary>调整当前模式的数值：倒计时调剩余量，正计时调累计量。</summary>
+    /// <summary>调整当前模式的数值：倒计时调剩余量，正计时调累计量</summary>
     private void Adjust(TimeSpan delta)
     {
         if (state != TimerState.Idle)

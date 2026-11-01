@@ -2,7 +2,7 @@ using System.Windows;
 
 namespace InkCanvasNext.Tests;
 
-// 多指笔画按窗口分段缓存几何：活动段每帧重建，冻结段各占一个绘制视觉。
+// 多指笔画按窗口分段缓存几何：活动段每帧重建，冻结段各占一个绘制视觉
 // 分段只影响绘制路径，提交的 Stroke 必须保留全部触点。
 public class MultiTouchSegmentTests
 {

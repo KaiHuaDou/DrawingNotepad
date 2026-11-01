@@ -19,7 +19,7 @@ public partial class InkCanvasNext
     private View edgeScrollFrom;
     private View edgeScrollTo;
 
-    /// <summary>测试接缝：过渡是否进行中。</summary>
+    /// <summary>测试接缝：过渡是否进行中</summary>
     internal bool IsEdgeScrolling => edgeScrollTimer.IsEnabled;
 
     /// <summary>

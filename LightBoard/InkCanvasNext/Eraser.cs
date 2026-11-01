@@ -14,10 +14,8 @@ public partial class InkCanvasNext
 
     private void EndEraserCycle( )
     {
-        if (eraser.End( ) is { } change)
-        {
-            PushChange(change);
-        }
+        SealEraseBatch( );
+        eraser.End( );
     }
 
     private bool IsAreaEraserActive(TouchState state)
@@ -64,8 +62,6 @@ public partial class InkCanvasNext
 internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameters parameters)
 {
     private readonly double rebuildThreshold = parameters.RebuildThreshold;
-    private readonly StrokeCollection added = [];
-    private readonly StrokeCollection removed = [];
 
     private IncrementalStrokeHitTester? hitTester;
 
@@ -78,7 +74,12 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
     /// </summary>
     internal double Scale { get; set; } = 1.0;
 
-    internal bool Active { get; private set; }
+    private bool Active { get; set; }
+
+    /// <summary>
+    /// 命中测试进行中：这段窗口里的画布增删都由擦除器产生
+    /// </summary>
+    internal bool Recording { get; private set; }
 
     private double LogicalDiameter { get => Math.Max(Diameter / Scale, field); } = parameters.MinLogicalDiameter;
 
@@ -99,8 +100,6 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
         }
 
         Active = true;
-        added.Clear( );
-        removed.Clear( );
         CreateHitTester(canvasPosition);
     }
 
@@ -117,14 +116,23 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
 
     internal void Update(Point canvasPosition)
     {
-        if (!Active)
+        // 命中回调里的画布增删属于当前批次，窗口要盖住整段命中测试
+        Recording = true;
+        try
         {
-            Start(canvasPosition);
+            if (!Active)
+            {
+                Start(canvasPosition);
+            }
+            else
+            {
+                SyncHitTester(canvasPosition);
+                Move(canvasPosition);
+            }
         }
-        else
+        finally
         {
-            SyncHitTester(canvasPosition);
-            Move(canvasPosition);
+            Recording = false;
         }
     }
 
@@ -146,29 +154,19 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
         CreateHitTester(canvasPosition);
     }
 
-    internal StrokeChanges? End( )
+    internal void End( )
     {
         // EvalDraw 只显示橡皮不开擦除周期：隐藏不依赖 Active，否则圈内残留到下一次擦除态
         feedback.Visibility = Visibility.Collapsed;
 
         if (!Active)
         {
-            return null;
+            return;
         }
 
         Active = false;
         hitTester?.EndHitTesting( );
         hitTester = null;
-
-        if (added.Count == 0 && removed.Count == 0)
-        {
-            return null;
-        }
-
-        var change = new StrokeChanges([.. added], [.. removed]);
-        added.Clear( );
-        removed.Clear( );
-        return change;
     }
 
     private void CreateHitTester(Point position)
@@ -183,7 +181,6 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
 
     private void OnStrokeHit(object sender, StrokeHitEventArgs e)
     {
-        var result = e.GetPointEraseResults( );
         var hitStroke = e.HitStroke;
 
         if (!canvas.Strokes.Contains(hitStroke))
@@ -191,28 +188,6 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
             return;
         }
 
-        canvas.Strokes.Replace([hitStroke], result);
-
-        TrackRemoved(hitStroke);
-        foreach (var stroke in result)
-        {
-            TrackAdded(stroke);
-        }
-    }
-
-    private void TrackAdded(Stroke stroke)
-    {
-        if (!removed.Remove(stroke))
-        {
-            added.Add(stroke);
-        }
-    }
-
-    private void TrackRemoved(Stroke stroke)
-    {
-        if (!added.Remove(stroke))
-        {
-            removed.Add(stroke);
-        }
+        canvas.Strokes.Replace([hitStroke], e.GetPointEraseResults( ));
     }
 }

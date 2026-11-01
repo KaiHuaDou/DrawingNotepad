@@ -5,8 +5,8 @@ using System.Windows.Threading;
 namespace LightBoard.Tests.Toolbar;
 
 /// <summary>
-/// 单例 STA 应用线程：创建唯一 App 并常驻 Dispatcher。
-/// WPF 对象具有线程亲和性且一个 AppDomain 只允许一个 Application，因此全部测试在该线程上顺序执行。
+/// 单例 STA 应用线程：创建唯一 App 并常驻 Dispatcher
+/// WPF 对象具有线程亲和性且一个 AppDomain 只允许一个 Application，因此全部测试在该线程上顺序执行
 /// </summary>
 internal static class UiThread
 {
@@ -76,7 +76,7 @@ internal static class UiThread
         return Dispatcher!;
     }
 
-    /// <summary>在唯一 App 的 STA 线程上执行测试体，异常原样抛出。</summary>
+    /// <summary>在唯一 App 的 STA 线程上执行测试体，异常原样抛出</summary>
     public static void Run(Action action)
     {
         Exception? error = null;

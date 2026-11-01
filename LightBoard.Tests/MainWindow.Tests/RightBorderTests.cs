@@ -7,14 +7,14 @@ using System.Windows.Threading;
 
 namespace LightBoard.Tests.Toolbar;
 
-// RightBorder 面板开合的布局契约:终态全部由内容实测,动画只做过渡,写回后恢复自适应。
-// 断言依赖真实布局与动画时钟,窗口必须实际显示(未显示的 Window 上 UpdateLayout 不完整、动画时钟不推进)。
+// RightBorder 面板开合的布局契约：终态全部由内容实测，动画只做过渡，写回后恢复自适应
+// 断言依赖真实布局与动画时钟，窗口必须实际显示 (未显示的 Window 上 UpdateLayout 不完整、动画时钟不推进)。
 [Collection("Toolbar")]
 public class RightBorderTests
 {
-    // ExpandedWidth 对列表做无约束重测,真实自动布局的度量与它存在环境相关的漂移
+    // ExpandedWidth 对列表做无约束重测，真实自动布局的度量与它存在环境相关的漂移
     // (CI 实测 1.38 px:字形/虚拟化度量在 ∞ 约束与有限视口两条路径上不逐位一致),
-    // 远超布局圆差 0.5,断言的是"写回后落回内容自适应宽"而非逐位相等。
+    // 远超布局圆差 0.5，断言的是"写回后落回内容自适应宽"而非逐位相等。
     private const double ExpandedTolerance = 2.5;
 
     [Fact]
@@ -25,7 +25,7 @@ public class RightBorderTests
             using var host = CreateVisibleHost(out var window);
             var border = window.RightBorder;
 
-            // 复现 AllPageToggleClick 的测量序列:锁宽补布局后,列宽应是内容需求而非被视口压缩
+            // 复现 AllPageToggleClick 的测量序列：锁宽补布局后，列宽应是内容需求而非被视口压缩
             var from = border.ActualWidth;
             border.BeginAnimation(FrameworkElement.WidthProperty, new DoubleAnimation(from, from, TimeSpan.FromSeconds(0.2)));
             window.PagePreviewsBox.Visibility = Visibility.Visible;
@@ -33,8 +33,8 @@ public class RightBorderTests
 
             var column = ((GridView) window.PagePreviewsBox.View).Columns[0];
 
-            // 视口约 212,列内容(页码 + 300 宽缩略图)必须完整报出需求
-            Assert.True(column.ActualWidth >= 226, $"列宽 {column.ActualWidth:0.#} 被视口压缩,未报出内容需求");
+            // 视口约 212，列内容 (页码 + 300 宽缩略图) 必须完整报出需求
+            Assert.True(column.ActualWidth >= 226, $"列宽 {column.ActualWidth:0.#} 被视口压缩，未报出内容需求");
         });
     }
 
@@ -58,7 +58,7 @@ public class RightBorderTests
                     + $"按钮行={window.PageButtonsRow.ActualWidth:0.#}");
 
             Assert.Equal(ExpandedWidth(window), border.ActualWidth, ExpandedTolerance);
-            Assert.True(double.IsNaN(border.Width), $"展开写回后 Width 应为 Auto,实际 {border.Width}");
+            Assert.True(double.IsNaN(border.Width), $"展开写回后 Width 应为 Auto，实际 {border.Width}");
             Assert.Equal(window.ActualHeight - border.Margin.Bottom, border.ActualHeight, 0.5);
             Assert.Equal(window.ActualHeight - border.Margin.Bottom, border.Height, 0.5);
 
@@ -66,9 +66,9 @@ public class RightBorderTests
             PumpUntil(( ) => Math.Abs(border.ActualWidth - initial) < 0.5, 2000, "收起终态宽");
 
             Assert.Equal(initial, border.ActualWidth, 0.5);
-            Assert.True(double.IsNaN(border.Width), $"收起写回后 Width 应为 Auto,实际 {border.Width}");
+            Assert.True(double.IsNaN(border.Width), $"收起写回后 Width 应为 Auto，实际 {border.Width}");
             Assert.Equal(window.PageButtonsRow.ActualHeight + chrome, border.ActualHeight, 0.5);
-            Assert.True(double.IsNaN(border.Height), $"收起写回后 Height 应为 Auto,实际 {border.Height}");
+            Assert.True(double.IsNaN(border.Height), $"收起写回后 Height 应为 Auto，实际 {border.Height}");
         });
     }
 
@@ -120,7 +120,7 @@ public class RightBorderTests
 
             Assert.True(
                 border.ActualWidth > initial + 5,
-                $"页码变宽后收起宽度应自适应,实际 {border.ActualWidth:0.#},初始 {initial:0.#}");
+                $"页码变宽后收起宽度应自适应，实际 {border.ActualWidth:0.#},初始 {initial:0.#}");
             Assert.Equal(window.PageButtonsRow.ActualWidth + chrome, border.ActualWidth, 0.5);
         });
     }
@@ -180,7 +180,7 @@ public class RightBorderTests
             Assert.Equal(Visibility.Collapsed, window.PagePreviewsBox.Visibility);
             Assert.False(window.AllPageToggle.IsChecked);
             Assert.Equal(collapsedWidth, border.ActualWidth, 0.5);
-            Assert.True(double.IsNaN(border.Width), $"折叠收起后 Width 应为 Auto,实际 {border.Width}");
+            Assert.True(double.IsNaN(border.Width), $"折叠收起后 Width 应为 Auto，实际 {border.Width}");
 
             collapse.IsChecked = false;
             collapse.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
@@ -195,7 +195,7 @@ public class RightBorderTests
     {
         var host = new MainWindowHost( );
         window = host.Window;
-        // Maximized 与 ShowActivated=false 不能组合 Show;用声明尺寸 1920×1080 布局,断言全用动态 Actual 值
+        // Maximized 与 ShowActivated=false 不能组合 Show;用声明尺寸 1920×1080 布局，断言全用动态 Actual 值
         window.WindowState = WindowState.Normal;
         window.ShowActivated = false;
         window.Show( );
@@ -228,9 +228,9 @@ public class RightBorderTests
             Dispatcher.PushFrame(frame);
         }
 
-        Assert.True(condition( ), $"等待 {what} 超时({timeoutMs} ms){(diagnose is null ? "" : $",现场:{diagnose( )}")}");
+        Assert.True(condition( ), $"等待 {what} 超时 ({timeoutMs} ms){(diagnose is null ? "" : $",现场:{diagnose( )}")}");
 
-        // 条件满足后再泵一个动画时长,让 Completed 写回与布局跑完再断言
+        // 条件满足后再泵一个动画时长，让 Completed 写回与布局跑完再断言
         var stable = new DispatcherFrame( );
         var timer = new DispatcherTimer(TimeSpan.FromMilliseconds(200), DispatcherPriority.Background,
             (_, _) => stable.Continue = false, Dispatcher.CurrentDispatcher);

@@ -31,7 +31,7 @@ public record LightBoardSettings(
 )
 {
     /// <summary>
-    /// 创建画布时读取的选项，改动需重启。
+    /// 创建画布时读取的选项，改动需重启
     /// </summary>
     [JsonIgnore]
     public InkCanvasNextOptions CanvasOptions => new( )
@@ -115,7 +115,7 @@ public partial class Settings : Window
     }
 
     /// <summary>
-    /// 把手工改过的越界值收进可选范围：设置窗口与画布都按 Data 的值工作。
+    /// 把手工改过的越界值收进可选范围：设置窗口与画布都按 Data 的值工作
     /// </summary>
     internal static LightBoardSettings Normalize(LightBoardSettings data)
     {

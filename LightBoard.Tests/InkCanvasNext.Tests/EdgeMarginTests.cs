@@ -5,8 +5,8 @@ using LightBoard;
 namespace InkCanvasNext.Tests;
 
 /// <summary>
-/// 平移/缩放手势结束时按视口与画布边缘的距离扩展画布：右/下余量不足一屏则各扩展一屏。
-/// 宿主 1280x800、缩放 1，一屏即 1280x800。
+/// 平移/缩放手势结束时按视口与画布边缘的距离扩展画布：右/下余量不足一屏则各扩展一屏
+/// 宿主 1280x800、缩放 1，一屏即 1280x800
 /// </summary>
 public class EdgeMarginTests
 {

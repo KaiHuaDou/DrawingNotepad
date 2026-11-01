@@ -53,7 +53,7 @@ internal sealed partial class SelectionVisual
         host.InvalidateVisual( );
     }
 
-    /// <summary>旋转手柄中心（内容坐标）：浮于选区正上方（顶部居中），拖拽绕选区中心旋转。</summary>
+    /// <summary>旋转手柄中心（内容坐标）：浮于选区正上方（顶部居中），拖拽绕选区中心旋转</summary>
     internal static Point RotateHandleCenter(Rect b, double zoom)
     {
         var z = Math.Max(zoom, 1e-6);

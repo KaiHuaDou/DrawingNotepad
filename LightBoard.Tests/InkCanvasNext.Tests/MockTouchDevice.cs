@@ -5,10 +5,10 @@ namespace InkCanvasNext.Tests;
 
 /// <summary>
 /// 自定义 TouchDevice 模拟类：按 WPF 触摸输入协议（SetActiveSource → Activate → ReportDown/ReportMove/ReportUp → Deactivate）
-/// 向目标元素上报触摸，从而驱动 InkCanvasNext 的触摸状态机。
+/// 向目标元素上报触摸，从而驱动 InkCanvasNext 的触摸状态机
 /// <para>
 /// GetTouchPoint 采用恒等映射：状态机只做相对量比较（距离/位移/两两距离），不受坐标系影响；
-/// 上报坐标位于宿主窗口根可视（InkCanvasNext）坐标系内，保证命中测试命中 InnerCanvas。
+/// 上报坐标位于宿主窗口根可视（InkCanvasNext）坐标系内，保证命中测试命中 InnerCanvas
 /// </para>
 /// </summary>
 internal sealed class MockTouchDevice : TouchDevice
@@ -61,7 +61,7 @@ internal sealed class MockTouchDevice : TouchDevice
         DeactivateIfActive( );
     }
 
-    /// <summary>未抬起时强制结束设备生命周期（配对 Activate），用于测试清理。</summary>
+    /// <summary>未抬起时强制结束设备生命周期（配对 Activate），用于测试清理</summary>
     public void ForceEnd( )
     {
         if (down)

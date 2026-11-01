@@ -6,7 +6,7 @@ namespace LightBoard.Tests.Toolbar;
 
 /// <summary>
 /// 工具条测试宿主：在 App 的 STA 线程上构造真实 MainWindow（不显示），
-/// 提供控件查找、事件驱动与状态断言入口。
+/// 提供控件查找、事件驱动与状态断言入口
 /// </summary>
 public sealed class MainWindowHost : IDisposable
 {

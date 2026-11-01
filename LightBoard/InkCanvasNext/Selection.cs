@@ -5,8 +5,8 @@ using System.Windows.Ink;
 namespace InkCanvasNext;
 
 /// <summary>
-/// 自绘选择控制器：维护自有选型集合与包围盒，替代 WPF InkCanvas 内置选择。
-/// 坐标一律为 InkCanvas 内容坐标（已含 CanvasGrid 缩放），与滚动/缩放解耦。
+/// 自绘选择控制器：维护自有选型集合与包围盒，替代 WPF InkCanvas 内置选择
+/// 坐标一律为 InkCanvas 内容坐标（已含 CanvasGrid 缩放），与滚动/缩放解耦
 /// </summary>
 internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual visual)
 {

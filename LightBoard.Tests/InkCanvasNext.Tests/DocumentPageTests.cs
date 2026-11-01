@@ -4,7 +4,7 @@ using System.Windows.Media.Imaging;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>文档页面盒与画布尺寸：页面盒更大时扩展画布，墨迹层保持原点。</summary>
+/// <summary>文档页面盒与画布尺寸：页面盒更大时扩展画布，墨迹层保持原点</summary>
 public class DocumentPageTests
 {
     [Fact]

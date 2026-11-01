@@ -13,7 +13,7 @@ public partial class InkCanvasNext
     private readonly Dictionary<int, Point> touchStarts = [];
     private bool releasingCaptures;
 
-    /// <summary>测试接缝：暴露内部墨迹画布（触摸事件处理目标，供 InkCanvasNext.Tests 上报触摸）。</summary>
+    /// <summary>测试接缝：暴露内部墨迹画布（触摸事件处理目标，供 InkCanvasNext.Tests 上报触摸）</summary>
     internal InkCanvas InnerCanvasElement => InnerCanvas;
 
     internal int ActiveTouchCount => touches.Count;
@@ -47,7 +47,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>触摸事件尾声（Down/Move/Up/LostTouchCapture/TouchLeave 必经）：
-    /// 触点事实已更新，橡皮视觉随之刷新；离开擦除态的结算由 SetState 通用钩子完成。</summary>
+    /// 触点事实已更新，橡皮视觉随之刷新；离开擦除态的结算由 SetState 通用钩子完成</summary>
     private void TouchEpilogue( )
     {
         UpdateAreaEraser( );
@@ -154,7 +154,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>形状模式下的 EvalDraw/Draw 路由：形状在途时用终点触点更新预览并拦截事件；
-    /// 形状已被状态机取消（手势接管）或非形状模式时为空操作，让原生 InkCanvas 收笔。</summary>
+    /// 形状已被状态机取消（手势接管）或非形状模式时为空操作，让原生 InkCanvas 收笔</summary>
     private void UpdateShapeIfActive(TouchEventArgs e)
     {
         if (!shapeActive)

@@ -4,7 +4,7 @@ using System.Windows;
 namespace InkCanvasNext;
 
 /// <summary>
-/// 视口四侧的边缘热区。
+/// 视口四侧的边缘热区
 /// </summary>
 internal enum EdgeScrollSide
 {
