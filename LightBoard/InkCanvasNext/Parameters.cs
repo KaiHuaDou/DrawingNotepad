@@ -11,8 +11,19 @@ public partial class InkCanvasNext
 
     // ---------- 画布与视图 ----------
 
+    /// <summary>
+    /// 缩放下限
+    /// </summary>
     public const double MinScale = 0.1;
+
+    /// <summary>
+    /// 缩放上限
+    /// </summary>
     public const double MaxScale = 10.0;
+
+    /// <summary>
+    /// 滚轮与缩放命令的单次缩放倍率
+    /// </summary>
     public const double WheelZoomFactor = 1.1;
 
     /// <summary>
@@ -27,6 +38,9 @@ public partial class InkCanvasNext
     public const double Q = 0.5;
     public const double S = 1;
 
+    /// <summary>
+    /// 多指笔画触点的默认压感
+    /// </summary>
     public const float DefaultPressure = 0.5f;
 
     // ---------- 选区 ----------
@@ -67,6 +81,10 @@ public partial class InkCanvasNext
     /// 内容 DIP
     /// </summary>
     public const double ShapeCommitMinDistance = 4;
+
+    /// <summary>
+    /// 圆形近似的线段数
+    /// </summary>
     public const int CircleSegments = 64;
 
     /// <summary>

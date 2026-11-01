@@ -9,12 +9,18 @@ namespace InkCanvasNext;
 /// </summary>
 public static class InkCanvasNextCommands
 {
+    /// <summary>
+    /// 撤销上一步墨迹操作
+    /// </summary>
     public static readonly RoutedUICommand Undo = new(
         "撤销",
         nameof(Undo),
         typeof(InkCanvasNextCommands),
         [new KeyGesture(Key.Z, ModifierKeys.Control)]);
 
+    /// <summary>
+    /// 重做已撤销的操作
+    /// </summary>
     public static readonly RoutedUICommand Redo = new(
         "重做",
         nameof(Redo),
@@ -24,36 +30,54 @@ public static class InkCanvasNextCommands
             new KeyGesture(Key.Z, ModifierKeys.Control | ModifierKeys.Shift)
         ]);
 
+    /// <summary>
+    /// 删除选中笔画
+    /// </summary>
     public static readonly RoutedUICommand Delete = new(
         "删除",
         nameof(Delete),
         typeof(InkCanvasNextCommands),
         [new KeyGesture(Key.Delete)]);
 
+    /// <summary>
+    /// 复制选中笔画到剪贴板
+    /// </summary>
     public static readonly RoutedUICommand Copy = new(
         "复制",
         nameof(Copy),
         typeof(InkCanvasNextCommands),
         [new KeyGesture(Key.C, ModifierKeys.Control)]);
 
+    /// <summary>
+    /// 剪切选中笔画到剪贴板并从画布删除
+    /// </summary>
     public static readonly RoutedUICommand Cut = new(
         "剪切",
         nameof(Cut),
         typeof(InkCanvasNextCommands),
         [new KeyGesture(Key.X, ModifierKeys.Control)]);
 
+    /// <summary>
+    /// 粘贴剪贴板墨迹到视口中心
+    /// </summary>
     public static readonly RoutedUICommand Paste = new(
         "粘贴",
         nameof(Paste),
         typeof(InkCanvasNextCommands),
         [new KeyGesture(Key.V, ModifierKeys.Control)]);
 
+    /// <summary>
+    /// 取消进行中的手势并回到静止状态
+    /// </summary>
     public static readonly RoutedUICommand Cancel = new(
         "取消",
         nameof(Cancel),
         typeof(InkCanvasNextCommands),
         [new KeyGesture(Key.Escape)]);
 
+    /// <summary>
+    /// 以视口中心为锚点放大画布
+    /// </summary>
     public static readonly RoutedUICommand ZoomIn = new(
         "放大",
         nameof(ZoomIn),
@@ -63,6 +87,9 @@ public static class InkCanvasNextCommands
             new KeyGesture(Key.Add, ModifierKeys.Control)
         ]);
 
+    /// <summary>
+    /// 以视口中心为锚点缩小画布
+    /// </summary>
     public static readonly RoutedUICommand ZoomOut = new(
         "缩小",
         nameof(ZoomOut),
@@ -72,6 +99,9 @@ public static class InkCanvasNextCommands
             new KeyGesture(Key.Subtract, ModifierKeys.Control)
         ]);
 
+    /// <summary>
+    /// 缩放到 100%
+    /// </summary>
     public static readonly RoutedUICommand ActualSize = new(
         "实际大小",
         nameof(ActualSize),

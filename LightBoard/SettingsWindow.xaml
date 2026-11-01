@@ -292,6 +292,7 @@
 
                 <TextBlock Style="{StaticResource SectionTitleStyle}" Text="手势" />
                 <ItemsControl ItemTemplate="{StaticResource FieldTemplate}" ItemsSource="{Binding GestureFields}" />
+                <CheckBox IsChecked="{Binding SmoothZoom}" Style="{StaticResource RowCheckBoxStyle}" Content="双指缩放按平滑曲线跟随" />
 
                 <TextBlock Style="{StaticResource SectionTitleStyle}" Text="边缘滚动提示" />
                 <CheckBox IsChecked="{Binding EdgeScrollHint}" Style="{StaticResource RowCheckBoxStyle}" Content="热区内有墨迹时显示滚动按钮" />

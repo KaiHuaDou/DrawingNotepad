@@ -39,7 +39,7 @@ public class SpecialModeGestureTests
     }
 
     [Fact]
-    public void SelectMode_ThreeFingers_EntersPan( )
+    public void SelectMode_ThreeFingers_EntersEvalPan( )
     {
         StaTest.Run(( ) =>
         {
@@ -50,7 +50,7 @@ public class SpecialModeGestureTests
             host.Device( ).Down(host.Target, cluster[0]);
             host.Device( ).Down(host.Target, cluster[1]);
             host.Device( ).Down(host.Target, cluster[2]);
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
         });
     }
 
@@ -174,9 +174,9 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>套索在途时落第三指：迁入 Pan 前结算套索（选区保留），随后三指平移画布</summary>
+    /// <summary>套索在途时落第三指：迁入平移评估前结算套索（选区保留），随后多指平移画布</summary>
     [Fact]
-    public void SelectMode_LassoThenThirdFinger_EntersPan_KeepsLassoSelection( )
+    public void SelectMode_LassoThenThirdFinger_EntersEvalPan_KeepsLassoSelection( )
     {
         StaTest.Run(( ) =>
         {
@@ -193,14 +193,14 @@ public class SpecialModeGestureTests
             lasso.Move(host.Target, lassoPoint);
             Assert.Equal(TouchState.Selection, host.Canvas.State);
 
-            // 两根附加指彼此与套索指的间距均不超过 l/4：三指并拢迁入 Pan
+            // 两根附加指彼此与套索指的间距均不超过 l/4：三指并拢迁入平移评估
             var secondPoint = TestPoints.CloseTo(host, lassoPoint);
             var thirdPoint = TestPoints.CloseTo(host, secondPoint);
             var second = host.Device( );
             var third = host.Device( );
             second.Down(host.Target, secondPoint);
             third.Down(host.Target, thirdPoint);
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
 
             lasso.Up(host.Target, lassoPoint);
             second.Up(host.Target, secondPoint);
@@ -574,6 +574,35 @@ public class SpecialModeGestureTests
         });
     }
 
+    /// <summary>擦除模式单指确认（Draw）后落满掌擦触点数：Draw 不再迁掌擦，保持原地擦除上下文</summary>
+    [Theory]
+    [InlineData(InkCanvasNextMode.EraseArea)]
+    [InlineData(InkCanvasNextMode.EraseStroke)]
+    public void EraseMode_PalmFingersOnDraw_StaysDraw(InkCanvasNextMode mode)
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.Mode = mode;
+
+            var startPoint = new Point(165, 100);
+            var drawPoint = TestPoints.BeyondDisplacement(host, startPoint);
+            var cluster = TestPoints.CloseCluster(host, startPoint, 5);
+
+            var finger = host.Device( );
+            finger.Down(host.Target, cluster[0]);
+            finger.Move(host.Target, drawPoint); // 超过单指位移阈值，EvalDraw -> Draw
+            Assert.Equal(TouchState.Draw, host.Canvas.State);
+
+            for (var i = 1; i < cluster.Length; i++)
+            {
+                host.Device( ).Down(host.Target, cluster[i]);
+            }
+
+            Assert.Equal(TouchState.Draw, host.Canvas.State);
+        });
+    }
+
     [Fact]
     public void PalmEraser_FiveFingers_MoveErasesStroke( )
     {
@@ -850,6 +879,32 @@ public class SpecialModeGestureTests
             a.Move(host.Target, new Point(baseA.X - spread, baseA.Y));
             b.Move(host.Target, new Point(baseA.X + pinch / 4 + spread, baseA.Y));
             Assert.Equal(frozen, host.Canvas.CurrentScale);
+        });
+    }
+
+    /// <summary>关闭平滑曲线后按指距比例线性缩放：越过死区的微小张合立即产生对应缩放</summary>
+    [Fact]
+    public void PanZoom_SmoothZoomOff_FollowsSpanRatioLinearly( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost(options: new( ) { SmoothZoom = false });
+
+            var spacing = TestPoints.PinchSpacing(host);
+            var baseA = P1;
+            var baseB = new Point(P1.X + spacing, P1.Y);
+
+            var a = host.Device( );
+            var b = host.Device( );
+            a.Down(host.Target, baseA);
+            b.Down(host.Target, baseB);
+            Assert.Equal(TouchState.PanZoom, host.Canvas.State);
+
+            // 对称张开：中点不动不触发平移锁死，缩放等于末帧指距与基线之比
+            a.Move(host.Target, new Point(baseA.X - 5, baseA.Y));
+            b.Move(host.Target, new Point(baseB.X + 5, baseB.Y));
+
+            Assert.Equal((spacing + 10) / spacing, host.Canvas.CurrentScale, 3);
         });
     }
 

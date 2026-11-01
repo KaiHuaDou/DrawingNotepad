@@ -77,6 +77,15 @@ public sealed record InkCanvasNextOptions
     } = PinchLockDistanceDefault;
 
     /// <summary>
+    /// 双指缩放是否按 T/Q/S 平滑曲线跟随；关闭后按指距比例线性缩放
+    /// </summary>
+    public bool SmoothZoom
+    {
+        get;
+        init;
+    } = SmoothZoomDefault;
+
+    /// <summary>
     /// <see cref="PinchLockDistance"/> 的平方，逐事件判定的热点路径预计算
     /// </summary>
     internal double PinchLockDistance2
@@ -170,20 +179,54 @@ public sealed record InkCanvasNextOptions
         init => field = value ?? new( );
     } = new( );
 
+    /// <summary>
+    /// 掌擦触点数下限
+    /// </summary>
     public const int PalmEraseFingersMin = 4;
+
+    /// <summary>
+    /// 掌擦触点数上限
+    /// </summary>
     public const int PalmEraseFingersMax = 5;
+
+    /// <summary>
+    /// 掌擦触点数默认值
+    /// </summary>
     public const int PalmEraseFingersDefault = PalmEraseFingersMax;
 
     /// <summary>
-    /// 手势类阈值的共同范围，视口 DIP
+    /// 手势类阈值下限，视口 DIP
     /// </summary>
     public const double GestureMin = 1;
+
+    /// <summary>
+    /// 手势类阈值上限，视口 DIP
+    /// </summary>
     public const double GestureMax = 200;
 
+    /// <summary>
+    /// 单指起笔位移阈值默认值，视口 DIP
+    /// </summary>
     public const double TouchDisplacementThresholdDefault = 20;
+
+    /// <summary>
+    /// 双指平移锁定阈值默认值，视口 DIP
+    /// </summary>
     public const double PanZoomDisplaceThresholdDefault = 30;
+
+    /// <summary>
+    /// 双指捏合锁定间距默认值，视口 DIP
+    /// </summary>
     public const double PinchLockDistanceDefault = 24;
 
+    /// <summary>
+    /// 双指缩放平滑曲线开关默认值
+    /// </summary>
+    public const bool SmoothZoomDefault = true;
+
+    /// <summary>
+    /// 触点间距阈值相对主屏工作区宽度的派生比例
+    /// </summary>
 #if DEBUG
     public const double DistanceThresholdFactor = 0.9;
 #else
@@ -191,18 +234,48 @@ public sealed record InkCanvasNextOptions
 #endif
 
     /// <summary>
-    /// 边缘热区宽度的范围，视口 DIP
+    /// 边缘热区宽度下限，视口 DIP
     /// </summary>
     public const double EdgeScrollThresholdMin = 0;
+
+    /// <summary>
+    /// 边缘热区宽度上限，视口 DIP
+    /// </summary>
     public const double EdgeScrollThresholdMax = 1000;
 
+    /// <summary>
+    /// 上侧热区宽度默认值，视口 DIP
+    /// </summary>
     public const double EdgeScrollTopDefault = 64;
+
+    /// <summary>
+    /// 下侧热区宽度默认值，视口 DIP
+    /// </summary>
     public const double EdgeScrollBottomDefault = 192;
+
+    /// <summary>
+    /// 左侧热区宽度默认值，视口 DIP
+    /// </summary>
     public const double EdgeScrollLeftDefault = 64;
+
+    /// <summary>
+    /// 右侧热区宽度默认值，视口 DIP
+    /// </summary>
     public const double EdgeScrollRightDefault = 96;
 
+    /// <summary>
+    /// 撤销历史容量默认值
+    /// </summary>
     public const int MaxHistoryCountDefault = 200;
+
+    /// <summary>
+    /// 撤销历史容量下限
+    /// </summary>
     public const int MaxHistoryCountMin = 0;
+
+    /// <summary>
+    /// 撤销历史容量上限
+    /// </summary>
     public const int MaxHistoryCountMax = 1000;
 
     private static double DefaultSpacing => DistanceThresholdFactor * SystemParameters.WorkArea.Width;
@@ -259,19 +332,63 @@ public sealed record EraserParameters
         init => field = Math.Clamp(value, RebuildThresholdMin, RebuildThresholdMax);
     } = RebuildThresholdDefault;
 
+    /// <summary>
+    /// 面积擦直径默认值，视口 DIP
+    /// </summary>
     public const double DiameterDefault = 75;
+
+    /// <summary>
+    /// 面积擦直径下限，视口 DIP
+    /// </summary>
     public const double DiameterMin = 1;
+
+    /// <summary>
+    /// 面积擦直径上限，视口 DIP
+    /// </summary>
     public const double DiameterMax = 400;
 
+    /// <summary>
+    /// 掌擦外扩量默认值，视口 DIP
+    /// </summary>
     public const double PalmExtraDefault = 8;
+
+    /// <summary>
+    /// 掌擦外扩量下限，视口 DIP
+    /// </summary>
     public const double PalmExtraMin = 0;
+
+    /// <summary>
+    /// 掌擦外扩量上限，视口 DIP
+    /// </summary>
     public const double PalmExtraMax = 100;
 
+    /// <summary>
+    /// 逻辑直径下限默认值，内容 DIP
+    /// </summary>
     public const double MinLogicalDiameterDefault = 1;
+
+    /// <summary>
+    /// 逻辑直径下限的下限，内容 DIP
+    /// </summary>
     public const double MinLogicalDiameterMin = 0.1;
+
+    /// <summary>
+    /// 逻辑直径下限的上限，内容 DIP
+    /// </summary>
     public const double MinLogicalDiameterMax = 10;
 
+    /// <summary>
+    /// 命中测试器重建阈值默认值，内容 DIP
+    /// </summary>
     public const double RebuildThresholdDefault = 0.5;
+
+    /// <summary>
+    /// 命中测试器重建阈值下限，内容 DIP
+    /// </summary>
     public const double RebuildThresholdMin = 0.01;
+
+    /// <summary>
+    /// 命中测试器重建阈值上限，内容 DIP
+    /// </summary>
     public const double RebuildThresholdMax = 10;
 }

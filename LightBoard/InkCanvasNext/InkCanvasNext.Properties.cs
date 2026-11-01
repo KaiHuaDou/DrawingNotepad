@@ -7,11 +7,54 @@ using DependencyPropertyGenerator;
 namespace InkCanvasNext;
 
 // 依赖项属性注册、公共事件与 CLR 属性包装
-[DependencyProperty<bool>("CanRedo", IsReadOnly = true)]
-[DependencyProperty<bool>("CanUndo", IsReadOnly = true)]
-[DependencyProperty<bool>("IsReadOnly")]
-[DependencyProperty<bool>("UseDefaultCommands")]
-[DependencyProperty<InkCanvasNextMode>("Mode", DefaultValue = InkCanvasNextMode.Ink)]
+[DependencyProperty<bool>(
+    "CanRedo",
+    IsReadOnly = true,
+    PropertyXmlDocumentation =
+    """
+    <summary>
+    获取是否可以重做
+    </summary>
+    """
+)]
+[DependencyProperty<bool>(
+    "CanUndo",
+    IsReadOnly = true,
+    PropertyXmlDocumentation =
+    """
+    <summary>
+    获取是否可以撤销
+    </summary>
+    """
+)]
+[DependencyProperty<bool>(
+    "IsReadOnly",
+    PropertyXmlDocumentation =
+    """
+    <summary>
+    获取或设置是否只读；只读时绘制、擦除与选择均不响应
+    </summary>
+    """
+)]
+[DependencyProperty<bool>(
+    "UseDefaultCommands",
+    PropertyXmlDocumentation =
+    """
+    <summary>
+    获取或设置是否启用默认命令；为 false 时画布不注册快捷键，命令可用性仍按画布状态重查
+    </summary>
+    """
+)]
+[DependencyProperty<InkCanvasNextMode>(
+    "Mode",
+    DefaultValue = InkCanvasNextMode.Ink,
+    PropertyXmlDocumentation =
+    """
+    <summary>
+    获取或设置画布编辑工具模式
+    </summary>
+    """
+)]
 [DependencyProperty<double>(
     "EraserDiameter",
     DefaultValueExpression = "EraserParameters.DiameterDefault",
@@ -42,6 +85,9 @@ public partial class InkCanvasNext
 
     // 生成器对无默认值的引用类型一律追加 ?，与 Strokes、DefaultDrawingAttributes
     // “构造后必非空”的对外声明不符，二者保持手工注册
+    /// <summary>
+    /// 标识 <see cref="DefaultDrawingAttributes"/> 依赖项属性
+    /// </summary>
     public static readonly DependencyProperty DefaultDrawingAttributesProperty =
         DependencyProperty.Register(
             nameof(DefaultDrawingAttributes),
@@ -49,6 +95,9 @@ public partial class InkCanvasNext
             typeof(InkCanvasNext),
             new PropertyMetadata(null, OnDefaultDrawingAttributesChanged, CoerceDefaultDrawingAttributes));
 
+    /// <summary>
+    /// 标识 <see cref="Strokes"/> 依赖项属性
+    /// </summary>
     public static readonly DependencyProperty StrokesProperty =
         DependencyProperty.Register(
             nameof(Strokes),
@@ -56,12 +105,24 @@ public partial class InkCanvasNext
             typeof(InkCanvasNext),
             new PropertyMetadata(null, OnStrokesPropertyChanged, CoerceStrokes));
 
+    /// <summary>
+    /// <see cref="CanRedo"/> 变化时触发
+    /// </summary>
     public event EventHandler<DependencyPropertyChangedEventArgs>? CanRedoChanged;
 
+    /// <summary>
+    /// <see cref="CanUndo"/> 变化时触发
+    /// </summary>
     public event EventHandler<DependencyPropertyChangedEventArgs>? CanUndoChanged;
 
+    /// <summary>
+    /// 墨迹集合发生笔画增删时触发；选区整体变换不触发
+    /// </summary>
     public event EventHandler<InkCanvasStrokesChangedEventArgs>? StrokesChanged;
 
+    /// <summary>
+    /// 选中笔画集合变化时触发
+    /// </summary>
     public event EventHandler? SelectionChanged;
 
     /// <summary>

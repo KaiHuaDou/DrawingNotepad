@@ -8,13 +8,24 @@ namespace InkCanvasNext;
 /// </summary>
 public enum EdgeScrollSide
 {
-    /// <summary>上侧</summary>
+    /// <summary>
+    /// 上侧
+    /// </summary>
     Top,
-    /// <summary>下侧</summary>
+
+    /// <summary>
+    /// 下侧
+    /// </summary>
     Bottom,
-    /// <summary>左侧</summary>
+
+    /// <summary>
+    /// 左侧
+    /// </summary>
     Left,
-    /// <summary>右侧</summary>
+
+    /// <summary>
+    /// 右侧
+    /// </summary>
     Right
 }
 

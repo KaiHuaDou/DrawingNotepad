@@ -31,6 +31,13 @@ public class OptionsTests
     }
 
     [Fact]
+    public void SmoothZoom_Default_True( )
+    {
+        Assert.True(InkCanvasNextOptions.SmoothZoomDefault);
+        Assert.True(new InkCanvasNextOptions( ).SmoothZoom);
+    }
+
+    [Fact]
     public void SquaredThresholds_FollowInitValues( )
     {
         var options = new InkCanvasNextOptions

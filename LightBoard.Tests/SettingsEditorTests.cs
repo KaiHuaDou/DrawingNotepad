@@ -112,6 +112,7 @@ public class SettingsEditorTests
         editor.ToolbarFields[0].Text = "1.5";
         editor.FourFingerErase = true;
         editor.EdgeScrollHint = false;
+        editor.SmoothZoom = false;
 
         var settings = editor.Build( );
 
@@ -122,6 +123,7 @@ public class SettingsEditorTests
         Assert.Equal(1.5, settings.ToolbarScale);
         Assert.Equal(4, settings.PalmEraseFingers);
         Assert.False(settings.EdgeScrollHint);
+        Assert.False(settings.SmoothZoom);
     }
 
     [Fact]

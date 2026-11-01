@@ -55,7 +55,7 @@ public partial class InkCanvasNext
         {
             var distance = Math.Sqrt(span2);
             var k = distance0 > 0 && distance > 0
-                ? Smooth(distance / distance0)
+                ? (options.SmoothZoom ? Smooth(distance / distance0) : distance / distance0)
                 : 1.0;
 
             targetScale = Math.Clamp(initialScale * k, MinScale, MaxScale);

@@ -67,6 +67,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `TouchDisplacementThreshold` | 20 | 单指起笔位移阈值，视口 DIP |
 | `PanZoomDisplaceThreshold` | 30 | 双指平移锁定阈值，视口 DIP |
 | `PinchLockDistance` | 24 | 双指捏合锁定间距，视口 DIP |
+| `SmoothZoom` | `true` | 双指缩放按 T/Q/S 平滑曲线跟随（起手死区与过渡阻尼）；`false` 按指距比例线性缩放 |
 | `TouchSpacingThreshold` | NaN | 触点间距阈值，视口 DIP；NaN 表示按主屏工作区宽度派生 |
 | `EdgeScrollTopThreshold` / `EdgeScrollBottomThreshold` / `EdgeScrollLeftThreshold` / `EdgeScrollRightThreshold` | 64 / 192 / 64 / 96 | 四侧热区宽度，视口 DIP；0 关闭该侧 |
 | `MaxHistoryCount` | 200 | 撤销历史容量；0 关闭历史 |

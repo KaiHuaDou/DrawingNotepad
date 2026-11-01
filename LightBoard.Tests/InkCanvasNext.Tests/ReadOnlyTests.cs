@@ -27,7 +27,7 @@ public class ReadOnlyTests
     }
 
     [Fact]
-    public void FiveFingers_PanInsteadOfPalmErase( )
+    public void FiveFingers_EvalPanInsteadOfPalmErase( )
     {
         StaTest.Run(( ) =>
         {
@@ -40,7 +40,7 @@ public class ReadOnlyTests
                 host.Device( ).Down(host.Target, point);
             }
 
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
         });
     }
 

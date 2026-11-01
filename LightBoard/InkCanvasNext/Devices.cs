@@ -138,6 +138,12 @@ public partial class InkCanvasNext
                 UpdateShapeIfActive(e);
                 break;
 
+            case TouchState.EvalPan:
+                // 先平移后重评：提交帧的位移用旧基准结算，重评触发的 InitGesture 再以新位置重立基准
+                Pan( );
+                UpdateState( );
+                break;
+
             case TouchState.PanZoom: PanZoom( ); break;
             case TouchState.Pan: Pan( ); break;
             case TouchState.Selection: UpdateSelectionTouch( ); break;
@@ -265,7 +271,7 @@ public partial class InkCanvasNext
         touches[id] = (device, position);
         touchStarts[id] = position;
 
-        if (State is TouchState.Pan or TouchState.PanZoom)
+        if (State is TouchState.EvalPan or TouchState.Pan or TouchState.PanZoom)
         {
             InitGesture( );
         }
@@ -280,7 +286,7 @@ public partial class InkCanvasNext
         touches.Remove(id);
         touchStarts.Remove(id);
 
-        if (State is TouchState.Pan or TouchState.PanZoom)
+        if (State is TouchState.EvalPan or TouchState.Pan or TouchState.PanZoom)
         {
             InitGesture( );
         }

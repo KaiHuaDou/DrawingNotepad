@@ -17,6 +17,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
     private readonly LightBoardSettings baseline;
     private bool edgeScrollHint;
+    private bool smoothZoom;
     private int palmEraseFingers;
     private string switchOutProcess;
 
@@ -24,6 +25,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
     {
         baseline = settings;
         edgeScrollHint = settings.EdgeScrollHint;
+        smoothZoom = settings.SmoothZoom;
         palmEraseFingers = settings.PalmEraseFingers;
         switchOutProcess = settings.SwitchOutProcessName;
 
@@ -113,6 +115,21 @@ public sealed class SettingsEditor : INotifyPropertyChanged
         }
     }
 
+    public bool SmoothZoom
+    {
+        get => smoothZoom;
+        set
+        {
+            if (smoothZoom == value)
+            {
+                return;
+            }
+
+            smoothZoom = value;
+            Raise(nameof(SmoothZoom));
+        }
+    }
+
     public string SwitchOutProcess
     {
         get => switchOutProcess;
@@ -157,6 +174,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
         var result = baseline with
         {
             EdgeScrollHint = edgeScrollHint,
+            SmoothZoom = smoothZoom,
             PalmEraseFingers = palmEraseFingers,
             SwitchOutProcessName = string.IsNullOrWhiteSpace(switchOutProcess) ? baseline.SwitchOutProcessName : switchOutProcess.Trim( )
         };
@@ -177,6 +195,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
         }
 
         EdgeScrollHint = defaults.EdgeScrollHint;
+        SmoothZoom = defaults.SmoothZoom;
         SetPalmEraseFingers(defaults.PalmEraseFingers);
         SwitchOutProcess = defaults.SwitchOutProcessName;
     }

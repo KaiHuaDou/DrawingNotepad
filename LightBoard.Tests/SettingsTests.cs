@@ -35,6 +35,7 @@ public class SettingsTests
 
         Assert.NotNull(data);
         Assert.False(data.EdgeScrollHint);
+        Assert.True(data.SmoothZoom);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollTopDefault, data.EdgeScrollTopThreshold);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollBottomDefault, data.EdgeScrollBottomThreshold);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollLeftDefault, data.EdgeScrollLeftThreshold);
@@ -70,6 +71,7 @@ public class SettingsTests
             TouchDisplacementThreshold = 21,
             PanZoomDisplaceThreshold = 31,
             PinchLockDistance = 25,
+            SmoothZoom = false,
             MaxHistoryCount = 201,
             PalmEraseFingers = 4,
             EraserDiameter = 80,
@@ -84,6 +86,7 @@ public class SettingsTests
         Assert.Equal(21, options.TouchDisplacementThreshold);
         Assert.Equal(31, options.PanZoomDisplaceThreshold);
         Assert.Equal(25, options.PinchLockDistance);
+        Assert.False(options.SmoothZoom);
         Assert.Equal(0, options.EdgeScrollTopThreshold);
         Assert.Equal(0, options.EdgeScrollBottomThreshold);
         Assert.Equal(0, options.EdgeScrollLeftThreshold);

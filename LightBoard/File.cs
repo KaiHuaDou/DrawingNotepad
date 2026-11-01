@@ -283,10 +283,15 @@ public partial class App
     }
 
     /// <summary>
-    /// 定时备份：内容未变化时跳过，写盘放到后台
+    /// 定时备份：内容未变化时跳过，写盘放到后台；交互期间跳过（全量克隆会卡住交互帧），推到下一次定时
     /// </summary>
     private static void SaveRecoverInBackground( )
     {
+        if (Current.MainWindow is not MainWindow window || window.CanvasNext.IsGestureActive)
+        {
+            return;
+        }
+
         if (IsBoardEmpty( ) || RecoverRevision == BoardRevision)
         {
             return;

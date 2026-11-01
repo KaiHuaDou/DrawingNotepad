@@ -8,6 +8,7 @@ internal enum TouchState
     Idle,
     EvalDraw,
     Draw,
+    EvalPan,
     PanZoom,
     Pan,
     Eraser,
@@ -70,6 +71,11 @@ public partial class InkCanvasNext
     internal TouchState State { get; private set; } = TouchState.Idle;
 
     /// <summary>
+    /// 是否有输入序列在途：触摸或合成触点使状态离开 Idle，或原生墨迹画布持有笔捕获
+    /// </summary>
+    public bool IsGestureActive => State != TouchState.Idle || InnerCanvas.IsStylusCaptured;
+
+    /// <summary>
     /// 当前工具快照，工具差异判定的唯一读取入口
     /// </summary>
     internal ToolSnapshot Tool => new(Mode, StampAction, IsReadOnly);
@@ -78,7 +84,7 @@ public partial class InkCanvasNext
     {
         return state switch
         {
-            TouchState.PanZoom or TouchState.Pan => new(BlocksNativeInput: true, OverridesEditing: true),
+            TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan => new(BlocksNativeInput: true, OverridesEditing: true),
             TouchState.MultiDraw => new(BlocksNativeInput: true, OverridesEditing: true, AreaEraseHost: true),
             TouchState.Selection => new(BlocksNativeInput: true),
             TouchState.Eraser => new(OverridesEditing: true, PalmErase: true),
@@ -93,7 +99,8 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 触点数变化（Down/Up），或 EvalDraw 状态下 Move 时重评迁移/ 守卫内联写死：switch 臂自上而下即优先级（见 docs/TouchStates2.md）；
+    /// 触点数变化（Down/Up）重评迁移，EvalDraw/EvalPan 在 Move 时重评以跟踪位移提交；
+    /// 守卫内联写死：switch 臂自上而下即优先级（见 docs/TouchStates2.md）；
     /// 掌擦触点数构造期固定；d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态。
     /// 触点坐标取自 GetTouchPoint(this)（根可视空间：WPF 只按 relativeTo 的祖先链做变换），
     /// 不经过画布 LayoutTransform，因此阈值（视口 DIP）不随缩放变化
@@ -119,7 +126,7 @@ public partial class InkCanvasNext
                 1 => TouchState.EvalDraw,
                 2 when d2 <= l2 => TouchState.PanZoom,
                 >= 3 when palm && d2 <= l2 => TouchState.Eraser,
-                >= 3 when d2 <= l2 => TouchState.Pan,
+                >= 3 when d2 <= l2 => TouchState.EvalPan,
                 >= 2 when d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => State,
             },
@@ -132,16 +139,26 @@ public partial class InkCanvasNext
                 // 多指张开不迁多指画笔、保持擦除上下文
                 >= 3 when palm && (d2 <= l2 || tool.IsErase) => TouchState.Eraser,
                 2 when d2 <= l2 => TouchState.PanZoom,
-                >= 3 when d2 <= l2 => TouchState.Pan,
+                >= 3 when d2 <= l2 => TouchState.EvalPan,
                 >= 2 when d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => State,
             },
 
+            // 绘制提交后不再迁掌擦：掌擦只能发生在评估期
             TouchState.Draw => count switch
             {
                 0 => TouchState.Idle,
-                >= 3 when palm && tool.IsErase => TouchState.Eraser,
                 >= 2 when tool.AllowsMultiDraw => TouchState.MultiDraw,
+                _ => State,
+            },
+
+            // 平移评估期：平移随 Move 实时生效，位移超过阈值前可迁掌擦与多指画笔
+            TouchState.EvalPan => count switch
+            {
+                0 => TouchState.Idle,
+                >= 3 when palm && (d2 <= l2 || tool.IsErase) => TouchState.Eraser,
+                >= 2 when d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
+                _ when x2 > c2 => TouchState.Pan,
                 _ => State,
             },
 
@@ -151,19 +168,19 @@ public partial class InkCanvasNext
                 _ => State,
             },
 
+            // 双指手势按前两指执行：并拢的附加指迁平移评估，张开的附加指不参与（不迁多指书写）
             TouchState.PanZoom => count switch
             {
                 0 => TouchState.Idle,
-                1 or >= 3 when d2 <= l2 => TouchState.Pan,
-                > 2 when d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
+                1 => TouchState.EvalPan,
+                >= 3 when d2 <= l2 => TouchState.EvalPan,
                 _ => State,
             },
 
+            // 平移提交后锁定：无论触点如何变化，仅触点清空迁回 Idle
             TouchState.Pan => count switch
             {
                 0 => TouchState.Idle,
-                >= 3 when palm && (d2 <= l2 || tool.IsErase) => TouchState.Eraser,
-                > 3 when d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => State,
             },
 
@@ -180,7 +197,7 @@ public partial class InkCanvasNext
                 0 => TouchState.Idle,
                 // 选区手势中附加手指：并拢平移画布、达到掌擦触点数切换为掌擦（与 Idle 入口优先级一致）
                 >= 3 when palm && d2 <= l2 => TouchState.Eraser,
-                >= 3 when d2 <= l2 => TouchState.Pan,
+                >= 3 when d2 <= l2 => TouchState.EvalPan,
                 _ => TouchState.Selection,
             },
 
@@ -221,7 +238,8 @@ public partial class InkCanvasNext
         }
 
         // 迁出平移/缩放手势族（含回 Idle 或转擦除/多指）即视为手势结束，补足右/下边距
-        if (from is TouchState.Pan or TouchState.PanZoom && to is not (TouchState.Pan or TouchState.PanZoom))
+        if (from is TouchState.EvalPan or TouchState.Pan or TouchState.PanZoom
+            && to is not (TouchState.EvalPan or TouchState.Pan or TouchState.PanZoom))
         {
             EnsureEdgeMargin( );
         }
@@ -296,9 +314,10 @@ public partial class InkCanvasNext
                 BeginSelectionTouch( );
                 break;
 
+            case TouchState.EvalPan:
             case TouchState.PanZoom:
             case TouchState.Pan:
-                if (from != TouchState.PanZoom)
+                if (from is not (TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan))
                 {
                     ReleaseAll( );
                     InnerCanvas.EditingMode = InkCanvasEditingMode.None;

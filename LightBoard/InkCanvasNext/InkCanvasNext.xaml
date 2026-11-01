@@ -37,8 +37,7 @@
 
         <Canvas x:Name="EraserOverlayCanvas"
                 Panel.ZIndex="1"
-                IsHitTestVisible="False"
-                Background="Transparent">
+                IsHitTestVisible="False">
             <Ellipse x:Name="EraserFeedback"
                      Width="0" Height="0"
                      Visibility="Collapsed"

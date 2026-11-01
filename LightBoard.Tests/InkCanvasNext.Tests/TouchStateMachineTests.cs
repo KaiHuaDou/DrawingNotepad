@@ -151,7 +151,7 @@ public class TouchStateMachineTests
     }
 
     [Fact]
-    public void Idle_ThreeFingers_EntersPan( )
+    public void Idle_ThreeFingers_EntersEvalPan( )
     {
         StaTest.Run(( ) =>
         {
@@ -161,7 +161,7 @@ public class TouchStateMachineTests
             host.Device( ).Down(host.Target, cluster[0]);
             host.Device( ).Down(host.Target, cluster[1]);
             host.Device( ).Down(host.Target, cluster[2]);
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
         });
     }
 
@@ -221,9 +221,9 @@ public class TouchStateMachineTests
 
     // ---------- 掌擦触点数（设置项：四指 / 五指） ----------
 
-    /// <summary>默认掌擦触点数五：四指并拢仍是平移</summary>
+    /// <summary>默认掌擦触点数五：四指并拢仍进入平移评估</summary>
     [Fact]
-    public void Idle_FourCloseFingers_DefaultPalmFingers_EntersPan( )
+    public void Idle_FourCloseFingers_DefaultPalmFingers_EntersEvalPan( )
     {
         StaTest.Run(( ) =>
         {
@@ -235,13 +235,13 @@ public class TouchStateMachineTests
                 host.Device( ).Down(host.Target, point);
             }
 
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
         });
     }
 
-    /// <summary>掌擦触点数为四：三指并拢仍是平移</summary>
+    /// <summary>掌擦触点数为四：三指并拢仍进入平移评估</summary>
     [Fact]
-    public void Idle_ThreeCloseFingers_PalmFingersFour_EntersPan( )
+    public void Idle_ThreeCloseFingers_PalmFingersFour_EntersEvalPan( )
     {
         StaTest.Run(( ) =>
         {
@@ -253,7 +253,7 @@ public class TouchStateMachineTests
                 host.Device( ).Down(host.Target, point);
             }
 
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
         });
     }
 
@@ -293,7 +293,7 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>掌擦触点数为四：双指缩放中并拢落下四指，第三指先迁 Pan，第四指由 Pan 迁入掌擦</summary>
+    /// <summary>掌擦触点数为四：双指缩放中并拢落下附加指，经平移评估迁入掌擦</summary>
     [Fact]
     public void PanZoom_TwoMoreCloseFingers_PalmFingersFour_EntersEraser( )
     {
@@ -307,6 +307,8 @@ public class TouchStateMachineTests
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
 
             host.Device( ).Down(host.Target, cluster[2]);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
+
             host.Device( ).Down(host.Target, cluster[3]);
 
             Assert.Equal(TouchState.Eraser, host.Canvas.State);
@@ -353,7 +355,7 @@ public class TouchStateMachineTests
         });
     }
 
-    // ---------- PanZoom（含迁移规则变更：1、3+ 指均进 Pan，仅 2 指停留） ----------
+    // ---------- PanZoom（附加指不参与迁移，减为单指迁平移评估） ----------
 
     [Fact]
     public void PanZoom_StaysPanZoom_WhileTwoFingers( )
@@ -374,7 +376,7 @@ public class TouchStateMachineTests
     }
 
     [Fact]
-    public void PanZoom_ReleaseToOneFinger_EntersPan( )
+    public void PanZoom_ReleaseToOneFinger_EntersEvalPan( )
     {
         StaTest.Run(( ) =>
         {
@@ -387,30 +389,32 @@ public class TouchStateMachineTests
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
 
             b.Up(host.Target, TestPoints.CloseTo(host, P1));
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
         });
     }
 
+    /// <summary>PanZoom 中张开的附加指不参与迁移：不迁多指书写，双指手势继续按前两指执行</summary>
     [Fact]
-    public void PanZoom_AddThirdFinger_EntersPan( )
+    public void PanZoom_ExtraFarFinger_StaysPanZoom( )
     {
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            var cluster = TestPoints.CloseCluster(host, P1, 3);
 
-            host.Device( ).Down(host.Target, cluster[0]);
-            host.Device( ).Down(host.Target, cluster[1]);
+            var a = host.Device( );
+            var b = host.Device( );
+            a.Down(host.Target, P1);
+            b.Down(host.Target, TestPoints.CloseTo(host, P1));
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
 
-            host.Device( ).Down(host.Target, cluster[2]);
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            host.Device( ).Down(host.Target, TestPoints.FarFrom(host, P1));
+            Assert.Equal(TouchState.PanZoom, host.Canvas.State);
         });
     }
 
-    /// <summary>Pan 没有回 PanZoom 的迁移：抬指后再落第二指仍停在 Pan，需全部抬起重新开始双指手势</summary>
+    /// <summary>平移评估没有回 PanZoom 的迁移：抬指后再落第二指仍留在评估态，需全部抬起重新开始双指手势</summary>
     [Fact]
-    public void Pan_AddSecondFinger_StaysPan( )
+    public void EvalPan_FingerCountChanges_StaysEvalPan( )
     {
         StaTest.Run(( ) =>
         {
@@ -423,13 +427,13 @@ public class TouchStateMachineTests
             a.Down(host.Target, cluster[0]);
             b.Down(host.Target, cluster[1]);
             c.Down(host.Target, cluster[2]);
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
 
             c.Up(host.Target, cluster[2]);
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
 
             host.Device( ).Down(host.Target, TestPoints.CloseTo(host, cluster[0]));
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
         });
     }
 
@@ -452,8 +456,9 @@ public class TouchStateMachineTests
         });
     }
 
+    /// <summary>双指手势减为单指后拖动：平移评估随位移提交为 Pan 并平移画布</summary>
     [Fact]
-    public void PanZoom_ToPan_MovePansCanvas( )
+    public void PanZoom_ReleaseToOneFinger_MoveCommitsPanAndPans( )
     {
         StaTest.Run(( ) =>
         {
@@ -463,13 +468,98 @@ public class TouchStateMachineTests
             var b = host.Device( );
             a.Down(host.Target, P1);
             b.Down(host.Target, TestPoints.CloseTo(host, P1));
-            b.Up(host.Target, TestPoints.CloseTo(host, P1)); // PanZoom -> Pan（剩 a）
+            b.Up(host.Target, TestPoints.CloseTo(host, P1)); // PanZoom -> EvalPan（剩 a）
 
             var before = host.Canvas.OffsetX;
-            a.Move(host.Target, new Point(50, 100)); // 向左平移 50px
+            a.Move(host.Target, new Point(50, 100)); // 向左平移 50px，位移超过阈值提交 Pan
             host.Canvas.UpdateLayout( ); // ScrollViewer 的滚动偏移需一次布局后才生效
-            Assert.True(host.Canvas.OffsetX > before, "Pan 状态下手势移动应平移画布");
+            Assert.True(host.Canvas.OffsetX > before, "平移手势移动应平移画布");
             Assert.Equal(TouchState.Pan, host.Canvas.State);
+        });
+    }
+
+    // ---------- EvalPan（多指平移评估：位移提交前可迁掌擦与多指书写，提交后锁定） ----------
+
+    /// <summary>三指并拢进入评估，位移超过阈值提交为 Pan；提交后张开与附加指均不迁移，触点清空才回 Idle</summary>
+    [Fact]
+    public void EvalPan_MoveBeyondThreshold_CommitsPan_AndLocks( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var cluster = TestPoints.CloseCluster(host, P1, 3);
+
+            var a = host.Device( );
+            var b = host.Device( );
+            var c = host.Device( );
+            a.Down(host.Target, cluster[0]);
+            b.Down(host.Target, cluster[1]);
+            c.Down(host.Target, cluster[2]);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
+
+            a.Move(host.Target, TestPoints.BeyondDisplacement(host, cluster[0]));
+            Assert.Equal(TouchState.Pan, host.Canvas.State);
+
+            // 提交后手指张开仍留在 Pan：平移锁定，不迁多指书写
+            b.Move(host.Target, TestPoints.FarFrom(host, cluster[1]));
+            Assert.Equal(TouchState.Pan, host.Canvas.State);
+
+            // 附加指同样不引发迁移
+            var farPoint = TestPoints.FarFrom(host, P1);
+            var d = host.Device( );
+            d.Down(host.Target, farPoint);
+            Assert.Equal(TouchState.Pan, host.Canvas.State);
+
+            a.Up(host.Target, TestPoints.BeyondDisplacement(host, cluster[0]));
+            b.Up(host.Target, TestPoints.FarFrom(host, cluster[1]));
+            c.Up(host.Target, cluster[2]);
+            d.Up(host.Target, farPoint);
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+        });
+    }
+
+    /// <summary>评估期内手指张开迁入多指书写</summary>
+    [Fact]
+    public void EvalPan_SpreadFingers_EntersMultiDraw( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var cluster = TestPoints.CloseCluster(host, P1, 3);
+
+            var a = host.Device( );
+            var b = host.Device( );
+            var c = host.Device( );
+            a.Down(host.Target, cluster[0]);
+            b.Down(host.Target, cluster[1]);
+            c.Down(host.Target, cluster[2]);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
+
+            c.Move(host.Target, TestPoints.FarFrom(host, cluster[2]));
+
+            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
+        });
+    }
+
+    /// <summary>评估期内落满掌擦触点数迁入掌擦</summary>
+    [Fact]
+    public void EvalPan_PalmFingers_EntersEraser( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var cluster = TestPoints.CloseCluster(host, P1, 5);
+            for (var i = 0; i < 3; i++)
+            {
+                host.Device( ).Down(host.Target, cluster[i]);
+            }
+
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
+
+            host.Device( ).Down(host.Target, cluster[3]);
+            host.Device( ).Down(host.Target, cluster[4]);
+
+            Assert.Equal(TouchState.Eraser, host.Canvas.State);
         });
     }
 

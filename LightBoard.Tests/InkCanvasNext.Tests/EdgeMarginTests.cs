@@ -33,7 +33,7 @@ public class EdgeMarginTests
             a.Down(host.Target, cluster[0]);
             b.Down(host.Target, cluster[1]);
             c.Down(host.Target, cluster[2]);
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
 
             // 手指左移推高滚动偏移但被夹在最大值，视口保持贴住右缘
             a.Move(host.Target, new Point(50, 100));
@@ -65,7 +65,7 @@ public class EdgeMarginTests
             a.Down(host.Target, cluster[0]);
             b.Down(host.Target, cluster[1]);
             c.Down(host.Target, cluster[2]);
-            Assert.Equal(TouchState.Pan, host.Canvas.State);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
 
             // 手指右移压低滚动偏移但被夹在 0，视口保持贴住左缘
             a.Move(host.Target, new Point(150, 100));

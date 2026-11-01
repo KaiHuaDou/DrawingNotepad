@@ -137,10 +137,19 @@ public sealed class InkCanvasStrokesChangedEventArgs : EventArgs
         TransformOnly = transformOnly;
     }
 
+    /// <summary>
+    /// 新增的笔画；无新增时为空列表
+    /// </summary>
     public IReadOnlyList<Stroke> Added { get; }
 
+    /// <summary>
+    /// 移除的笔画；无移除时为空列表
+    /// </summary>
     public IReadOnlyList<Stroke> Removed { get; }
 
+    /// <summary>
+    /// 是否仅为选区整体变换（移动/缩放/旋转），此时无笔画增删
+    /// </summary>
     public bool TransformOnly { get; }
 }
 
@@ -154,6 +163,9 @@ public sealed class HistorySnapshot
 
     internal IReadOnlyList<IHistoryChange> Changes { get; }
 
+    /// <summary>
+    /// 历史位置：之前的条目为可撤销项，之后的条目为可重做项
+    /// </summary>
     public int Position { get; }
 }
 
