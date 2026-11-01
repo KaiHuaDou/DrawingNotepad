@@ -177,21 +177,31 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 
 ## 常用常量
 
+`InkCanvasNext` 上的常量：
+
 | 常量 | 值 | 说明 |
 | --- | --- | --- |
 | `MinScale` / `MaxScale` | 0.1 / 10 | 缩放范围 |
 | `WheelZoomFactor` | 1.1 | 滚轮每格缩放倍数 |
 | `ScrollStep` | 25 | 滚轮横滚一步的内容 DIP，乘缩放后为视口位移 |
+
+`InkCanvasNextOptions` / `EraserParameters` 上的常量，供选项与设置窗口取默认值与范围：
+
+| 常量 | 值 | 说明 |
+| --- | --- | --- |
 | `TouchDisplacementThresholdDefault` | 20 | 单指起笔位移，视口 DIP |
 | `PanZoomDisplaceThresholdDefault` | 30 | 双指平移锁定位移，视口 DIP |
 | `PinchLockDistanceDefault` | 24 | 双指捏合锁定间距，视口 DIP |
-| `MaxHistoryCount` | 200 | 撤销历史默认容量 |
+| `GestureMin` / `GestureMax` | 1 / 200 | 手势阈值共同范围，视口 DIP |
+| `MaxHistoryCountDefault` | 200 | 撤销历史默认容量 |
 | `PalmEraseFingersMin` / `PalmEraseFingersMax` / `PalmEraseFingersDefault` | 4 / 5 / 5 | 掌擦触点数量 |
-| `EraserDiameterDefault` | 75 | 面积擦直径，视口 DIP |
-| `EraserPalmExtraDefault` | 8 | 掌擦圆外扩量，视口 DIP |
-| `EraserMinLogicalDiameterDefault` | 1 | 缩放后逻辑直径下限，内容 DIP |
-| `EraserRebuildThresholdDefault` | 0.5 | 命中测试器重建阈值，内容 DIP |
-| `EdgeScrollTopDefaultThreshold` / `EdgeScrollBottomDefaultThreshold` / `EdgeScrollLeftDefaultThreshold` / `EdgeScrollRightDefaultThreshold` | 64 / 192 / 64 / 96 | 热区宽度，视口 DIP |
+| `EraserParameters.DiameterDefault` | 75 | 面积擦直径，视口 DIP |
+| `EraserParameters.PalmExtraDefault` | 8 | 掌擦圆外扩量，视口 DIP |
+| `EraserParameters.MinLogicalDiameterDefault` | 1 | 缩放后逻辑直径下限，内容 DIP |
+| `EraserParameters.RebuildThresholdDefault` | 0.5 | 命中测试器重建阈值，内容 DIP |
+| `EdgeScrollTopDefault` / `EdgeScrollBottomDefault` / `EdgeScrollLeftDefault` / `EdgeScrollRightDefault` | 64 / 192 / 64 / 96 | 热区宽度，视口 DIP |
+
+各选项属性在 init 时把越界值收拢到对应范围。
 
 ## 使用注意
 

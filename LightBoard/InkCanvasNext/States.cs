@@ -94,18 +94,20 @@ public partial class InkCanvasNext
 
     /// <summary>
     /// 触点数变化（Down/Up），或 EvalDraw 状态下 Move 时重评迁移/ 守卫内联写死：switch 臂自上而下即优先级（见 docs/TouchStates2.md）；
-    /// 掌擦触点数 palmEraseFingers 构造期固定；d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态
+    /// 掌擦触点数构造期固定；d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态。
+    /// 触点坐标取自 GetTouchPoint(this)（根可视空间：WPF 只按 relativeTo 的祖先链做变换），
+    /// 不经过画布 LayoutTransform，因此阈值（视口 DIP）不随缩放变化
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void UpdateState( )
     {
         var count = touches.Count;
         var d2 = GetMaxDistance2( );
-        var l2 = distanceThreshold2;
-        var c2 = touchDisplacementThreshold2;
+        var l2 = options.TouchSpacingThreshold2;
+        var c2 = options.TouchDisplacementThreshold2;
         var x2 = Get1stFingerDispl2( );
         var tool = Tool;
-        var palm = !tool.IsReadOnly && count >= palmEraseFingers;
+        var palm = !tool.IsReadOnly && count >= options.PalmEraseFingers;
 
         var newState = State switch
         {
@@ -169,7 +171,7 @@ public partial class InkCanvasNext
             {
                 0 => TouchState.Idle,
                 // 擦除工具多指全程掌擦，不迁多指画笔
-                _ when count > palmEraseFingers && d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
+                _ when count > options.PalmEraseFingers && d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => State,
             },
 

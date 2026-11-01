@@ -245,7 +245,7 @@ public partial class MainWindow
     private HelpVisual CreateHelpVisual( )
     {
         // 掌擦触点数在设置中二选一：并拢平移的可用指位与掌擦起点随之变化
-        var (panText, eraseText) = SettingsStore.Current.PalmEraseFingers == InkCanvasNext.InkCanvasNext.PalmEraseFingersMin
+        var (panText, eraseText) = SettingsStore.Current.PalmEraseFingers == InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersMin
             ? ("三指", "四指")
             : ("三/四指", "五指");
 

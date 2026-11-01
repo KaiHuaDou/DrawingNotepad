@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
-using static InkCanvasNext.InkCanvasNext;
+using InkCanvasNext;
 
 namespace LightBoard;
 
@@ -29,41 +29,41 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
         GestureFields =
         [
-            new("单指起笔位移阈值", ViewportDIP, SettingsLimits.GestureMin, SettingsLimits.GestureMax, 1, false,
+            new("单指起笔位移阈值", ViewportDIP, InkCanvasNextOptions.GestureMin, InkCanvasNextOptions.GestureMax, 1, false,
                 s => s.TouchDisplacementThreshold, (s, v) => s with { TouchDisplacementThreshold = v }),
-            new("双指平移锁定阈值", ViewportDIP, SettingsLimits.GestureMin, SettingsLimits.GestureMax, 1, false,
+            new("双指平移锁定阈值", ViewportDIP, InkCanvasNextOptions.GestureMin, InkCanvasNextOptions.GestureMax, 1, false,
                 s => s.PanZoomDisplaceThreshold, (s, v) => s with { PanZoomDisplaceThreshold = v }),
-            new("双指捏合锁定间距", ViewportDIP, SettingsLimits.GestureMin, SettingsLimits.GestureMax, 1, false,
+            new("双指捏合锁定间距", ViewportDIP, InkCanvasNextOptions.GestureMin, InkCanvasNextOptions.GestureMax, 1, false,
                 s => s.PinchLockDistance, (s, v) => s with { PinchLockDistance = v }),
         ];
 
         EdgeFields =
         [
-            new("上边缘热区", ViewportDIP, SettingsLimits.EdgeScrollMin, SettingsLimits.EdgeScrollMax, 8, false,
+            new("上边缘热区", ViewportDIP, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax, 8, false,
                 s => s.EdgeScrollTopThreshold, (s, v) => s with { EdgeScrollTopThreshold = v }),
-            new("下边缘热区", ViewportDIP, SettingsLimits.EdgeScrollMin, SettingsLimits.EdgeScrollMax, 8, false,
+            new("下边缘热区", ViewportDIP, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax, 8, false,
                 s => s.EdgeScrollBottomThreshold, (s, v) => s with { EdgeScrollBottomThreshold = v }),
-            new("左边缘热区", ViewportDIP, SettingsLimits.EdgeScrollMin, SettingsLimits.EdgeScrollMax, 8, false,
+            new("左边缘热区", ViewportDIP, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax, 8, false,
                 s => s.EdgeScrollLeftThreshold, (s, v) => s with { EdgeScrollLeftThreshold = v }),
-            new("右边缘热区", ViewportDIP, SettingsLimits.EdgeScrollMin, SettingsLimits.EdgeScrollMax, 8, false,
+            new("右边缘热区", ViewportDIP, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax, 8, false,
                 s => s.EdgeScrollRightThreshold, (s, v) => s with { EdgeScrollRightThreshold = v }),
         ];
 
         EraserFields =
         [
-            new("橡皮直径", ViewportDIP, SettingsLimits.EraserDiameterMin, SettingsLimits.EraserDiameterMax, 5, false,
+            new("橡皮直径", ViewportDIP, EraserParameters.DiameterMin, EraserParameters.DiameterMax, 5, false,
                 s => s.EraserDiameter, (s, v) => s with { EraserDiameter = v }),
-            new("掌擦外扩", ViewportDIP, SettingsLimits.PalmExtraMin, SettingsLimits.PalmExtraMax, 1, false,
+            new("掌擦外扩", ViewportDIP, EraserParameters.PalmExtraMin, EraserParameters.PalmExtraMax, 1, false,
                 s => s.EraserPalmExtra, (s, v) => s with { EraserPalmExtra = v }),
-            new("最小逻辑直径", ContentDIP, SettingsLimits.LogicalDiameterMin, SettingsLimits.LogicalDiameterMax, 0.1, false,
+            new("最小逻辑直径", ContentDIP, EraserParameters.MinLogicalDiameterMin, EraserParameters.MinLogicalDiameterMax, 0.1, false,
                 s => s.EraserMinLogicalDiameter, (s, v) => s with { EraserMinLogicalDiameter = v }),
-            new("命中重建阈值", ContentDIP, SettingsLimits.RebuildThresholdMin, SettingsLimits.RebuildThresholdMax, 0.05, false,
+            new("命中重建阈值", ContentDIP, EraserParameters.RebuildThresholdMin, EraserParameters.RebuildThresholdMax, 0.05, false,
                 s => s.EraserRebuildThreshold, (s, v) => s with { EraserRebuildThreshold = v }),
         ];
 
         UndoFields =
         [
-            new("撤销历史条数", "条", SettingsLimits.HistoryMin, SettingsLimits.HistoryMax, 10, true,
+            new("撤销历史条数", "条", SettingsLimits.HistoryMin, InkCanvasNextOptions.MaxHistoryCountMax, 10, true,
                 s => s.MaxHistoryCount, (s, v) => s with { MaxHistoryCount = (int)v }),
         ];
 
@@ -130,24 +130,24 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
     public bool FourFingerErase
     {
-        get => palmEraseFingers == PalmEraseFingersMin;
+        get => palmEraseFingers == InkCanvasNextOptions.PalmEraseFingersMin;
         set
         {
             if (value)
             {
-                SetPalmEraseFingers(PalmEraseFingersMin);
+                SetPalmEraseFingers(InkCanvasNextOptions.PalmEraseFingersMin);
             }
         }
     }
 
     public bool FiveFingerErase
     {
-        get => palmEraseFingers == PalmEraseFingersMax;
+        get => palmEraseFingers == InkCanvasNextOptions.PalmEraseFingersMax;
         set
         {
             if (value)
             {
-                SetPalmEraseFingers(PalmEraseFingersMax);
+                SetPalmEraseFingers(InkCanvasNextOptions.PalmEraseFingersMax);
             }
         }
     }

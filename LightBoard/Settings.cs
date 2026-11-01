@@ -1,9 +1,8 @@
 using System;
+
 using System.Text.Json.Serialization;
 
 using InkCanvasNext;
-
-using static InkCanvasNext.InkCanvasNext;
 
 namespace LightBoard;
 
@@ -12,19 +11,19 @@ namespace LightBoard;
 /// </summary>
 public record LightBoardSettings(
     bool EdgeScrollHint = true,
-    double EdgeScrollTopThreshold = EdgeScrollTopDefaultThreshold,
-    double EdgeScrollBottomThreshold = EdgeScrollBottomDefaultThreshold,
-    double EdgeScrollLeftThreshold = EdgeScrollLeftDefaultThreshold,
-    double EdgeScrollRightThreshold = EdgeScrollRightDefaultThreshold,
-    double TouchDisplacementThreshold = TouchDisplacementThresholdDefault,
-    double PanZoomDisplaceThreshold = PanZoomDisplaceThresholdDefault,
-    double PinchLockDistance = PinchLockDistanceDefault,
-    int MaxHistoryCount = MaxHistoryCount,
-    int PalmEraseFingers = PalmEraseFingersDefault,
-    double EraserDiameter = EraserDiameterDefault,
-    double EraserPalmExtra = EraserPalmExtraDefault,
-    double EraserMinLogicalDiameter = EraserMinLogicalDiameterDefault,
-    double EraserRebuildThreshold = EraserRebuildThresholdDefault,
+    double EdgeScrollTopThreshold = InkCanvasNextOptions.EdgeScrollTopDefault,
+    double EdgeScrollBottomThreshold = InkCanvasNextOptions.EdgeScrollBottomDefault,
+    double EdgeScrollLeftThreshold = InkCanvasNextOptions.EdgeScrollLeftDefault,
+    double EdgeScrollRightThreshold = InkCanvasNextOptions.EdgeScrollRightDefault,
+    double TouchDisplacementThreshold = InkCanvasNextOptions.TouchDisplacementThresholdDefault,
+    double PanZoomDisplaceThreshold = InkCanvasNextOptions.PanZoomDisplaceThresholdDefault,
+    double PinchLockDistance = InkCanvasNextOptions.PinchLockDistanceDefault,
+    int MaxHistoryCount = InkCanvasNextOptions.MaxHistoryCountDefault,
+    int PalmEraseFingers = InkCanvasNextOptions.PalmEraseFingersDefault,
+    double EraserDiameter = EraserParameters.DiameterDefault,
+    double EraserPalmExtra = EraserParameters.PalmExtraDefault,
+    double EraserMinLogicalDiameter = EraserParameters.MinLogicalDiameterDefault,
+    double EraserRebuildThreshold = EraserParameters.RebuildThresholdDefault,
     double ToolbarScale = SettingsLimits.ToolbarScaleDefault,
     string SwitchOutProcessName = SettingsLimits.SwitchOutProcessDefault
 )
@@ -62,43 +61,31 @@ public record LightBoardSettings(
     {
         return data with
         {
-            EdgeScrollTopThreshold = Math.Clamp(data.EdgeScrollTopThreshold, SettingsLimits.EdgeScrollMin, SettingsLimits.EdgeScrollMax),
-            EdgeScrollBottomThreshold = Math.Clamp(data.EdgeScrollBottomThreshold, SettingsLimits.EdgeScrollMin, SettingsLimits.EdgeScrollMax),
-            EdgeScrollLeftThreshold = Math.Clamp(data.EdgeScrollLeftThreshold, SettingsLimits.EdgeScrollMin, SettingsLimits.EdgeScrollMax),
-            EdgeScrollRightThreshold = Math.Clamp(data.EdgeScrollRightThreshold, SettingsLimits.EdgeScrollMin, SettingsLimits.EdgeScrollMax),
-            TouchDisplacementThreshold = Math.Clamp(data.TouchDisplacementThreshold, SettingsLimits.GestureMin, SettingsLimits.GestureMax),
-            PanZoomDisplaceThreshold = Math.Clamp(data.PanZoomDisplaceThreshold, SettingsLimits.GestureMin, SettingsLimits.GestureMax),
-            PinchLockDistance = Math.Clamp(data.PinchLockDistance, SettingsLimits.GestureMin, SettingsLimits.GestureMax),
-            MaxHistoryCount = Math.Clamp(data.MaxHistoryCount, SettingsLimits.HistoryMin, SettingsLimits.HistoryMax),
-            PalmEraseFingers = Math.Clamp(data.PalmEraseFingers, PalmEraseFingersMin, PalmEraseFingersMax),
-            EraserDiameter = Math.Clamp(data.EraserDiameter, SettingsLimits.EraserDiameterMin, SettingsLimits.EraserDiameterMax),
-            EraserPalmExtra = Math.Clamp(data.EraserPalmExtra, SettingsLimits.PalmExtraMin, SettingsLimits.PalmExtraMax),
-            EraserMinLogicalDiameter = Math.Clamp(data.EraserMinLogicalDiameter, SettingsLimits.LogicalDiameterMin, SettingsLimits.LogicalDiameterMax),
-            EraserRebuildThreshold = Math.Clamp(data.EraserRebuildThreshold, SettingsLimits.RebuildThresholdMin, SettingsLimits.RebuildThresholdMax),
+            EdgeScrollTopThreshold = Math.Clamp(data.EdgeScrollTopThreshold, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax),
+            EdgeScrollBottomThreshold = Math.Clamp(data.EdgeScrollBottomThreshold, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax),
+            EdgeScrollLeftThreshold = Math.Clamp(data.EdgeScrollLeftThreshold, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax),
+            EdgeScrollRightThreshold = Math.Clamp(data.EdgeScrollRightThreshold, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax),
+            TouchDisplacementThreshold = Math.Clamp(data.TouchDisplacementThreshold, InkCanvasNextOptions.GestureMin, InkCanvasNextOptions.GestureMax),
+            PanZoomDisplaceThreshold = Math.Clamp(data.PanZoomDisplaceThreshold, InkCanvasNextOptions.GestureMin, InkCanvasNextOptions.GestureMax),
+            PinchLockDistance = Math.Clamp(data.PinchLockDistance, InkCanvasNextOptions.GestureMin, InkCanvasNextOptions.GestureMax),
+            MaxHistoryCount = Math.Clamp(data.MaxHistoryCount, SettingsLimits.HistoryMin, InkCanvasNextOptions.MaxHistoryCountMax),
+            PalmEraseFingers = Math.Clamp(data.PalmEraseFingers, InkCanvasNextOptions.PalmEraseFingersMin, InkCanvasNextOptions.PalmEraseFingersMax),
+            EraserDiameter = Math.Clamp(data.EraserDiameter, EraserParameters.DiameterMin, EraserParameters.DiameterMax),
+            EraserPalmExtra = Math.Clamp(data.EraserPalmExtra, EraserParameters.PalmExtraMin, EraserParameters.PalmExtraMax),
+            EraserMinLogicalDiameter = Math.Clamp(data.EraserMinLogicalDiameter, EraserParameters.MinLogicalDiameterMin, EraserParameters.MinLogicalDiameterMax),
+            EraserRebuildThreshold = Math.Clamp(data.EraserRebuildThreshold, EraserParameters.RebuildThresholdMin, EraserParameters.RebuildThresholdMax),
             ToolbarScale = Math.Clamp(data.ToolbarScale, SettingsLimits.ToolbarScaleMin, SettingsLimits.ToolbarScaleMax)
         };
     }
 }
 
 /// <summary>
-/// 设置项的可选范围，设置窗口与 <see cref="LightBoardSettings.Normalize"/> 共用
+/// 应用层设置项的范围，设置窗口与 <see cref="LightBoardSettings.Normalize"/> 共用；
+/// 画布参数的范围由 InkCanvasNextOptions 与 EraserParameters 的常数给出
 /// </summary>
 internal static class SettingsLimits
 {
-    public const double GestureMin = 1;
-    public const double GestureMax = 200;
-    public const double EdgeScrollMin = 0;
-    public const double EdgeScrollMax = 1000;
     public const int HistoryMin = 10;
-    public const int HistoryMax = 1000;
-    public const double EraserDiameterMin = 1;
-    public const double EraserDiameterMax = 400;
-    public const double PalmExtraMin = 0;
-    public const double PalmExtraMax = 100;
-    public const double LogicalDiameterMin = 0.1;
-    public const double LogicalDiameterMax = 10;
-    public const double RebuildThresholdMin = 0.01;
-    public const double RebuildThresholdMax = 10;
     public const double ToolbarScaleDefault = 1;
     public const double ToolbarScaleMin = 0.75;
     public const double ToolbarScaleMax = 1.5;

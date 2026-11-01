@@ -99,33 +99,17 @@ public partial class InkCanvasNext : UserControl
         InitializeComponent( );
         InitializeCommands( );
 
-        var settings = options ?? new InkCanvasNextOptions( );
-        var eraserOptions = settings.Eraser ?? new EraserParameters( );
+        this.options = options ?? new( );
 
-        palmEraseFingers = Math.Clamp(settings.PalmEraseFingers, PalmEraseFingersMin, PalmEraseFingersMax);
-        eraserPalmExtra = NonNegative(eraserOptions.PalmExtra);
-        touchDisplacementThreshold2 = Square(NonNegative(settings.TouchDisplacementThreshold));
-        panZoomDisplaceThreshold2 = Square(NonNegative(settings.PanZoomDisplaceThreshold));
-        pinchLockDistance2 = Square(NonNegative(settings.PinchLockDistance));
-        edgeScrollTopThreshold = NonNegative(settings.EdgeScrollTopThreshold);
-        edgeScrollBottomThreshold = NonNegative(settings.EdgeScrollBottomThreshold);
-        edgeScrollLeftThreshold = NonNegative(settings.EdgeScrollLeftThreshold);
-        edgeScrollRightThreshold = NonNegative(settings.EdgeScrollRightThreshold);
-        mouseWheelAction = Enum.IsDefined(settings.WheelAction) ? settings.WheelAction : MouseWheelAction.Scroll;
-        history = new RingBuffer<IHistoryChange>(Math.Max(0, settings.MaxHistoryCount));
-
-        var spacing = double.IsFinite(settings.TouchSpacingThreshold) && settings.TouchSpacingThreshold > 0
-            ? settings.TouchSpacingThreshold
-            : DistanceThresholdFactor * SystemParameters.WorkArea.Width;
-        distanceThreshold2 = spacing * spacing;
+        history = new RingBuffer<IHistoryChange>(this.options.MaxHistoryCount);
 
         InnerCanvas.Width = canvasSize.Width;
         InnerCanvas.Height = canvasSize.Height;
         CanvasGrid.Width = canvasSize.Width;
         CanvasGrid.Height = canvasSize.Height;
 
-        eraser = new Eraser(InnerCanvas, EraserFeedback, eraserOptions);
-        EraserDiameter = eraserOptions.Diameter;
+        eraser = new Eraser(InnerCanvas, EraserFeedback, this.options.Eraser);
+        EraserDiameter = this.options.Eraser.Diameter;
 
         MousePointer = new MouseTouchDevice(this);
 

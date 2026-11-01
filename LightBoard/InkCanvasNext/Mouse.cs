@@ -111,8 +111,6 @@ internal sealed class MouseTouchDevice : TouchDevice
 // 另有滚轮缩放与横滚；落章统一在抬手位置发生（与触摸一致）
 public partial class InkCanvasNext
 {
-    private readonly MouseWheelAction mouseWheelAction;
-
     internal MouseTouchDevice MousePointer { get; }
 
     private void CanvasPreviewMouseDown(object o, MouseButtonEventArgs e)
@@ -175,7 +173,7 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseWheel(object o, MouseWheelEventArgs e)
     {
-        var command = ResolveWheel(mouseWheelAction, Keyboard.Modifiers);
+        var command = ResolveWheel(options.WheelAction, Keyboard.Modifiers);
 
         if (command == WheelCommand.None)
         {

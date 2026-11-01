@@ -456,7 +456,7 @@ public class SpecialModeGestureTests
             Assert.Equal(TouchState.Eraser, host.Canvas.State);
 
             // 5 指横向均布：包络直径 = 4 倍指间距（Spacing/8 × 4）
-            var expected = TestPoints.Spacing(host) / 2 + host.Canvas.eraserPalmExtra;
+            var expected = TestPoints.Spacing(host) / 2 + host.Canvas.options.Eraser.PalmExtra;
             Assert.Equal(expected, host.Canvas.EraserFeedback.Width, 9);
         });
     }
@@ -471,7 +471,7 @@ public class SpecialModeGestureTests
             host.Canvas.Mode = InkCanvasNextMode.EraseArea;
 
             Assert.Equal(80, host.Canvas.EraserDiameter);
-            Assert.Equal(20, host.Canvas.eraserPalmExtra);
+            Assert.Equal(20, host.Canvas.options.Eraser.PalmExtra);
 
             var cluster = TestPoints.CloseCluster(host, P1, 5);
             foreach (var point in cluster)
@@ -791,7 +791,7 @@ public class SpecialModeGestureTests
 
             // 逐指上报时中间帧只有一指到位：初始间距需保证中间帧跨度落在 Smooth 死区
             // （不产生缩放）、中间帧中点位移低于平移锁死阈值，末帧中点位移才触发锁死
-            var displace = Math.Sqrt(host.Canvas.panZoomDisplaceThreshold2);
+            var displace = host.Canvas.options.PanZoomDisplaceThreshold;
             var dy = displace * 1.05 + 1;
             var spacing = Math.Max(TestPoints.PinchSpacing(host), dy * 1.7);
             var baseA = P1;
@@ -825,7 +825,7 @@ public class SpecialModeGestureTests
             using var host = new TouchHost( );
 
             var spacing = TestPoints.PinchSpacing(host);
-            var pinch = Math.Sqrt(host.Canvas.pinchLockDistance2);
+            var pinch = host.Canvas.options.PinchLockDistance;
             var baseA = P1;
             var baseB = new Point(P1.X + spacing, P1.Y);
 

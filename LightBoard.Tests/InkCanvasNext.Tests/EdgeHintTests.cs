@@ -220,10 +220,10 @@ public class EdgeHintTests
         var view = new View(canvas.CurrentScale, canvas.OffsetX, canvas.OffsetY);
         var threshold = side switch
         {
-            EdgeScrollSide.Top => canvas.edgeScrollTopThreshold,
-            EdgeScrollSide.Bottom => canvas.edgeScrollBottomThreshold,
-            EdgeScrollSide.Left => canvas.edgeScrollLeftThreshold,
-            _ => canvas.edgeScrollRightThreshold,
+            EdgeScrollSide.Top => canvas.options.EdgeScrollTopThreshold,
+            EdgeScrollSide.Bottom => canvas.options.EdgeScrollBottomThreshold,
+            EdgeScrollSide.Left => canvas.options.EdgeScrollLeftThreshold,
+            _ => canvas.options.EdgeScrollRightThreshold,
         };
         var band = InkCanvasNext.EdgeBandContentRect(view, canvas.ViewportSize, threshold, side);
 
@@ -245,10 +245,10 @@ public class EdgeHintTests
         var view = new View(canvas.CurrentScale, canvas.OffsetX, canvas.OffsetY);
         var threshold = side switch
         {
-            EdgeScrollSide.Top => canvas.edgeScrollTopThreshold,
-            EdgeScrollSide.Bottom => canvas.edgeScrollBottomThreshold,
-            EdgeScrollSide.Left => canvas.edgeScrollLeftThreshold,
-            _ => canvas.edgeScrollRightThreshold,
+            EdgeScrollSide.Top => canvas.options.EdgeScrollTopThreshold,
+            EdgeScrollSide.Bottom => canvas.options.EdgeScrollBottomThreshold,
+            EdgeScrollSide.Left => canvas.options.EdgeScrollLeftThreshold,
+            _ => canvas.options.EdgeScrollRightThreshold,
         };
         var band = InkCanvasNext.EdgeBandContentRect(view, canvas.ViewportSize, threshold, side);
 

@@ -35,15 +35,15 @@ public class SettingsTests
 
         Assert.NotNull(data);
         Assert.False(data.EdgeScrollHint);
-        Assert.Equal(InkCanvasNext.InkCanvasNext.EdgeScrollTopDefaultThreshold, data.EdgeScrollTopThreshold);
-        Assert.Equal(InkCanvasNext.InkCanvasNext.EdgeScrollBottomDefaultThreshold, data.EdgeScrollBottomThreshold);
-        Assert.Equal(InkCanvasNext.InkCanvasNext.EdgeScrollLeftDefaultThreshold, data.EdgeScrollLeftThreshold);
-        Assert.Equal(InkCanvasNext.InkCanvasNext.EdgeScrollRightDefaultThreshold, data.EdgeScrollRightThreshold);
-        Assert.Equal(InkCanvasNext.InkCanvasNext.PalmEraseFingersDefault, data.PalmEraseFingers);
-        Assert.Equal(InkCanvasNext.InkCanvasNext.EraserDiameterDefault, data.EraserDiameter);
-        Assert.Equal(InkCanvasNext.InkCanvasNext.EraserPalmExtraDefault, data.EraserPalmExtra);
-        Assert.Equal(InkCanvasNext.InkCanvasNext.EraserMinLogicalDiameterDefault, data.EraserMinLogicalDiameter);
-        Assert.Equal(InkCanvasNext.InkCanvasNext.EraserRebuildThresholdDefault, data.EraserRebuildThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollTopDefault, data.EdgeScrollTopThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollBottomDefault, data.EdgeScrollBottomThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollLeftDefault, data.EdgeScrollLeftThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollRightDefault, data.EdgeScrollRightThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersDefault, data.PalmEraseFingers);
+        Assert.Equal(InkCanvasNext.EraserParameters.DiameterDefault, data.EraserDiameter);
+        Assert.Equal(InkCanvasNext.EraserParameters.PalmExtraDefault, data.EraserPalmExtra);
+        Assert.Equal(InkCanvasNext.EraserParameters.MinLogicalDiameterDefault, data.EraserMinLogicalDiameter);
+        Assert.Equal(InkCanvasNext.EraserParameters.RebuildThresholdDefault, data.EraserRebuildThreshold);
         Assert.Equal(LightBoardSettings.ToolbarScaleDefault, data.ToolbarScale);
     }
 
@@ -136,7 +136,7 @@ public class SettingsTests
         Assert.Equal(1000, normalized.EdgeScrollBottomThreshold);
         Assert.Equal(1, normalized.TouchDisplacementThreshold);
         Assert.Equal(10, normalized.MaxHistoryCount);
-        Assert.Equal(InkCanvasNext.InkCanvasNext.PalmEraseFingersMax, normalized.PalmEraseFingers);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersMax, normalized.PalmEraseFingers);
         Assert.Equal(1, normalized.EraserDiameter);
         Assert.Equal(0, normalized.EraserPalmExtra);
         Assert.Equal(0.1, normalized.EraserMinLogicalDiameter);

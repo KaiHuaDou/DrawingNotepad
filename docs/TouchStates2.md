@@ -11,7 +11,7 @@
 - `l`: 距离阈值。`l = DistanceThresholdFactor * WorkArea.Width`，其中 `DistanceThresholdFactor` 在 DEBUG 下为 `0.9`、RELEASE 下为 `0.1`（注意：与 v1 的 `0.6 * ActualWidth` 不同）。
 - `c`: 位移阈值，默认 `20` 视口 DIP，构造期由 `InkCanvasNextOptions.TouchDisplacementThreshold` 设定。
 - `x`: 首指相对按下点的位移（`Get1stFingerDispl2`）。
-- `p`: 掌擦触点数，设置中二选一（4 或 5，默认 5），画布构造时固定（`palmEraseFingers`）。
+- `p`: 掌擦触点数，设置中二选一（4 或 5，默认 5），构造期由 `InkCanvasNextOptions.PalmEraseFingers` 设定。
 - 比较均用**平方距离**（免 `sqrt`）：`d2 <= l2`、`x2 > c2`；每次重评 `d2`/`x2` 只计算一次。
 
 ## 状态

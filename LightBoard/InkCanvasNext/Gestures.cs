@@ -39,7 +39,7 @@ public partial class InkCanvasNext
         var span2 = second is null ? 0.0 : Distance2(firstPoint, second.Value);
         var displ2 = second is null ? 0.0 : Distance2(MidPoint(firstPoint, second.Value), panZoomAnchor);
 
-        if (!zoomLocked && (displ2 > panZoomDisplaceThreshold2 || span2 < pinchLockDistance2))
+        if (!zoomLocked && (displ2 > options.PanZoomDisplaceThreshold2 || span2 < options.PinchLockDistance2))
         {
             zoomLocked = true;
         }

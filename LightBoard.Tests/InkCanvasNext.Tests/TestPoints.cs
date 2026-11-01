@@ -11,19 +11,19 @@ internal static class TestPoints
     /// <summary>状态机使用的触点间距阈值 l（视口 DIP），与画布构造取值一致</summary>
     public static double Spacing(TouchHost host)
     {
-        return Math.Sqrt(host.Canvas.distanceThreshold2);
+        return host.Canvas.options.TouchSpacingThreshold;
     }
 
     /// <summary>单指起笔位移阈值 c（视口 DIP）</summary>
     public static double Displacement(TouchHost host)
     {
-        return Math.Sqrt(host.Canvas.touchDisplacementThreshold2);
+        return host.Canvas.options.TouchDisplacementThreshold;
     }
 
     /// <summary>双指捏合测试的初始间距：捏合锁死阈值的 2 倍，保证初始不触发距离锁死，且不超过指距阈值 l</summary>
     public static double PinchSpacing(TouchHost host)
     {
-        return Math.Sqrt(host.Canvas.pinchLockDistance2) * 2;
+        return host.Canvas.options.PinchLockDistance * 2;
     }
 
     /// <summary>p 右侧的近距点：与 p 间距 l/8，满足 d ≤ l 的捏合/平移判定</summary>

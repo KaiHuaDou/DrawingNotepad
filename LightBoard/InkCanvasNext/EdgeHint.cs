@@ -170,18 +170,18 @@ public partial class InkCanvasNext
 
     private bool EdgeHintsEnabled( )
     {
-        return edgeScrollTopThreshold > 0 || edgeScrollBottomThreshold > 0
-            || edgeScrollLeftThreshold > 0 || edgeScrollRightThreshold > 0;
+        return options.EdgeScrollTopThreshold > 0 || options.EdgeScrollBottomThreshold > 0
+            || options.EdgeScrollLeftThreshold > 0 || options.EdgeScrollRightThreshold > 0;
     }
 
     private double EdgeThreshold(EdgeScrollSide side)
     {
         return side switch
         {
-            EdgeScrollSide.Top => edgeScrollTopThreshold,
-            EdgeScrollSide.Bottom => edgeScrollBottomThreshold,
-            EdgeScrollSide.Left => edgeScrollLeftThreshold,
-            _ => edgeScrollRightThreshold,
+            EdgeScrollSide.Top => options.EdgeScrollTopThreshold,
+            EdgeScrollSide.Bottom => options.EdgeScrollBottomThreshold,
+            EdgeScrollSide.Left => options.EdgeScrollLeftThreshold,
+            _ => options.EdgeScrollRightThreshold,
         };
     }
 

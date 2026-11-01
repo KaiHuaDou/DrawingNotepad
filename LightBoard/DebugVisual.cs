@@ -170,10 +170,11 @@ internal sealed class DebugVisual : FrameworkElement
     {
         DistanceRow(dc, 0, 96, "LassoPointDistance", $"{Math.Sqrt(LassoPointDistance2):0.#} DIP", Math.Sqrt(LassoPointDistance2), false, dip);
         DistanceRow(dc, 1, 122, "SelectionToolbarGap", $"{SelectionToolbarGap:0.#} DIP", SelectionToolbarGap, false, dip);
-        DistanceRow(dc, 2, 148, "PinchLockDistance", ThresholdText(canvas.pinchLockDistance2), ThresholdLength(canvas.pinchLockDistance2), ThresholdDisabled(canvas.pinchLockDistance2), dip);
-        DistanceRow(dc, 3, 174, "PanZoomDisplaceThreshold", ThresholdText(canvas.panZoomDisplaceThreshold2), ThresholdLength(canvas.panZoomDisplaceThreshold2), ThresholdDisabled(canvas.panZoomDisplaceThreshold2), dip);
+        DistanceRow(dc, 2, 148, "PinchLockDistance", ThresholdText(canvas.options.PinchLockDistance), canvas.options.PinchLockDistance, false, dip);
+        DistanceRow(dc, 3, 174, "PanZoomDisplaceThreshold", ThresholdText(canvas.options.PanZoomDisplaceThreshold), canvas.options.PanZoomDisplaceThreshold, false, dip);
         DistanceRow(dc, 4, 200, "RotateGapAboveSelection", $"{SelectionVisual.RotateGapAboveSelection:0.#} DIP", SelectionVisual.RotateGapAboveSelection, false, dip);
-        DistanceRow(dc, 5, 226, "DistanceThreshold", ThresholdText(canvas.distanceThreshold2), ThresholdLength(canvas.distanceThreshold2), ThresholdApproximate(canvas.distanceThreshold2) || ThresholdDisabled(canvas.distanceThreshold2), dip);
+        var spacing = canvas.options.TouchSpacingThreshold;
+        DistanceRow(dc, 5, 226, "DistanceThreshold", ThresholdText(spacing), Math.Min(spacing, MaxThresholdLineLength), spacing > MaxThresholdLineLength, dip);
     }
 
     // 边缘热区：在视口上下左右各阈值距离处画红色虚线
@@ -185,10 +186,10 @@ internal sealed class DebugVisual : FrameworkElement
             return;
         }
 
-        var top = canvas.edgeScrollTopThreshold;
-        var bottom = canvas.edgeScrollBottomThreshold;
-        var left = canvas.edgeScrollLeftThreshold;
-        var right = canvas.edgeScrollRightThreshold;
+        var top = canvas.options.EdgeScrollTopThreshold;
+        var bottom = canvas.options.EdgeScrollBottomThreshold;
+        var left = canvas.options.EdgeScrollLeftThreshold;
+        var right = canvas.options.EdgeScrollRightThreshold;
         dc.DrawLine(EdgeScrollPen, new Point(0, top), new Point(viewport.Width, top));
         dc.DrawLine(EdgeScrollPen, new Point(0, viewport.Height - bottom), new Point(viewport.Width, viewport.Height - bottom));
         dc.DrawLine(EdgeScrollPen, new Point(left, 0), new Point(left, viewport.Height));
@@ -242,31 +243,9 @@ internal sealed class DebugVisual : FrameworkElement
     // 值文本列固定在 590：线段起点 470，可用长度留出间距
     private const double MaxThresholdLineLength = 112;
 
-    private static string ThresholdText(double threshold2)
+    private static string ThresholdText(double threshold)
     {
-        if (ThresholdDisabled(threshold2))
-        {
-            return "禁用";
-        }
-
-        var length = Math.Sqrt(threshold2);
-        return length > MaxThresholdLineLength ? $"≈ {length:0.#} DIP" : $"{length:0.#} DIP";
-    }
-
-    private static double ThresholdLength(double threshold2)
-    {
-        return ThresholdDisabled(threshold2) ? 44 : Math.Min(Math.Sqrt(threshold2), MaxThresholdLineLength);
-    }
-
-    private static bool ThresholdApproximate(double threshold2)
-    {
-        return !ThresholdDisabled(threshold2) && Math.Sqrt(threshold2) > MaxThresholdLineLength;
-    }
-
-    // 阈值以超出屏幕尺度的极大值或非正值表示关闭（见 Parameters.cs），此时不参与距离比较。
-    private static bool ThresholdDisabled(double threshold2)
-    {
-        return !double.IsFinite(threshold2) || threshold2 < 0 || threshold2 > 1e10;
+        return threshold > MaxThresholdLineLength ? $"≈ {threshold:0.#} DIP" : $"{threshold:0.#} DIP";
     }
 
     private static SolidColorBrush MakeBrush(string hex)
