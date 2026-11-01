@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Ink;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace InkCanvasNext;
@@ -315,6 +316,11 @@ public partial class InkCanvasNext
         var canUndo = Position > 0;
         var canRedo = Position < history.Count;
 
+        if (CanUndo == canUndo && CanRedo == canRedo)
+        {
+            return;
+        }
+
         if (CanUndo != canUndo)
         {
             CanUndo = canUndo;
@@ -326,6 +332,9 @@ public partial class InkCanvasNext
             CanRedo = canRedo;
             CanRedoChanged?.Invoke(this, new DependencyPropertyChangedEventArgs(CanRedoProperty, !canRedo, canRedo));
         }
+
+        // 命令的 CanExecute 只在重查时重算，撤销与重做按钮要立刻跟着状态变
+        CommandManager.InvalidateRequerySuggested( );
     }
 
     /// <summary>

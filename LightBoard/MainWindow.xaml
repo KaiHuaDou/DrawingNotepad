@@ -35,6 +35,26 @@
                        FontSize="32"
                        Text="帮助" />
         </Grid>
+        <Button x:Name="TopEdgeHint"
+                Margin="0,8,0,0" HorizontalAlignment="Center" VerticalAlignment="Top"
+                Visibility="Collapsed"
+                Style="{StaticResource ButtonStyle}"
+                Click="TopEdgeHintClick" Tag="&#xE70E;" />
+        <Button x:Name="BottomEdgeHint"
+                Margin="0,0,0,68" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Visibility="Collapsed"
+                Style="{StaticResource ButtonStyle}"
+                Click="BottomEdgeHintClick" Tag="&#xE70D;" />
+        <Button x:Name="LeftEdgeHint"
+                Margin="8,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                Visibility="Collapsed"
+                Style="{StaticResource ButtonStyle}"
+                Click="LeftEdgeHintClick" Tag="&#xE76B;" />
+        <Button x:Name="RightEdgeHint"
+                Margin="0,0,8,0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                Visibility="Collapsed"
+                Style="{StaticResource ButtonStyle}"
+                Click="RightEdgeHintClick" Tag="&#xE76C;" />
         <Border x:Name="LeftBorder"
                 Margin="5,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"
                 Style="{StaticResource ContainerStyle}"
@@ -245,14 +265,8 @@
                             Style="{StaticResource ButtonStyle}"
                             Foreground="#F25767"
                             Click="EraseAll" Tag="&#xE894;" />
-                    <Button x:Name="UndoButton"
-                            IsEnabled="False"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="UndoButtonClick" Tag="&#xE7A7;" />
-                    <Button x:Name="RedoButton"
-                            IsEnabled="False"
-                            Style="{StaticResource ButtonStyle}"
-                            Click="RedoButtonClick" Tag="&#xE7A6;" />
+                    <Button x:Name="UndoButton" Style="{StaticResource ButtonStyle}" Tag="&#xE7A7;" />
+                    <Button x:Name="RedoButton" Style="{StaticResource ButtonStyle}" Tag="&#xE7A6;" />
                     <ToggleButton x:Name="MoreToggle"
                                   Style="{StaticResource ToggleStyle}"
                                   Click="MoreToggleClick" Tag="&#xE712;" />
@@ -427,9 +441,9 @@
                 BorderThickness="1"
                 CornerRadius="8">
             <StackPanel Orientation="Horizontal">
-                <Button x:Name="CopyButton" Style="{StaticResource ButtonStyle}" Click="CopyClick" Tag="&#xE8C8;" />
-                <Button x:Name="CutButton" Style="{StaticResource ButtonStyle}" Click="CutClick" Tag="&#xE8C6;" />
-                <Button x:Name="DeleteButton" Style="{StaticResource ButtonStyle}" Click="DeleteClick" Tag="&#xE74D;" />
+                <Button x:Name="CopyButton" Style="{StaticResource ButtonStyle}" Tag="&#xE8C8;" />
+                <Button x:Name="CutButton" Style="{StaticResource ButtonStyle}" Tag="&#xE8C6;" />
+                <Button x:Name="DeleteButton" Style="{StaticResource ButtonStyle}" Tag="&#xE74D;" />
                 <ToggleButton x:Name="CloneButton"
                               Style="{StaticResource ToggleStyle}"
                               Click="CloneClick" Tag="&#xF413;" />

@@ -6,15 +6,40 @@ namespace InkCanvasNext.Tests;
 public class CommandTests
 {
     [Fact]
-    public void Commands_DisabledByDefault( )
+    public void Commands_CanExecuteFollowsCanvasState( )
     {
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
+
+            Assert.False(InkCanvasNextCommands.Undo.CanExecute(null, host.Canvas));
+
             host.Canvas.Strokes.Add(MakeStroke( ));
 
+            Assert.True(InkCanvasNextCommands.Undo.CanExecute(null, host.Canvas));
             Assert.False(host.Canvas.Focusable);
-            Assert.False(InkCanvasNextCommands.Undo.CanExecute(null, host.Canvas));
+        });
+    }
+
+    [Fact]
+    public void ZoomCommands_ChangeScale( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var canvas = host.Canvas;
+
+            InkCanvasNextCommands.ZoomIn.Execute(null, canvas);
+            Assert.True(canvas.CurrentScale > 1);
+
+            InkCanvasNextCommands.ZoomOut.Execute(null, canvas);
+            Assert.Equal(1.0, canvas.CurrentScale, 9);
+
+            InkCanvasNextCommands.ZoomOut.Execute(null, canvas);
+            Assert.True(canvas.CurrentScale < 1);
+
+            InkCanvasNextCommands.ActualSize.Execute(null, canvas);
+            Assert.Equal(1.0, canvas.CurrentScale, 9);
         });
     }
 

@@ -1,4 +1,3 @@
-using System.Windows;
 using System.Windows.Media;
 
 namespace InkCanvasNext;
@@ -120,37 +119,12 @@ public partial class InkCanvasNext
     public const double EdgeScrollRightDefaultThreshold = 96;
 
     /// <summary>
-    /// 提示按钮距视口四边的间距默认值，视口 DIP
-    /// </summary>
-    public const double EdgeHintMarginDefault = 8;
-
-    /// <summary>
     /// 视口 DIP，0 关闭该侧提示，构造期固定
     /// </summary>
     internal readonly double edgeScrollTopThreshold;
     internal readonly double edgeScrollBottomThreshold;
     internal readonly double edgeScrollLeftThreshold;
     internal readonly double edgeScrollRightThreshold;
-
-    private Thickness edgeHintMargin = new(EdgeHintMarginDefault);
-
-    /// <summary>
-    /// 提示按钮距视口四边的间距，视口 DIP；宿主用它在工具栏等常驻界面上方留出位置
-    /// </summary>
-    public Thickness EdgeHintMargin
-    {
-        get => edgeHintMargin;
-        set
-        {
-            if (value == edgeHintMargin)
-            {
-                return;
-            }
-
-            edgeHintMargin = value;
-            UpdateEdgeHints( );
-        }
-    }
 
     private static double NonNegative(double value)
     {

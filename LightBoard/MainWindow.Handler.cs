@@ -161,33 +161,10 @@ public partial class MainWindow
         SyncToolState( );
     }
 
-    private void CopyClick(object o, RoutedEventArgs e)
-    {
-        CanvasNext.CopySelected( );
-    }
-
-    private void CutClick(object o, RoutedEventArgs e)
-    {
-        ExitStamp( );
-
-        if (CanvasNext.CutSelected( ))
-        {
-            SelectionBorder.Visibility = Visibility.Collapsed;
-        }
-    }
-
     private void DebugLayerClick(object o, RoutedEventArgs e)
     {
         var isChecked = DebugLayerMenu.IsChecked;
         DebugLayer.Visibility = isChecked ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    private void DeleteClick(object o, RoutedEventArgs e)
-    {
-        ExitStamp( );
-
-        CanvasNext.DeleteSelected( );
-        SelectionBorder.Visibility = Visibility.Collapsed;
     }
 
     private void EraseAll(object o, RoutedEventArgs e)
@@ -279,11 +256,6 @@ public partial class MainWindow
         }
     }
 
-    private void RedoButtonClick(object o, RoutedEventArgs e)
-    {
-        CanvasNext.Redo( );
-    }
-
     private void SettingsClick(object o, RoutedEventArgs e)
     {
         var dialog = new Settings { Owner = this };
@@ -332,10 +304,5 @@ public partial class MainWindow
 
         timerWindow = new TimerWindow( );
         timerWindow.Show( );
-    }
-
-    private void UndoButtonClick(object o, RoutedEventArgs e)
-    {
-        CanvasNext.Undo( );
     }
 }

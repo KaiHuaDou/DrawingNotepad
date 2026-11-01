@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Threading;
 
 namespace InkCanvasNext;
@@ -12,7 +11,23 @@ public partial class InkCanvasNext
     private const double EdgeScrollSeconds = 0.18;
     private const double EdgeScrollTickMilliseconds = 16;
 
+    // 目标多走 1 视口 DIP：热区与墨迹恰好相切时浮点误差会让判定仍为相交，提示留在原地
+    private const double EdgeScrollClearance = 1;
+
+    private static readonly EdgeScrollSide[] EdgeSides =
+    [
+        EdgeScrollSide.Top,
+        EdgeScrollSide.Bottom,
+        EdgeScrollSide.Left,
+        EdgeScrollSide.Right
+    ];
+
     private readonly List<Rect> edgeBounds = [];
+
+    /// <summary>
+    /// 四侧提示的显示状态，下标为 <see cref="EdgeScrollSide"/> 的取值
+    /// </summary>
+    private readonly bool[] edgeHintVisible = new bool[4];
 
     private readonly DispatcherTimer edgeScrollTimer = new(DispatcherPriority.Render);
     private Stopwatch? edgeScrollClock;
@@ -23,152 +38,17 @@ public partial class InkCanvasNext
     internal bool IsEdgeScrolling => edgeScrollTimer.IsEnabled;
 
     /// <summary>
-    /// 按当前视图与笔画刷新四个提示按钮：热区有墨迹且该方向可平移才显示，按钮贴视口边缘
+    /// 该侧边缘提示是否应显示：热区内有墨迹，且该方向还能平移
     /// </summary>
-    private void UpdateEdgeHints( )
+    public bool IsEdgeHintVisible(EdgeScrollSide side)
     {
-        var view = CurrentView;
-        var viewport = ViewportSize;
-
-        if (viewport.Width <= 0 || viewport.Height <= 0 || !EdgeHintsEnabled( ))
-        {
-            HideEdgeHints( );
-            return;
-        }
-
-        CollectEdgeBounds( );
-
-        UpdateEdgeHint(EdgeScrollSide.Top, view, viewport);
-        UpdateEdgeHint(EdgeScrollSide.Bottom, view, viewport);
-        UpdateEdgeHint(EdgeScrollSide.Left, view, viewport);
-        UpdateEdgeHint(EdgeScrollSide.Right, view, viewport);
-    }
-
-    private void UpdateEdgeHint(EdgeScrollSide side, View view, Size viewport)
-    {
-        var button = EdgeHintButton(side);
-        var band = EdgeBandContentRect(view, viewport, EdgeThreshold(side), side);
-
-        if (band.IsEmpty || !BandHasInk(edgeBounds, band) || !HasEdgeScrollRoom(side, view, band))
-        {
-            button.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        PlaceEdgeHint(side, button, viewport);
-        button.Visibility = Visibility.Visible;
-    }
-
-    /// <summary>
-    /// 上/左没有负方向余量，位移超出当前偏移时按钮点了也没有效果；下/右在点击时按需扩展画布
-    /// </summary>
-    private bool HasEdgeScrollRoom(EdgeScrollSide side, View view, Rect band)
-    {
-        if (side is EdgeScrollSide.Bottom or EdgeScrollSide.Right)
-        {
-            return true;
-        }
-
-        var shift = BandClearDelta(edgeBounds, band, side) * view.Scale;
-        return shift > 0 && shift <= (side == EdgeScrollSide.Top ? view.OffsetY : view.OffsetX);
-    }
-
-    /// <summary>
-    /// 按钮贴视口四边摆放，沿该侧居中；边距由 <see cref="EdgeHintMargin"/> 给出，供宿主让开常驻界面
-    /// </summary>
-    private void PlaceEdgeHint(EdgeScrollSide side, FrameworkElement button, Size viewport)
-    {
-        var margin = EdgeHintMargin;
-        var width = button.Width;
-        var height = button.Height;
-
-        var x = side switch
-        {
-            EdgeScrollSide.Left => margin.Left,
-            EdgeScrollSide.Right => viewport.Width - margin.Right - width,
-            _ => (viewport.Width - width) / 2,
-        };
-
-        var y = side switch
-        {
-            EdgeScrollSide.Top => margin.Top,
-            EdgeScrollSide.Bottom => viewport.Height - margin.Bottom - height,
-            _ => (viewport.Height - height) / 2,
-        };
-
-        Canvas.SetLeft(button, Math.Clamp(x, 0, Math.Max(0, viewport.Width - width)));
-        Canvas.SetTop(button, Math.Clamp(y, 0, Math.Max(0, viewport.Height - height)));
-    }
-
-    private void CollectEdgeBounds( )
-    {
-        edgeBounds.Clear( );
-        foreach (var stroke in InnerCanvas.Strokes)
-        {
-            edgeBounds.Add(stroke.GetBounds( ));
-        }
-    }
-
-    private bool EdgeHintsEnabled( )
-    {
-        return edgeScrollTopThreshold > 0 || edgeScrollBottomThreshold > 0
-            || edgeScrollLeftThreshold > 0 || edgeScrollRightThreshold > 0;
-    }
-
-    private double EdgeThreshold(EdgeScrollSide side)
-    {
-        return side switch
-        {
-            EdgeScrollSide.Top => edgeScrollTopThreshold,
-            EdgeScrollSide.Bottom => edgeScrollBottomThreshold,
-            EdgeScrollSide.Left => edgeScrollLeftThreshold,
-            _ => edgeScrollRightThreshold,
-        };
-    }
-
-    private Button EdgeHintButton(EdgeScrollSide side)
-    {
-        return side switch
-        {
-            EdgeScrollSide.Top => TopEdgeHint,
-            EdgeScrollSide.Bottom => BottomEdgeHint,
-            EdgeScrollSide.Left => LeftEdgeHint,
-            _ => RightEdgeHint,
-        };
-    }
-
-    private void HideEdgeHints( )
-    {
-        TopEdgeHint.Visibility = Visibility.Collapsed;
-        BottomEdgeHint.Visibility = Visibility.Collapsed;
-        LeftEdgeHint.Visibility = Visibility.Collapsed;
-        RightEdgeHint.Visibility = Visibility.Collapsed;
-    }
-
-    private void TopEdgeHintClick(object o, RoutedEventArgs e)
-    {
-        ScrollEdgeClear(EdgeScrollSide.Top);
-    }
-
-    private void BottomEdgeHintClick(object o, RoutedEventArgs e)
-    {
-        ScrollEdgeClear(EdgeScrollSide.Bottom);
-    }
-
-    private void LeftEdgeHintClick(object o, RoutedEventArgs e)
-    {
-        ScrollEdgeClear(EdgeScrollSide.Left);
-    }
-
-    private void RightEdgeHintClick(object o, RoutedEventArgs e)
-    {
-        ScrollEdgeClear(EdgeScrollSide.Right);
+        return edgeHintVisible[(int) side];
     }
 
     /// <summary>
     /// 平移画布直到该侧热区内没有墨迹；没有可平移的余量时不动
     /// </summary>
-    private void ScrollEdgeClear(EdgeScrollSide side)
+    public void ScrollEdgeClear(EdgeScrollSide side)
     {
         var view = CurrentView;
         var viewport = ViewportSize;
@@ -180,7 +60,7 @@ public partial class InkCanvasNext
 
         CollectEdgeBounds( );
 
-        var shift = BandClearDelta(edgeBounds, band, side) * view.Scale;
+        var shift = EdgeClearShift(side, band, view);
         if (shift <= 0)
         {
             return;
@@ -210,6 +90,99 @@ public partial class InkCanvasNext
         }
 
         StartEdgeScroll(target);
+    }
+
+    /// <summary>
+    /// 按当前视图与笔画刷新四侧提示的显示状态，状态变化时触发 <see cref="EdgeHintsChanged"/>
+    /// </summary>
+    private void UpdateEdgeHints( )
+    {
+        var view = CurrentView;
+        var viewport = ViewportSize;
+        var measurable = viewport.Width > 0 && viewport.Height > 0 && EdgeHintsEnabled( );
+
+        if (measurable)
+        {
+            CollectEdgeBounds( );
+        }
+
+        var changed = false;
+        foreach (var side in EdgeSides)
+        {
+            changed |= SetEdgeHint(side, measurable && EvaluateEdgeHint(side, view, viewport));
+        }
+
+        if (changed)
+        {
+            EdgeHintsChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private bool SetEdgeHint(EdgeScrollSide side, bool visible)
+    {
+        var index = (int) side;
+        if (edgeHintVisible[index] == visible)
+        {
+            return false;
+        }
+
+        edgeHintVisible[index] = visible;
+        return true;
+    }
+
+    private bool EvaluateEdgeHint(EdgeScrollSide side, View view, Size viewport)
+    {
+        var band = EdgeBandContentRect(view, viewport, EdgeThreshold(side), side);
+        return !band.IsEmpty && BandHasInk(edgeBounds, band) && HasEdgeScrollRoom(side, view, band);
+    }
+
+    /// <summary>
+    /// 上/左没有负方向余量，位移超出当前偏移时按钮点了也没有效果；下/右在点击时按需扩展画布
+    /// </summary>
+    private bool HasEdgeScrollRoom(EdgeScrollSide side, View view, Rect band)
+    {
+        var shift = EdgeClearShift(side, band, view);
+        if (side is EdgeScrollSide.Bottom or EdgeScrollSide.Right)
+        {
+            return shift > 0;
+        }
+
+        return shift > 0 && shift <= (side == EdgeScrollSide.Top ? view.OffsetY : view.OffsetX);
+    }
+
+    /// <summary>
+    /// 让该侧热区脱离墨迹所需的最小视口位移
+    /// </summary>
+    private double EdgeClearShift(EdgeScrollSide side, Rect band, View view)
+    {
+        var delta = BandClearDelta(edgeBounds, band, side);
+        return delta > 0 ? delta * view.Scale + EdgeScrollClearance : 0;
+    }
+
+    private void CollectEdgeBounds( )
+    {
+        edgeBounds.Clear( );
+        foreach (var stroke in InnerCanvas.Strokes)
+        {
+            edgeBounds.Add(stroke.GetBounds( ));
+        }
+    }
+
+    private bool EdgeHintsEnabled( )
+    {
+        return edgeScrollTopThreshold > 0 || edgeScrollBottomThreshold > 0
+            || edgeScrollLeftThreshold > 0 || edgeScrollRightThreshold > 0;
+    }
+
+    private double EdgeThreshold(EdgeScrollSide side)
+    {
+        return side switch
+        {
+            EdgeScrollSide.Top => edgeScrollTopThreshold,
+            EdgeScrollSide.Bottom => edgeScrollBottomThreshold,
+            EdgeScrollSide.Left => edgeScrollLeftThreshold,
+            _ => edgeScrollRightThreshold,
+        };
     }
 
     /// <summary>

@@ -32,12 +32,40 @@ internal static class ToolDriver
     public static void Toggle(ToggleButton toggle, bool on)
     {
         toggle.IsChecked = on;
-        toggle.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, toggle));
+        RaiseClick(toggle);
     }
 
     public static void Click(Button button)
     {
+        RaiseClick(button);
+    }
+
+    /// <summary>与 ButtonBase.OnClick 一致：先触发 Click，再执行 Command</summary>
+    private static void RaiseClick(ButtonBase button)
+    {
         button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+
+        if (button.Command is not RoutedCommand command)
+        {
+            return;
+        }
+
+        var target = button.CommandTarget ?? button;
+        if (command.CanExecute(button.CommandParameter, target))
+        {
+            command.Execute(button.CommandParameter, target);
+        }
+    }
+
+    /// <summary>模拟按下按键：路由到窗口的输入绑定后由画布命令执行</summary>
+    public static void KeyDown(Window window, Key key)
+    {
+        var e = new KeyEventArgs(Keyboard.PrimaryDevice, new NullPresentationSource( ), 0, key)
+        {
+            RoutedEvent = Keyboard.KeyDownEvent
+        };
+
+        window.RaiseEvent(e);
     }
 
     public static void Esc(MainWindow window)

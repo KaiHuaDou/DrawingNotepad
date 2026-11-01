@@ -6,11 +6,15 @@ namespace InkCanvasNext;
 /// <summary>
 /// 视口四侧的边缘热区
 /// </summary>
-internal enum EdgeScrollSide
+public enum EdgeScrollSide
 {
+    /// <summary>上侧</summary>
     Top,
+    /// <summary>下侧</summary>
     Bottom,
+    /// <summary>左侧</summary>
     Left,
+    /// <summary>右侧</summary>
     Right
 }
 

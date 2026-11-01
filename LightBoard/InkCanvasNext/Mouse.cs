@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Windows;
 using System.Windows.Input;
@@ -12,9 +13,8 @@ internal enum WheelCommand
 }
 
 /// <summary>
-/// 真实鼠标的合成触点设备：自定义工具（形状/选区/面积擦/盖章）下，把鼠标按下-移动-抬起上报为触摸序列，
-/// 与触摸共用状态机、事件答复与资产结算。原生工具（墨迹/按笔擦）不激活，鼠标维持 InkCanvas 原生收笔
-/// 位置以控件根（InkCanvasNext）坐标系存储，GetTouchPoint 按布局变换与滚动平移换算到目标元素
+/// 真实鼠标的合成触点设备：自定义工具下，把鼠标操作上报为触摸序列。原生工具不激活。
+/// 位置以控件坐标系存储，GetTouchPoint 按布局变换与滚动平移换算到目标元素
 /// </summary>
 internal sealed class MouseTouchDevice : TouchDevice
 {
@@ -107,10 +107,8 @@ internal sealed class MouseTouchDevice : TouchDevice
     }
 }
 
-/// <summary>
-/// 鼠标输入路径：自定义工具下经 <see cref="MouseTouchDevice"/> 进入触摸状态机，
-/// 原生工具下放行给 InkCanvas，另有滚轮缩放与横滚。落章统一在抬手位置发生（与触摸一致）
-/// </summary>
+// 鼠标输入路径：自定义工具下经 MouseTouchDevice 进入触摸状态机，原生工具下放行给 InkCanvas，
+// 另有滚轮缩放与横滚；落章统一在抬手位置发生（与触摸一致）
 public partial class InkCanvasNext
 {
     private readonly MouseWheelAction mouseWheelAction;
@@ -203,6 +201,22 @@ public partial class InkCanvasNext
         var step = ScrollStep * CurrentScale;
         var x = CanvasScroll.HorizontalOffset + (delta > 0 ? -step : step);
         CurrentView = new View(CurrentScale, x, CanvasScroll.VerticalOffset);
+    }
+
+    private void ZoomAtCursor(MouseWheelEventArgs e)
+    {
+        var view = CurrentView;
+        var factor = e.Delta > 0 ? WheelZoomFactor : 1.0 / WheelZoomFactor;
+        var target = Math.Clamp(view.Scale * factor, MinScale, MaxScale);
+        if (Math.Abs(target / view.Scale - 1.0) < 1e-9)
+        {
+            return;
+        }
+
+        var cursor = e.GetPosition(this);
+        var anchor = new Point(cursor.X - viewportOrigin.X, cursor.Y - viewportOrigin.Y);
+
+        CurrentView = view.ZoomAt(anchor, target);
     }
 
     internal static WheelCommand ResolveWheel(MouseWheelAction action, ModifierKeys modifiers)

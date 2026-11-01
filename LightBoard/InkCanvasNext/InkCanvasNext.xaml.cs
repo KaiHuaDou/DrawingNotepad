@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace InkCanvasNext;
@@ -163,6 +164,9 @@ public partial class InkCanvasNext : UserControl
     internal void RaiseSelectionChanged( )
     {
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+
+        // 选区变化决定删除、剪切、复制的可用性，命令的 CanExecute 要跟着重算
+        CommandManager.InvalidateRequerySuggested( );
     }
 
     internal void RaiseViewOrSelectionChanged( )

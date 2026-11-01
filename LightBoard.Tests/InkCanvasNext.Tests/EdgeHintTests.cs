@@ -1,16 +1,13 @@
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Ink;
 using System.Windows.Input;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace InkCanvasNext.Tests;
 
 /// <summary>
-/// 边缘墨迹滚动提示：热区内有墨迹才显示该侧按钮，点击后平移到该侧热区无墨迹
+/// 边缘墨迹滚动提示：热区内有墨迹才显示该侧提示，点按后平移到该侧热区无墨迹
 /// 坐标一律由控件的当前视图与阈值推导，宿主尺寸变化时测试自动跟随
 /// </summary>
 public class EdgeHintTests
@@ -30,29 +27,8 @@ public class EdgeHintTests
         });
     }
 
-    [Theory]
-    [InlineData("TopEdgeHint", 16, 10)]
-    [InlineData("BottomEdgeHint", 16, 10)]
-    [InlineData("LeftEdgeHint", 10, 16)]
-    [InlineData("RightEdgeHint", 10, 16)]
-    public void HintChevron_FillsItsBox_SoItIsCentered(string name, double width, double height)
-    {
-        StaTest.Run(( ) =>
-        {
-            using var host = new TouchHost( );
-            var path = (Path) Hint(host, name).Content;
-
-            path.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-
-            // Shape 的自然尺寸取笔迹外沿：等于箭头笔迹尺寸时，ContentPresenter 居中才准确
-            // 几何求交的浮点误差在 1e-5 量级，留 3 位小数
-            Assert.Equal(width, path.DesiredSize.Width, 3);
-            Assert.Equal(height, path.DesiredSize.Height, 3);
-        });
-    }
-
     [Fact]
-    public void InkInBottomBand_ShowsBottomHintAtEdge( )
+    public void InkInBottomBand_ShowsBottomHintOnly( )
     {
         StaTest.Run(( ) =>
         {
@@ -60,60 +36,20 @@ public class EdgeHintTests
 
             AddStroke(host, BandCenter(host, EdgeScrollSide.Bottom));
 
-            var button = Hint(host, "BottomEdgeHint");
-            Assert.Equal(Visibility.Visible, button.Visibility);
-            Assert.Equal(Visibility.Collapsed, Hint(host, "TopEdgeHint").Visibility);
-            Assert.Equal(Visibility.Collapsed, Hint(host, "LeftEdgeHint").Visibility);
-            Assert.Equal(Visibility.Collapsed, Hint(host, "RightEdgeHint").Visibility);
-
-            var canvas = host.Canvas;
-            var view = new View(canvas.CurrentScale, canvas.OffsetX, canvas.OffsetY);
-            var band = InkCanvasNext.EdgeBandContentRect(
-                view, canvas.ViewportSize, canvas.edgeScrollBottomThreshold, EdgeScrollSide.Bottom);
-            var bandTop = band.Top * view.Scale - view.OffsetY;
-
-            Assert.Equal(canvas.ViewportSize.Height - canvas.EdgeHintMargin.Bottom - button.Height, Canvas.GetTop(button), 6);
-            Assert.Equal((canvas.ViewportSize.Width - button.Width) / 2, Canvas.GetLeft(button), 6);
-            Assert.True(Canvas.GetTop(button) >= bandTop, $"按钮应落在底部热区内：top={Canvas.GetTop(button)} bandTop={bandTop}");
+            Assert.Equal([false, true, false, false], VisibleSides(host));
         });
     }
 
     [Fact]
-    public void CustomMargin_MovesHintAboveReservedArea( )
+    public void InkInRightBand_ShowsRightHintOnly( )
     {
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            var canvas = host.Canvas;
-            const double clearance = 68;
 
-            canvas.EdgeHintMargin = new Thickness(8, 8, 8, clearance);
-            AddStroke(host, BandCenter(host, EdgeScrollSide.Bottom));
+            AddStroke(host, BandCenter(host, EdgeScrollSide.Right));
 
-            var button = Hint(host, "BottomEdgeHint");
-            Assert.Equal(Visibility.Visible, button.Visibility);
-            Assert.Equal(canvas.ViewportSize.Height - clearance - button.Height, Canvas.GetTop(button), 6);
-        });
-    }
-
-    [Fact]
-    public void ClickBottomHint_ScrollsUntilBandHasNoInk( )
-    {
-        StaTest.Run(( ) =>
-        {
-            using var host = new TouchHost( );
-            var canvas = host.Canvas;
-            AddStroke(host, BandCenter(host, EdgeScrollSide.Bottom));
-
-            var button = Hint(host, "BottomEdgeHint");
-            var before = canvas.OffsetY;
-
-            Click(button);
-            PumpUntilIdle(canvas);
-
-            Assert.True(canvas.OffsetY > before, $"偏移应增大：before={before} after={canvas.OffsetY}");
-            Assert.Equal(Visibility.Collapsed, button.Visibility);
-            Assert.False(HasBandInk(host, EdgeScrollSide.Bottom));
+            Assert.Equal([false, false, false, true], VisibleSides(host));
         });
     }
 
@@ -129,12 +65,47 @@ public class EdgeHintTests
 
             AddStroke(host, BandCenter(host, EdgeScrollSide.Top));
 
-            Assert.Equal(Visibility.Collapsed, Hint(host, "TopEdgeHint").Visibility);
+            Assert.False(host.Canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
         });
     }
 
     [Fact]
-    public void InkInBottomBandAtCanvasEnd_ClickExtendsCanvas( )
+    public void InkInTopBandAfterScroll_ShowsTopHint( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.OffsetY = 400;
+            host.Canvas.UpdateLayout( );
+
+            AddStroke(host, BandCenter(host, EdgeScrollSide.Top));
+
+            Assert.True(host.Canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
+        });
+    }
+
+    [Fact]
+    public void ScrollEdgeClear_ScrollsUntilBandHasNoInk( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var canvas = host.Canvas;
+            AddStroke(host, BandCenter(host, EdgeScrollSide.Bottom));
+
+            var before = canvas.OffsetY;
+
+            canvas.ScrollEdgeClear(EdgeScrollSide.Bottom);
+            PumpUntilIdle(canvas);
+
+            Assert.True(canvas.OffsetY > before, $"偏移应增大：before={before} after={canvas.OffsetY}");
+            Assert.False(canvas.IsEdgeHintVisible(EdgeScrollSide.Bottom));
+            Assert.False(HasBandInk(host, EdgeScrollSide.Bottom));
+        });
+    }
+
+    [Fact]
+    public void ScrollEdgeClear_AtCanvasEnd_ExtendsCanvas( )
     {
         StaTest.Run(( ) =>
         {
@@ -145,10 +116,9 @@ public class EdgeHintTests
             var heightBefore = canvas.InnerCanvas.Height;
 
             AddStroke(host, BandCenter(host, EdgeScrollSide.Bottom));
-            var button = Hint(host, "BottomEdgeHint");
-            Assert.Equal(Visibility.Visible, button.Visibility);
+            Assert.True(canvas.IsEdgeHintVisible(EdgeScrollSide.Bottom));
 
-            Click(button);
+            canvas.ScrollEdgeClear(EdgeScrollSide.Bottom);
             PumpUntilIdle(canvas);
 
             Assert.True(canvas.InnerCanvas.Height > heightBefore, $"画布应扩展：before={heightBefore} after={canvas.InnerCanvas.Height}");
@@ -189,8 +159,7 @@ public class EdgeHintTests
             AddStroke(host, view.ToContent(new Point(canvas.ViewportSize.Width / 2, 10)));
             AddStroke(host, BandCenter(host, EdgeScrollSide.Bottom));
 
-            Assert.Equal(Visibility.Collapsed, Hint(host, "TopEdgeHint").Visibility);
-            Assert.Equal(Visibility.Visible, Hint(host, "BottomEdgeHint").Visibility);
+            Assert.Equal([false, true, false, false], VisibleSides(host));
         });
     }
 
@@ -201,7 +170,7 @@ public class EdgeHintTests
         {
             using var host = new TouchHost( );
             AddStroke(host, BandCenter(host, EdgeScrollSide.Bottom));
-            Assert.Equal(Visibility.Visible, Hint(host, "BottomEdgeHint").Visibility);
+            Assert.True(host.Canvas.IsEdgeHintVisible(EdgeScrollSide.Bottom));
 
             host.Canvas.Strokes.Clear( );
 
@@ -209,17 +178,39 @@ public class EdgeHintTests
         });
     }
 
-    private static Button Hint(TouchHost host, string name)
+    [Fact]
+    public void EdgeHintsChanged_FiresOnlyWhenStateChanges( )
     {
-        return (Button) host.Canvas.FindName(name);
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var raised = 0;
+            host.Canvas.EdgeHintsChanged += (_, _) => raised++;
+
+            AddStroke(host, BandCenter(host, EdgeScrollSide.Bottom));
+
+            Assert.Equal(1, raised);
+
+            AddStroke(host, BandCenter(host, EdgeScrollSide.Bottom));
+
+            Assert.Equal(1, raised);
+        });
+    }
+
+    private static bool[] VisibleSides(TouchHost host)
+    {
+        return
+        [
+            host.Canvas.IsEdgeHintVisible(EdgeScrollSide.Top),
+            host.Canvas.IsEdgeHintVisible(EdgeScrollSide.Bottom),
+            host.Canvas.IsEdgeHintVisible(EdgeScrollSide.Left),
+            host.Canvas.IsEdgeHintVisible(EdgeScrollSide.Right)
+        ];
     }
 
     private static void AssertAllHidden(TouchHost host)
     {
-        Assert.Equal(Visibility.Collapsed, Hint(host, "TopEdgeHint").Visibility);
-        Assert.Equal(Visibility.Collapsed, Hint(host, "BottomEdgeHint").Visibility);
-        Assert.Equal(Visibility.Collapsed, Hint(host, "LeftEdgeHint").Visibility);
-        Assert.Equal(Visibility.Collapsed, Hint(host, "RightEdgeHint").Visibility);
+        Assert.Equal([false, false, false, false], VisibleSides(host));
     }
 
     /// <summary>热区中心的内容坐标</summary>
@@ -262,11 +253,6 @@ public class EdgeHintTests
         var band = InkCanvasNext.EdgeBandContentRect(view, canvas.ViewportSize, threshold, side);
 
         return InkCanvasNext.BandHasInk([.. canvas.Strokes.Select(s => s.GetBounds( ))], band);
-    }
-
-    private static void Click(Button button)
-    {
-        button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
     }
 
     private static void PumpUntilIdle(InkCanvasNext canvas)

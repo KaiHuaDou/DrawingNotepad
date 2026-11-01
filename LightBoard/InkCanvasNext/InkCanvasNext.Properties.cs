@@ -6,9 +6,7 @@ using DependencyPropertyGenerator;
 
 namespace InkCanvasNext;
 
-/// <summary>
-/// 依赖项属性注册、公共事件与 CLR 属性包装
-/// </summary>
+// 依赖项属性注册、公共事件与 CLR 属性包装
 [DependencyProperty<bool>("CanRedo", IsReadOnly = true)]
 [DependencyProperty<bool>("CanUndo", IsReadOnly = true)]
 [DependencyProperty<bool>("IsReadOnly")]
@@ -20,7 +18,7 @@ namespace InkCanvasNext;
     PropertyXmlDocumentation =
     """
     <summary>
-    获取或设置橡皮擦的直径（像素）
+    获取或设置橡皮擦的直径，视口 DIP
     </summary>
     """
 )]
@@ -30,7 +28,7 @@ namespace InkCanvasNext;
     PropertyXmlDocumentation =
     """
     <summary>
-    当前盖章模式（克隆/粘贴）。激活期间单指只落章、原生收笔关闭，多指手势照常
+    当前盖章模式（克隆或粘贴）；激活期间单指在抬手位置落章，多指手势照常
     </summary>
     """
 )]
@@ -72,6 +70,11 @@ public partial class InkCanvasNext
     public event EventHandler? ViewOrSelectionChanged;
 
     /// <summary>
+    /// 边缘提示的显示状态变化，宿主据此刷新自己绘制的提示
+    /// </summary>
+    public event EventHandler? EdgeHintsChanged;
+
+    /// <summary>
     /// 获取或设置默认笔触属性；赋 null 时保留当前值
     /// </summary>
     public DrawingAttributes DefaultDrawingAttributes
@@ -88,40 +91,4 @@ public partial class InkCanvasNext
         get => (StrokeCollection) GetValue(StrokesProperty);
         set => SetValue(StrokesProperty, value);
     }
-
-    /// <summary>
-    /// 获取或设置画布缩放比例，范围 0.1 ~ 10
-    /// </summary>
-    public double CurrentScale
-    {
-        get => CurrentView.Scale;
-        set
-        {
-            if (!double.IsFinite(value))
-            {
-                return;
-            }
-
-            var scale = Math.Clamp(value, MinScale, MaxScale);
-            canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = scale;
-            eraser.Scale = scale;
-        }
-    }
-
-    public double OffsetX
-    {
-        get => CanvasScroll.HorizontalOffset;
-        set => CanvasScroll.ScrollToHorizontalOffset(value);
-    }
-
-    public double OffsetY
-    {
-        get => CanvasScroll.VerticalOffset;
-        set => CanvasScroll.ScrollToVerticalOffset(value);
-    }
-
-    /// <summary>
-    /// 获取当前视口尺寸（DIP）
-    /// </summary>
-    public Size ViewportSize => new(CanvasScroll.ViewportWidth, CanvasScroll.ViewportHeight);
 }
