@@ -28,6 +28,7 @@ public partial class MainWindow
             Content =
             $"""
             OpenCV: {(BuildInfo.WithOpenCv ? "启用" : "未启用")}
+            架构: {BuildInfo.Architecture}
             运行时: {(BuildInfo.SelfContained ? "自包含" : "框架依赖")}
             提交: {BuildInfo.Commit}
             源代码: <a href="https://github.com/KaiHuaDou/DrawingNotepad/">https://github.com/KaiHuaDou/DrawingNotepad/</a>

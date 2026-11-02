@@ -109,12 +109,16 @@
 
 从 [Releases](https://github.com/KaiHuaDou/DrawingNotepad/releases/latest) 下载：
 
-- `LightBoard-<版本>.zip`：免安装（框架依赖），需要 .NET 10 桌面运行时
-- `LightBoard-runtime-<版本>.zip`：免安装（自包含）
-- `LightBoard-nocv-<版本>.zip`、`LightBoard-nocv-runtime-<版本>.zip`：同上，不含 OpenCV（无视频展台）
-- `LightBoard-installer-<版本>.exe`：安装包（框架依赖），需要 .NET 10 桌面运行时
-- `LightBoard-installer-runtime-<版本>.exe`：安装包（自包含）
-- `LightBoard-installer-nocv-<版本>.exe`、`LightBoard-installer-nocv-runtime-<版本>.exe`：同上，不含 OpenCV（无视频展台）
+- `LightBoard-x64-<版本>.zip`：免安装（框架依赖），需要 .NET 10 桌面运行时
+- `LightBoard-runtime-x64-<版本>.zip`：免安装（自包含）
+- `LightBoard-nocv-x64-<版本>.zip`、`LightBoard-nocv-runtime-x64-<版本>.zip`：同上，不含 OpenCV（无视频展台）
+- `LightBoard-arm64-<版本>.zip`、`LightBoard-runtime-arm64-<版本>.zip`：Windows Arm64，其余同上
+- `LightBoard-nocv-arm64-<版本>.zip`、`LightBoard-nocv-runtime-arm64-<版本>.zip`：Windows Arm64，不含 OpenCV
+- `LightBoard-installer-x64-<版本>.exe`：安装包（框架依赖），需要 .NET 10 桌面运行时
+- `LightBoard-installer-runtime-x64-<版本>.exe`：安装包（自包含）
+- `LightBoard-installer-nocv-x64-<版本>.exe`、`LightBoard-installer-nocv-runtime-x64-<版本>.exe`：同上，不含 OpenCV（无视频展台）
+- `LightBoard-installer-arm64-<版本>.exe`、`LightBoard-installer-runtime-arm64-<版本>.exe`：Windows Arm64 安装包
+- `LightBoard-installer-nocv-arm64-<版本>.exe`、`LightBoard-installer-nocv-runtime-arm64-<版本>.exe`：同上，不含 OpenCV
 
 免安装包解压后运行 `LightBoard.exe`。
 
@@ -123,7 +127,10 @@
 - Windows 7 SP1 或更新版本
     - 已测试：Windows 7 SP1 上可安装 .NET 10.0 Desktop Runtime 并运行本程序
     - 安装包（`LightBoard-installer-*.exe`）需要 Windows 10 或更新版本
-- .NET 10.0 Desktop Runtime（x64）或更新版本
+- Windows 11 Arm（Arm64 变体）
+    - 安装包（`LightBoard-installer-*-arm64.exe`）需要 Windows 11 Arm
+    - 免安装包需要 Arm64 版 .NET 10 桌面运行时，Windows 10 Arm 未测试
+- .NET 10.0 Desktop Runtime（x64 或 Arm64）或更新版本
     - 使用 `runtime` 版本可免安装运行时
 - Microsoft Office（打开 Office 文档时需要）
     - 需要已激活版本，部分绿色版本需确认 COM 组件已注册
@@ -142,7 +149,9 @@ dotnet publish LightBoard -p:PublishProfile=SelfContained -c Release    # 自包
 dotnet test
 ```
 
-产物在 `LightBoard/bin/publish/`（框架依赖）与 `LightBoard/bin/publish-runtime/`（自包含）。加 `-p:WithOpenCv=false` 构建不含 OpenCV 的变体，两者分别为 `LightBoard/bin/publish-nocv/` 与 `LightBoard/bin/publish-nocv-runtime/`。
+产物在 `LightBoard/bin/publish-x64/`（框架依赖）与 `LightBoard/bin/publish-runtime-x64/`（自包含）。加 `-p:WithOpenCv=false` 构建不含 OpenCV 的变体，两者分别为 `LightBoard/bin/publish-nocv-x64/` 与 `LightBoard/bin/publish-nocv-runtime-x64/`。
+
+Arm64 使用 `FolderProfileArm64` 与 `SelfContainedArm64`，产物在 `LightBoard/bin/publish-arm64/` 与 `LightBoard/bin/publish-runtime-arm64/`，nocv 变体为 `publish-nocv-arm64/` 与 `publish-nocv-runtime-arm64/`。
 
 测试使用 xunit.v3 与 Microsoft Testing Platform。
 

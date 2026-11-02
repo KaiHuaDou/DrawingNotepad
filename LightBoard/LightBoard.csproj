@@ -59,6 +59,7 @@
         <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
         <PackageReference Include="OpenCvSharp5" Version="5.0.0.20261018" Condition="'$(WithOpenCv)' == 'true'" />
         <PackageReference Include="OpenCvSharp5.runtime.win" Version="5.0.0.20261018" Condition="'$(WithOpenCv)' == 'true'" />
+        <PackageReference Include="OpenCvSharp5.runtime.win-arm64" Version="5.0.0.20261018" Condition="'$(WithOpenCv)' == 'true'" />
         <PackageReference Include="OpenCvSharp5.WpfExtensions" Version="5.0.0.20261018" Condition="'$(WithOpenCv)' == 'true'" />
         <PackageReference Include="PDFiumCore" Version="157.0.8100" />
         <PackageReference Include="SingleInstanceCore" Version="2.2.2" />

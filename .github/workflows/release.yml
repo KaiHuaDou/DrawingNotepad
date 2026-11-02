@@ -79,26 +79,27 @@ jobs:
           echo "run=$RUN" >> "$GITHUB_OUTPUT"
 
       # 逐个 --name 下载：--pattern 只命中一个产物时会直接解到 --dir，目录结构随命中数量变化
-      # 八个产物都是构建的必备项，任一缺失即失败
+      # 十六个产物都是构建的必备项，任一缺失即失败
       - name: Download artifacts
         run: |
           for name in \
-            LightBoard LightBoard-nocv LightBoard-runtime LightBoard-nocv-runtime \
-            LightBoard-installer LightBoard-installer-nocv LightBoard-installer-runtime LightBoard-installer-nocv-runtime; do
+            LightBoard-x64 LightBoard-nocv-x64 LightBoard-runtime-x64 LightBoard-nocv-runtime-x64 \
+            LightBoard-arm64 LightBoard-nocv-arm64 LightBoard-runtime-arm64 LightBoard-nocv-runtime-arm64 \
+            LightBoard-installer-x64 LightBoard-installer-nocv-x64 LightBoard-installer-runtime-x64 LightBoard-installer-nocv-runtime-x64 \
+            LightBoard-installer-arm64 LightBoard-installer-nocv-arm64 LightBoard-installer-runtime-arm64 LightBoard-installer-nocv-runtime-arm64; do
             gh run download "${{ steps.build.outputs.run }}" --name "$name" --dir "artifacts/$name"
           done
 
-      # 免安装 zip 的文件名在发布时加入版本号；安装包的文件名在构建时已含版本号，直接复制。
-      # 同一后缀组合下框架依赖与自包含的内部文件名相同，按产物名分目录打包
-      - name: Package
+      # 文件名在构建时已含版本与架构，这里只把各产物收进工作目录
+      - name: Collect
         shell: bash
         run: |
-          VERSION=${RELEASE_TAG#v}
-          for name in LightBoard LightBoard-nocv LightBoard-runtime LightBoard-nocv-runtime; do
-            ( cd "artifacts/$name" && zip -qr "$GITHUB_WORKSPACE/$name-$VERSION.zip" . )
-          done
-          for name in LightBoard-installer LightBoard-installer-nocv LightBoard-installer-runtime LightBoard-installer-nocv-runtime; do
-            cp "artifacts/$name"/*.exe "$GITHUB_WORKSPACE/"
+          for name in \
+            LightBoard-x64 LightBoard-nocv-x64 LightBoard-runtime-x64 LightBoard-nocv-runtime-x64 \
+            LightBoard-arm64 LightBoard-nocv-arm64 LightBoard-runtime-arm64 LightBoard-nocv-runtime-arm64 \
+            LightBoard-installer-x64 LightBoard-installer-nocv-x64 LightBoard-installer-runtime-x64 LightBoard-installer-nocv-runtime-x64 \
+            LightBoard-installer-arm64 LightBoard-installer-nocv-arm64 LightBoard-installer-runtime-arm64 LightBoard-installer-nocv-runtime-arm64; do
+            cp "artifacts/$name"/* "$GITHUB_WORKSPACE/"
           done
           ls -l --block-size=K ./*.zip ./*.exe
 

@@ -88,10 +88,10 @@ public class TimerWindowTests
             var window = new TimerWindow( );
             try
             {
-                var content = Assert.IsAssignableFrom<FrameworkElement>(window.Content);
+                var content = Assert.IsType<FrameworkElement>(window.Content, exactMatch: false);
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                var slider = Assert.IsAssignableFrom<FrameworkElement>(window.FindName("MinuteSlider"));
-                var fill = Assert.IsAssignableFrom<FrameworkElement>(window.FindName("MinuteFill"));
+                var slider = Assert.IsType<FrameworkElement>(window.FindName("MinuteSlider"), exactMatch: false);
+                var fill = Assert.IsType<FrameworkElement>(window.FindName("MinuteFill"), exactMatch: false);
                 var natural = NaturalWidth(content);
 
                 // 窗口被撑宽后内容仍应回到自身宽度，填充占满整段也不能反推列宽

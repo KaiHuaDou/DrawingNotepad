@@ -39,9 +39,30 @@ jobs:
           echo "numeric=$NUMERIC" >> "$GITHUB_OUTPUT"
 
   package:
+    name: package (${{ matrix.arch }})
     needs: [meta]
-    runs-on: windows-latest
-    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        # Arm64 使用 GitHub 托管的 Windows 11 Arm 运行器原生构建；
+        # 测试只在 x64 上跑，Arm64 的测试另行安排
+        include:
+          - arch: x64
+            runner: windows-latest
+            folder: FolderProfile
+            runtime: SelfContained
+            suffix: "-x64"
+            iscc: ""
+            cache: "true"
+          - arch: arm64
+            runner: windows-11-arm
+            folder: FolderProfileArm64
+            runtime: SelfContainedArm64
+            suffix: "-arm64"
+            iscc: "-DArm64"
+            cache: "false"
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
 
     steps:
       - name: Checkout
@@ -51,20 +72,21 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: ./global.json
-          cache: true
+          cache: ${{ matrix.cache }}
           cache-dependency-path: "**/*.csproj"
 
       - name: Test
+        if: matrix.arch == 'x64'
         run: dotnet test
 
       - name: Publish
         shell: pwsh
         run: |
           $variants = @(
-            @{ profile = 'FolderProfile'; extra = @() },
-            @{ profile = 'FolderProfile'; extra = @('-p:WithOpenCv=false') },
-            @{ profile = 'SelfContained'; extra = @() },
-            @{ profile = 'SelfContained'; extra = @('-p:WithOpenCv=false') }
+            @{ profile = '${{ matrix.folder }}'; extra = @() },
+            @{ profile = '${{ matrix.folder }}'; extra = @('-p:WithOpenCv=false') },
+            @{ profile = '${{ matrix.runtime }}'; extra = @() },
+            @{ profile = '${{ matrix.runtime }}'; extra = @('-p:WithOpenCv=false') }
           )
           foreach ($variant in $variants) {
             dotnet publish LightBoard -p:PublishProfile=$($variant.profile) -c Release @($variant.extra)
@@ -73,35 +95,59 @@ jobs:
             }
           }
 
+      - name: Package app
+        shell: pwsh
+        env:
+          APP_VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          $suffix = '${{ matrix.suffix }}'
+          $dist = 'dist'
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          $variants = @(
+            @{ dir = "publish$suffix";              name = "LightBoard$suffix" },
+            @{ dir = "publish-nocv$suffix";         name = "LightBoard-nocv$suffix" },
+            @{ dir = "publish-runtime$suffix";      name = "LightBoard-runtime$suffix" },
+            @{ dir = "publish-nocv-runtime$suffix"; name = "LightBoard-nocv-runtime$suffix" }
+          )
+          foreach ($variant in $variants) {
+            $source = "LightBoard/bin/$($variant.dir)"
+            $target = "$dist/$($variant.name)-$env:APP_VERSION.zip"
+            [System.IO.Compression.ZipFile]::CreateFromDirectory(
+              $source,
+              $target,
+              [System.IO.Compression.CompressionLevel]::Optimal,
+              $false)
+          }
+
       - name: Upload app
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard
-          path: ./LightBoard/bin/publish/*
+          name: LightBoard${{ matrix.suffix }}
+          path: ./dist/LightBoard${{ matrix.suffix }}-${{ needs.meta.outputs.version }}.zip
           retention-days: 30
           if-no-files-found: error
 
       - name: Upload app (no OpenCV)
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard-nocv
-          path: ./LightBoard/bin/publish-nocv/*
+          name: LightBoard-nocv${{ matrix.suffix }}
+          path: ./dist/LightBoard-nocv${{ matrix.suffix }}-${{ needs.meta.outputs.version }}.zip
           retention-days: 30
           if-no-files-found: error
 
       - name: Upload app (runtime)
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard-runtime
-          path: ./LightBoard/bin/publish-runtime/*
+          name: LightBoard-runtime${{ matrix.suffix }}
+          path: ./dist/LightBoard-runtime${{ matrix.suffix }}-${{ needs.meta.outputs.version }}.zip
           retention-days: 30
           if-no-files-found: error
 
       - name: Upload app (runtime, no OpenCV)
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard-nocv-runtime
-          path: ./LightBoard/bin/publish-nocv-runtime/*
+          name: LightBoard-nocv-runtime${{ matrix.suffix }}
+          path: ./dist/LightBoard-nocv-runtime${{ matrix.suffix }}-${{ needs.meta.outputs.version }}.zip
           retention-days: 30
           if-no-files-found: error
 
@@ -114,15 +160,21 @@ jobs:
         env:
           APP_VERSION: ${{ needs.meta.outputs.version }}
           APP_VERSION_NUMERIC: ${{ needs.meta.outputs.numeric }}
+          ISCC_DEFINE: ${{ matrix.iscc }}
         run: |
+          $suffix = '${{ matrix.suffix }}'
           $variants = @(
-            @{ out = 'LightBoard-installer';              extra = @() },
-            @{ out = 'LightBoard-installer-nocv';         extra = @('-DNoOpenCv') },
-            @{ out = 'LightBoard-installer-runtime';      extra = @('-DSelfContained') },
-            @{ out = 'LightBoard-installer-nocv-runtime'; extra = @('-DNoOpenCv', '-DSelfContained') }
+            @{ out = "LightBoard-installer$suffix";              extra = @() },
+            @{ out = "LightBoard-installer-nocv$suffix";         extra = @('-DNoOpenCv') },
+            @{ out = "LightBoard-installer-runtime$suffix";      extra = @('-DSelfContained') },
+            @{ out = "LightBoard-installer-nocv-runtime$suffix"; extra = @('-DNoOpenCv', '-DSelfContained') }
           )
           foreach ($variant in $variants) {
-            $isccArgs = @($variant.extra) + @(
+            $isccArgs = @($variant.extra)
+            if ($env:ISCC_DEFINE) {
+              $isccArgs += $env:ISCC_DEFINE
+            }
+            $isccArgs += @(
               "-DAppVersion=$env:APP_VERSION",
               "-DAppVersionNumeric=$env:APP_VERSION_NUMERIC",
               "--output-dir=LightBoard.Installer\Output\$($variant.out)",
@@ -137,31 +189,31 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard-installer
-          path: LightBoard.Installer/Output/LightBoard-installer/*.exe
+          name: LightBoard-installer${{ matrix.suffix }}
+          path: LightBoard.Installer/Output/LightBoard-installer${{ matrix.suffix }}/*.exe
           retention-days: 30
           if-no-files-found: error
 
       - name: Upload installer (no OpenCV)
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard-installer-nocv
-          path: LightBoard.Installer/Output/LightBoard-installer-nocv/*.exe
+          name: LightBoard-installer-nocv${{ matrix.suffix }}
+          path: LightBoard.Installer/Output/LightBoard-installer-nocv${{ matrix.suffix }}/*.exe
           retention-days: 30
           if-no-files-found: error
 
       - name: Upload installer (runtime)
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard-installer-runtime
-          path: LightBoard.Installer/Output/LightBoard-installer-runtime/*.exe
+          name: LightBoard-installer-runtime${{ matrix.suffix }}
+          path: LightBoard.Installer/Output/LightBoard-installer-runtime${{ matrix.suffix }}/*.exe
           retention-days: 30
           if-no-files-found: error
 
       - name: Upload installer (runtime, no OpenCV)
         uses: actions/upload-artifact@v7
         with:
-          name: LightBoard-installer-nocv-runtime
-          path: LightBoard.Installer/Output/LightBoard-installer-nocv-runtime/*.exe
+          name: LightBoard-installer-nocv-runtime${{ matrix.suffix }}
+          path: LightBoard.Installer/Output/LightBoard-installer-nocv-runtime${{ matrix.suffix }}/*.exe
           retention-days: 30
           if-no-files-found: error

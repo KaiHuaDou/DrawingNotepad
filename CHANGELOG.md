@@ -17,10 +17,12 @@
 - 摄像头断开时提示「摄像头已断开」并退出展台。
 - 视频背景不写入 `.lbf`，导出的图片与 PDF 不含视频画面。
 - 构建加 `-p:WithOpenCv=false` 得到不含视频展台的版本，背景选项里没有「视频」。
+- 新增 Windows Arm64 变体：免安装包 `LightBoard[-nocv][-runtime]-arm64-<版本>.zip` 与安装包 `LightBoard-installer[-nocv][-runtime]-arm64-<版本>.exe`；安装包需要 Windows 11 Arm。
 
 ### 变更
 
-- 发布产物重命名并新增不含 OpenCV 的变体：免安装包为 `LightBoard-<版本>.zip`、`LightBoard-runtime-<版本>.zip`、`LightBoard-nocv-<版本>.zip`、`LightBoard-nocv-runtime-<版本>.zip`，安装包为对应的 `LightBoard-installer-…-<版本>.exe`；自包含变体后缀由 `with-runtime` 改为 `runtime`，文件名加入版本号。
+- 发布产物按架构与变体命名：免安装包为 `LightBoard[-nocv][-runtime]-<架构>-<版本>.zip`，安装包为 `LightBoard-installer[-nocv][-runtime]-<架构>-<版本>.exe`，架构取 `x64` 或 `arm64`；自包含变体后缀由 `with-runtime` 改为 `runtime`，文件名加入版本号。
+- 关于对话框显示运行架构（`x64`、`arm64`）。
 
 ### 修复
 

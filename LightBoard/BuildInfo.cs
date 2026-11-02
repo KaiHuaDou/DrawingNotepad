@@ -1,5 +1,8 @@
 using System;
 using System.Reflection;
+using System.Runtime.InteropServices;
+
+using ProcessArchitecture = System.Runtime.InteropServices.Architecture;
 
 namespace LightBoard;
 
@@ -22,11 +25,19 @@ internal static class BuildInfo
 
     public static bool SelfContained { get; } = ReadFlag("SelfContained");
 
+    // 发布产物按 RID 生成，运行进程的架构即产物架构
+    public static string Architecture { get; } = RuntimeInformation.ProcessArchitecture switch
+    {
+        ProcessArchitecture.X64 => "x64",
+        ProcessArchitecture.Arm64 => "arm64",
+        var architecture => architecture.ToString( ),
+    };
+
     private static string BeforeRevision( )
     {
         var plus = Informational.IndexOf('+');
         var version = plus < 0 ? Informational : Informational[..plus];
-        return version.Length > 0 ? version : typeof(BuildInfo).Assembly.GetName( ).Version?.ToString(3) ?? @"0.0.0";
+        return version.Length > 0 ? version : typeof(BuildInfo).Assembly.GetName( ).Version?.ToString(3) ?? "0.0.0";
     }
 
     // 源码链接把提交号接在版本后（1.3.0+<40 位哈希>），源码目录没有仓库时为空

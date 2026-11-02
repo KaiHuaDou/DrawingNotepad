@@ -1,15 +1,15 @@
 ; 轻白板（LightBoard）安装包脚本
 ; 需要 Inno Setup 7.0.2 或更高版本编译
 ;
-; 编译命令（AppVersion 缺省为 0.0.0，CI 从 csproj 的 Version 提取后传入）：
+; 编译命令（AppVersion 默认为 0.0.0，CI 从 csproj 的 Version 提取后传入）：
 ;   ISCC -DAppVersion=1.2.3 LightBoard.iss                        框架依赖版，含 .NET 运行时检测
 ;   ISCC -DAppVersion=1.2.3 -DSelfContained LightBoard.iss        自包含版，无运行时检测
-;   两命令均可加 -DNoOpenCv 构建不含 OpenCV 的变体，产物名加 -nocv
+;   上述命令均可加 -DArm64 构建 Windows Arm64 版本，或加 -DNoOpenCv 构建不含 OpenCV 的变体
 ;
 ; 产物来源（各变体读取各自的发布目录，与发布、构建的先后顺序无关）：
-;   框架依赖版 ← LightBoard/bin/publish[-nocv]
-;   自包含版 ← LightBoard/bin/publish[-nocv]-runtime
-;   发布命令见 README 的「构建」。
+;   框架依赖版 ← LightBoard/bin/publish[-nocv]-<架构>
+;   自包含版 ← LightBoard/bin/publish[-nocv][-runtime]-<架构>
+;   架构取 x64 或 arm64，发布命令见 README 的「构建」。
 ;
 ; 框架依赖版在运行时缺失时，在 PrepareToInstall 阶段从 aka.ms 下载最新 .NET 10 Desktop Runtime
 ; 并静默安装，普通模式与静默模式（/SILENT、/VERYSILENT）行为一致。
@@ -34,15 +34,28 @@
     #define OpenCvSuffix ""
 #endif
 
-; 目录名与产物名共用同一后缀顺序：publish[-nocv][-runtime]，LightBoard-installer[-nocv][-runtime]
-#define VariantSuffix OpenCvSuffix + RuntimeSuffix
+#ifdef Arm64
+    #define ArchSuffix "-arm64"
+    #define ArchitecturesValue "arm64"
+#else
+    #define ArchSuffix "-x64"
+    #define ArchitecturesValue "x64compatible"
+#endif
+
+; 目录名与产物名共用同一后缀顺序：publish[-nocv][-runtime]-<架构>，LightBoard-installer[-nocv][-runtime]-<架构>
+#define VariantSuffix OpenCvSuffix + RuntimeSuffix + ArchSuffix
 #define PublishDir "..\LightBoard\bin\publish" + VariantSuffix
 
 #define AppName "LightBoard"
 #define AppDisplayName "轻白板"
 #ifndef SelfContained
-    #define DesktopRuntimeUrl "https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe"
-    #define DesktopRuntimeName "windowsdesktop-runtime-win-x64.exe"
+    #ifdef Arm64
+        #define DesktopRuntimeUrl "https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-arm64.exe"
+        #define DesktopRuntimeName "windowsdesktop-runtime-win-arm64.exe"
+    #else
+        #define DesktopRuntimeUrl "https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe"
+        #define DesktopRuntimeName "windowsdesktop-runtime-win-x64.exe"
+    #endif
 #endif
 
 [Setup]
@@ -57,8 +70,10 @@ UninstallDisplayIcon={app}\{#AppName}.exe
 OutputDir=Output
 OutputBaseFilename=LightBoard-installer{#VariantSuffix}-{#AppVersion}
 WizardStyle=modern
-; x64 安装器：{pf} 等路径不经过 WOW64 重定向，与 win-x64 应用匹配
+; 引导程序为 x64（Inno Setup 的 SetupArchitecture 只有 x86、x64），Arm64 版本在 Arm64 Windows 上以 x64 模拟运行
 SetupArchitecture=x64
+ArchitecturesAllowed={#ArchitecturesValue}
+ArchitecturesInstallIn64BitMode={#ArchitecturesValue}
 PrivilegesRequired=admin
 SetupLogging=yes
 
@@ -164,18 +179,30 @@ begin
     end;
 end;
 
-// 机器级安装位置（含 ARM64 Windows 11 上 x64 运行的 {pf}\dotnet\x64）与显式声明的 DOTNET_ROOT_X64
+// Arm64 的运行时装在 {pf}\dotnet；Arm64 上的 x64 运行时装在 {pf}\dotnet\x64。
+// 两套可以同时存在，检测时只看目标架构的位置。
 function DesktopRuntimeInstalled: Boolean;
 var
     EnvRoot: String;
 begin
     if not RuntimeChecked then
     begin
-        EnvRoot := ExpandConstant('{%DOTNET_ROOT_X64|}');
+#ifdef Arm64
+        EnvRoot := ExpandConstant('{%DOTNET_ROOT|}');
         RuntimePresent :=
         DirHasDesktopRuntime(ExpandConstant('{pf}\dotnet')) or
-        DirHasDesktopRuntime(ExpandConstant('{pf}\dotnet\x64')) or
         ((EnvRoot <> '') and DirHasDesktopRuntime(EnvRoot));
+#else
+        EnvRoot := ExpandConstant('{%DOTNET_ROOT_X64|}');
+        if IsArm64 then
+            RuntimePresent :=
+            DirHasDesktopRuntime(ExpandConstant('{pf}\dotnet\x64')) or
+            ((EnvRoot <> '') and DirHasDesktopRuntime(EnvRoot))
+        else
+            RuntimePresent :=
+            DirHasDesktopRuntime(ExpandConstant('{pf}\dotnet')) or
+            ((EnvRoot <> '') and DirHasDesktopRuntime(EnvRoot));
+#endif
         RuntimeChecked := True;
     end;
     Result := RuntimePresent;
