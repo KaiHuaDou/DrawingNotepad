@@ -60,19 +60,22 @@ public partial class MainWindow
     {
         cameraAngle = (cameraAngle + 90) % 360;
 
-        // 位图的宽高随取向交换，重建后立即重填当前帧
+        // 位图的宽高随取向交换；取向先推进采集线程，画面随下一帧跟上，冻结帧立即重写
         if (camera is not null)
         {
             var (width, height) = CameraOrientation.PixelSize(camera.FrameWidth, camera.FrameHeight, cameraAngle);
             cameraBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr24, null);
+            camera.SetOrientation(cameraAngle, CameraMirrorButton.IsChecked == true);
             BlitCamera( );
             RefreshVideoBackground( );
         }
     }
 
-    // 冻结期间画面停在冻结帧上，镜像要在这一刻重写位图才生效
+    // 冻结期间画面停在冻结帧上，镜像要在这一刻重写位图才生效；未冻结时采集线程从下一帧带上镜像
     private void CameraMirrorClick(object o, RoutedEventArgs e)
     {
+        camera?.SetOrientation(cameraAngle, CameraMirrorButton.IsChecked == true);
+
         if (CameraFreezeButton.IsChecked == true)
         {
             BlitCamera( );
@@ -100,22 +103,24 @@ public partial class MainWindow
         var capture = camera;
         var angle = cameraAngle;
         var mirror = CameraMirrorButton.IsChecked == true;
+        // 拍照期间可能翻页或退出展台：照片只落回按下拍照那一刻的视频页
+        var target = videoPage;
 
         CameraPhotoButton.IsEnabled = false;
         ShowCameraTip("正在拍照……");
 
-        string? path;
+        (string PhotoPath, BitmapSource Photo)? photo;
         try
         {
-            path = await Task.Run(( ) => CameraPhoto.Take(capture, angle, mirror));
+            photo = await Task.Run(( ) => CameraPhoto.Take(capture, angle, mirror));
         }
         catch (Exception ex)
         {
             App.LogException(ex);
-            path = null;
+            photo = null;
         }
 
-        var frozen = path is not null && await FreezeVideoPage(path);
+        var frozen = photo is not null && FreezeVideoPage(target, photo.Value.PhotoPath, photo.Value.Photo);
         // 期间可能已开始换设备或退出展台，按钮可用性按当时的状态还原
         CameraPhotoButton.IsEnabled = !cameraOpening;
         if (frozen)
@@ -181,6 +186,7 @@ public partial class MainWindow
         var (width, height) = CameraOrientation.PixelSize(capture.FrameWidth, capture.FrameHeight, cameraAngle);
         var bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr24, null);
         capture.Stopped += OnCameraStopped;
+        capture.SetOrientation(cameraAngle, CameraMirrorButton.IsChecked == true);
 
         UnsubscribeCameraRendering( );
         camera?.Dispose( );
@@ -202,39 +208,24 @@ public partial class MainWindow
             : $"{name}  {capture.FrameWidth}×{capture.FrameHeight}";
     }
 
-    // 拍照翻页：当前帧冻结为视频页的静态背景，新增页并切换过去，视频背景接续在新页上
-    private async Task<bool> FreezeVideoPage(string photoPath)
+    // 拍照翻页：当前帧冻结为视频页的静态背景，新增页并切换过去，视频背景接续在新页上。
+    // 拍照只动背景与新页，不算未保存的墨迹
+    private bool FreezeVideoPage(Page? target, string photoPath, BitmapSource photo)
     {
-        var current = videoPage;
-        if (current is null || videoArea.IsEmpty)
+        if (target is null || videoArea.IsEmpty)
         {
             return false;
         }
+
+        // 位图随拍照带回：登记后画布、缩略图与导出直接取内存位图，路径供保存与下次打开解码
+        App.RegisterPhotoSource(photoPath, photo);
+
+        // 照片与原视频画面重合在同一块内容区域
+        target.Background = new DocumentBackground(photoPath, 1, videoArea);
+        target.InvalidatePreview( );
 
         // 新页沿用拍照时的缩放与平移；视频区域不随视口重算，画面在内容坐标里原地不动
         var view = CanvasNext.CurrentView;
-
-        // 背景按路径取图，照片必须先登记为文档源，否则画布、缩略图与导出都取不到它
-        try
-        {
-            await App.OpenDocumentSourceAsync(photoPath);
-        }
-        catch (Exception e)
-        {
-            App.LogException(e);
-            return false;
-        }
-
-        // 取图期间展台被关掉或换了视频页：这张照片不再落回任何页
-        if (!ReferenceEquals(videoPage, current))
-        {
-            return false;
-        }
-
-        // 照片与原视频画面重合在同一块内容区域
-        current.Background = new DocumentBackground(photoPath, 1, videoArea);
-        current.InvalidatePreview( );
-
         var page = new Page
         {
             Number = App.Pages.Count + 1,
@@ -246,7 +237,6 @@ public partial class MainWindow
         videoPage = page;
         App.SwitchPage(App.Pages.Count - 1);
         App.BoardRevision++;
-        Dirty = true;
         return true;
     }
 #endif

@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 using NetOffice.OfficeApi.Enums;
 using NetOffice.PowerPointApi.Enums;
@@ -51,6 +52,12 @@ public sealed class DocumentService : IDisposable
     internal PageSource Source { get; }
 
     public int PageCount => Source.PageCount;
+
+    // 拍照等内存位图直接构成单页文档，跳过磁盘打开；位图须已冻结
+    internal static DocumentService FromBitmap(BitmapSource page)
+    {
+        return new DocumentService(ImagePageSource.FromBitmap(page), null);
+    }
 
     public static async Task<DocumentService> OpenAsync(string path)
     {

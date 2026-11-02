@@ -6,7 +6,7 @@ using System.Windows.Media.Imaging;
 namespace LightBoard;
 
 /// <summary>
-/// 图片渲染源：BMP/GIF/ICO/JPEG/PNG/TIFF 均由 BitmapDecoder 按容器签名自动识别解码，
+/// 图片渲染源：BMP/GIF/ICO/JPEG/PNG/TIFF 均由 BitmapDecoder 按容器签名自动识别解码
 /// </summary>
 internal sealed class ImagePageSource : PageSource
 {
@@ -19,6 +19,12 @@ internal sealed class ImagePageSource : PageSource
     }
 
     public override int PageCount { get; }
+
+    // 拍照等来源已在内存中的位图直接构成单页源，跳过磁盘解码；位图须已冻结
+    internal static ImagePageSource FromBitmap(BitmapSource source)
+    {
+        return new ImagePageSource(BitmapFrame.Create(source));
+    }
 
     public static ImagePageSource Open(string path)
     {

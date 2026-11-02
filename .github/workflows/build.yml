@@ -53,14 +53,12 @@ jobs:
             runtime: SelfContained
             suffix: "-x64"
             iscc: ""
-            cache: "true"
           - arch: arm64
             runner: windows-11-arm
             folder: FolderProfileArm64
             runtime: SelfContainedArm64
             suffix: "-arm64"
             iscc: "-DArm64"
-            cache: "false"
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
 
@@ -72,11 +70,10 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: ./global.json
-          cache: ${{ matrix.cache }}
+          cache: true
           cache-dependency-path: "**/*.csproj"
 
       - name: Test
-        if: matrix.arch == 'x64'
         run: dotnet test
 
       - name: Publish

@@ -5,19 +5,37 @@ using OpenCvSharp;
 
 namespace LightBoard;
 
-// 展台画面的取向：先绕画面中心镜像，再按 90 度步进旋转。目标 Mat 跨帧复用，避免每帧分配
+// 展台画面的取向：先绕画面中心镜像，再按 90 度步进旋转；镜像加旋转的组合经内部 mid 缓冲
 internal sealed class CameraOrientation : IDisposable
 {
-    private Mat? mirrored;
-    private Mat? rotated;
+    private Mat? mid;
 
-    /// <summary>
-    /// 按 <paramref name="angle"/> 与 <paramref name="mirror"/> 变换画面；返回的 Mat 由本实例持有，下次调用前有效
-    /// </summary>
-    public Mat Apply(Mat source, int angle, bool mirror)
+    // 按 angle 与 mirror 变换画面写入 output；output 与 source 须为不同实例，跨帧复用由调用方负责
+    public void Apply(Mat source, Mat output, int angle, bool mirror)
     {
-        var frame = mirror ? Flip(source) : source;
-        return angle == 0 ? frame : Rotate(frame, angle);
+        if (angle == 0)
+        {
+            if (mirror)
+            {
+                Flip(source, output);
+            }
+            else
+            {
+                source.CopyTo(output);
+            }
+
+            return;
+        }
+
+        if (mirror)
+        {
+            var buffer = Mid( );
+            Flip(source, buffer);
+            Rotate(buffer, output, angle);
+            return;
+        }
+
+        Rotate(source, output, angle);
     }
 
     /// <summary>
@@ -30,29 +48,29 @@ internal sealed class CameraOrientation : IDisposable
 
     public void Dispose( )
     {
-        mirrored?.Dispose( );
-        rotated?.Dispose( );
-        mirrored = null;
-        rotated = null;
+        mid?.Dispose( );
+        mid = null;
     }
 
-    private Mat Flip(Mat source)
+    private Mat Mid( )
     {
-        mirrored ??= new Mat( );
-        Cv2.Flip(source, mirrored, FlipMode.Y);
-        return mirrored;
+        mid ??= new Mat( );
+        return mid;
     }
 
-    private Mat Rotate(Mat source, int angle)
+    private static void Flip(Mat source, Mat output)
     {
-        rotated ??= new Mat( );
-        Cv2.Rotate(source, rotated, angle switch
+        Cv2.Flip(source, output, FlipMode.Y);
+    }
+
+    private static void Rotate(Mat source, Mat output, int angle)
+    {
+        Cv2.Rotate(source, output, angle switch
         {
             90 => RotateFlags.Rotate90Clockwise,
             180 => RotateFlags.Rotate180,
             _ => RotateFlags.Rotate90Counterclockwise
         });
-        return rotated;
     }
 }
 #endif

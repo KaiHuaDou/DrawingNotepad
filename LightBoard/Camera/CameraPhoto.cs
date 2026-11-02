@@ -1,33 +1,27 @@
 #if OPENCV
 using System;
 using System.IO;
+using System.Windows.Media.Imaging;
 
 using OpenCvSharp;
+using OpenCvSharp.WpfExtensions;
 
 namespace LightBoard;
 
-// 展台拍照：最新帧按预览的取向物化为 PNG，写入程序目录的 photos
+// 展台拍照：最新帧按预览的取向物化为 PNG 写入 photos，同时带回冻结位图供落页直接显示
 internal static class CameraPhoto
 {
     // 线程池线程执行；capture 为 null 或无帧返回 null
-    public static string? Take(CameraCapture? capture, int angle, bool mirror)
+    public static (string PhotoPath, BitmapSource Photo)? Take(CameraCapture? capture, int angle, bool mirror)
     {
         using var frame = new Mat( );
-        using var orientation = new CameraOrientation( );
-        if (capture?.CopyLatestTo(frame) != true)
+        if (capture?.CopyLatestTo(frame, angle, mirror) != true)
         {
             Log("无可用帧");
             return null;
         }
 
-        var photo = orientation.Apply(frame, angle, mirror);
-        if (photo.Empty( ))
-        {
-            Log("旋转或镜像后帧为空");
-            return null;
-        }
-
-        if (!Cv2.ImEncode(".png", photo, out var bytes))
+        if (!Cv2.ImEncode(".png", frame, out var bytes))
         {
             Log("PNG 编码失败");
             return null;
@@ -39,7 +33,11 @@ internal static class CameraPhoto
             Directory.CreateDirectory(directory);
             var path = Path.Join(directory, $"{DateTime.Now:yyyyMMdd-HHmmss-fff}.png");
             File.WriteAllBytes(path, bytes);
-            return path;
+
+            // 冻结后跨线程交给 UI 线程；与 PNG 同一帧，画布显示与下次打开解码结果一致
+            var bitmap = frame.ToBitmapSource( );
+            bitmap.Freeze( );
+            return (path, bitmap);
         }
         catch (Exception e)
         {

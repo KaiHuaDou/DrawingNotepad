@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace LightBoard;
 
@@ -58,6 +59,16 @@ public partial class App
 
         OpenedDocuments[fullPath] = document;
         return document;
+    }
+
+    // 拍照位图已在内存：登记后画布、缩略图与导出直接取内存位图；路径仍指向磁盘 PNG，下次打开走常规解码
+    internal static void RegisterPhotoSource(string path, BitmapSource page)
+    {
+        var fullPath = Path.GetFullPath(path);
+        if (!OpenedDocuments.ContainsKey(fullPath))
+        {
+            OpenedDocuments[fullPath] = DocumentService.FromBitmap(page);
+        }
     }
 
     internal static async Task RegisterBackgroundsAsync(IEnumerable<BoardPage> pages)
