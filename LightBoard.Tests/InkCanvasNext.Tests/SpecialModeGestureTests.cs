@@ -375,8 +375,10 @@ public class SpecialModeGestureTests
     }
 
     // ---------- 橡皮模式 ----------
+
+    /// <summary>面积擦落指即擦除：单击不移动也擦掉橡皮圈内的笔画，抬手结算为一步撤销</summary>
     [Fact]
-    public void EraseAreaMode_SingleFinger_ErasesStroke( )
+    public void EraseAreaMode_TapErasesStroke( )
     {
         StaTest.Run(( ) =>
         {
@@ -384,18 +386,44 @@ public class SpecialModeGestureTests
             host.Canvas.Mode = InkCanvasNextMode.EraseArea;
 
             var radius = host.Canvas.EraserDiameter / 2;
-            var startPoint = new Point(165, 100);
-            var drawPoint = TestPoints.BeyondDisplacement(host, startPoint);
-            host.Canvas.Strokes.Add(MakeStroke(
-                new Point(drawPoint.X - radius * 0.6, 100),
-                new Point(drawPoint.X + radius * 0.6, 100)));
+            var original = MakeStroke(new Point(P1.X - radius * 0.6, P1.Y), new Point(P1.X + radius * 0.6, P1.Y));
+            host.Canvas.Strokes.Add(original);
 
             var finger = host.Device( );
-            finger.Down(host.Target, startPoint);
+            finger.Down(host.Target, P1);
             Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
-            Assert.Single(host.Canvas.Strokes); // EvalDraw 仅显示橡皮，不擦除
+            Assert.Empty(host.Canvas.Strokes);
 
-            finger.Move(host.Target, drawPoint); // 移过位移阈值进入 Draw 才开始擦除
+            finger.Up(host.Target, P1);
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.Equal(Visibility.Collapsed, host.Canvas.EraserFeedback.Visibility);
+
+            host.Canvas.Undo( );
+            Assert.Same(original, Assert.Single(host.Canvas.Strokes));
+        });
+    }
+
+    /// <summary>面积擦拖动：落指处与笔画相距一个橡皮直径，按下不擦，橡皮圈移到笔画上才擦除</summary>
+    [Fact]
+    public void EraseAreaMode_SingleFinger_DragErasesStroke( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+
+            var radius = host.Canvas.EraserDiameter / 2;
+            var drawPoint = new Point(P1.X + host.Canvas.EraserDiameter, P1.Y);
+            host.Canvas.Strokes.Add(MakeStroke(
+                new Point(drawPoint.X - radius * 0.6, P1.Y),
+                new Point(drawPoint.X + radius * 0.6, P1.Y)));
+
+            var finger = host.Device( );
+            finger.Down(host.Target, P1);
+            Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
+            Assert.Single(host.Canvas.Strokes);
+
+            finger.Move(host.Target, drawPoint);
             Assert.Equal(TouchState.Draw, host.Canvas.State);
             Assert.Empty(host.Canvas.Strokes);
         });
@@ -662,7 +690,7 @@ public class SpecialModeGestureTests
 
             var finger = host.Device( );
             finger.Down(host.Target, startPoint);
-            finger.Move(host.Target, drawPoint); // 越过位移阈值进入 Draw 才开始擦除
+            finger.Move(host.Target, drawPoint); // 越过位移阈值进入 Draw
             Assert.Equal(TouchState.Draw, host.Canvas.State);
             Assert.Empty(host.Canvas.Strokes);
 

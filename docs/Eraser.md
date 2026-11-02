@@ -24,7 +24,7 @@
         - 严格遵循现有状态机模型：`state == TouchState.Eraser`
     - 工具栏已选中面积擦
         - 严格遵循现有状态机模型：`state == TouchState.Eraser || state == TouchState.Draw || state == TouchState.EvalDraw`
-            - `TouchState.EvalDraw` 状态下显示白色圆形但无擦除功能
+            - `TouchState.EvalDraw` 状态下显示白色圆形，落指即擦除，不要求先移动到位移阈值之外
             - `TouchState.Eraser` 且多指时大小随触点包络变化（擦除工具下 5+ 指无论间距均迁入掌擦）
 - 撤销、重做功能
     - 将每个触摸周期擦除的部分作为整体插入历史记录栈

@@ -68,8 +68,9 @@ public class MouseMachineTests
         });
     }
 
+    /// <summary>面积擦鼠标单击：按下即擦掉指针下的笔画，无须拖动</summary>
     [Fact]
-    public void AreaErase_Mouse_ErasesOnlyAfterDisplacementThreshold( )
+    public void AreaErase_MouseClick_ErasesAtDown( )
     {
         StaTest.Run(( ) =>
         {
@@ -77,17 +78,15 @@ public class MouseMachineTests
             host.Canvas.Mode = InkCanvasNextMode.EraseArea;
             host.Canvas.Strokes.Add(MakeStroke(new Point(170, 100), new Point(190, 100)));
             var pointer = host.Canvas.MousePointer;
-            // 起点选 (155, 100)：越过位移阈值后橡皮圆心落在 (186, 100)，直径 50 恰好完整覆盖短笔画
             var downAt = RootOf(host, new Point(155, 100));
-            var moved = TestPoints.BeyondDisplacement(host, downAt);
 
             pointer.Down(downAt);
             Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
-            Assert.Single(host.Canvas.Strokes); // EvalDraw 仅显示橡皮，不擦除
-
-            pointer.Move(moved);
-            Assert.Equal(TouchState.Draw, host.Canvas.State);
             Assert.Empty(host.Canvas.Strokes);
+
+            pointer.Up(downAt);
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.Equal(Visibility.Collapsed, host.Canvas.EraserFeedback.Visibility);
         });
     }
 

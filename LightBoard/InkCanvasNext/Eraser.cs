@@ -50,11 +50,7 @@ public partial class InkCanvasNext
             var canvasPosition = Device.GetTouchPoint(InnerCanvas).Position;
 
             eraser.Show(screenPosition);
-
-            if (State != TouchState.EvalDraw)
-            {
-                eraser.Update(canvasPosition);
-            }
+            eraser.Update(canvasPosition);
         }
     }
 }
@@ -156,7 +152,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
 
     internal void End( )
     {
-        // EvalDraw 只显示橡皮不开擦除周期：隐藏不依赖 Active，否则圈内残留到下一次擦除态
+        // 未开擦除周期时也会调用：隐藏先于 Active 判定，否则橡皮圈残留到下一次擦除
         feedback.Visibility = Visibility.Collapsed;
 
         if (!Active)

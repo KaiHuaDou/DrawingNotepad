@@ -22,6 +22,10 @@
 
 - 发布产物重命名并新增不含 OpenCV 的变体：免安装包为 `LightBoard-<版本>.zip`、`LightBoard-runtime-<版本>.zip`、`LightBoard-nocv-<版本>.zip`、`LightBoard-nocv-runtime-<版本>.zip`，安装包为对应的 `LightBoard-installer-…-<版本>.exe`；自包含变体后缀由 `with-runtime` 改为 `runtime`，文件名加入版本号。
 
+### 修复
+
+- 修复面积擦按下不擦除：落指或鼠标按下即擦掉橡皮圈内的笔画，不必先拖动（原先须移动超过单指起笔位移阈值才开始擦除）。
+
 ## [v1.2.0]
 
 ### 新增
