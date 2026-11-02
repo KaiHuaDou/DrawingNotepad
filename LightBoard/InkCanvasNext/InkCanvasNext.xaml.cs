@@ -338,7 +338,7 @@ public partial class InkCanvasNext : UserControl
     }
 
     /// <summary>
-    /// 设置文档背景页面；页面为 null 或盒子无效时移除页面
+    /// 设置文档背景页面；页面为 null 或盒子无效时移除页面。与当前显示一致时不变。
     /// fitBox 为背景页在内容坐标中的 Uniform 适配盒子，决定 DocumentHost 的位置与尺寸，页面由布局居中等比适配；
     /// 页面与盒子成对提供，均取自同一页的背景引用
     /// </summary>
@@ -346,18 +346,34 @@ public partial class InkCanvasNext : UserControl
     {
         if (page is null || fitBox is not { Width: > 0, Height: > 0 })
         {
+            if (DocumentHost.Child is null)
+            {
+                return;
+            }
+
             DocumentHost.Child = null;
             DocumentHost.Visibility = Visibility.Collapsed;
             return;
         }
 
-        DocumentHost.Margin = new Thickness(fitBox.Value.X, fitBox.Value.Y, 0, 0);
-        DocumentHost.Width = fitBox.Value.Width;
-        DocumentHost.Height = fitBox.Value.Height;
+        var box = fitBox.Value;
+        if (DocumentHost.Child is Image shown
+            && ReferenceEquals(shown.Source, page)
+            && DocumentHost.Width == box.Width
+            && DocumentHost.Height == box.Height
+            && DocumentHost.Margin.Left == box.X
+            && DocumentHost.Margin.Top == box.Y)
+        {
+            return;
+        }
+
+        DocumentHost.Margin = new Thickness(box.X, box.Y, 0, 0);
+        DocumentHost.Width = box.Width;
+        DocumentHost.Height = box.Height;
         DocumentHost.Child = new Image { Source = page, Stretch = Stretch.Uniform };
         DocumentHost.Visibility = Visibility.Visible;
 
         // 页面盒可能大于画布：先扩展画布，避免固定尺寸的 CanvasGrid 把墨迹层挤到中间
-        ExtendCanvas(fitBox.Value.Right - InnerCanvas.Width, fitBox.Value.Bottom - InnerCanvas.Height);
+        ExtendCanvas(box.Right - InnerCanvas.Width, box.Bottom - InnerCanvas.Height);
     }
 }

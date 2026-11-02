@@ -2,13 +2,14 @@
 ; 需要 Inno Setup 7.0.2 或更高版本编译
 ;
 ; 编译命令（AppVersion 缺省为 0.0.0，CI 从 CHANGELOG 提取后传入）：
-;   ISCC -DAppVersion=1.2.3 LightBoard.iss                 框架依赖版，含 .NET 运行时检测
-;   ISCC -DAppVersion=1.2.3 -DSelfContained LightBoard.iss 自包含版，无运行时检测
+;   ISCC -DAppVersion=1.2.3 LightBoard.iss                        框架依赖版，含 .NET 运行时检测
+;   ISCC -DAppVersion=1.2.3 -DSelfContained LightBoard.iss        自包含版，无运行时检测
+;   两命令均可加 -DNoOpenCv 构建不含 OpenCV 的变体，产物名加 -nocv
 ;
-; 产物来源（两个变体各自读取自己的发布目录，与发布、构建的先后顺序无关）：
-;   框架依赖版 ← LightBoard/bin/publish
-;   自包含版 ← LightBoard/bin/publish-with-runtime
-;   发布命令见 README 的「开发与构建」。
+; 产物来源（各变体读取各自的发布目录，与发布、构建的先后顺序无关）：
+;   框架依赖版 ← LightBoard/bin/publish[-nocv]
+;   自包含版 ← LightBoard/bin/publish[-nocv]-runtime
+;   发布命令见 README 的「构建」。
 ;
 ; 框架依赖版在运行时缺失时，在 PrepareToInstall 阶段从 aka.ms 下载最新 .NET 10 Desktop Runtime
 ; 并静默安装，普通模式与静默模式（/SILENT、/VERYSILENT）行为一致。
@@ -22,12 +23,20 @@
 #endif
 
 #ifdef SelfContained
-    #define VariantSuffix "-with-runtime"
-    #define PublishDir "..\LightBoard\bin\publish-with-runtime"
+    #define RuntimeSuffix "-runtime"
 #else
-    #define VariantSuffix ""
-    #define PublishDir "..\LightBoard\bin\publish"
+    #define RuntimeSuffix ""
 #endif
+
+#ifdef NoOpenCv
+    #define OpenCvSuffix "-nocv"
+#else
+    #define OpenCvSuffix ""
+#endif
+
+; 目录名与产物名共用同一后缀顺序：publish[-nocv][-runtime]，LightBoard-installer[-nocv][-runtime]
+#define VariantSuffix OpenCvSuffix + RuntimeSuffix
+#define PublishDir "..\LightBoard\bin\publish" + VariantSuffix
 
 #define AppName "LightBoard"
 #define AppDisplayName "轻白板"
@@ -46,7 +55,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppDisplayName}
 UninstallDisplayIcon={app}\{#AppName}.exe
 OutputDir=Output
-OutputBaseFilename=LightBoard-Installer{#VariantSuffix}-{#AppVersion}
+OutputBaseFilename=LightBoard-installer{#VariantSuffix}-{#AppVersion}
 WizardStyle=modern
 ; x64 安装器：{pf} 等路径不经过 WOW64 重定向，与 win-x64 应用匹配
 SetupArchitecture=x64

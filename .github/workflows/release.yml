@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag, e.g. v1.0.0（必填）"
+        description: "Release tag"
         required: true
 
 concurrency:
@@ -79,21 +79,25 @@ jobs:
           echo "run=$RUN" >> "$GITHUB_OUTPUT"
 
       # 逐个 --name 下载：--pattern 只命中一个产物时会直接解到 --dir，目录结构随命中数量变化
-      # 四个产物都是构建的必备项，任一缺失即失败
+      # 八个产物都是构建的必备项，任一缺失即失败
       - name: Download artifacts
         run: |
-          for name in LightBoard LightBoard-with-runtime LightBoard-installer LightBoard-installer-with-runtime; do
+          for name in \
+            LightBoard LightBoard-nocv LightBoard-runtime LightBoard-nocv-runtime \
+            LightBoard-installer LightBoard-installer-nocv LightBoard-installer-runtime LightBoard-installer-nocv-runtime; do
             gh run download "${{ steps.build.outputs.run }}" --name "$name" --dir "artifacts/$name"
           done
 
-      # 两个产物（框架依赖 / 自包含）文件名完全相同，不能合并到同一目录，各自打一个包
+      # 免安装 zip 的文件名在发布时加入版本号；安装包的文件名在构建时已含版本号，直接复制。
+      # 同一后缀组合下框架依赖与自包含的内部文件名相同，按产物名分目录打包
       - name: Package
         shell: bash
         run: |
-          for name in LightBoard LightBoard-with-runtime; do
-            ( cd "artifacts/$name" && zip -qr "$GITHUB_WORKSPACE/$name.zip" . )
+          VERSION=${RELEASE_TAG#v}
+          for name in LightBoard LightBoard-nocv LightBoard-runtime LightBoard-nocv-runtime; do
+            ( cd "artifacts/$name" && zip -qr "$GITHUB_WORKSPACE/$name-$VERSION.zip" . )
           done
-          for name in LightBoard-installer LightBoard-installer-with-runtime; do
+          for name in LightBoard-installer LightBoard-installer-nocv LightBoard-installer-runtime LightBoard-installer-nocv-runtime; do
             cp "artifacts/$name"/*.exe "$GITHUB_WORKSPACE/"
           done
           ls -l --block-size=K ./*.zip ./*.exe
@@ -107,7 +111,7 @@ jobs:
         with:
           files: |
             *.zip
-            LightBoard-Installer-*.exe
+            LightBoard-installer-*.exe
           tag_name: ${{ env.RELEASE_TAG }}
           body_path: release_notes.md
           prerelease: ${{ env.PRERELEASE }}

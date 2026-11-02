@@ -71,7 +71,7 @@ public partial class App
     // 捕获画布当前视图：背景盒取可见内容区域，背景随之落在视口内、画布无需移动；各文档页视图取捕获视图，
     // 换页后外观一致。极小缩放下可见区域大于画布，盒子夹回画布内。视口尺寸未知时按 1x 整块主屏估算
     // （无边框最大化窗口的视口即整块主屏）。
-    private static (double Scale, double OffsetX, double OffsetY, Rect Box) CanvasView( )
+    internal static (double Scale, double OffsetX, double OffsetY, Rect Box) CanvasView( )
     {
         var canvas = (Current.MainWindow as MainWindow)?.CanvasNext;
 

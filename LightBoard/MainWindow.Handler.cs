@@ -23,7 +23,7 @@ public partial class MainWindow
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
-            MainInstruction = "轻白板 / LightBoard v1.1.0",
+            MainInstruction = "轻白板 / LightBoard v1.3.0",
             MainIcon = TaskDialogIcon.Information,
             Content =
             """
@@ -40,11 +40,20 @@ public partial class MainWindow
     private void ApplyBackground( )
     {
         var transparent = TransparentBackgroundRadio.IsChecked == true;
+#if OPENCV
+        if (VideoBackgroundRadio.IsChecked == true)
+        {
+            StartVideoStand( );
+        }
+        else if (videoPage is not null)
+        {
+            // 改选其他背景：视频停止，本页改用所选背景
+            videoPage = null;
+            StopVideoStand( );
+        }
+#endif
 
-        CanvasNext.Background = WhiteBackgroundRadio.IsChecked == true ? Brushes.White
-            : BlackBackgroundRadio.IsChecked == true ? Brushes.Black
-            : transparent ? Brushes.Transparent
-            : MajorGridBrush;
+        RefreshVideoBackground( );
 
         TimeText.Visibility = transparent || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
         SwitchOutButton.Visibility = transparent ? Visibility.Collapsed : Visibility.Visible;
@@ -55,12 +64,39 @@ public partial class MainWindow
         Topmost = transparent;
     }
 
+    // 背景单选对应的画布底色
+    private Brush BackgroundBrush( )
+    {
+        return WhiteBackgroundRadio.IsChecked == true ? Brushes.White
+            : BlackBackgroundRadio.IsChecked == true ? Brushes.Black
+            : TransparentBackgroundRadio.IsChecked == true ? Brushes.Transparent
+            : MajorGridBrush;
+    }
+
+    // 视频背景仅在含 OpenCV 的构建中存在；nocv 构建的画布底色只随背景单选走
+#if !OPENCV
+    private void RefreshVideoBackground( )
+    {
+        CanvasNext.Background = BackgroundBrush( );
+    }
+#endif
+
     private void BackgroundRadioClick(object o, RoutedEventArgs e)
     {
-        if (o is RadioButton { IsChecked: true })
+        if (o is not RadioButton { IsChecked: true })
         {
-            ApplyBackground( );
+            return;
         }
+
+#if OPENCV
+        // 组互斥在 Click 之前已取消其余单选，最近勾选的全局背景只能在这里记录
+        if (!ReferenceEquals(o, VideoBackgroundRadio))
+        {
+            globalBackgroundRadio = (RadioButton) o;
+        }
+#endif
+
+        ApplyBackground( );
     }
 
     private void CloneClick(object o, RoutedEventArgs e)
@@ -124,10 +160,19 @@ public partial class MainWindow
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = ease
         };
+        // 展台工具栏钉在 CenterBorder 上方，随折叠位移一起滑动
+        var animationCameraBar = new DoubleAnimation
+        {
+            From = CameraBarTransform.Y,
+            To = flag ? CenterBorder.ActualHeight * toolbarScale : 0,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = ease
+        };
 
         LeftTransform.BeginAnimation(TranslateTransform.XProperty, animationLeft);
         CenterTransform.BeginAnimation(TranslateTransform.YProperty, animationCenter);
         RightTransform.BeginAnimation(TranslateTransform.XProperty, animationRight);
+        CameraBarTransform.BeginAnimation(TranslateTransform.YProperty, animationCameraBar);
     }
 
     private void ColorRadioChecked(object o, RoutedEventArgs e)

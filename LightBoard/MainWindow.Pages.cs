@@ -96,6 +96,9 @@ public partial class MainWindow
         CanvasNext.CurrentView = new View(page.Scale, page.OffsetX, page.OffsetY);
         CanvasNext.SwapHistory(out _, page.History);
         CanvasNext.SetDocumentPage(App.BackgroundImage(page.Background), page.Background?.Box);
+
+        // 视频层显隐与背景单选随页面走
+        RefreshVideoBackground( );
     }
 
     private void PagePreviewsBoxSelectionChanged(object o, SelectionChangedEventArgs e)

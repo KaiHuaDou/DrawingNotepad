@@ -37,7 +37,7 @@ public class SettingsWindowTests
             var window = new SettingsWindow( );
             try
             {
-                var root = (FrameworkElement)window.Content;
+                var root = (FrameworkElement) window.Content;
                 window.Content = null;
                 root.DataContext = window.DataContext;
 

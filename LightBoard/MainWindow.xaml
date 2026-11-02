@@ -22,13 +22,17 @@
         </ControlTemplate>
     </Window.Template>
     <Grid x:Name="MainGrid">
-        <Grid x:Name="DebugLayer" IsHitTestVisible="False" Visibility="Collapsed">
+        <Grid x:Name="DebugLayer"
+              Panel.ZIndex="4"
+              IsHitTestVisible="False" Visibility="Collapsed">
             <TextBlock Margin="0,50,0,0" HorizontalAlignment="Center" VerticalAlignment="Top"
                        Foreground="#AAEEEEEE"
                        FontSize="32"
                        Text="调试模式" />
         </Grid>
-        <Grid x:Name="HelpLayer" IsHitTestVisible="False" Visibility="Collapsed">
+        <Grid x:Name="HelpLayer"
+              Panel.ZIndex="4"
+              IsHitTestVisible="False" Visibility="Collapsed">
             <Rectangle Fill="#40000000" />
             <TextBlock Margin="0,50,0,0" HorizontalAlignment="Center" VerticalAlignment="Top"
                        Foreground="#AAEEEEEE"
@@ -37,26 +41,31 @@
         </Grid>
         <Button x:Name="TopEdgeHint"
                 Margin="0,8,0,0" HorizontalAlignment="Center" VerticalAlignment="Top"
+                Panel.ZIndex="4"
                 Visibility="Collapsed"
                 Style="{StaticResource ButtonStyle}"
                 Click="TopEdgeHintClick" Tag="&#xE70E;" />
         <Button x:Name="BottomEdgeHint"
                 Margin="0,0,0,68" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Panel.ZIndex="4"
                 Visibility="Collapsed"
                 Style="{StaticResource ButtonStyle}"
                 Click="BottomEdgeHintClick" Tag="&#xE70D;" />
         <Button x:Name="LeftEdgeHint"
                 Margin="8,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                Panel.ZIndex="4"
                 Visibility="Collapsed"
                 Style="{StaticResource ButtonStyle}"
                 Click="LeftEdgeHintClick" Tag="&#xE76B;" />
         <Button x:Name="RightEdgeHint"
                 Margin="0,0,8,0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                Panel.ZIndex="4"
                 Visibility="Collapsed"
                 Style="{StaticResource ButtonStyle}"
                 Click="RightEdgeHintClick" Tag="&#xE76C;" />
         <Border x:Name="LeftBorder"
                 Margin="5,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                Panel.ZIndex="64"
                 Style="{StaticResource ContainerStyle}"
                 CornerRadius="12,12,12,12">
             <Border.RenderTransform>
@@ -166,16 +175,17 @@
                                  Style="{StaticResource LabelledRadioStyle}"
                                  Click="BackgroundRadioClick" Content=" 透明" GroupName="BackgroundGroup"
                                  Tag="&#xE7A1;" />
-                    <!--TODO 视频背景-->
-                    <RadioButton IsEnabled="False"
+                    <RadioButton x:Name="VideoBackgroundRadio"
                                  Style="{StaticResource LabelledRadioStyle}"
-                                 Content=" 视频" Tag="&#xE714;" />
+                                 Click="BackgroundRadioClick" Content=" 视频" GroupName="BackgroundGroup"
+                                 Tag="&#xE714;" />
                 </StackPanel>
             </Border>
         </Popup>
         <Border x:Name="CenterBorder"
                 Height="54"
                 Margin="0,0,0,5" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Panel.ZIndex="64"
                 Style="{StaticResource ContainerStyle}"
                 CornerRadius="8">
             <Border.RenderTransform>
@@ -275,6 +285,7 @@
         </Border>
         <Border x:Name="RightBorder"
                 Margin="0,0,5,5" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Panel.ZIndex="64"
                 Style="{StaticResource ContainerStyle}"
                 CornerRadius="12,12,12,12">
             <Border.RenderTransform>
@@ -417,6 +428,7 @@
                    Foreground="#AACCCCCC"
                    FontSize="48" />
         <Border x:Name="LoadingBorder"
+                Panel.ZIndex="4"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Visibility="Collapsed"
                 Style="{StaticResource ContainerStyle}"
@@ -435,6 +447,7 @@
             </StackPanel>
         </Border>
         <Border x:Name="SelectionBorder"
+                Panel.ZIndex="4"
                 HorizontalAlignment="Left" VerticalAlignment="Top"
                 Visibility="Collapsed"
                 Style="{StaticResource ContainerStyle}"
@@ -452,7 +465,62 @@
         <Border x:Name="PassThroughBorder"
                 Width="64" Height="640"
                 Margin="48,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                Panel.ZIndex="4"
                 Visibility="Collapsed"
                 Background="Transparent" BorderBrush="#EEEEEE" BorderThickness="2" />
+        <Grid x:Name="CameraLayer"
+              Panel.ZIndex="1"
+              Visibility="Collapsed"
+              Background="#FF141414">
+            <Grid x:Name="CameraHost"
+                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                  RenderTransformOrigin="0.5,0.5">
+                <Grid.RenderTransform>
+                    <RotateTransform x:Name="CameraRotateTransform" Angle="0" />
+                </Grid.RenderTransform>
+                <Image x:Name="CameraImage"
+                       Stretch="Uniform"
+                       RenderTransformOrigin="0.5,0.5">
+                    <Image.RenderTransform>
+                        <ScaleTransform x:Name="CameraMirrorTransform" ScaleX="1" />
+                    </Image.RenderTransform>
+                </Image>
+            </Grid>
+        </Grid>
+        <TextBlock x:Name="CameraTipText"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Panel.ZIndex="64"
+                   Visibility="Collapsed"
+                   Foreground="#E6E6E6"
+                   FontSize="24" />
+        <Border x:Name="CameraBar"
+                Margin="0,0,0,68" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Panel.ZIndex="64"
+                Visibility="Collapsed"
+                Style="{StaticResource ContainerStyle}"
+                CornerRadius="12">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="CameraBarTransform" />
+            </Border.RenderTransform>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="CameraDeviceText"
+                           Margin="12,0,3,0" VerticalAlignment="Center"
+                           Foreground="#AACCCCCC"
+                           FontSize="15" />
+                <Button x:Name="CameraSwitchButton"
+                        Style="{StaticResource ButtonStyle}" Tag="&#xE895;" />
+                <Button x:Name="CameraRotateButton"
+                        Style="{StaticResource ButtonStyle}" Tag="&#xE7AD;" />
+                <ToggleButton x:Name="CameraMirrorButton"
+                              Style="{StaticResource ToggleStyle}" Tag="&#xE8AB;" />
+                <ToggleButton x:Name="CameraFreezeButton"
+                              Style="{StaticResource ToggleStyle}" Tag="&#xE769;" />
+                <Button x:Name="CameraPhotoButton"
+                        Style="{StaticResource ButtonStyle}" Tag="&#xE722;" />
+                <Button x:Name="CameraCloseButton"
+                        Style="{StaticResource ButtonStyle}"
+                        Foreground="#F25767" Tag="&#xE711;" />
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

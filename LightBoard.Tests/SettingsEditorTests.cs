@@ -149,9 +149,10 @@ public class SettingsEditorTests
     [Fact]
     public void Editor_ProcessName_TrimsAndApplies( )
     {
-        var editor = new SettingsEditor(new LightBoardSettings( ));
-
-        editor.SwitchOutProcess = "  notepad  ";
+        var editor = new SettingsEditor(new LightBoardSettings( ))
+        {
+            SwitchOutProcess = "  notepad  "
+        };
 
         Assert.Equal("notepad", editor.Build( ).SwitchOutProcessName);
     }
@@ -159,9 +160,10 @@ public class SettingsEditorTests
     [Fact]
     public void Editor_EmptyProcessName_KeepsBaseline( )
     {
-        var editor = new SettingsEditor(new LightBoardSettings { SwitchOutProcessName = "chrome" });
-
-        editor.SwitchOutProcess = "   ";
+        var editor = new SettingsEditor(new LightBoardSettings { SwitchOutProcessName = "chrome" })
+        {
+            SwitchOutProcess = "   "
+        };
 
         Assert.Equal("chrome", editor.Build( ).SwitchOutProcessName);
     }

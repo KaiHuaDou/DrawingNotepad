@@ -6,6 +6,22 @@
 
 本文件的内容基于对代码实际差异的比对（而非提交信息），以准确反映用户可见的行为变化。
 
+## [v1.3.0]
+
+### 新增
+
+- 视频展台：背景切换新增「视频」，摄像头画面成为当前页的背景，直接在画面上书写批注，画布工具全部可用；同一时刻只有一页带视频背景，翻到其他页时画面隐藏。
+- 画面按设备的原生档协商：分辨率优先，同一分辨率优先 MJPG 再取最高帧率；展台工具栏显示协商到的分辨率与帧率。
+- 展台工具栏：显示设备名与画面档，可旋转 90 度、镜像、冻结画面、切换设备（多台设备按键循环）、拍照与关闭；选其他背景或按关闭按钮退出，回到最近选中的背景；连接与切换设备期间显示提示，按钮暂不可用。
+- 「拍照」把当前帧按预览的旋转与镜像写成图片，冻结为当前页的背景并新增一页接续视频；图片存在程序目录的 `photos`，与其他图片背景一样以文件引用记入 `.lbf`，导出的图片与 PDF 同样带这张背景。
+- 摄像头断开时提示「摄像头已断开」并退出展台。
+- 视频背景不写入 `.lbf`，导出的图片与 PDF 不含视频画面。
+- 构建加 `-p:WithOpenCv=false` 得到不含视频展台的版本，背景选项里没有「视频」。
+
+### 变更
+
+- 发布产物重命名并新增不含 OpenCV 的变体：免安装包为 `LightBoard-<版本>.zip`、`LightBoard-runtime-<版本>.zip`、`LightBoard-nocv-<版本>.zip`、`LightBoard-nocv-runtime-<版本>.zip`，安装包为对应的 `LightBoard-installer-…-<版本>.exe`；自包含变体后缀由 `with-runtime` 改为 `runtime`，文件名加入版本号。
+
 ## [v1.2.0]
 
 ### 新增
@@ -215,6 +231,7 @@
 
 - 删除内部设计文档 `docs/EraserReference.md`、`docs/MultiTouchReference.md`。
 
+[v1.3.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.0.1...v1.1.0

@@ -23,6 +23,13 @@ public partial class MainWindow : Window
     {
         InitializeComponent( );
 
+#if !OPENCV
+        // 不含 OpenCV 的构建没有视频展台
+        VideoBackgroundRadio.Visibility = Visibility.Collapsed;
+#else
+        WireCameraOverlay( );
+#endif
+
         // 图标提取要枚举进程并调 Shell，放到窗口显示后再取
         Loaded += (_, _) => Dispatcher.InvokeAsync(RefreshSwitchOutIcon, DispatcherPriority.Background);
 
@@ -42,10 +49,18 @@ public partial class MainWindow : Window
         CanvasNext.SelectionChanged += CanvasNextSelectionChanged;
         CanvasNext.StrokesChanged += CanvasNextStrokesChanged;
         MainGrid.Children.Insert(0, CanvasNext);
+        // 视频背景层(1) 之上、画布附属浮层(4) 之下，批注直接落在视频上
+        System.Windows.Controls.Panel.SetZIndex(CanvasNext, 2);
         InitializeCommands( );
 
         CanvasNext.EdgeHintsChanged += (_, _) => UpdateEdgeHintButtons( );
-        CenterBorder.SizeChanged += (_, _) => UpdateEdgeHintMargin( );
+        CenterBorder.SizeChanged += (_, _) =>
+        {
+            UpdateEdgeHintMargin( );
+#if OPENCV
+            UpdateCameraBarMargin( );
+#endif
+        };
         UpdateEdgeHintMargin( );
 
         colorRadio ??= DefaultColorRadio;

@@ -150,7 +150,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `EnsureStrokesVisible(StrokeCollection)` | 笔画包围盒不完全在可见内容区域内时平移到视口中心 |
 | `ResetTouchState()`              | 重置当前触摸状态并释放所有触摸捕获          |
 | `SwapHistory(...)`               | 交换撤销 / 重做历史栈，旧栈经 `out` 参数返回 |
-| `SetDocumentPage(ImageSource?, Rect?)` | 设置或清除文档页面背景图像；第二参数为背景页在内容坐标中的 Uniform 适配盒，决定位置与尺寸，页面为 null 或盒子无效时移除 |
+| `SetDocumentPage(ImageSource?, Rect?)` | 设置或清除文档页面背景图像；第二参数为背景页在内容坐标中的 Uniform 适配盒，决定位置与尺寸，页面为 null 或盒子无效时移除；与当前显示一致时不变 |
 | `ClearMultiTouchVisuals()`       | 清空进行中的多指笔画（视觉与笔迹）          |
 | `IsEdgeHintVisible(EdgeScrollSide)` | 该侧边缘提示是否应显示                   |
 | `ScrollEdgeClear(EdgeScrollSide)` | 平移画布直到该侧热区内没有墨迹            |

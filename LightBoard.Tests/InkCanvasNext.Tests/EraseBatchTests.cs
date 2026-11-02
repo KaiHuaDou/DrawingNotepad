@@ -238,7 +238,7 @@ public class EraseBatchTests
     /// <summary>过 centerX 的横线，两端各超出橡皮直径两倍，中段擦除后仍有两片</summary>
     private static Stroke HorizontalLine(double y, double centerX)
     {
-        var reach = EraserParameters.DiameterDefault * 2;
+        const double reach = EraserParameters.DiameterDefault * 2;
         var points = new StylusPointCollection( );
         for (var x = centerX - reach; x <= centerX + reach; x += 10)
         {

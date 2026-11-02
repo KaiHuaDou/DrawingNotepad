@@ -38,9 +38,10 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "numeric=$NUMERIC" >> "$GITHUB_OUTPUT"
 
-  test:
+  package:
+    needs: [meta]
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
@@ -56,46 +57,51 @@ jobs:
       - name: Test
         run: dotnet test
 
-  # 两个变体各自一个作业：发布目录与安装包输出目录互不共享，单变体失败不影响另一个
-  package:
-    needs: [meta, test]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - app: LightBoard
-            profile: FolderProfile
-            publish_dir: bin/publish
-            installer: LightBoard-installer
-            self_contained: "false"
-          - app: LightBoard-with-runtime
-            profile: SelfContained
-            publish_dir: bin/publish-with-runtime
-            installer: LightBoard-installer-with-runtime
-            self_contained: "true"
-    runs-on: windows-latest
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: ./global.json
-          cache: true
-          cache-dependency-path: "**/*.csproj"
-
       - name: Publish
-        run: dotnet publish LightBoard -p:PublishProfile=${{ matrix.profile }} -c Release
+        shell: pwsh
+        run: |
+          $variants = @(
+            @{ profile = 'FolderProfile'; extra = @() },
+            @{ profile = 'FolderProfile'; extra = @('-p:WithOpenCv=false') },
+            @{ profile = 'SelfContained'; extra = @() },
+            @{ profile = 'SelfContained'; extra = @('-p:WithOpenCv=false') }
+          )
+          foreach ($variant in $variants) {
+            dotnet publish LightBoard -p:PublishProfile=$($variant.profile) -c Release @($variant.extra)
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
+          }
 
       - name: Upload app
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.app }}
-          path: ./LightBoard/${{ matrix.publish_dir }}/*
-          # 发版要复用这里的产物，保留期需覆盖「构建完成后过一段时间才打 tag」
+          name: LightBoard
+          path: ./LightBoard/bin/publish/*
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload app (no OpenCV)
+        uses: actions/upload-artifact@v7
+        with:
+          name: LightBoard-nocv
+          path: ./LightBoard/bin/publish-nocv/*
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload app (runtime)
+        uses: actions/upload-artifact@v7
+        with:
+          name: LightBoard-runtime
+          path: ./LightBoard/bin/publish-runtime/*
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload app (runtime, no OpenCV)
+        uses: actions/upload-artifact@v7
+        with:
+          name: LightBoard-nocv-runtime
+          path: ./LightBoard/bin/publish-nocv-runtime/*
           retention-days: 30
           if-no-files-found: error
 
@@ -108,24 +114,54 @@ jobs:
         env:
           APP_VERSION: ${{ needs.meta.outputs.version }}
           APP_VERSION_NUMERIC: ${{ needs.meta.outputs.numeric }}
-          SELF_CONTAINED: ${{ matrix.self_contained }}
         run: |
-          $isccArgs = @(
-            "-DAppVersion=$env:APP_VERSION",
-            "-DAppVersionNumeric=$env:APP_VERSION_NUMERIC",
-            "--output-dir=LightBoard.Installer\Output\${{ matrix.installer }}",
-            "LightBoard.Installer\LightBoard.iss"
+          $variants = @(
+            @{ out = 'LightBoard-installer';              extra = @() },
+            @{ out = 'LightBoard-installer-nocv';         extra = @('-DNoOpenCv') },
+            @{ out = 'LightBoard-installer-runtime';      extra = @('-DSelfContained') },
+            @{ out = 'LightBoard-installer-nocv-runtime'; extra = @('-DNoOpenCv', '-DSelfContained') }
           )
-          if ($env:SELF_CONTAINED -eq 'true') {
-            $isccArgs = @('-DSelfContained') + $isccArgs
+          foreach ($variant in $variants) {
+            $isccArgs = @($variant.extra) + @(
+              "-DAppVersion=$env:APP_VERSION",
+              "-DAppVersionNumeric=$env:APP_VERSION_NUMERIC",
+              "--output-dir=LightBoard.Installer\Output\$($variant.out)",
+              "LightBoard.Installer\LightBoard.iss"
+            )
+            & $env:ISCC @isccArgs
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
           }
-          & $env:ISCC @isccArgs
-          exit $LASTEXITCODE
 
       - name: Upload installer
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.installer }}
-          path: LightBoard.Installer/Output/${{ matrix.installer }}/*.exe
+          name: LightBoard-installer
+          path: LightBoard.Installer/Output/LightBoard-installer/*.exe
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload installer (no OpenCV)
+        uses: actions/upload-artifact@v7
+        with:
+          name: LightBoard-installer-nocv
+          path: LightBoard.Installer/Output/LightBoard-installer-nocv/*.exe
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload installer (runtime)
+        uses: actions/upload-artifact@v7
+        with:
+          name: LightBoard-installer-runtime
+          path: LightBoard.Installer/Output/LightBoard-installer-runtime/*.exe
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload installer (runtime, no OpenCV)
+        uses: actions/upload-artifact@v7
+        with:
+          name: LightBoard-installer-nocv-runtime
+          path: LightBoard.Installer/Output/LightBoard-installer-nocv-runtime/*.exe
           retention-days: 30
           if-no-files-found: error

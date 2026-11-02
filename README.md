@@ -61,13 +61,22 @@
 - PDF：整板导出为单个文件，缩放选项相同
 - 导出过程显示进度与当前页码
 
+### 视频展台
+
+- 背景切换选「视频」：摄像头画面成为当前页的背景，直接在视频上书写批注，全部画布工具可用
+- 画面按设备原生档协商：分辨率优先，同一分辨率取最高帧率；展台工具栏显示协商到的分辨率与帧率
+- 视频背景同一时刻只有一页；「拍照」把当前帧冻结为该页的静态背景并新增一页接续视频
+- 选其他背景或按展台工具栏的关闭按钮退出；旋转、镜像、冻结画面，多台设备按键循环切换
+- 视频背景不写入 `.lbf`（拍照生成的静态背景与其他图片背景一致，随文件保存）
+- 构建加 `-p:WithOpenCv=false` 时不含此功能
+
 ### 界面
 
 - 左工具栏：关闭、最小化、文件菜单、背景、切换窗口
 - 主工具栏：颜色、荧光笔、橡皮、清屏、撤销、重做；展开后为粗细、直线、圆、选择、粘贴
 - 右工具栏：收起工具栏、菜单、上一页、页码、下一页
-- 背景：默认网格、纯白、纯黑、透明；透明时窗口置顶
-- 右上角显示时间；菜单包含帮助、计时、调试与设置
+- 背景：默认网格、纯白、纯黑、透明与视频展台；透明时窗口置顶
+- 右上角显示时间；菜单包含关于、设置、帮助、计时与调试
 
 ### 手势
 
@@ -100,17 +109,22 @@
 
 从 [Releases](https://github.com/KaiHuaDou/DrawingNotepad/releases/latest) 下载：
 
-- `LightBoard-Installer-<版本>.exe`：安装包（框架依赖），需要 .NET 10 桌面运行时
-- `LightBoard-Installer-with-runtime-<版本>.exe`：安装包（自包含）
-- `LightBoard.zip`、`LightBoard-with-runtime.zip`：免安装，解压后运行 `LightBoard.exe`
+- `LightBoard-<版本>.zip`：免安装（框架依赖），需要 .NET 10 桌面运行时
+- `LightBoard-runtime-<版本>.zip`：免安装（自包含）
+- `LightBoard-nocv-<版本>.zip`、`LightBoard-nocv-runtime-<版本>.zip`：同上，不含 OpenCV（无视频展台）
+- `LightBoard-installer-<版本>.exe`：安装包（框架依赖），需要 .NET 10 桌面运行时
+- `LightBoard-installer-runtime-<版本>.exe`：安装包（自包含）
+- `LightBoard-installer-nocv-<版本>.exe`、`LightBoard-installer-nocv-runtime-<版本>.exe`：同上，不含 OpenCV（无视频展台）
+
+免安装包解压后运行 `LightBoard.exe`。
 
 ## 系统要求
 
 - Windows 7 SP1 或更新版本
     - 已测试：Windows 7 SP1 上可安装 .NET 10.0 Desktop Runtime 并运行本程序
-    - 安装包（`LightBoard-Installer-*.exe`）需要 Windows 10 或更新版本
+    - 安装包（`LightBoard-installer-*.exe`）需要 Windows 10 或更新版本
 - .NET 10.0 Desktop Runtime（x64）或更新版本
-    - 使用 `with-runtime` 版本可免安装运行时
+    - 使用 `runtime` 版本可免安装运行时
 - Microsoft Office（打开 Office 文档时需要）
     - 需要已激活版本，部分绿色版本需确认 COM 组件已注册
     - Office 2010 及更新版本
@@ -128,13 +142,13 @@ dotnet publish LightBoard -p:PublishProfile=SelfContained -c Release    # 自包
 dotnet test
 ```
 
-产物分别在 `LightBoard/bin/publish/` 与 `LightBoard/bin/publish-with-runtime/`。
+产物在 `LightBoard/bin/publish/`（框架依赖）与 `LightBoard/bin/publish-runtime/`（自包含）。加 `-p:WithOpenCv=false` 构建不含 OpenCV 的变体，两者分别为 `LightBoard/bin/publish-nocv/` 与 `LightBoard/bin/publish-nocv-runtime/`。
 
 测试使用 xunit.v3 与 Microsoft Testing Platform。
 
 ## 项目结构
 
-- `LightBoard/`：主程序。`InkCanvasNext/` 为画布控件，`Document/` 为文档渲染与背景
+- `LightBoard/`：主程序。`InkCanvasNext/` 为画布控件，`Document/` 为文档渲染与背景，`Camera/` 为视频展台
 - `LightBoard.Tests/`：测试
 - `LightBoard.Installer/`：Inno Setup 打包脚本
 - `docs/`：设计文档
