@@ -13,6 +13,9 @@ namespace LightBoard;
 
 public partial class MainWindow : Window
 {
+    private const int WmSysCommand = 0x0112;
+    private const int ScKeyMenu = 0xF100;
+
     internal readonly InkCanvasNext.InkCanvasNext CanvasNext;
 
     private readonly DispatcherTimer timeTimer;
@@ -49,8 +52,6 @@ public partial class MainWindow : Window
         CanvasNext.SelectionChanged += CanvasNextSelectionChanged;
         CanvasNext.StrokesChanged += CanvasNextStrokesChanged;
         MainGrid.Children.Insert(0, CanvasNext);
-        // 视频背景层(1) 之上、画布附属浮层(4) 之下，批注直接落在视频上
-        System.Windows.Controls.Panel.SetZIndex(CanvasNext, 2);
         InitializeCommands( );
 
         CanvasNext.EdgeHintsChanged += (_, _) => UpdateEdgeHintButtons( );
@@ -191,5 +192,24 @@ public partial class MainWindow : Window
         LocationChanged += (_, _) => UpdateWindowRegion( );
         SizeChanged += (_, _) => UpdateWindowRegion( );
         Loaded += (_, _) => UpdateWindowRegion( );
+
+        if (PresentationSource.FromVisual(this) is HwndSource source)
+        {
+            source.AddHook(WindowMessageHook);
+        }
+    }
+
+    // 窗口没有菜单栏：Alt 单独松开时丢弃系统菜单激活，否则窗口进入菜单模式，鼠标滚轮被菜单循环取走，
+    // 要点击窗口才恢复。Alt+字母 的 lParam 非零，助记键行为不受影响
+    private static IntPtr WindowMessageHook(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (message == WmSysCommand
+            && (wParam.ToInt64( ) & 0xFFF0) == ScKeyMenu
+            && lParam == IntPtr.Zero)
+        {
+            handled = true;
+        }
+
+        return IntPtr.Zero;
     }
 }

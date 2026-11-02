@@ -18,6 +18,8 @@ internal readonly record struct CameraFormat(int Width, int Height, double Fps, 
 // 设备的原生媒体类型：分辨率优先，同一尺寸优先 MJPG，再取最高帧率
 internal static class CameraFormats
 {
+    // MF_SOURCE_READER_FIRST_VIDEO_STREAM
+    private const uint FirstVideoStream = 0xFFFF_FFFC;
     /// <summary>
     /// 设备可申请的最大画面档；探测失败（设备被占用、没有视频流）时返回空值
     /// </summary>
@@ -97,7 +99,7 @@ internal static class CameraFormats
     {
         try
         {
-            reader.GetNativeMediaType(unchecked((uint) MF_SOURCE_READER_CONSTANTS.MF_SOURCE_READER_FIRST_VIDEO_STREAM), index, out type);
+            reader.GetNativeMediaType(FirstVideoStream, index, out type);
             return true;
         }
         catch (COMException)

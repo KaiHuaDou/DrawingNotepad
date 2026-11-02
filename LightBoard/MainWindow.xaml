@@ -428,8 +428,7 @@
                    Foreground="#AACCCCCC"
                    FontSize="48" />
         <Border x:Name="LoadingBorder"
-                Panel.ZIndex="4"
-                HorizontalAlignment="Center" VerticalAlignment="Center"
+                HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="4"
                 Visibility="Collapsed"
                 Style="{StaticResource ContainerStyle}"
                 BorderThickness="1"
@@ -447,8 +446,7 @@
             </StackPanel>
         </Border>
         <Border x:Name="SelectionBorder"
-                Panel.ZIndex="4"
-                HorizontalAlignment="Left" VerticalAlignment="Top"
+                HorizontalAlignment="Left" VerticalAlignment="Top" Panel.ZIndex="4"
                 Visibility="Collapsed"
                 Style="{StaticResource ContainerStyle}"
                 BorderThickness="1"
@@ -468,28 +466,8 @@
                 Panel.ZIndex="4"
                 Visibility="Collapsed"
                 Background="Transparent" BorderBrush="#EEEEEE" BorderThickness="2" />
-        <Grid x:Name="CameraLayer"
-              Panel.ZIndex="1"
-              Visibility="Collapsed"
-              Background="#FF141414">
-            <Grid x:Name="CameraHost"
-                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                  RenderTransformOrigin="0.5,0.5">
-                <Grid.RenderTransform>
-                    <RotateTransform x:Name="CameraRotateTransform" Angle="0" />
-                </Grid.RenderTransform>
-                <Image x:Name="CameraImage"
-                       Stretch="Uniform"
-                       RenderTransformOrigin="0.5,0.5">
-                    <Image.RenderTransform>
-                        <ScaleTransform x:Name="CameraMirrorTransform" ScaleX="1" />
-                    </Image.RenderTransform>
-                </Image>
-            </Grid>
-        </Grid>
         <TextBlock x:Name="CameraTipText"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Panel.ZIndex="64"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="64"
                    Visibility="Collapsed"
                    Foreground="#E6E6E6"
                    FontSize="24" />
@@ -507,19 +485,15 @@
                            Margin="12,0,3,0" VerticalAlignment="Center"
                            Foreground="#AACCCCCC"
                            FontSize="15" />
-                <Button x:Name="CameraSwitchButton"
-                        Style="{StaticResource ButtonStyle}" Tag="&#xE895;" />
-                <Button x:Name="CameraRotateButton"
-                        Style="{StaticResource ButtonStyle}" Tag="&#xE7AD;" />
-                <ToggleButton x:Name="CameraMirrorButton"
-                              Style="{StaticResource ToggleStyle}" Tag="&#xE8AB;" />
-                <ToggleButton x:Name="CameraFreezeButton"
-                              Style="{StaticResource ToggleStyle}" Tag="&#xE769;" />
-                <Button x:Name="CameraPhotoButton"
-                        Style="{StaticResource ButtonStyle}" Tag="&#xE722;" />
+                <Button x:Name="CameraSwitchButton" Style="{StaticResource ButtonStyle}" Tag="&#xE895;" />
+                <Button x:Name="CameraRotateButton" Style="{StaticResource ButtonStyle}" Tag="&#xE7AD;" />
+                <ToggleButton x:Name="CameraMirrorButton" Style="{StaticResource ToggleStyle}" Tag="&#xE8AB;" />
+                <ToggleButton x:Name="CameraFreezeButton" Style="{StaticResource ToggleStyle}" Tag="&#xE769;" />
+                <Button x:Name="CameraPhotoButton" Style="{StaticResource ButtonStyle}" Tag="&#xE722;" />
                 <Button x:Name="CameraCloseButton"
                         Style="{StaticResource ButtonStyle}"
-                        Foreground="#F25767" Tag="&#xE711;" />
+                        Foreground="#F25767"
+                        Tag="&#xE711;" />
             </StackPanel>
         </Border>
     </Grid>

@@ -16,7 +16,6 @@ public partial class MainWindow
 #if OPENCV
     private CameraCapture? camera;
     private WriteableBitmap? cameraBitmap;
-    private Size cameraFrame;
     private int cameraFrameId = -1;
     private int cameraAngle;
     private int cameraDeviceIndex;
@@ -24,6 +23,9 @@ public partial class MainWindow
 
     // 视频背景仅在至多一页上生效；拍照时该页冻结为照片背景，新页接续视频
     private Page? videoPage;
+
+    // 视频画面在内容坐标中的区域，进入视频背景时取当前视口；画面随之随画布缩放平移
+    private Rect videoArea;
 
     // 最近勾选的全局背景（网格 / 纯白 / 纯黑 / 透明），离开视频页与退出展台时恢复勾选。
     // 组互斥在 Click 之前就取消了其余单选，所以只能在点击处记录，不能事后读 IsChecked
@@ -50,7 +52,6 @@ public partial class MainWindow
         CameraPhotoButton.Click += CameraPhotoClick;
         CameraCloseButton.Click += CameraCloseClick;
         cameraTipTimer.Tick += (_, _) => HideCameraTip( );
-        CameraLayer.SizeChanged += (_, _) => UpdateCameraView( );
     }
 
     // 提示跟随视频页显隐；autoHide 的提示数秒后自动消失
@@ -77,7 +78,7 @@ public partial class MainWindow
         RefreshVideoBackground( );
     }
 
-    // 视频背景仅在视频页上显示；翻页、换背景或清板时同步层的显隐、画布底色、提示与背景单选
+    // 视频背景仅在视频页上显示；翻页、换背景或清板时同步背景页、提示与背景单选
     private void RefreshVideoBackground( )
     {
         if (videoPage is not null && !App.Pages.Contains(videoPage))
@@ -88,17 +89,16 @@ public partial class MainWindow
         }
 
         var onVideoPage = videoPage is not null && ReferenceEquals(App.CurrentPage, videoPage);
-        CameraLayer.Visibility = onVideoPage ? Visibility.Visible : Visibility.Collapsed;
         CameraBar.Visibility = onVideoPage ? Visibility.Visible : Visibility.Collapsed;
         CameraTipText.Text = cameraTip ?? "";
         CameraTipText.Visibility = onVideoPage && cameraTip is not null ? Visibility.Visible : Visibility.Collapsed;
-        CanvasNext.Background = onVideoPage ? Brushes.Transparent : BackgroundBrush( );
+        CanvasNext.Background = BackgroundBrush( );
 
-        // 视频页上页自身的文档背景让位，否则它在画布内盖住视频
+        // 视频页让位页自身的文档背景：视频画面占住画布内的背景位
         var page = App.CurrentPage;
         CanvasNext.SetDocumentPage(
-            onVideoPage ? null : App.BackgroundImage(page.Background),
-            onVideoPage ? null : page.Background?.Box);
+            onVideoPage ? cameraBitmap : App.BackgroundImage(page.Background),
+            onVideoPage ? videoArea : page.Background?.Box);
 
         // 背景单选跟随当前页：视频页勾「视频」，其余页回到最近勾选的全局背景
         VideoBackgroundRadio.IsChecked = onVideoPage;
@@ -115,11 +115,15 @@ public partial class MainWindow
             return;
         }
 
-        // 至多一页：视频背景随当前页走，旧的视频页让位
-        videoPage = App.CurrentPage;
-        CameraLayer.Visibility = Visibility.Visible;
-        CameraBar.Visibility = Visibility.Visible;
+        // 至多一页：视频背景随当前页走，换页时画面重新落在新页的视口内
+        if (!ReferenceEquals(videoPage, App.CurrentPage))
+        {
+            videoPage = App.CurrentPage;
+            videoArea = App.CanvasView( ).Box;
+        }
+
         UpdateCameraBarMargin( );
+        RefreshVideoBackground( );
 
         if (camera is not null)
         {
@@ -134,10 +138,10 @@ public partial class MainWindow
 
         try
         {
-            var devices = await Task.Run(CameraDevices.Enumerate);
-            // 无设备时不能算 Clamp 的上界（max 会是 −1），短路在 && 左侧
+            var devices = await Task.Run(( ) => CameraDevices.Enumerate(cameraDeviceIndex));
+            // 无设备时没有下标可取，短路在 && 左侧
             var opened = devices.Count > 0
-                && await OpenCameraAsync(Math.Clamp(cameraDeviceIndex, 0, devices.Count - 1), devices, generation);
+                && await OpenCameraAsync(CameraDevices.Resolve(cameraDeviceIndex, devices.Count), devices, generation);
             if (generation != cameraGeneration)
             {
                 return;   // 期间已切走，界面归新会话管
@@ -171,11 +175,8 @@ public partial class MainWindow
         camera?.Dispose( );
         camera = null;
         cameraBitmap = null;
-        cameraFrame = default;
-        CameraImage.Source = null;
-        CameraHost.Width = 0;
-        CameraHost.Height = 0;
-        CameraLayer.Visibility = Visibility.Collapsed;
+        cameraFrameId = -1;
+        videoArea = Rect.Empty;
         CameraBar.Visibility = Visibility.Collapsed;
         cameraTip = null;
         SetCameraButtonsEnabled(true);
@@ -188,23 +189,6 @@ public partial class MainWindow
         StopVideoStand( );
         (globalBackgroundRadio ?? DefaultBackgroundRadio).IsChecked = true;
         ApplyBackground( );
-    }
-
-    // 预览按相机取向等比装进窗口，镜像与旋转都绕画面中心；拍照的背景盒用同一套推导
-    private void UpdateCameraView( )
-    {
-        var area = new Size(CameraLayer.ActualWidth, CameraLayer.ActualHeight);
-        var display = CameraView.Fit(cameraFrame, cameraAngle, area);
-        if (display.IsEmpty)
-        {
-            CameraHost.Width = 0;
-            CameraHost.Height = 0;
-            return;
-        }
-
-        var box = CameraView.BeforeRotation(display.Size, cameraAngle);
-        CameraHost.Width = box.Width;
-        CameraHost.Height = box.Height;
     }
 
     // 展台工具栏恰在 CenterBorder 上方：两者都不遮挡，随 CenterBorder 折叠位移与倍率一起移动
@@ -223,13 +207,22 @@ public partial class MainWindow
         CameraPhotoButton.IsEnabled = enabled;
     }
 
-    // 渲染节拍写入最新帧；冻结、层隐藏或帧号未变时跳过（源 30 fps，显示器刷新率更高）
+    // 立即把当前帧按预览取向写进位图；冻结中换取向用它让画面马上跟上
+    private void BlitCamera( )
+    {
+        if (camera is not null && cameraBitmap is not null)
+        {
+            camera.BlitLatestTo(cameraBitmap, cameraAngle, CameraMirrorButton.IsChecked == true);
+        }
+    }
+
+    // 渲染节拍写入最新帧；冻结、不在视频页或帧号未变时跳过（源 30 fps，显示器刷新率更高）
     private void CameraFrame(object? o, EventArgs e)
     {
         if (camera is null
             || cameraBitmap is null
             || CameraFreezeButton.IsChecked == true
-            || CameraLayer.Visibility != Visibility.Visible)
+            || !ReferenceEquals(App.CurrentPage, videoPage))
         {
             return;
         }
@@ -241,7 +234,7 @@ public partial class MainWindow
         }
 
         cameraFrameId = id;
-        camera.BlitLatestTo(cameraBitmap);
+        BlitCamera( );
     }
 
     private void OnCameraStopped( )

@@ -29,9 +29,9 @@ public partial class MainWindow
 
         try
         {
-            var devices = await Task.Run(CameraDevices.Enumerate);
+            var devices = await Task.Run(( ) => CameraDevices.Enumerate(cameraDeviceIndex + 1));
             var opened = devices.Count > 0
-                && await OpenCameraAsync((cameraDeviceIndex + 1) % devices.Count, devices, generation);
+                && await OpenCameraAsync(CameraDevices.Resolve(cameraDeviceIndex + 1, devices.Count), devices, generation);
             if (generation != cameraGeneration)
             {
                 return;
@@ -59,18 +59,24 @@ public partial class MainWindow
     private void CameraRotateClick(object o, RoutedEventArgs e)
     {
         cameraAngle = (cameraAngle + 90) % 360;
-        CameraRotateTransform.Angle = cameraAngle;
-        UpdateCameraView( );
+
+        // 位图的宽高随取向交换，重建后立即重填当前帧
+        if (camera is not null)
+        {
+            var (width, height) = CameraOrientation.PixelSize(camera.FrameWidth, camera.FrameHeight, cameraAngle);
+            cameraBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr24, null);
+            BlitCamera( );
+            RefreshVideoBackground( );
+        }
     }
 
+    // 冻结期间画面停在冻结帧上，镜像要在这一刻重写位图才生效
     private void CameraMirrorClick(object o, RoutedEventArgs e)
     {
-        if (o is not ToggleButton button)
+        if (CameraFreezeButton.IsChecked == true)
         {
-            return;
+            BlitCamera( );
         }
-
-        CameraMirrorTransform.ScaleX = button.IsChecked == true ? -1 : 1;
     }
 
     private void CameraFreezeClick(object o, RoutedEventArgs e)
@@ -142,7 +148,7 @@ public partial class MainWindow
         {
             camera.Freeze( );
             // 画面停在冻结帧上，否则最后一帧之前的内容与拍照结果不一致
-            camera.BlitLatestTo(cameraBitmap);
+            BlitCamera( );
         }
         else
         {
@@ -152,13 +158,13 @@ public partial class MainWindow
 
     // 换设备共用：新设备开成功后才换下旧实例，打开失败时原设备继续出帧。
     // 打开期间退出展台（代次变化）时，迟到的结果就地销毁
-    private async Task<bool> OpenCameraAsync(int index, IReadOnlyList<CameraDevice> devices, int generation)
+    private async Task<bool> OpenCameraAsync(int index, List<CameraDevice> devices, int generation)
     {
         var device = devices[index];
         var capture = new CameraCapture( );
         try
         {
-            if (!await capture.OpenAsync(device) || generation != cameraGeneration)
+            if (!await capture.OpenAsync(device.Index, device.Format) || generation != cameraGeneration)
             {
                 capture.Dispose( );
                 return false;
@@ -171,21 +177,19 @@ public partial class MainWindow
             return false;
         }
 
-        // 位图按新协商尺寸重建，分配先于换下旧实例，失败时原设备不受影响
-        var bitmap = new WriteableBitmap(capture.FrameWidth, capture.FrameHeight, 96, 96, PixelFormats.Bgr24, null);
+        // 位图按新协商尺寸与当前取向重建，分配先于换下旧实例，失败时原设备不受影响
+        var (width, height) = CameraOrientation.PixelSize(capture.FrameWidth, capture.FrameHeight, cameraAngle);
+        var bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr24, null);
         capture.Stopped += OnCameraStopped;
 
         UnsubscribeCameraRendering( );
         camera?.Dispose( );
         camera = capture;
         cameraBitmap = bitmap;
-        cameraFrame = new Size(capture.FrameWidth, capture.FrameHeight);
         cameraFrameId = -1;
         cameraDeviceIndex = index;
         CameraDeviceText.Text = DeviceLabel(device.Name, capture);
-        CameraImage.Source = bitmap;
         SetCameraFreeze(false);
-        UpdateCameraView( );
         SubscribeCameraRendering( );
         return true;
     }
@@ -202,17 +206,13 @@ public partial class MainWindow
     private async Task<bool> FreezeVideoPage(string photoPath)
     {
         var current = videoPage;
-        if (current is null)
+        if (current is null || videoArea.IsEmpty)
         {
             return false;
         }
 
-        var (scale, offsetX, offsetY, _) = App.CanvasView( );
-        var box = PhotoBox(scale, offsetX, offsetY);
-        if (box.IsEmpty)
-        {
-            return false;
-        }
+        // 新页沿用拍照时的缩放与平移；视频区域不随视口重算，画面在内容坐标里原地不动
+        var view = CanvasNext.CurrentView;
 
         // 背景按路径取图，照片必须先登记为文档源，否则画布、缩略图与导出都取不到它
         try
@@ -231,15 +231,16 @@ public partial class MainWindow
             return false;
         }
 
-        current.Background = new DocumentBackground(photoPath, 1, box);
+        // 照片与原视频画面重合在同一块内容区域
+        current.Background = new DocumentBackground(photoPath, 1, videoArea);
         current.InvalidatePreview( );
 
         var page = new Page
         {
             Number = App.Pages.Count + 1,
-            Scale = scale,
-            OffsetX = offsetX,
-            OffsetY = offsetY,
+            Scale = view.Scale,
+            OffsetX = view.OffsetX,
+            OffsetY = view.OffsetY,
         };
         App.Pages.Add(page);
         videoPage = page;
@@ -247,22 +248,6 @@ public partial class MainWindow
         App.BoardRevision++;
         Dirty = true;
         return true;
-    }
-
-    // 照片在内容坐标中的盒子：取预览画面在视口里占的区域，照片与此刻的笔迹因此落在同一位置
-    private Rect PhotoBox(double scale, double offsetX, double offsetY)
-    {
-        var display = CameraView.Fit(cameraFrame, cameraAngle, CanvasNext.ViewportSize);
-        if (display.IsEmpty)
-        {
-            return Rect.Empty;
-        }
-
-        return new Rect(
-            (display.X + offsetX) / scale,
-            (display.Y + offsetY) / scale,
-            display.Width / scale,
-            display.Height / scale);
     }
 #endif
 }
