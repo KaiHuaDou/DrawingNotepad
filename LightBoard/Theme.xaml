@@ -262,6 +262,7 @@
 
     <Style x:Key="ButtonStyle" BasedOn="{StaticResource ToolButtonBaseStyle}" TargetType="{x:Type Button}">
         <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="FontSize" Value="25" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -269,6 +270,7 @@
                         <TextBlock x:Name="PART_IconText"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Style="{StaticResource IconTextStyle}"
+                                   FontSize="{TemplateBinding FontSize}"
                                    Foreground="{TemplateBinding Foreground}"
                                    Text="{TemplateBinding Tag}" />
                     </Border>

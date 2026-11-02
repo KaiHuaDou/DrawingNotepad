@@ -23,11 +23,14 @@ public partial class MainWindow
         using TaskDialog dialog = new( )
         {
             WindowTitle = "轻白板",
-            MainInstruction = "轻白板 / LightBoard v1.3.0",
+            MainInstruction = $"轻白板 / LightBoard v{BuildInfo.Version}",
             MainIcon = TaskDialogIcon.Information,
             Content =
-            """
-            源代码: <a href="https://github.com/KaiHuaDou/DrawingNotepad/">https://github.com/KaiHuaDou/DrawingNotepad/</a>        
+            $"""
+            OpenCV: {(BuildInfo.WithOpenCv ? "启用" : "未启用")}
+            运行时: {(BuildInfo.SelfContained ? "自包含" : "框架依赖")}
+            提交: {BuildInfo.Commit}
+            源代码: <a href="https://github.com/KaiHuaDou/DrawingNotepad/">https://github.com/KaiHuaDou/DrawingNotepad/</a>
             发布版本: <a href="https://github.com/KaiHuaDou/DrawingNotepad/releases/">https://github.com/KaiHuaDou/DrawingNotepad/releases/</a>
             """,
             EnableHyperlinks = true,

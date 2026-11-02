@@ -5,9 +5,11 @@ from pathlib import Path
 from typing import NoReturn
 
 CHANGELOG = Path("CHANGELOG.md")
+CSPROJ = Path("LightBoard/LightBoard.csproj")
 # 标题形如 ## [v1.2.3]、## 1.2.3 - 2026-10-18；Unreleased 等非版本标题不匹配
 HEADING = re.compile(r"^##\s+\[?v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\]?(?:\s+-\s+\S+)?\s*$")
 LINK_DEFINITION = re.compile(r"^\[[^\]]+\]:")
+VERSION_ELEMENT = re.compile(r"<Version>\s*([^<\s]+)\s*</Version>")
 
 
 def fail(message: str) -> NoReturn:
@@ -22,11 +24,13 @@ def read_lines() -> list[str]:
 
 
 def read_version() -> str:
-    for line in read_lines():
-        match = HEADING.match(line)
-        if match:
-            return match.group(1)
-    fail("CHANGELOG.md 中没有找到版本标题（## [vX.Y.Z]）")
+    # 版本以 csproj 的 <Version> 为准，CHANGELOG 只提供该版本的说明
+    if not CSPROJ.is_file():
+        fail(f"找不到 {CSPROJ}，请在仓库根目录运行")
+    match = VERSION_ELEMENT.search(CSPROJ.read_text(encoding="utf-8"))
+    if match is None:
+        fail(f"{CSPROJ} 中没有 <Version>")
+    return match.group(1)
 
 
 def write_notes(tag: str, output: Path) -> None:

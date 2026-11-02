@@ -36,14 +36,14 @@ jobs:
         with:
           ref: ${{ env.RELEASE_TAG }}
 
-      # 构建时从 CHANGELOG 首个版本标题提取 AppVersion 写入安装包，此处校验 tag 与之一致，
-      # 避免发版版本与安装包版本错位
-      - name: Verify tag matches CHANGELOG version
+      # 程序与安装包的版本取自 LightBoard.csproj 的 Version，此处校验 tag 与之一致，
+      # 避免发版版本与产物版本错位
+      - name: Verify tag matches project version
         shell: bash
         run: |
           TOP=$(python3 .github/scripts/changelog.py version)
           if [ "$TOP" != "${RELEASE_TAG#v}" ]; then
-            echo "::error::$RELEASE_TAG 与 CHANGELOG 首个版本 v$TOP 不一致：该 commit 构建出的安装包版本为 $TOP"
+            echo "::error::$RELEASE_TAG 与 LightBoard.csproj 的 Version $TOP 不一致：该 commit 构建出的程序与安装包版本为 $TOP"
             exit 1
           fi
 

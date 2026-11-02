@@ -48,7 +48,7 @@ public partial class TimerWindow
         {
             // 首次渲染前没有动画在飞，直接落位
             SecondsPanel.BeginAnimation(WidthProperty, null);
-            SecondsPanel.Width = state != TimerState.Idle ? double.NaN : 0;
+            SecondsPanel.Width = viewModel.IsIdle ? 0 : double.NaN;
             return;
         }
 
@@ -66,7 +66,7 @@ public partial class TimerWindow
     {
         resizePending = false;
 
-        var showSeconds = state != TimerState.Idle;
+        var showSeconds = !viewModel.IsIdle;
 
         if (WindowState != WindowState.Normal)
         {

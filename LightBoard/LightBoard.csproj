@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <LangVersion>preview</LangVersion>
         <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+        <Version>1.3.0</Version>
     </PropertyGroup>
     <PropertyGroup>
         <WithOpenCv Condition="'$(WithOpenCv)' == ''">true</WithOpenCv>
@@ -27,6 +28,10 @@
     <PropertyGroup Condition="$(Configuration)==Release">
         <DebugType>none</DebugType>
     </PropertyGroup>
+    <ItemGroup>
+        <AssemblyMetadata Include="WithOpenCv" Value="$(WithOpenCv)" />
+        <AssemblyMetadata Include="SelfContained" Value="$(SelfContained)" />
+    </ItemGroup>
     <ItemGroup>
         <Resource Include="Segoe Fluent Icons.ttf">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -1,7 +1,7 @@
 ; 轻白板（LightBoard）安装包脚本
 ; 需要 Inno Setup 7.0.2 或更高版本编译
 ;
-; 编译命令（AppVersion 缺省为 0.0.0，CI 从 CHANGELOG 提取后传入）：
+; 编译命令（AppVersion 缺省为 0.0.0，CI 从 csproj 的 Version 提取后传入）：
 ;   ISCC -DAppVersion=1.2.3 LightBoard.iss                        框架依赖版，含 .NET 运行时检测
 ;   ISCC -DAppVersion=1.2.3 -DSelfContained LightBoard.iss        自包含版，无运行时检测
 ;   两命令均可加 -DNoOpenCv 构建不含 OpenCV 的变体，产物名加 -nocv

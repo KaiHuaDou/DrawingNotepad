@@ -1,94 +1,43 @@
 using System;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Threading;
 
 namespace LightBoard;
 
-internal enum TimerMode
-{
-    Countdown,
-    Countup,
-}
-
 public partial class TimerWindow : Window
 {
-    private const string PlayGlyph = "\uE768";
-    private const string PauseGlyph = "\uE769";
-
-    private const double NormalFontSize = 96;
-    private const double FullscreenFontSize = 192;
-
-    private static readonly TimeSpan AlertSpan = TimeSpan.FromSeconds(10);
-    private static readonly TimeSpan MaxSpan = TimeSpan.FromSeconds(99 * 3600 + 59 * 60 + 59);
-
-    private static readonly SolidColorBrush AlertBrush = new(Color.FromRgb(0xFF, 0x52, 0x52));
-
-    private readonly DispatcherTimer timer;
-    private long startedAt;
-
-    private TimerMode mode = TimerMode.Countdown;
+    private const int MinuteStep = 5;
+    private const int MinuteSteps = 60 / MinuteStep;
+    private const int MaxMinute = (MinuteSteps - 1) * MinuteStep;
+    private readonly TimerViewModel viewModel;
 
     /// <summary>
-    /// 倒计时的剩余时长
+    /// 把手直径，与条高一致
     /// </summary>
-    private TimeSpan countdownRemaining;
+    private double HandleWidth => MinuteSlider.ActualHeight;
 
     /// <summary>
-    /// 正计时的累计时长
+    /// 把手在条内可移动的宽度
     /// </summary>
-    private TimeSpan countupElapsed;
-
-    static TimerWindow( )
-    {
-        AlertBrush.Freeze( );
-    }
+    private double UsableWidth => Math.Max(0, MinuteSlider.ActualWidth - HandleWidth);
 
     public TimerWindow( )
     {
         InitializeComponent( );
 
-        timer = new(DispatcherPriority.Normal, Dispatcher.CurrentDispatcher)
-        {
-            Interval = TimeSpan.FromMilliseconds(100),
-        };
-        timer.Tick += (_, _) => Refresh( );
-
-        Refresh( );
+        viewModel = (TimerViewModel) DataContext;
+        viewModel.DisplayChanged += DisplayChanged;
     }
 
     private void TimerClick(object o, RoutedEventArgs e)
     {
-        if (state == TimerState.Idle)
-        {
-            if (CanStart( ))
-            {
-                SetState(TimerState.Running);
-            }
-        }
-        else
-        {
-            SetState(TimerState.Idle);
-        }
-
-        Refresh( );
+        viewModel.Toggle( );
     }
 
     private void ResetClick(object o, RoutedEventArgs e)
     {
-        if (mode == TimerMode.Countdown)
-        {
-            countdownRemaining = TimeSpan.Zero;
-        }
-        else
-        {
-            countupElapsed = TimeSpan.Zero;
-        }
-
-        Refresh( );
+        viewModel.Reset( );
     }
 
     private void ModeClick(object o, RoutedEventArgs e)
@@ -98,15 +47,7 @@ public partial class TimerWindow : Window
             return;
         }
 
-        var newMode = radio == CountdownRadio ? TimerMode.Countdown : TimerMode.Countup;
-        if (newMode == mode)
-        {
-            return;
-        }
-
-        mode = newMode;
-        Title = mode == TimerMode.Countdown ? "倒计时" : "计时器";
-        Refresh( );
+        viewModel.SetMode(radio == CountdownRadio ? TimerMode.Countdown : TimerMode.Countup);
     }
 
     private void HourClick(object o, RoutedEventArgs e)
@@ -116,7 +57,7 @@ public partial class TimerWindow : Window
             return;
         }
 
-        Adjust(ReferenceEquals(button, HourUpButton) ? TimeSpan.FromHours(1) : TimeSpan.FromHours(-1));
+        viewModel.Adjust(ReferenceEquals(button, HourUpButton) ? TimeSpan.FromHours(1) : TimeSpan.FromHours(-1));
     }
 
     private void MinuteClick(object o, RoutedEventArgs e)
@@ -126,18 +67,57 @@ public partial class TimerWindow : Window
             return;
         }
 
-        Adjust(ReferenceEquals(button, MinuteUpButton) ? TimeSpan.FromMinutes(1) : TimeSpan.FromMinutes(-1));
+        viewModel.Adjust(ReferenceEquals(button, MinuteUpButton) ? TimeSpan.FromMinutes(1) : TimeSpan.FromMinutes(-1));
     }
 
-    private void PresetClick(object o, RoutedEventArgs e)
+    private void PreviousHourClick(object o, RoutedEventArgs e)
     {
-        if (o is not Button button || button.Tag is not string minutes || !int.TryParse(minutes, out var value))
+        viewModel.Adjust(TimeSpan.FromHours(-1));
+    }
+
+    private void NextHourClick(object o, RoutedEventArgs e)
+    {
+        viewModel.Adjust(TimeSpan.FromHours(1));
+    }
+
+    private void MinuteTickClick(object o, RoutedEventArgs e)
+    {
+        if (o is Button { Tag: string minutes } && int.TryParse(minutes, out var value))
+        {
+            viewModel.SetMinutes(value);
+        }
+    }
+
+    private void MinuteSliderMouseLeftButtonDown(object o, MouseButtonEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed)
         {
             return;
         }
 
-        countdownRemaining = TimeSpan.FromMinutes(value);
-        Refresh( );
+        MinuteSlider.CaptureMouse( );
+        SetMinutesFromPosition(e.GetPosition(MinuteSlider).X);
+    }
+
+    private void MinuteSliderMouseMove(object o, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        SetMinutesFromPosition(e.GetPosition(MinuteSlider).X);
+    }
+
+    private void MinuteSliderMouseLeftButtonUp(object o, MouseButtonEventArgs e)
+    {
+        MinuteSlider.ReleaseMouseCapture( );
+    }
+
+    private void MinuteSliderSizeChanged(object o, SizeChangedEventArgs e)
+    {
+        SyncMinuteBar( );
+        SyncMinuteTicks( );
     }
 
     private void WindowMouseLeftButtonDown(object o, MouseButtonEventArgs e)
@@ -148,140 +128,57 @@ public partial class TimerWindow : Window
         }
     }
 
-    /// <summary>当前显示的时长：倒计时为剩余，正计时为累计</summary>
-    private TimeSpan DisplayValue( )
+    private void DisplayChanged(object? o, EventArgs e)
     {
-        var used = Elapsed( );
-
-        return mode == TimerMode.Countdown
-            ? Clamp(countdownRemaining - used, TimeSpan.Zero, MaxSpan)
-            : Clamp(countupElapsed + used, TimeSpan.Zero, MaxSpan);
+        SyncMinuteBar( );
+        ResizeToContent( );
     }
 
-    /// <summary>本轮已运行的时长；取单调时钟，不受系统时间调整影响</summary>
-    private TimeSpan Elapsed( )
+    private void SetMinutesFromPosition(double x)
     {
-        return state == TimerState.Idle ? TimeSpan.Zero : Stopwatch.GetElapsedTime(startedAt);
-    }
-
-    private bool CanStart( )
-    {
-        return mode == TimerMode.Countup ? countupElapsed < MaxSpan : countdownRemaining > TimeSpan.Zero;
-    }
-
-    /// <summary>调整当前模式的数值：倒计时调剩余量，正计时调累计量</summary>
-    private void Adjust(TimeSpan delta)
-    {
-        if (state != TimerState.Idle)
+        var usable = UsableWidth;
+        if (usable <= 0)
         {
             return;
         }
 
-        if (mode == TimerMode.Countdown)
-        {
-            countdownRemaining = Clamp(countdownRemaining + delta, TimeSpan.Zero, MaxSpan);
-        }
-        else
-        {
-            countupElapsed = Clamp(countupElapsed + delta, TimeSpan.Zero, MaxSpan);
-        }
-
-        Refresh( );
+        var ratio = Math.Clamp((x - HandleWidth / 2) / usable, 0, 1);
+        viewModel.SetMinutes((int) Math.Round(ratio * (MinuteSteps - 1)) * MinuteStep);
     }
 
-    private void Refresh( )
+    private void SyncMinuteBar( )
     {
-        UpdateState( );
+        var ratio = viewModel.ShowsProgress
+            ? viewModel.Progress
+            : Math.Min(viewModel.Minutes / (double) MaxMinute, 1);
 
-        var totalSeconds = (int) DisplayValue( ).TotalSeconds;
-
-        UpdateControls(totalSeconds);
-        ShowValue(totalSeconds);
-        ResizeToContent( );
+        // 填充末端圆角即把手：把手中心随比例走过可用宽度，落点 0 与 1 都在轨道两端
+        MinuteFill.Width = UsableWidth * ratio + HandleWidth;
     }
 
-    /// <summary>按状态、模式与显示值刷新控件的可见性、可用性与外观；秒区显隐由 ResizeToContent 负责</summary>
-    private void UpdateControls(int totalSeconds)
+    private void SyncMinuteTicks( )
     {
-        var idle = state == TimerState.Idle;
-        var fullscreen = WindowState == WindowState.Maximized;
+        var usable = UsableWidth;
 
-        TimerButton.Tag = idle ? PlayGlyph : PauseGlyph;
-
-        var fontSize = fullscreen ? FullscreenFontSize : NormalFontSize;
-
-        HourText.FontSize = fontSize;
-        MinuteText.FontSize = fontSize;
-        Separator1Text.FontSize = fontSize;
-        Separator2Text.FontSize = fontSize;
-        SecondText.FontSize = fontSize;
-
-        var adjustable = mode == TimerMode.Countdown && idle && !fullscreen;
-
-        // 非全屏时调整区隐藏也占位，开始与暂停不改变窗口尺寸；全屏窗口尺寸固定，收起让数字垂直居中
-        var adjustVisibility = adjustable
-            ? Visibility.Visible
-            : fullscreen ? Visibility.Collapsed : Visibility.Hidden;
-
-        HourUpButton.Visibility = adjustVisibility;
-        HourDownButton.Visibility = adjustVisibility;
-        MinuteUpButton.Visibility = adjustVisibility;
-        MinuteDownButton.Visibility = adjustVisibility;
-        PresetRow.Visibility = adjustVisibility;
-
-        var frameVisibility = fullscreen ? Visibility.Collapsed : Visibility.Visible;
-
-        ModeRow.Visibility = frameVisibility;
-        TimerButton.Visibility = frameVisibility;
-
-        HourDownButton.IsEnabled = totalSeconds >= 3600;
-        MinuteDownButton.IsEnabled = totalSeconds % 3600 >= 60;
-        CountdownRadio.IsEnabled = idle;
-        CountupRadio.IsEnabled = idle;
-        ResetButton.IsEnabled = idle;
-        TimerButton.IsEnabled = !idle || CanStart( );
+        PositionTick(MinuteFiveButton, 5, usable);
+        PositionTick(MinuteTenButton, 10, usable);
+        PositionTick(MinuteFifteenButton, 15, usable);
+        PositionTick(MinuteThirtyButton, 30, usable);
+        PositionTick(MinuteFortyFiveButton, 45, usable);
     }
 
-    private void ShowValue(int totalSeconds)
+    private void PositionTick(Button tick, int minutes, double usable)
     {
-        HourText.Text = (totalSeconds / 3600).ToString("00");
-        MinuteText.Text = (totalSeconds % 3600 / 60).ToString("00");
-        SecondText.Text = (totalSeconds % 60).ToString("00");
-    }
-
-    private void ApplyAlertForeground( )
-    {
-        HourText.Foreground = AlertBrush;
-        MinuteText.Foreground = AlertBrush;
-        Separator1Text.Foreground = AlertBrush;
-        Separator2Text.Foreground = AlertBrush;
-        SecondText.Foreground = AlertBrush;
-    }
-
-    /// <summary>清除本地值以恢复从 Window 继承的配色</summary>
-    private void RestoreForeground( )
-    {
-        HourText.ClearValue(TextBlock.ForegroundProperty);
-        MinuteText.ClearValue(TextBlock.ForegroundProperty);
-        Separator1Text.ClearValue(TextBlock.ForegroundProperty);
-        Separator2Text.ClearValue(TextBlock.ForegroundProperty);
-        SecondText.ClearValue(TextBlock.ForegroundProperty);
-    }
-
-    private static TimeSpan Clamp(TimeSpan value, TimeSpan min, TimeSpan max)
-    {
-        if (value < min)
-        {
-            return min;
-        }
-
-        return value > max ? max : value;
+        var center = HandleWidth / 2 + usable * minutes / MaxMinute;
+        Canvas.SetLeft(tick, center - tick.Width / 2);
     }
 
     protected override void OnClosed(EventArgs e)
     {
+        viewModel.DisplayChanged -= DisplayChanged;
+        viewModel.Stop( );
+
         base.OnClosed(e);
-        timer.Stop( );
     }
 
     protected override void OnStateChanged(EventArgs e)
@@ -290,6 +187,6 @@ public partial class TimerWindow : Window
 
         // 状态切换后的尺寸变化直接落到目标值，不播过渡动画
         fullscreenTransition = true;
-        Refresh( );
+        ResizeToContent( );
     }
 }
