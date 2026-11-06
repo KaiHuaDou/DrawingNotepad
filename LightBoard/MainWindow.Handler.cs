@@ -352,7 +352,7 @@ public partial class MainWindow
             return;
         }
 
-        timerWindow = new TimerWindow( );
+        timerWindow = new TimerWindow { Owner = this };
         timerWindow.Show( );
     }
 }

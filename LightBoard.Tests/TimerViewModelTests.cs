@@ -14,7 +14,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.ApplyPreset(5);
+                timer.SetMinutes(5);
 
                 timer.Reset( );
 
@@ -37,7 +37,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.ApplyPreset(5);
+                timer.SetMinutes(5);
                 timer.Toggle( );
 
                 Assert.True(timer.IsActive);
@@ -69,7 +69,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.ApplyPreset(1);
+                timer.SetMinutes(1);
 
                 timer.Adjust(TimeSpan.FromMinutes(-2));
 
@@ -91,7 +91,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.ApplyPreset(75);
+                timer.SetMinutes(75);
 
                 timer.SetMinutes(40);
 
@@ -128,26 +128,6 @@ public class TimerViewModelTests
     }
 
     [Fact]
-    public void HourLabels_FollowDisplayedHour( )
-    {
-        UiThread.Run(( ) =>
-        {
-            var timer = new TimerViewModel( );
-            try
-            {
-                timer.ApplyPreset(75);
-
-                Assert.Equal(0, timer.PreviousHour);
-                Assert.Equal(2, timer.NextHour);
-            }
-            finally
-            {
-                timer.Stop( );
-            }
-        });
-    }
-
-    [Fact]
     public void ShowsProgress_OnlyWithinCountdownRun( )
     {
         UiThread.Run(( ) =>
@@ -155,7 +135,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.ApplyPreset(5);
+                timer.SetMinutes(5);
                 Assert.False(timer.ShowsProgress);
 
                 timer.Toggle( );
@@ -182,7 +162,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.ApplyPreset(60);
+                timer.SetMinutes(60);
 
                 Assert.Equal(0, timer.Minutes);
                 Assert.True(timer.CanDecreaseMinute);
@@ -192,7 +172,7 @@ public class TimerViewModelTests
                 Assert.Equal(0, timer.Hours);
                 Assert.Equal(59, timer.Minutes);
 
-                timer.ApplyPreset(0);
+                timer.SetMinutes(0);
 
                 Assert.False(timer.CanDecreaseMinute);
             }
@@ -211,12 +191,110 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.ApplyPreset(5);
+                timer.SetMinutes(5);
 
                 timer.SetMode(TimerMode.Countup);
 
                 Assert.Equal("计时器", timer.Title);
                 Assert.Equal(0, timer.Minutes);
+                Assert.True(timer.CanToggle);
+            }
+            finally
+            {
+                timer.Stop( );
+            }
+        });
+    }
+
+    [Fact]
+    public void SetMode_WhenPaused_Ignored( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var timer = new TimerViewModel( );
+            try
+            {
+                timer.SetMinutes(5);
+                timer.Toggle( );
+                timer.Toggle( );
+
+                timer.SetMode(TimerMode.Countup);
+
+                Assert.True(timer.IsCountdown);
+                Assert.Equal("倒计时", timer.Title);
+            }
+            finally
+            {
+                timer.Stop( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Adjust_WhenCountup_Ignored( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var timer = new TimerViewModel( );
+            try
+            {
+                timer.SetMode(TimerMode.Countup);
+
+                timer.Adjust(TimeSpan.FromMinutes(5));
+
+                Assert.Equal(0, timer.Minutes);
+                Assert.Equal(0, timer.Seconds);
+            }
+            finally
+            {
+                timer.Stop( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Start_WithinAlertSpan_EntersAlerting( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var timer = new TimerViewModel( );
+            try
+            {
+                timer.SetMinutes(1);
+                timer.Adjust(TimeSpan.FromSeconds(-55));
+
+                Assert.Equal(5, timer.Seconds);
+
+                timer.Toggle( );
+
+                Assert.True(timer.IsAlerting);
+                Assert.True(timer.IsActive);
+                Assert.False(timer.CanReset);
+            }
+            finally
+            {
+                timer.Stop( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Pause_WhenAlerting_LeavesAlerting( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var timer = new TimerViewModel( );
+            try
+            {
+                timer.SetMinutes(1);
+                timer.Adjust(TimeSpan.FromSeconds(-55));
+                timer.Toggle( );
+
+                timer.Toggle( );
+
+                Assert.False(timer.IsAlerting);
+                Assert.False(timer.IsActive);
+                Assert.True(timer.CanReset);
                 Assert.True(timer.CanToggle);
             }
             finally

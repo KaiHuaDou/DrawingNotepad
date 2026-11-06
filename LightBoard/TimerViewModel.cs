@@ -42,6 +42,11 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     private long startedAt;
     private int totalSeconds;
 
+    /// <summary>
+    /// 上次推送属性通知时的状态，用于跳过重复通知
+    /// </summary>
+    private (TimerState State, TimerMode Mode, int Seconds) shown;
+
     public TimerViewModel( )
     {
         timer = new(DispatcherPriority.Normal, Dispatcher.CurrentDispatcher)
@@ -67,10 +72,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     public int Minutes => totalSeconds % 3600 / 60;
 
     public int Seconds => totalSeconds % 60;
-
-    public int PreviousHour => Math.Clamp(Hours - 1, 0, 99);
-
-    public int NextHour => Math.Clamp(Hours + 1, 0, 99);
 
     /// <summary>
     /// 倒计时模式
@@ -162,9 +163,12 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         Refresh( );
     }
 
+    /// <summary>
+    /// 只在未开始时切换模式，暂停中与推进中保持当前模式
+    /// </summary>
     public void SetMode(TimerMode value)
     {
-        if (mode == value)
+        if (mode == value || !IsIdle)
         {
             return;
         }
@@ -175,22 +179,17 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         Refresh( );
     }
 
+    /// <summary>
+    /// 倒计时未开始时增减时长
+    /// </summary>
     public void Adjust(TimeSpan delta)
     {
-        if (state != TimerState.Idle)
+        if (!IsAdjustable)
         {
             return;
         }
 
-        if (mode == TimerMode.Countdown)
-        {
-            countdownRemaining = Clamp(countdownRemaining + delta, TimeSpan.Zero, MaxSpan);
-        }
-        else
-        {
-            countupElapsed = Clamp(countupElapsed + delta, TimeSpan.Zero, MaxSpan);
-        }
-
+        countdownRemaining = Clamp(countdownRemaining + delta, TimeSpan.Zero, MaxSpan);
         Refresh( );
     }
 
@@ -208,12 +207,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         Refresh( );
     }
 
-    public void ApplyPreset(int minutes)
-    {
-        countdownRemaining = TimeSpan.FromMinutes(minutes);
-        Refresh( );
-    }
-
     public void Stop( )
     {
         timer.Stop( );
@@ -224,24 +217,26 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         UpdateState( );
 
         var seconds = (int) DisplayValue( ).TotalSeconds;
-        if (seconds != totalSeconds)
+        var signature = (state, mode, seconds);
+
+        // 秒数、状态与模式未变时推导出来的属性也没有变化，每拍重复通知只会让绑定重复求值
+        if (signature != shown)
         {
+            shown = signature;
             totalSeconds = seconds;
+
             Raise(nameof(Hours));
             Raise(nameof(Minutes));
             Raise(nameof(Seconds));
-            Raise(nameof(PreviousHour));
-            Raise(nameof(NextHour));
             Raise(nameof(CanDecreaseHour));
             Raise(nameof(CanDecreaseMinute));
+            Raise(nameof(IsActive));
+            Raise(nameof(IsIdle));
+            Raise(nameof(IsAlerting));
+            Raise(nameof(IsAdjustable));
+            Raise(nameof(CanToggle));
+            Raise(nameof(CanReset));
         }
-
-        Raise(nameof(IsActive));
-        Raise(nameof(IsIdle));
-        Raise(nameof(IsAlerting));
-        Raise(nameof(IsAdjustable));
-        Raise(nameof(CanToggle));
-        Raise(nameof(CanReset));
 
         DisplayChanged?.Invoke(this, EventArgs.Empty);
     }

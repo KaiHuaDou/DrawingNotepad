@@ -6,53 +6,18 @@ using System.Windows.Threading;
 
 namespace LightBoard;
 
+// 窗口尺寸交给 SizeToContent 跟随内容，这里只驱动秒位的展开与收起
 public partial class TimerWindow
 {
     private static readonly TimeSpan ResizeDuration = TimeSpan.FromMilliseconds(100);
 
-    /// <summary>
-    /// 非客户区尺寸，首次渲染后量得
-    /// </summary>
-    private Size chrome;
-
-    private Size sizeTarget;
-    private int resizeGeneration;
-    private bool sizeReady;
-    private bool fullscreenTransition;
     private bool resizePending;
 
-    protected override void OnContentRendered(EventArgs e)
-    {
-        base.OnContentRendered(e);
-
-        if (sizeReady)
-        {
-            return;
-        }
-
-        var content = ContentSize( );
-        chrome = new Size(ActualWidth - content.Width, ActualHeight - content.Height);
-
-        SizeToContent = SizeToContent.Manual;
-        Width = ActualWidth;
-        Height = ActualHeight;
-
-        sizeTarget = new Size(Math.Ceiling(Width), Math.Ceiling(Height));
-        sizeReady = true;
-    }
-
-    /// <summary>窗口与秒区的宽度同步过渡；秒区收窄即被裁掉，动画结束时才设为收起</summary>
+    /// <summary>
+    /// 同一事件批内只排一次重排；时钟生成挪出点击链路，规避同拍先撤再加的竞态
+    /// </summary>
     private void ResizeToContent( )
     {
-        if (!sizeReady)
-        {
-            // 首次渲染前没有动画在飞，直接落位
-            SecondsPanel.BeginAnimation(WidthProperty, null);
-            SecondsPanel.Width = viewModel.IsIdle ? 0 : double.NaN;
-            return;
-        }
-
-        // 合并同一事件批内的重复进入，并且时钟生成挪出点击/点击链路，规避同拍先撤再加的时钟竞态
         if (resizePending)
         {
             return;
@@ -68,6 +33,7 @@ public partial class TimerWindow
 
         var showSeconds = !viewModel.IsIdle;
 
+        // 全屏时数字区不受窗口约束，秒位按内容取宽
         if (WindowState != WindowState.Normal)
         {
             SecondsPanel.BeginAnimation(WidthProperty, null);
@@ -75,61 +41,28 @@ public partial class TimerWindow
             return;
         }
 
-        // 动画进行中 Width 读数即动画当前值，从当前值续动画才不被 Actual 的滞后拉回去
-        var fromSeconds = SecondsPanel.Width;
+        // 动画进行中 Width 读数即动画当前值；自动宽度时取排版后的实际宽度接力
+        var fromSeconds = double.IsFinite(SecondsPanel.Width) ? SecondsPanel.Width : SecondsPanel.ActualWidth;
 
-        // 量秒区自然宽度前先停掉进行中的宽度动画
         SecondsPanel.BeginAnimation(WidthProperty, null);
 
         var toSeconds = showSeconds ? Math.Ceiling(NaturalSecondsWidth( )) : 0;
 
+        // 基值直接落到目标，动画以 Stop 收尾：结束或被打断后读到的都是目标宽度
         SecondsPanel.Width = toSeconds;
 
-        var content = ContentSize( );
-        var target = new Size(
-            Math.Ceiling(content.Width + chrome.Width),
-            Math.Ceiling(content.Height + chrome.Height)
-        );
-
-        // 进出全屏的这一拍直接切到目标尺寸，不播过渡动画
-        if (fullscreenTransition)
-        {
-            fullscreenTransition = false;
-            resizeGeneration++;    // 作废未完成动画的写回
-            BeginAnimation(WidthProperty, null);
-            BeginAnimation(HeightProperty, null);
-
-            sizeTarget = target;
-            Width = target.Width;
-            Height = target.Height;
-            return;
-        }
-
-        if (Math.Abs(target.Width - sizeTarget.Width) <= 0.5
-            && Math.Abs(target.Height - sizeTarget.Height) <= 0.5
-            && Math.Abs(toSeconds - fromSeconds) <= 0.5)
+        if (Math.Abs(toSeconds - fromSeconds) <= 0.5)
         {
             return;
         }
 
-        sizeTarget = target;
-
-        var generation = ++resizeGeneration;
-
-        SecondsPanel.Width = fromSeconds;
-
-        AnimateSize(SecondsPanel, WidthProperty, fromSeconds, toSeconds, generation);
-
-        // 窗口尺寸已到位就不拆不建时钟，零长度时钟只会制造竞态
-        if (Math.Abs(target.Width - Width) > 0.5)
+        var animation = new DoubleAnimation(fromSeconds, toSeconds, ResizeDuration)
         {
-            AnimateSize(this, WidthProperty, Width, target.Width, generation);
-        }
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+            FillBehavior = FillBehavior.Stop,
+        };
 
-        if (Math.Abs(target.Height - Height) > 0.5)
-        {
-            AnimateSize(this, HeightProperty, Height, target.Height, generation);
-        }
+        SecondsPanel.BeginAnimation(WidthProperty, animation, HandoffBehavior.SnapshotAndReplace);
     }
 
     /// <summary>秒区按自身内容排版所需的宽度</summary>
@@ -138,45 +71,15 @@ public partial class TimerWindow
         var width = SecondsPanel.Width;
 
         SecondsPanel.Width = double.NaN;
+
+        // 子级按上次约束缓存 DesiredSize，同约束再量会拿回旧值；整棵子树先打脏再量
+        InvalidateMeasureTree(SecondsPanel);
         SecondsPanel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
 
         var desired = SecondsPanel.DesiredSize.Width;
         SecondsPanel.Width = width;
 
         return desired;
-    }
-
-    private void AnimateSize(UIElement element, DependencyProperty property, double from, double to, int generation)
-    {
-        var animation = new DoubleAnimation(from, to, ResizeDuration)
-        {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
-        };
-
-        animation.Completed += (o, e) =>
-        {
-            // 被更晚的动画取代时，基值由那次动画负责写回
-            if (generation != resizeGeneration)
-            {
-                return;
-            }
-
-            element.SetValue(property, to);
-            element.BeginAnimation(property, null);
-        };
-
-        element.BeginAnimation(property, animation, HandoffBehavior.SnapshotAndReplace);
-    }
-
-    private Size ContentSize( )
-    {
-        var content = (FrameworkElement) Content;
-
-        // 子级按上次约束缓存 DesiredSize 且同约束则直接旁路，同约束的 Measure(∞) 拿回旧值；
-        // 整棵子树先打脏标记再量，保证拿回自然尺寸
-        InvalidateMeasureTree(content);
-        content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        return content.DesiredSize;
     }
 
     private static void InvalidateMeasureTree(DependencyObject node)
@@ -192,5 +95,12 @@ public partial class TimerWindow
         {
             InvalidateMeasureTree(VisualTreeHelper.GetChild(node, i));
         }
+    }
+
+    protected override void OnStateChanged(EventArgs e)
+    {
+        base.OnStateChanged(e);
+
+        ResizeToContent( );
     }
 }
