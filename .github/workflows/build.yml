@@ -3,9 +3,17 @@ name: Build
 on:
   push:
     branches: ["master"]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - LICENSE
 
   pull_request:
     branches: ["master"]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - LICENSE
 
   workflow_dispatch:
 

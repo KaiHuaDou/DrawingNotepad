@@ -15,18 +15,18 @@ concurrency:
 
 permissions:
   contents: write
-  actions: read
+  actions: write
 
 env:
   BUILD_WORKFLOW: build.yml
-  BUILD_BRANCH: master
   RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
   PRERELEASE: ${{ contains(inputs.tag || github.ref_name, '-') }}
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 按需触发构建时，等待时间包含整个构建
+    timeout-minutes: 150
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -47,36 +47,11 @@ jobs:
             exit 1
           fi
 
+      # 本地打 tag 后立即 push 时构建可能尚未建立，缺失时按 tag 触发一次
       - name: Resolve build run for this commit
         id: build
         shell: bash
-        run: |
-          # 取 tag 指向的提交：workflow_dispatch 时 github.sha 是分支 HEAD，不是输入的 tag
-          SHA=$(git rev-parse HEAD)
-
-          INFO=$(gh run list --workflow "$BUILD_WORKFLOW" --commit "$SHA" --limit 1 \
-            --json databaseId,conclusion --jq '.[0] // empty | "\(.databaseId)\t\(.conclusion // "pending")"')
-          if [ -z "$INFO" ]; then
-            echo "::error::$RELEASE_TAG ($SHA) 上没有 $BUILD_WORKFLOW 运行。请先把该 commit 推到 $BUILD_BRANCH 并等构建完成"
-            exit 1
-          fi
-
-          RUN_ID=$(printf '%s' "$INFO" | cut -f1)
-          CONCLUSION=$(printf '%s' "$INFO" | cut -f2)
-
-          # 最新运行尚未结束则等它跑完（只等，不重建）
-          if [ "$CONCLUSION" = "pending" ]; then
-            gh run watch "$RUN_ID" --exit-status
-          fi
-
-          RUN=$(gh run list --workflow "$BUILD_WORKFLOW" --commit "$SHA" --status success --limit 1 \
-            --json databaseId --jq '.[0].databaseId // empty')
-          if [ -z "$RUN" ]; then
-            echo "::error::$RELEASE_TAG ($SHA) 上没有成功的 $BUILD_WORKFLOW 运行，产物不可信，已中止发版"
-            exit 1
-          fi
-
-          echo "run=$RUN" >> "$GITHUB_OUTPUT"
+        run: python3 .github/scripts/resolve_build_run.py --workflow "$BUILD_WORKFLOW" --tag "$RELEASE_TAG"
 
       # 逐个 --name 下载：--pattern 只命中一个产物时会直接解到 --dir，目录结构随命中数量变化
       # 十六个产物都是构建的必备项，任一缺失即失败
