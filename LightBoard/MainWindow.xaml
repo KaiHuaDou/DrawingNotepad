@@ -330,6 +330,7 @@
                         <Style TargetType="ListViewItem">
                             <Setter Property="BorderBrush" Value="Transparent" />
                             <Setter Property="BorderThickness" Value="2" />
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
                             <Style.Resources>
                                 <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
                                 <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Transparent" />
@@ -352,14 +353,26 @@
                             <GridViewColumn>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate DataType="local:Page">
-                                        <StackPanel Margin="0,6" HorizontalAlignment="Center" Orientation="Horizontal">
-                                            <TextBlock Margin="5,0,10,0" VerticalAlignment="Center" Panel.ZIndex="16"
+                                        <Grid Margin="0,5">
+                                            <Image Source="{Binding Preview}" />
+                                            <TextBlock Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
                                                        Foreground="#E6E6E6"
                                                        FontSize="19"
-                                                       Text="{Binding Number}"
-                                                       TextAlignment="Center" />
-                                            <Image Source="{Binding Preview}" />
-                                        </StackPanel>
+                                                       Text="{Binding Number}" />
+                                            <Button Margin="0,5,5,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                    Click="DeletePageClick"
+                                                    Tag="&#xE894;">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Items.Count, RelativeSource={RelativeSource AncestorType=ListView}}" Value="1">
+                                                                <Setter Property="IsEnabled" Value="False" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

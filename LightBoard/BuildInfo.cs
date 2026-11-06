@@ -40,7 +40,7 @@ internal static class BuildInfo
         return version.Length > 0 ? version : typeof(BuildInfo).Assembly.GetName( ).Version?.ToString(3) ?? "0.0.0";
     }
 
-    // 源码链接把提交号接在版本后（1.3.0+<40 位哈希>），源码目录没有仓库时为空
+    // 源码链接把提交号接在版本后（1.3.0+<哈希>），源码目录没有仓库时为空
     private static string AfterRevision( )
     {
         var plus = Informational.IndexOf('+');

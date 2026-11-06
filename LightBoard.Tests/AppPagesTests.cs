@@ -16,6 +16,15 @@ public class AppPagesTests
         App.InitializePages( );
     }
 
+    private static void ResetPages(int count)
+    {
+        ResetPages( );
+        for (var i = 1; i < count; i++)
+        {
+            App.NewPage( );
+        }
+    }
+
     [Fact]
     public void SwitchPage_RejectsOutOfRangeAndSameIndex( )
     {
@@ -59,6 +68,103 @@ public class AppPagesTests
 
             App.SwitchPage(1);
             Assert.Equal(1, App.PageIndex);
+        });
+    }
+
+    [Fact]
+    public void DeletePage_KeepsLastPage( )
+    {
+        UiThread.Run(( ) =>
+        {
+            ResetPages( );
+
+            App.DeletePage(0);
+
+            Assert.Single(App.Pages);
+            Assert.Equal(0, App.PageIndex);
+        });
+    }
+
+    [Fact]
+    public void DeletePage_CurrentPage_ShowsNextPage( )
+    {
+        UiThread.Run(( ) =>
+        {
+            ResetPages(3); // 当前页为第 2 页
+            var next = App.Pages[2];
+
+            App.DeletePage(1);
+
+            Assert.Equal(2, App.Pages.Count);
+            Assert.Equal(1, App.PageIndex);
+            Assert.Same(next, App.CurrentPage);
+            Assert.Equal([1, 2], App.Pages.Select(page => page.Number));
+        });
+    }
+
+    [Fact]
+    public void DeletePage_CurrentLastPage_ShowsPreviousPage( )
+    {
+        UiThread.Run(( ) =>
+        {
+            ResetPages(2);
+            var previous = App.Pages[0];
+
+            App.DeletePage(1);
+
+            Assert.Single(App.Pages);
+            Assert.Equal(0, App.PageIndex);
+            Assert.Same(previous, App.CurrentPage);
+            Assert.Equal(1, App.Pages[0].Number);
+        });
+    }
+
+    [Fact]
+    public void DeletePage_BeforeCurrent_KeepsPageWithoutRebind( )
+    {
+        UiThread.Run(( ) =>
+        {
+            ResetPages(3);
+            var current = App.CurrentPage;
+
+            var changed = 0;
+            void counter(object? _o, EventArgs _e)
+            {
+                changed++;
+            }
+
+            App.PageChanged += counter;
+            try
+            {
+                App.DeletePage(0);
+            }
+            finally
+            {
+                App.PageChanged -= counter;
+            }
+
+            Assert.Equal(1, App.PageIndex);
+            Assert.Same(current, App.CurrentPage);
+            Assert.Equal(0, changed);
+            Assert.Equal([1, 2], App.Pages.Select(page => page.Number));
+        });
+    }
+
+    [Fact]
+    public void DeletePage_AfterCurrent_KeepsIndex( )
+    {
+        UiThread.Run(( ) =>
+        {
+            ResetPages(3);
+            App.SwitchPage(0);
+            var current = App.CurrentPage;
+
+            App.DeletePage(2);
+
+            Assert.Equal(2, App.Pages.Count);
+            Assert.Equal(0, App.PageIndex);
+            Assert.Same(current, App.CurrentPage);
+            Assert.Equal([1, 2], App.Pages.Select(page => page.Number));
         });
     }
 

@@ -106,6 +106,21 @@ public partial class MainWindow
         App.SwitchPage(PagePreviewsBox.SelectedIndex);
     }
 
+    private void DeletePageClick(object o, RoutedEventArgs e)
+    {
+        if (o is not Button { DataContext: Page page })
+        {
+            return;
+        }
+
+        App.DeletePage(App.Pages.IndexOf(page));
+        UpdatePageUI( );
+        Dirty = true;
+
+        // 视频页可能是被删的那一页
+        RefreshVideoBackground( );
+    }
+
     private void PrevPage(object o, RoutedEventArgs e)
     {
         App.SwitchPage(App.PageIndex - 1);
