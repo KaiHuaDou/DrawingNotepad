@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Ink;
+using System.Windows.Media;
 
 using InkCanvasNext;
 
@@ -289,6 +290,78 @@ public class ToolbarStampTests
             Assert.Equal(StampAction.None, host.Canvas.StampAction);
             Assert.Equal(InkCanvasNextMode.Line, host.Window.Mode);
             Assert.True(host.Window.LineRadio.IsChecked);
+            ToolbarAssertions.AssertConsistent(host);
+        });
+    }
+
+    [Fact]
+    public void PageSwitch_WithCloneStamp_ClearsStampButton( )
+    {
+        UiThread.Run(( ) =>
+        {
+            using var host = new MainWindowHost( );
+            ActivateClone(host);
+
+            App.NewPage( );
+
+            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.False(host.Window.CloneButton.IsChecked);
+            Assert.False(host.Window.PasteButton.IsChecked);
+            ToolbarAssertions.AssertConsistent(host);
+        });
+    }
+
+    [Fact]
+    public void Paste_Armed_UnchecksPenRadios( )
+    {
+        UiThread.Run(( ) =>
+        {
+            PutInkOnClipboard( );
+            using var host = new MainWindowHost( );
+
+            ToolDriver.Toggle(host.Window.PasteButton, true);
+
+            Assert.True(host.ColorRadios.All(r => r.IsChecked == false));
+            Assert.True(host.ThicknessRadios.All(r => r.IsChecked == false));
+            Assert.Equal(StampAction.Paste, host.Canvas.StampAction);
+            ToolbarAssertions.AssertConsistent(host, StampAction.Paste);
+        });
+    }
+
+    [Fact]
+    public void Paste_Armed_ClickColor_ExitsStampAndChecksRadio( )
+    {
+        UiThread.Run(( ) =>
+        {
+            PutInkOnClipboard( );
+            using var host = new MainWindowHost( );
+            ToolDriver.Toggle(host.Window.PasteButton, true);
+            var red = host.FindColor(Color.FromRgb(0xFF, 0x43, 0x45));
+
+            ToolDriver.ClickRadio(host, red);
+
+            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.False(host.Window.PasteButton.IsChecked);
+            Assert.True(red.IsChecked);
+            ToolbarAssertions.AssertConsistent(host);
+        });
+    }
+
+    [Fact]
+    public void Paste_Armed_ClickThickness_ExitsStampAndChecksRadio( )
+    {
+        UiThread.Run(( ) =>
+        {
+            PutInkOnClipboard( );
+            using var host = new MainWindowHost( );
+            ToolDriver.Toggle(host.Window.PasteButton, true);
+            var thickness = host.FindThickness(10);
+
+            ToolDriver.ClickRadio(host, thickness);
+
+            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.False(host.Window.PasteButton.IsChecked);
+            Assert.True(thickness.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
     }

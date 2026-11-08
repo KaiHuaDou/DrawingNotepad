@@ -11,7 +11,6 @@ public partial class InkCanvasNext
     private readonly List<Point> lassoPath = [];
     private readonly HashSet<Stroke> lassoSelected = [];
     private IncrementalLassoHitTester? lassoTester;
-    private bool lassoDragged;
 
     // ---------- 套索 ----------
 
@@ -21,7 +20,6 @@ public partial class InkCanvasNext
         selection.Clear( );
         selectionGesture = SelectionGesture.Lasso;
         lassoPath.Add(p);
-        lassoDragged = false;
         lassoTester = InnerCanvas.Strokes.GetIncrementalLassoHitTester(LassoHitPercentage);
         lassoTester.SelectionChanged += OnLassoSelectionChanged;
         lassoTester.AddPoints([ToStylusPoint(p)]);
@@ -37,7 +35,6 @@ public partial class InkCanvasNext
             return;
         }
 
-        lassoDragged = true;
         lassoPath.Add(p);
         lassoTester?.AddPoints([ToStylusPoint(p)]);
         selection.InvalidateLasso(lassoPath);
@@ -62,10 +59,11 @@ public partial class InkCanvasNext
         lassoTester?.SelectionChanged -= OnLassoSelectionChanged;
         lassoTester = null;
 
+        var dragged = lassoPath.Count > 1;
         lassoPath.Clear( );
         selection.InvalidateLasso(null);
 
-        if (lassoDragged)
+        if (dragged)
         {
             selection.SetStrokes(lassoSelected);
         }

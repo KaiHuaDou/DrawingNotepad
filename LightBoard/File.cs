@@ -38,16 +38,34 @@ public partial class MainWindow
 
     private async void AttachClick(object o, RoutedEventArgs e)
     {
+        if (opening)
+        {
+            return;
+        }
+
         OpenFileDialog dialog = new( ) { Filter = FileFilter };
         if (dialog.ShowDialog( ) != true)
         {
             return;
         }
 
+        var fileName = dialog.FileName;
+
+        // 有背景时文档附加按替换式打开处理，OpenFile 自带同一把闸
+        if (!IsBoardFile(fileName) && !IsInkFile(fileName) && App.HasBackground)
+        {
+            if (WhetherCloseFile( ))
+            {
+                return;
+            }
+
+            OpenFile(fileName);
+            return;
+        }
+
+        opening = true;
         try
         {
-            var fileName = dialog.FileName;
-
             if (IsBoardFile(fileName))
             {
                 await AttachBoard(fileName);
@@ -66,22 +84,14 @@ public partial class MainWindow
             App.LogException(ex);
             App.ShowDetailedInfo("无法附加文件", ex.Message, $"{ex.Message}\n{ex.StackTrace}");
         }
+        finally
+        {
+            opening = false;
+        }
     }
 
     private async Task AttachDocument(string fileName)
     {
-        if (App.HasBackground)
-        {
-            // 已有背景时附加等价于替换式打开，先走保存确认
-            if (WhetherCloseFile( ))
-            {
-                return;
-            }
-
-            OpenFile(fileName);
-            return;
-        }
-
         try
         {
             await RunWithLoading("正在附加文档", ( ) => App.AttachDocument(fileName));

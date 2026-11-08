@@ -6,6 +6,12 @@
 
 本文件的内容基于对代码实际差异的比对（而非提交信息），以准确反映用户可见的行为变化。
 
+## [v1.3.1]
+
+### 变更
+
+- 粘贴印章激活期间颜色与粗细都显示为未选中；点选颜色或粗细即退出粘贴。
+
 ## [v1.3.0]
 
 ### 新增
@@ -246,6 +252,7 @@
 
 - 删除内部设计文档 `docs/EraserReference.md`、`docs/MultiTouchReference.md`。
 
+[v1.3.1]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.1.0...v1.1.1

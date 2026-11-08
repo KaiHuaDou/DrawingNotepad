@@ -89,6 +89,54 @@ public class SpecialModeGestureTests
         });
     }
 
+    /// <summary>点选：落指与抬指之间没有超过采样间距的位移，抬手按触点命中选中该笔</summary>
+    [Fact]
+    public void SelectMode_TapOnStroke_SelectsIt( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.Mode = InkCanvasNextMode.Select;
+            var stroke = MakeStroke(new Point(80, 100), new Point(140, 100));
+            host.Canvas.Strokes.Add(stroke);
+
+            var finger = host.Device( );
+            finger.Down(host.Target, P1);
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+
+            finger.Up(host.Target, P1);
+
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.True(host.Canvas.HasSelection);
+            Assert.Same(stroke, Assert.Single(host.Canvas.SelectedStrokes));
+        });
+    }
+
+    /// <summary>点空白：已有选区时点外部，落指清空选型，抬手无命中保持空选区</summary>
+    [Fact]
+    public void SelectMode_TapOnEmpty_ClearsSelection( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.Strokes.Add(MakeStroke(new Point(80, 100), new Point(140, 100)));
+
+            var first = host.Device( );
+            first.Down(host.Target, P1);
+            first.Up(host.Target, P1);
+            Assert.True(host.Canvas.HasSelection);
+
+            var empty = new Point(600, 600);
+            var second = host.Device( );
+            second.Down(host.Target, empty);
+            second.Up(host.Target, empty);
+
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.False(host.Canvas.HasSelection);
+        });
+    }
+
     [Fact]
     public void SelectMode_Stamp_SingleFingerSkipsSelection( )
     {

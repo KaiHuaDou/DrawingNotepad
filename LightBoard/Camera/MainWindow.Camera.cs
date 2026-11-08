@@ -34,6 +34,7 @@ public partial class MainWindow
     // 打开可能很慢：cameraOpening 期间禁用按钮；cameraGeneration 让切换走之后的迟到结果就地销毁
     private bool cameraOpening;
     private int cameraGeneration;
+    private bool cameraFrozen;
 
     // 展台提示文字；null 即不显示。显隐由 RefreshVideoBackground 按当前页决定，翻页时联动
     private string? cameraTip;
@@ -92,7 +93,7 @@ public partial class MainWindow
         CameraBar.Visibility = onVideoPage ? Visibility.Visible : Visibility.Collapsed;
         CameraTipText.Text = cameraTip ?? "";
         CameraTipText.Visibility = onVideoPage && cameraTip is not null ? Visibility.Visible : Visibility.Collapsed;
-        CanvasNext.Background = BackgroundBrush( );
+        CanvasNext.Background = BackgroundBrush(CurrentBackground( ));
 
         // 视频页让位页自身的文档背景：视频画面占住画布内的背景位
         var page = App.CurrentPage;
@@ -221,7 +222,7 @@ public partial class MainWindow
     {
         if (camera is null
             || cameraBitmap is null
-            || CameraFreezeButton.IsChecked == true
+            || cameraFrozen
             || !ReferenceEquals(App.CurrentPage, videoPage))
         {
             return;

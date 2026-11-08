@@ -34,7 +34,8 @@ internal static class ToolbarAssertions
             Assert.Equal(mode, canvas.Mode);
             Assert.False(attrs.IsHighlighter);
 
-            if (IsToolMode(mode))
+            // 印章激活期间画笔单选与工具模式同样不勾选
+            if (IsToolMode(mode) || stamp is not null and not StampAction.None)
             {
                 Assert.True(host.ColorRadios.All(r => r.IsChecked == false));
                 Assert.True(host.ThicknessRadios.All(r => r.IsChecked == false));

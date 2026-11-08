@@ -58,6 +58,29 @@ public class BackgroundSwitchTests
         });
     }
 
+    [Fact]
+    public void Transparent_EnablesPassThrough_DefaultRestores( )
+    {
+        UiThread.Run(( ) =>
+        {
+            using var host = new MainWindowHost( );
+            var transparent = BackgroundRadio(host, "透明");
+            var defaultRadio = BackgroundRadio(host, "默认");
+
+            ClickRadio(host, transparent);
+
+            Assert.Same(Brushes.Transparent, host.Canvas.Background);
+            Assert.True(host.Window.Topmost);
+            Assert.Equal(Visibility.Visible, host.Window.PassThroughBorder.Visibility);
+
+            ClickRadio(host, defaultRadio);
+
+            Assert.False(host.Window.Topmost);
+            Assert.Equal(Visibility.Collapsed, host.Window.PassThroughBorder.Visibility);
+            Assert.Same(host.Window.FindResource("MajorGridBrush"), host.Canvas.Background);
+        });
+    }
+
     private static RadioButton BackgroundRadio(MainWindowHost host, string content)
     {
         return host.RadiosInGroup("BackgroundGroup").Single(r => (r.Content as string)?.Trim( ) == content);

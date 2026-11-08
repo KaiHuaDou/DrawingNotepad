@@ -13,7 +13,7 @@ internal sealed record PenProfile(
     bool IsHighlighter
 );
 
-internal sealed record ToolSnapshot(
+internal sealed record HighlighterReturn(
     InkCanvasNextMode Mode,
     RadioButton? ColorRadio,
     RadioButton? ThicknessRadio
@@ -23,12 +23,14 @@ public partial class MainWindow
 {
     internal InkCanvasNextMode Mode { get; private set; } = InkCanvasNextMode.Ink;
 
+    private StampAction stamp = StampAction.None;
+
     private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false);
     private static readonly PenProfile HighlighterProfile = new(Colors.Yellow, 36, true);
 
     private RadioButton? colorRadio;
     private RadioButton? thicknessRadio;
-    private ToolSnapshot? highlighterBackup;
+    private HighlighterReturn? highlighterReturn;
 
     private Size? selectionBorderSize;
     private bool selectionBorderUpdating;
@@ -47,30 +49,24 @@ public partial class MainWindow
         return m is InkCanvasNextMode.Line or InkCanvasNextMode.Circle;
     }
 
-    private void CommitCanvas( )
-    {
-        var p = Mode == InkCanvasNextMode.Highlighter ? HighlighterProfile : pen;
-        var drawingAttr = CanvasNext.DefaultDrawingAttributes;
-        drawingAttr.Color = p.Color;
-        drawingAttr.Width = drawingAttr.Height = p.Width;
-        drawingAttr.IsHighlighter = p.IsHighlighter;
-        CanvasNext.Mode = Mode == InkCanvasNextMode.Highlighter ? InkCanvasNextMode.Ink : Mode;
-    }
-
     private void EnterHighlighter( )
     {
-        highlighterBackup = new ToolSnapshot(Mode, colorRadio, thicknessRadio);
+        if (Mode == InkCanvasNextMode.Highlighter)
+        {
+            return;
+        }
+
+        highlighterReturn = new(Mode, colorRadio, thicknessRadio);
         Mode = InkCanvasNextMode.Highlighter;
-        SyncToolState( );
     }
 
     private void ExitHighlighter( )
     {
-        if (highlighterBackup is not null)
+        if (highlighterReturn is { } saved)
         {
-            Mode = highlighterBackup.Mode;
-            colorRadio = highlighterBackup.ColorRadio;
-            thicknessRadio = highlighterBackup.ThicknessRadio;
+            Mode = saved.Mode;
+            colorRadio = saved.ColorRadio;
+            thicknessRadio = saved.ThicknessRadio;
         }
 
         // Line/Circle 是 Pen 的附加，退出 Highlighter 时不恢复
@@ -82,16 +78,13 @@ public partial class MainWindow
 
     private void ExitStamp( )
     {
-        CanvasNext.StampAction = StampAction.None;
-
-        // XAML 加载期可能先于按钮创建触发（DefaultThicknessRadio 的 Checked 事件），需判空
-        CloneButton?.IsChecked = false;
-        PasteButton?.IsChecked = false;
+        stamp = StampAction.None;
+        SyncToolState( );
     }
 
     private void HighlighterBoxClicked(object o, RoutedEventArgs e)
     {
-        ExitStamp( );
+        stamp = StampAction.None;
 
         if (HighlighterToggle.IsChecked == true)
         {
@@ -100,8 +93,9 @@ public partial class MainWindow
         else
         {
             ExitHighlighter( );
-            SyncToolState( );
         }
+
+        SyncToolState( );
     }
 
     private Size MeasureSelectionBorder( )
@@ -122,11 +116,29 @@ public partial class MainWindow
         return size;
     }
 
-    // 状态机唯一出口：从 Mode 推导 UI 勾选与画布模式
+    // 工具态唯一写入口：印章归一 → 画布模式与印章 → 笔属性 → 控件勾选
     private void SyncToolState( )
     {
+        if (Mode is not (InkCanvasNextMode.Ink or InkCanvasNextMode.Select))
+        {
+            stamp = StampAction.None;
+        }
+
         var highlighter = Mode == InkCanvasNextMode.Highlighter;
+        var profile = highlighter ? HighlighterProfile : pen;
+
+        // 印章先写：OnModeChanged 的编辑模式判定要读到当前的 StampAction
+        CanvasNext.StampAction = stamp;
+        CanvasNext.Mode = highlighter ? InkCanvasNextMode.Ink : Mode;
+
+        var attrs = CanvasNext.DefaultDrawingAttributes;
+        attrs.Color = profile.Color;
+        attrs.Width = attrs.Height = profile.Width;
+        attrs.IsHighlighter = profile.IsHighlighter;
+
         HighlighterToggle?.IsChecked = highlighter;
+        CloneButton?.IsChecked = stamp == StampAction.Clone;
+        PasteButton?.IsChecked = stamp == StampAction.Paste;
 
         if (highlighter)
         {
@@ -140,17 +152,16 @@ public partial class MainWindow
         }
         else
         {
-            var toolMode = IsToolMode(Mode);
-            colorRadio?.IsChecked = !toolMode;
-            thicknessRadio?.IsChecked = !toolMode;
+            // 印章激活期间单指落章而非绘制，画笔单选与工具模式同样不勾选
+            var penHidden = IsToolMode(Mode) || stamp != StampAction.None;
+            colorRadio?.IsChecked = !penHidden;
+            thicknessRadio?.IsChecked = !penHidden;
             EraseAreaRadio?.IsChecked = Mode == InkCanvasNextMode.EraseArea;
             EraseStrokeRadio?.IsChecked = Mode == InkCanvasNextMode.EraseStroke;
             SelectRadio?.IsChecked = Mode == InkCanvasNextMode.Select;
             LineRadio?.IsChecked = Mode == InkCanvasNextMode.Line;
             CircleRadio?.IsChecked = Mode == InkCanvasNextMode.Circle;
         }
-
-        CommitCanvas( );
     }
 
     /// <summary>

@@ -76,7 +76,7 @@ public partial class MainWindow
     {
         camera?.SetOrientation(cameraAngle, CameraMirrorButton.IsChecked == true);
 
-        if (CameraFreezeButton.IsChecked == true)
+        if (cameraFrozen)
         {
             BlitCamera( );
         }
@@ -141,6 +141,7 @@ public partial class MainWindow
     // 冻结期间不向位图写帧，画面与拍照都停在冻结那一刻；新开的设备从解冻开始，残留的勾选会让预览一直空着
     private void SetCameraFreeze(bool frozen)
     {
+        cameraFrozen = frozen;
         CameraFreezeButton.IsChecked = frozen;
         CameraFreezeButton.Tag = frozen ? "\uE768" : "\uE769";
 

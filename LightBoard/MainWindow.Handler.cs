@@ -41,85 +41,22 @@ public partial class MainWindow
         dialog.ShowDialog( );
     }
 
-    private void ApplyBackground( )
-    {
-        var transparent = TransparentBackgroundRadio.IsChecked == true;
-#if OPENCV
-        if (VideoBackgroundRadio.IsChecked == true)
-        {
-            StartVideoStand( );
-        }
-        else if (videoPage is not null)
-        {
-            // 改选其他背景：视频停止，本页改用所选背景
-            videoPage = null;
-            StopVideoStand( );
-        }
-#endif
-
-        RefreshVideoBackground( );
-
-        TimeText.Visibility = transparent || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
-        SwitchOutButton.Visibility = transparent ? Visibility.Collapsed : Visibility.Visible;
-        LeftBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
-        CenterBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
-        RightBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
-        PassThroughBorder.Visibility = transparent ? Visibility.Visible : Visibility.Collapsed;
-        Topmost = transparent;
-    }
-
-    // 背景单选对应的画布底色
-    private Brush BackgroundBrush( )
-    {
-        return WhiteBackgroundRadio.IsChecked == true ? Brushes.White
-            : BlackBackgroundRadio.IsChecked == true ? Brushes.Black
-            : TransparentBackgroundRadio.IsChecked == true ? Brushes.Transparent
-            : MajorGridBrush;
-    }
-
-    // 视频背景仅在含 OpenCV 的构建中存在；nocv 构建的画布底色只随背景单选走
-#if !OPENCV
-    private void RefreshVideoBackground( )
-    {
-        CanvasNext.Background = BackgroundBrush( );
-    }
-#endif
-
-    private void BackgroundRadioClick(object o, RoutedEventArgs e)
-    {
-        if (o is not RadioButton { IsChecked: true })
-        {
-            return;
-        }
-
-#if OPENCV
-        // 组互斥在 Click 之前已取消其余单选，最近勾选的全局背景只能在这里记录
-        if (!ReferenceEquals(o, VideoBackgroundRadio))
-        {
-            globalBackgroundRadio = (RadioButton) o;
-        }
-#endif
-
-        ApplyBackground( );
-    }
-
     private void CloneClick(object o, RoutedEventArgs e)
     {
         if (CloneButton.IsChecked == true)
         {
-            if (!CanvasNext.HasSelection)
+            // 无选区时不改动印章：已有粘贴保持激活
+            if (CanvasNext.HasSelection)
             {
-                CloneButton.IsChecked = false;
-                return;
+                stamp = StampAction.Clone;
             }
-
-            PasteButton.IsChecked = false;
-            CanvasNext.StampAction = StampAction.Clone;
         }
-        else if (CanvasNext.StampAction == StampAction.Clone)
+        else if (stamp == StampAction.Clone)
         {
-            ExitStamp( );
+            stamp = StampAction.None;
         }
+
+        SyncToolState( );
     }
 
     private void CollapseExpandClick(object o, RoutedEventArgs e)
@@ -181,12 +118,12 @@ public partial class MainWindow
 
     private void ColorRadioChecked(object o, RoutedEventArgs e)
     {
-        ExitStamp( );
-
         if (o is not RadioButton { Background: SolidColorBrush brush } radio)
         {
             return;
         }
+
+        stamp = StampAction.None;
 
         // 形状模式下点当前已选中的颜色即取消形状回画笔；点其他颜色仅换笔保持形状
         if (IsShapeMode(Mode) && ReferenceEquals(radio, colorRadio))
@@ -234,7 +171,7 @@ public partial class MainWindow
             return;
         }
 
-        ExitStamp( );
+        stamp = StampAction.None;
 
         // 记录点击前的模式：用于识别"再点当前已激活的模式"（回退到画笔） 不能在退出高亮后再判断：从高亮态点模式 radio 属于新勾选，radio 也会被选中。
         var wasMode = Mode;
@@ -282,28 +219,24 @@ public partial class MainWindow
     {
         if (PasteButton.IsChecked == true)
         {
-            if (!Clipboard.ContainsData(StrokeCollection.InkSerializedFormat))
+            if (Clipboard.ContainsData(StrokeCollection.InkSerializedFormat))
             {
-                PasteButton.IsChecked = false;
-                return;
+                // 激活粘贴印章时退出其他模式回画笔
+                if (Mode == InkCanvasNextMode.Highlighter)
+                {
+                    ExitHighlighter( );
+                }
+
+                Mode = InkCanvasNextMode.Ink;
+                stamp = StampAction.Paste;
             }
-
-            CloneButton.IsChecked = false;
-
-            // 激活粘贴印章时退出其他模式回画笔；剪贴板为空时粘贴未生效，不扰动当前模式
-            if (Mode == InkCanvasNextMode.Highlighter)
-            {
-                ExitHighlighter( );
-            }
-
-            Mode = InkCanvasNextMode.Ink;
-            SyncToolState( );
-            CanvasNext.StampAction = StampAction.Paste;
         }
-        else if (CanvasNext.StampAction == StampAction.Paste)
+        else if (stamp == StampAction.Paste)
         {
-            ExitStamp( );
+            stamp = StampAction.None;
         }
+
+        SyncToolState( );
     }
 
     private void SettingsClick(object o, RoutedEventArgs e)
@@ -314,12 +247,12 @@ public partial class MainWindow
 
     private void ThicknessRadioClick(object o, RoutedEventArgs e)
     {
-        ExitStamp( );
-
         if (o is not RadioButton { MinWidth: double thickness } radio)
         {
             return;
         }
+
+        stamp = StampAction.None;
 
         // 形状模式下点当前已选中的粗细即取消形状回画笔；点其他粗细仅换笔保持形状
         if (IsShapeMode(Mode) && ReferenceEquals(radio, thicknessRadio))

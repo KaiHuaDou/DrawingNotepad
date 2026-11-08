@@ -221,7 +221,6 @@ public partial class InkCanvasNext
 
         lassoPath.Clear( );
         lassoSelected.Clear( );
-        lassoDragged = false;
 
         if (lassoTester is not null)
         {

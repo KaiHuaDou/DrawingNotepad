@@ -105,6 +105,25 @@ public class ToolbarHighlighterTests
     }
 
     [Fact]
+    public void ReenterHighlighter_ThenExit_RestoresPreviousTool( )
+    {
+        UiThread.Run(( ) =>
+        {
+            using var host = new MainWindowHost( );
+            ToolEntry.Enter(host, InkCanvasNextMode.Select);
+
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, false);
+
+            Assert.Equal(InkCanvasNextMode.Select, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Select, host.Canvas.Mode);
+            Assert.False(host.Window.HighlighterToggle.IsChecked);
+            ToolbarAssertions.AssertConsistent(host);
+        });
+    }
+
+    [Fact]
     public void ReclickHighlighter_WhileActive_IsIdempotent( )
     {
         UiThread.Run(( ) =>
