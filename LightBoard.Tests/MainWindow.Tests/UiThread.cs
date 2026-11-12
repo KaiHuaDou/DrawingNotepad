@@ -96,4 +96,14 @@ internal static class UiThread
             ExceptionDispatchInfo.Capture(error).Throw( );
         }
     }
+
+    /// <summary>处理 Dispatcher 队列指定时长，供等待动画、绑定与定时器推进</summary>
+    public static void Pump(TimeSpan duration)
+    {
+        var frame = new DispatcherFrame( );
+        var stop = new DispatcherTimer(duration, DispatcherPriority.Background, (_, _) => frame.Continue = false, Dispatcher.CurrentDispatcher);
+        stop.Start( );
+        Dispatcher.PushFrame(frame);
+        stop.Stop( );
+    }
 }

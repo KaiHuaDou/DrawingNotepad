@@ -2,14 +2,13 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 using LightBoard.Tests.Toolbar;
 
 namespace LightBoard.Tests;
 
-/// <summary>倒计时窗口：主题样式与绑定在构造时全部解析，尺寸跟随内容</summary>
+/// <summary>倒计时窗口：绑定在构造时全部解析，窗口尺寸不随开始与暂停变化</summary>
 [Collection("Toolbar")]
 public class TimerWindowTests
 {
@@ -36,8 +35,8 @@ public class TimerWindowTests
                 var hourUp = Assert.IsType<Button>(window.FindName("HourUpButton"));
                 Assert.Equal(Visibility.Visible, hourUp.Visibility);
 
-                var ring = Assert.IsType<Canvas>(window.FindName("RingCanvas"));
-                Assert.Equal(Visibility.Visible, ring.Visibility);
+                var dial = Assert.IsType<TimerDial>(window.FindName("Dial"));
+                Assert.Equal(Visibility.Visible, dial.Visibility);
             }
             finally
             {
@@ -47,7 +46,7 @@ public class TimerWindowTests
     }
 
     [Fact]
-    public void Ring_HiddenInCountup( )
+    public void Dial_HiddenInCountup( )
     {
         UiThread.Run(( ) =>
         {
@@ -57,12 +56,12 @@ public class TimerWindowTests
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
 
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                var ring = Assert.IsType<Canvas>(window.FindName("RingCanvas"));
+                var dial = Assert.IsType<TimerDial>(window.FindName("Dial"));
 
                 timer.SetMode(TimerMode.Countup);
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
 
-                Assert.Equal(Visibility.Collapsed, ring.Visibility);
+                Assert.Equal(Visibility.Collapsed, dial.Visibility);
             }
             finally
             {
@@ -72,7 +71,7 @@ public class TimerWindowTests
     }
 
     [Fact]
-    public void Ring_TakesDialWidth( )
+    public void Dial_TakesDigitWidth( )
     {
         UiThread.Run(( ) =>
         {
@@ -82,15 +81,15 @@ public class TimerWindowTests
                 window.Show( );
                 window.UpdateLayout( );
 
-                var dial = Assert.IsType<Border>(window.FindName("DialBorder"));
-                var ring = Assert.IsType<Canvas>(window.FindName("RingCanvas"));
+                var frame = Assert.IsType<Border>(window.FindName("DialBorder"));
+                var dial = Assert.IsType<TimerDial>(window.FindName("Dial"));
 
-                Assert.Equal(Math.Ceiling(dial.ActualWidth), ring.Width);
-                Assert.Equal(ring.Width, ring.Height);
+                Assert.Equal(frame.ActualWidth, dial.ActualWidth, 1);
+                Assert.Equal(dial.ActualWidth, dial.ActualHeight, 1);
 
                 // 窗口按内容定尺寸，环不能溢出客户区
-                Assert.True(window.ActualWidth > ring.Width);
-                Assert.True(window.ActualHeight > ring.Height);
+                Assert.True(window.ActualWidth > dial.ActualWidth);
+                Assert.True(window.ActualHeight > dial.ActualHeight);
             }
             finally
             {
@@ -100,7 +99,7 @@ public class TimerWindowTests
     }
 
     [Fact]
-    public void Ring_EndsAtThreeOClockForFifteenMinutes( )
+    public void Dial_ProgressFollowsMinutes( )
     {
         UiThread.Run(( ) =>
         {
@@ -111,17 +110,11 @@ public class TimerWindowTests
                 window.UpdateLayout( );
 
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                var ring = Assert.IsType<Canvas>(window.FindName("RingCanvas"));
-                var progress = Assert.IsType<Path>(window.FindName("RingProgressPath"));
+                var dial = Assert.IsType<TimerDial>(window.FindName("Dial"));
 
                 timer.SetMinutes(15);
 
-                // 12 点方向起顺时针扫过四分之一圈，止于 3 点
-                var bounds = progress.Data.Bounds;
-                Assert.Equal(ring.Width / 2, bounds.Left, 1);
-                Assert.Equal(ring.Width / 2, bounds.Bottom, 1);
-                Assert.True(bounds.Right > ring.Width / 2);
-                Assert.True(bounds.Top < ring.Width / 2);
+                Assert.Equal(0.25, dial.Progress, 3);
             }
             finally
             {
@@ -131,7 +124,7 @@ public class TimerWindowTests
     }
 
     [Fact]
-    public void Ring_FullAtRoundStart( )
+    public void Dial_FullAtRoundStart( )
     {
         UiThread.Run(( ) =>
         {
@@ -142,16 +135,13 @@ public class TimerWindowTests
                 window.UpdateLayout( );
 
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                var ring = Assert.IsType<Canvas>(window.FindName("RingCanvas"));
-                var progress = Assert.IsType<Path>(window.FindName("RingProgressPath"));
+                var dial = Assert.IsType<TimerDial>(window.FindName("Dial"));
 
                 timer.SetMinutes(55);
                 timer.Toggle( );
 
-                // 本轮刚开始时剩余量满圈，弧的外接盒只比正方形小一圈描边
-                var bounds = progress.Data.Bounds;
-                Assert.Equal(ring.Width - progress.StrokeThickness, bounds.Width, 1);
-                Assert.Equal(ring.Width - progress.StrokeThickness, bounds.Height, 1);
+                // 本轮刚开始时剩余量满圈
+                Assert.Equal(1.0, dial.Progress, 3);
             }
             finally
             {
@@ -161,7 +151,7 @@ public class TimerWindowTests
     }
 
     [Fact]
-    public void Start_ExpandsWindowToFitContent( )
+    public void Start_KeepsWindowSize( )
     {
         UiThread.Run(( ) =>
         {
@@ -169,20 +159,23 @@ public class TimerWindowTests
             try
             {
                 window.Show( );
-                Pump(TimeSpan.FromMilliseconds(200));
+                UiThread.Pump(TimeSpan.FromMilliseconds(200));
 
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                var content = Assert.IsType<FrameworkElement>(window.Content, exactMatch: false);
-                var before = window.ActualHeight;
+                var before = window.RenderSize;
 
                 timer.SetMinutes(5);
                 timer.Toggle( );
-                Pump(TimeSpan.FromMilliseconds(400));
+                UiThread.Pump(TimeSpan.FromMilliseconds(400));
 
-                // 秒位展开后内容变高，窗口跟着长；原本停在最小高度，内容被裁掉
-                Assert.True(window.ActualHeight > before);
-                Assert.True(window.ActualHeight >= content.DesiredSize.Height);
-                Assert.True(window.ActualWidth >= content.DesiredSize.Width);
+                // 秒位不参与宽度：两个状态各自居中，开始计时不改变窗口尺寸
+                Assert.Equal(before.Width, window.RenderSize.Width, 1);
+                Assert.Equal(before.Height, window.RenderSize.Height, 1);
+
+                var shortLayer = Assert.IsType<Grid>(window.FindName("ShortLayer"));
+                var fullLayer = Assert.IsType<StackPanel>(window.FindName("FullLayer"));
+                Assert.Equal(Visibility.Hidden, shortLayer.Visibility);
+                Assert.Equal(Visibility.Visible, fullLayer.Visibility);
             }
             finally
             {
@@ -192,7 +185,36 @@ public class TimerWindowTests
     }
 
     [Fact]
-    public void Fullscreen_TogglesSizeToContent( )
+    public void Paused_DimsDial( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new TimerWindow( );
+            try
+            {
+                window.Show( );
+                window.UpdateLayout( );
+
+                var timer = Assert.IsType<TimerViewModel>(window.DataContext);
+                var dial = Assert.IsType<TimerDial>(window.FindName("Dial"));
+
+                timer.SetMinutes(5);
+                timer.Toggle( );
+                timer.Toggle( );
+                window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
+
+                Assert.True(timer.IsPaused);
+                Assert.True(dial.IsPaused);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Fullscreen_BackgroundClickRestores( )
     {
         UiThread.Run(( ) =>
         {
@@ -206,23 +228,204 @@ public class TimerWindowTests
 
                 var button = Assert.IsType<Button>(window.FindName("FullscreenButton"));
                 button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Pump(TimeSpan.FromMilliseconds(200));
+                WaitFor(( ) => window.WindowState == WindowState.Maximized, TimeSpan.FromSeconds(2));
 
                 // 由内容定尺寸的窗口最大化会缩回内容大小，全屏期间必须是手动尺寸
                 Assert.Equal(WindowState.Maximized, window.WindowState);
                 Assert.Equal(SizeToContent.Manual, window.SizeToContent);
                 Assert.True(window.ActualWidth > size.Width);
 
-                window.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left)
-                {
-                    RoutedEvent = UIElement.MouseLeftButtonDownEvent,
-                });
-                Pump(TimeSpan.FromMilliseconds(400));
+                Click(window);
+                WaitFor(( ) => window.WindowState == WindowState.Normal, TimeSpan.FromSeconds(2));
+                UiThread.Pump(TimeSpan.FromMilliseconds(400));
 
                 Assert.Equal(WindowState.Normal, window.WindowState);
                 Assert.Equal(SizeToContent.WidthAndHeight, window.SizeToContent);
                 Assert.Equal(size.Width, window.ActualWidth, 1);
                 Assert.Equal(size.Height, window.ActualHeight, 1);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Key_SpaceTogglesRound( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new TimerWindow( );
+            try
+            {
+                window.Show( );
+                window.UpdateLayout( );
+
+                var timer = Assert.IsType<TimerViewModel>(window.DataContext);
+                timer.SetMinutes(5);
+
+                Press(window, Key.Space);
+                Assert.True(timer.IsActive);
+
+                Press(window, Key.Space);
+                Assert.True(timer.IsPaused);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Key_ArrowsAdjustMinutes( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new TimerWindow( );
+            try
+            {
+                window.Show( );
+                window.UpdateLayout( );
+
+                var timer = Assert.IsType<TimerViewModel>(window.DataContext);
+                timer.SetMinutes(10);
+
+                Press(window, Key.Right);
+                Assert.Equal(15, timer.Minutes);
+
+                Press(window, Key.Left);
+                Assert.Equal(10, timer.Minutes);
+
+                Press(window, Key.Up);
+                Assert.Equal(11, timer.Minutes);
+
+                Press(window, Key.Down);
+                Assert.Equal(10, timer.Minutes);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Key_ResetsPausedRound( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new TimerWindow( );
+            try
+            {
+                window.Show( );
+                window.UpdateLayout( );
+
+                var timer = Assert.IsType<TimerViewModel>(window.DataContext);
+                timer.SetMinutes(5);
+
+                Press(window, Key.Space);
+                Press(window, Key.Space);
+                Press(window, Key.R);
+
+                Assert.True(timer.IsIdle);
+                Assert.Equal(5, timer.Minutes);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Reset_KeepsWindowSize( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new TimerWindow( );
+            try
+            {
+                window.Show( );
+                UiThread.Pump(TimeSpan.FromMilliseconds(200));
+
+                var timer = Assert.IsType<TimerViewModel>(window.DataContext);
+                timer.SetMinutes(5);
+                timer.Toggle( );
+                timer.Toggle( );
+                UiThread.Pump(TimeSpan.FromMilliseconds(200));
+
+                var paused = window.RenderSize;
+
+                timer.Reset( );
+                UiThread.Pump(TimeSpan.FromMilliseconds(200));
+
+                Assert.True(timer.IsIdle);
+                Assert.Equal(paused.Width, window.RenderSize.Width, 1);
+                Assert.Equal(paused.Height, window.RenderSize.Height, 1);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Fullscreen_EscapeRestores( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new TimerWindow( );
+            try
+            {
+                window.Show( );
+                window.UpdateLayout( );
+
+                var button = Assert.IsType<Button>(window.FindName("FullscreenButton"));
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                WaitFor(( ) => window.WindowState == WindowState.Maximized, TimeSpan.FromSeconds(2));
+                Assert.Equal(WindowState.Maximized, window.WindowState);
+
+                Press(window, Key.Escape);
+                WaitFor(( ) => window.WindowState == WindowState.Normal, TimeSpan.FromSeconds(2));
+
+                Assert.Equal(WindowState.Normal, window.WindowState);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Fullscreen_SpaceStartsRound( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new TimerWindow( );
+            try
+            {
+                window.Show( );
+                window.UpdateLayout( );
+
+                var timer = Assert.IsType<TimerViewModel>(window.DataContext);
+                var radio = Assert.IsType<RadioButton>(window.FindName("CountdownRadio"));
+                radio.Focus( );
+                Assert.True(radio.IsKeyboardFocused);
+
+                timer.SetMinutes(5);
+
+                var button = Assert.IsType<Button>(window.FindName("FullscreenButton"));
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                WaitFor(( ) => window.WindowState == WindowState.Maximized, TimeSpan.FromSeconds(2));
+
+                // 焦点仍停在已折叠的单选框上，空格要落到窗口
+                Press(window, Key.Space);
+
+                Assert.True(timer.IsActive);
             }
             finally
             {
@@ -244,21 +447,19 @@ public class TimerWindowTests
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
                 timer.SetMinutes(5);
                 timer.Toggle( );
-                Pump(TimeSpan.FromMilliseconds(400));
+                UiThread.Pump(TimeSpan.FromMilliseconds(400));
 
                 var running = window.RenderSize;
 
                 var button = Assert.IsType<Button>(window.FindName("FullscreenButton"));
                 button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Pump(TimeSpan.FromMilliseconds(200));
+                WaitFor(( ) => window.WindowState == WindowState.Maximized, TimeSpan.FromSeconds(2));
 
-                window.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left)
-                {
-                    RoutedEvent = UIElement.MouseLeftButtonDownEvent,
-                });
-                Pump(TimeSpan.FromMilliseconds(400));
+                Click(window);
+                WaitFor(( ) => window.WindowState == WindowState.Normal, TimeSpan.FromSeconds(2));
+                UiThread.Pump(TimeSpan.FromMilliseconds(400));
 
-                // 全屏期间字号放大、调整按钮与环收起，退出后要一并回到全屏前，否则窗口比进入前大一圈
+                // 全屏期间字号放大、调整按钮与环收起，退出后要一并回到全屏前
                 Assert.Equal(running.Width, window.ActualWidth, 1);
                 Assert.Equal(running.Height, window.ActualHeight, 1);
             }
@@ -269,12 +470,34 @@ public class TimerWindowTests
         });
     }
 
-    private static void Pump(TimeSpan duration)
+    private static void Click(Window window)
     {
-        var frame = new DispatcherFrame( );
-        var stop = new DispatcherTimer(duration, DispatcherPriority.Background, (_, _) => frame.Continue = false, Dispatcher.CurrentDispatcher);
-        stop.Start( );
-        Dispatcher.PushFrame(frame);
-        stop.Stop( );
+        window.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left)
+        {
+            RoutedEvent = UIElement.MouseLeftButtonDownEvent,
+        });
+    }
+
+    // 窗口状态由系统消息循环落地，固定时长会漏拍，按条件推进
+    private static void WaitFor(Func<bool> condition, TimeSpan timeout)
+    {
+        var deadline = Environment.TickCount64 + (long) timeout.TotalMilliseconds;
+
+        while (!condition( ) && Environment.TickCount64 < deadline)
+        {
+            UiThread.Pump(TimeSpan.FromMilliseconds(20));
+        }
+    }
+
+    private static void Press(Window window, Key key)
+    {
+        window.RaiseEvent(new KeyEventArgs(
+            Keyboard.PrimaryDevice,
+            PresentationSource.FromVisual(window),
+            0,
+            key)
+        {
+            RoutedEvent = Keyboard.PreviewKeyDownEvent,
+        });
     }
 }

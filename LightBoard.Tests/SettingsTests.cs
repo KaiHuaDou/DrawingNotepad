@@ -25,7 +25,6 @@ public class SettingsTests
         var roundTrip = JsonSerializer.Deserialize(json, SettingsSerializerContext.Default.LightBoardSettings);
 
         Assert.Equal(data, roundTrip);
-        Assert.DoesNotContain("\"CanvasOptions\"", json);
     }
 
     [Fact]
@@ -49,17 +48,17 @@ public class SettingsTests
     }
 
     [Fact]
-    public void CanvasOptions_CompareByValue( )
+    public void CreateCanvasOptions_CompareByValue( )
     {
-        var a = new LightBoardSettings( ).CanvasOptions;
-        var b = new LightBoardSettings( ).CanvasOptions;
+        var a = new LightBoardSettings( ).CreateCanvasOptions( );
+        var b = new LightBoardSettings( ).CreateCanvasOptions( );
 
         Assert.Equal(a, b);
-        Assert.NotEqual(a, new LightBoardSettings { EraserPalmExtra = 9 }.CanvasOptions);
+        Assert.NotEqual(a, new LightBoardSettings { EraserPalmExtra = 9 }.CreateCanvasOptions( ));
     }
 
     [Fact]
-    public void CanvasOptions_MapsAllFields( )
+    public void CreateCanvasOptions_MapsAllFields( )
     {
         var data = new LightBoardSettings
         {
@@ -80,7 +79,7 @@ public class SettingsTests
             EraserRebuildThreshold = 0.25
         };
 
-        var options = data.CanvasOptions;
+        var options = data.CreateCanvasOptions( );
 
         Assert.Equal(4, options.PalmEraseFingers);
         Assert.Equal(21, options.TouchDisplacementThreshold);
@@ -99,7 +98,7 @@ public class SettingsTests
     }
 
     [Fact]
-    public void CanvasOptions_EdgeScrollEnabled_PassesThresholds( )
+    public void CreateCanvasOptions_EdgeScrollEnabled_PassesThresholds( )
     {
         var options = new LightBoardSettings
         {
@@ -108,7 +107,7 @@ public class SettingsTests
             EdgeScrollBottomThreshold = 193,
             EdgeScrollLeftThreshold = 65,
             EdgeScrollRightThreshold = 97
-        }.CanvasOptions;
+        }.CreateCanvasOptions( );
 
         Assert.Equal(65, options.EdgeScrollTopThreshold);
         Assert.Equal(193, options.EdgeScrollBottomThreshold);

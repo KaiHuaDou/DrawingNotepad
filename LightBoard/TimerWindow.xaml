@@ -8,6 +8,7 @@
         Background="#141414"
         Foreground="#E6E6E6"
         MouseLeftButtonDown="WindowMouseLeftButtonDown"
+        PreviewKeyDown="WindowKeyDown"
         ResizeMode="CanMinimize"
         ShowInTaskbar="False"
         SizeToContent="WidthAndHeight"
@@ -16,8 +17,6 @@
     <Window.Resources>
         <SolidColorBrush x:Key="TimerDigitBrush" Color="#E6E6E6" />
         <SolidColorBrush x:Key="TimerAlertBrush" Color="#FF5252" />
-        <SolidColorBrush x:Key="TimerRingBrush" Color="#D8FFFFFF" />
-        <SolidColorBrush x:Key="TimerRingTrackBrush" Color="#333333" />
 
         <Style x:Key="TimerDigitStyle" TargetType="{x:Type TextBlock}">
             <Setter Property="FontFamily" Value="Consolas" />
@@ -46,7 +45,8 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="TimerFrameStyle" TargetType="{x:Type FrameworkElement}">
+        <!--全屏只留数字：顶部行与主按钮共用同一处折叠条件-->
+        <Style x:Key="HideInFullscreen" TargetType="{x:Type FrameworkElement}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="Maximized">
                     <Setter Property="Visibility" Value="Collapsed" />
@@ -54,8 +54,24 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="TimerMainButtonStyle" BasedOn="{StaticResource ButtonStyle}" TargetType="{x:Type Button}">
+            <Setter Property="Width" Value="72" />
+            <Setter Property="Height" Value="72" />
+            <Setter Property="FontSize" Value="34" />
+            <Setter Property="Tag" Value="&#xE768;" />
+            <Setter Property="ToolTip" Value="开始 / 暂停" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                    <Setter Property="Tag" Value="&#xE769;" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <!--环的可见性跟随倒计时模式，全屏时让位给数字-->
-        <Style x:Key="TimerRingAreaStyle" TargetType="{x:Type Canvas}">
+        <Style x:Key="TimerDialStyle" TargetType="{x:Type local:TimerDial}">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="IsHitTestVisible" Value="False" />
             <Setter Property="Visibility" Value="Collapsed" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsCountdown}" Value="True">
@@ -67,13 +83,30 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="TimerRingProgressStyle" TargetType="{x:Type Path}">
-            <Setter Property="Stroke" Value="{StaticResource TimerRingBrush}" />
-            <Setter Property="StrokeStartLineCap" Value="Round" />
-            <Setter Property="StrokeEndLineCap" Value="Round" />
+        <!--暂停时数字变暗，与环的半透明同步-->
+        <Style x:Key="TimerDigitsFrameStyle" TargetType="{x:Type Border}">
             <Style.Triggers>
-                <DataTrigger Binding="{Binding IsAlerting}" Value="True">
-                    <Setter Property="Stroke" Value="{StaticResource TimerAlertBrush}" />
+                <DataTrigger Binding="{Binding IsPaused}" Value="True">
+                    <Setter Property="Opacity" Value="0.6" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!--未开始：时与分各自居中，秒位不参与这一层的宽度-->
+        <Style x:Key="TimerShortLayerStyle" TargetType="{x:Type Grid}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsIdle}" Value="False">
+                    <Setter Property="Visibility" Value="Hidden" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!--本轮内：带秒的一行居中；与上一行叠放，容器宽度取较宽的一份-->
+        <Style x:Key="TimerFullLayerStyle" TargetType="{x:Type StackPanel}">
+            <Setter Property="Visibility" Value="Hidden" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsIdle}" Value="False">
+                    <Setter Property="Visibility" Value="Visible" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -84,27 +117,31 @@
 
     <StackPanel Margin="50,0,50,0" VerticalAlignment="Center">
         <StackPanel Margin="0,0,0,25" HorizontalAlignment="Center"
-                    Style="{StaticResource TimerFrameStyle}"
-                    Orientation="Horizontal">
+                    Orientation="Horizontal"
+                    Style="{StaticResource HideInFullscreen}">
             <RadioButton x:Name="CountdownRadio"
                          Margin="0,0,10,0"
                          IsChecked="True"
                          IsEnabled="{Binding IsIdle}"
                          Style="{StaticResource LabelledRadioStyle}"
+                         ToolTip="倒计时"
                          Click="ModeClick" Content="倒计时" GroupName="TimeModeRadio" />
             <RadioButton x:Name="CountupRadio"
                          Margin="10,0,10,0"
                          IsEnabled="{Binding IsIdle}"
                          Style="{StaticResource LabelledRadioStyle}"
+                         ToolTip="计时器"
                          Click="ModeClick" Content="计时器" GroupName="TimeModeRadio" />
             <Button x:Name="ResetButton"
                     Margin="10,0,0,0"
                     IsEnabled="{Binding CanReset}"
                     Style="{StaticResource ButtonStyle}"
+                    ToolTip="重置本轮"
                     Click="ResetClick" Tag="&#xE72C;" />
             <Button x:Name="FullscreenButton"
                     Margin="10,0,0,0"
                     Style="{StaticResource ButtonStyle}"
+                    ToolTip="全屏"
                     Click="FullscreenClick" Tag="&#xE740;" />
         </StackPanel>
         <Grid x:Name="ClockGrid"
@@ -112,54 +149,82 @@
               Background="Transparent"
               MouseLeftButtonDown="ClockMouseLeftButtonDown"
               MouseLeftButtonUp="ClockMouseLeftButtonUp" MouseMove="ClockMouseMove">
-            <Canvas x:Name="RingCanvas"
-                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                    Style="{StaticResource TimerRingAreaStyle}">
-                <Path x:Name="RingTrackPath" Stroke="{StaticResource TimerRingTrackBrush}" StrokeThickness="8" />
-                <Path x:Name="RingProgressPath" Style="{StaticResource TimerRingProgressStyle}" StrokeThickness="8" />
-            </Canvas>
+            <local:TimerDial x:Name="Dial"
+                             Width="{Binding ActualWidth, ElementName=DialBorder}"
+                             Height="{Binding ActualWidth, ElementName=DialBorder}"
+                             Style="{StaticResource TimerDialStyle}"
+                             IsAlerting="{Binding IsAlerting}"
+                             IsPaused="{Binding IsPaused}" />
             <!--内边距让出描边，环的外接方边长取这一块的宽度-->
             <Border x:Name="DialBorder"
                     Padding="32" HorizontalAlignment="Center" VerticalAlignment="Center"
-                    SizeChanged="DialSizeChanged">
+                    Style="{StaticResource TimerDigitsFrameStyle}">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Button x:Name="HourUpButton"
-                            Grid.Row="0" Grid.Column="0"
-                            HorizontalAlignment="Center"
-                            Style="{StaticResource TimerAdjustButtonStyle}"
-                            Click="HourClick" Tag="&#xE710;" />
-                    <Button x:Name="MinuteUpButton"
-                            Grid.Row="0" Grid.Column="2"
-                            HorizontalAlignment="Center"
-                            Style="{StaticResource TimerAdjustButtonStyle}"
-                            Click="MinuteClick" Tag="&#xE710;" />
-                    <TextBlock Grid.Row="1" Grid.Column="0"
-                               Margin="0,20,0,20" HorizontalAlignment="Center"
-                               Style="{StaticResource TimerDigitStyle}"
-                               Text="{Binding Hours, StringFormat={}{0:00}}" />
-                    <TextBlock Grid.Row="1" Grid.Column="1"
-                               Margin="0,20,0,20" HorizontalAlignment="Center"
-                               Style="{StaticResource TimerDigitStyle}"
-                               Text=":" />
-                    <TextBlock Grid.Row="1" Grid.Column="2"
-                               Margin="0,20,0,20" HorizontalAlignment="Center"
-                               Style="{StaticResource TimerDigitStyle}"
-                               Text="{Binding Minutes, StringFormat={}{0:00}}" />
-                    <StackPanel x:Name="SecondsPanel"
-                                Grid.Row="1" Grid.Column="3"
-                                Width="0"
-                                ClipToBounds="True" Orientation="Horizontal">
+                    <Grid x:Name="ShortLayer"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                          Style="{StaticResource TimerShortLayerStyle}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Button x:Name="HourUpButton"
+                                Grid.Row="0" Grid.Column="0"
+                                HorizontalAlignment="Center"
+                                Style="{StaticResource TimerAdjustButtonStyle}"
+                                ToolTip="加一小时"
+                                Click="HourClick" Tag="&#xE710;" />
+                        <Button x:Name="MinuteUpButton"
+                                Grid.Row="0" Grid.Column="2"
+                                HorizontalAlignment="Center"
+                                Style="{StaticResource TimerAdjustButtonStyle}"
+                                ToolTip="加一分钟"
+                                Click="MinuteClick" Tag="&#xE710;" />
+                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                   Margin="0,20,0,20" HorizontalAlignment="Center"
+                                   Style="{StaticResource TimerDigitStyle}"
+                                   Text="{Binding Hours, StringFormat={}{0:00}}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1"
+                                   Margin="0,20,0,20" HorizontalAlignment="Center"
+                                   Style="{StaticResource TimerDigitStyle}"
+                                   Text=":" />
+                        <TextBlock Grid.Row="1" Grid.Column="2"
+                                   Margin="0,20,0,20" HorizontalAlignment="Center"
+                                   Style="{StaticResource TimerDigitStyle}"
+                                   Text="{Binding Minutes, StringFormat={}{0:00}}" />
+                        <Button x:Name="HourDownButton"
+                                Grid.Row="2" Grid.Column="0"
+                                HorizontalAlignment="Center"
+                                IsEnabled="{Binding CanDecreaseHour}"
+                                Style="{StaticResource TimerAdjustButtonStyle}"
+                                ToolTip="减一小时"
+                                Click="HourClick" Tag="&#xE738;" />
+                        <Button x:Name="MinuteDownButton"
+                                Grid.Row="2" Grid.Column="2"
+                                HorizontalAlignment="Center"
+                                IsEnabled="{Binding CanDecreaseMinute}"
+                                Style="{StaticResource TimerAdjustButtonStyle}"
+                                ToolTip="减一分钟"
+                                Click="MinuteClick" Tag="&#xE738;" />
+                    </Grid>
+                    <StackPanel x:Name="FullLayer"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Style="{StaticResource TimerFullLayerStyle}">
+                        <TextBlock Margin="0,20,0,20" HorizontalAlignment="Center"
+                                   Style="{StaticResource TimerDigitStyle}"
+                                   Text="{Binding Hours, StringFormat={}{0:00}}" />
+                        <TextBlock Margin="0,20,0,20" HorizontalAlignment="Center"
+                                   Style="{StaticResource TimerDigitStyle}"
+                                   Text=":" />
+                        <TextBlock Margin="0,20,0,20" HorizontalAlignment="Center"
+                                   Style="{StaticResource TimerDigitStyle}"
+                                   Text="{Binding Minutes, StringFormat={}{0:00}}" />
                         <TextBlock Margin="0,20,0,20" HorizontalAlignment="Center"
                                    Style="{StaticResource TimerDigitStyle}"
                                    Text=":" />
@@ -167,40 +232,14 @@
                                    Style="{StaticResource TimerDigitStyle}"
                                    Text="{Binding Seconds, StringFormat={}{0:00}}" />
                     </StackPanel>
-                    <Button x:Name="HourDownButton"
-                            Grid.Row="2" Grid.Column="0"
-                            HorizontalAlignment="Center"
-                            IsEnabled="{Binding CanDecreaseHour}"
-                            Style="{StaticResource TimerAdjustButtonStyle}"
-                            Click="HourClick" Tag="&#xE738;" />
-                    <Button x:Name="MinuteDownButton"
-                            Grid.Row="2" Grid.Column="2"
-                            HorizontalAlignment="Center"
-                            IsEnabled="{Binding CanDecreaseMinute}"
-                            Style="{StaticResource TimerAdjustButtonStyle}"
-                            Click="MinuteClick" Tag="&#xE738;" />
                 </Grid>
             </Border>
         </Grid>
-        <Button x:Name="TimerButton"
-                Width="72" Height="72"
-                HorizontalAlignment="Center"
-                IsEnabled="{Binding CanToggle}"
-                FontSize="34"
-                Click="TimerClick">
-            <Button.Style>
-                <Style BasedOn="{StaticResource ButtonStyle}" TargetType="{x:Type Button}">
-                    <Setter Property="Tag" Value="&#xE768;" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsActive}" Value="True">
-                            <Setter Property="Tag" Value="&#xE769;" />
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="Maximized">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Button.Style>
-        </Button>
+        <Grid Style="{StaticResource HideInFullscreen}">
+            <Button x:Name="TimerButton"
+                    IsEnabled="{Binding CanToggle}"
+                    Style="{StaticResource TimerMainButtonStyle}"
+                    Click="TimerClick" />
+        </Grid>
     </StackPanel>
 </Window>

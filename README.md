@@ -175,6 +175,10 @@ Arm64 使用 `FolderProfileArm64` 与 `SelfContainedArm64`，产物在 `LightBoa
 - [更新日志](CHANGELOG.md)
 - [路线图](docs/ROADMAP.md)
 
+## LLM 声明
+
+- 所有测试都是 AI 写的，文档编写用了不少 AI 辅助。
+
 ## 许可证
 
 本项目以 [Apache-2.0 License](http://www.apache.org/licenses/) 提供。

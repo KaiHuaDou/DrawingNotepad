@@ -1,7 +1,5 @@
 using System;
 
-using System.Text.Json.Serialization;
-
 using InkCanvasNext;
 
 namespace LightBoard;
@@ -32,29 +30,31 @@ public record LightBoardSettings(
     public const double ToolbarScaleDefault = SettingsLimits.ToolbarScaleDefault;
 
     /// <summary>
-    /// 创建画布时读取的选项，改动需重启
+    /// 按当前设置创建画布选项；每次调用返回新实例
     /// </summary>
-    [JsonIgnore]
-    public InkCanvasNextOptions CanvasOptions => new( )
+    public InkCanvasNextOptions CreateCanvasOptions( )
     {
-        PalmEraseFingers = PalmEraseFingers,
-        TouchDisplacementThreshold = TouchDisplacementThreshold,
-        PanZoomDisplaceThreshold = PanZoomDisplaceThreshold,
-        PinchLockDistance = PinchLockDistance,
-        SmoothZoom = SmoothZoom,
-        EdgeScrollTopThreshold = EdgeScrollHint ? EdgeScrollTopThreshold : 0,
-        EdgeScrollBottomThreshold = EdgeScrollHint ? EdgeScrollBottomThreshold : 0,
-        EdgeScrollLeftThreshold = EdgeScrollHint ? EdgeScrollLeftThreshold : 0,
-        EdgeScrollRightThreshold = EdgeScrollHint ? EdgeScrollRightThreshold : 0,
-        MaxHistoryCount = MaxHistoryCount,
-        Eraser = new( )
+        return new( )
         {
-            Diameter = EraserDiameter,
-            PalmExtra = EraserPalmExtra,
-            MinLogicalDiameter = EraserMinLogicalDiameter,
-            RebuildThreshold = EraserRebuildThreshold
-        }
-    };
+            PalmEraseFingers = PalmEraseFingers,
+            TouchDisplacementThreshold = TouchDisplacementThreshold,
+            PanZoomDisplaceThreshold = PanZoomDisplaceThreshold,
+            PinchLockDistance = PinchLockDistance,
+            SmoothZoom = SmoothZoom,
+            EdgeScrollTopThreshold = EdgeScrollHint ? EdgeScrollTopThreshold : 0,
+            EdgeScrollBottomThreshold = EdgeScrollHint ? EdgeScrollBottomThreshold : 0,
+            EdgeScrollLeftThreshold = EdgeScrollHint ? EdgeScrollLeftThreshold : 0,
+            EdgeScrollRightThreshold = EdgeScrollHint ? EdgeScrollRightThreshold : 0,
+            MaxHistoryCount = MaxHistoryCount,
+            Eraser = new( )
+            {
+                Diameter = EraserDiameter,
+                PalmExtra = EraserPalmExtra,
+                MinLogicalDiameter = EraserMinLogicalDiameter,
+                RebuildThreshold = EraserRebuildThreshold
+            }
+        };
+    }
 
     /// <summary>
     /// 把手工改过的越界值收进可选范围：设置窗口与画布都按返回值工作

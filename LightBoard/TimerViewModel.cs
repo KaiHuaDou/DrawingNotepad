@@ -65,6 +65,11 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     /// </summary>
     public event EventHandler? DisplayChanged;
 
+    /// <summary>
+    /// 倒数到零时触发一次，此刻状态已回到 <see cref="TimerState.Idle"/>
+    /// </summary>
+    public event EventHandler? Finished;
+
     public string Title => mode == TimerMode.Countdown ? "倒计时" : "计时器";
 
     public int Hours => totalSeconds / 3600;
@@ -89,6 +94,11 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     public bool IsIdle => state == TimerState.Idle;
 
     public bool IsAlerting => state == TimerState.Alerting;
+
+    /// <summary>
+    /// 本轮暂停中
+    /// </summary>
+    public bool IsPaused => state == TimerState.Paused;
 
     /// <summary>
     /// 倒计时在本轮内（推进或暂停）时按进度显示
@@ -233,6 +243,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
             Raise(nameof(IsActive));
             Raise(nameof(IsIdle));
             Raise(nameof(IsAlerting));
+            Raise(nameof(IsPaused));
             Raise(nameof(IsAdjustable));
             Raise(nameof(CanToggle));
             Raise(nameof(CanReset));
@@ -255,6 +266,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
             if (value <= TimeSpan.Zero)
             {
                 SetState(TimerState.Idle);
+                Finished?.Invoke(this, EventArgs.Empty);
             }
             else if (value <= AlertSpan)
             {

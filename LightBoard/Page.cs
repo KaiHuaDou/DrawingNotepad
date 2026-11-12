@@ -155,10 +155,10 @@ public partial class App
         // 与 PDF 导出一致：空白页与只有背景的页同样导出，页码与页面列表一一对应
         for (var i = 0; i < count; i++)
         {
-            var snapshot = Current.Dispatcher.Invoke(( ) => SnapshotPage(pages[i]));
-            var fileName = Path.Join(directory, $"{snapshot.Number.ToString( ).PadLeft(pad, '0')}.png");
+            var (Number, Strokes, Background, Box) = Current.Dispatcher.Invoke(( ) => SnapshotPage(pages[i]));
+            var fileName = Path.Join(directory, $"{Number.ToString( ).PadLeft(pad, '0')}.png");
 
-            snapshot.Strokes.ExportPng(fileName, dpi, scale, background: snapshot.Background, box: snapshot.Box);
+            Strokes.ExportPng(fileName, dpi, scale, background: Background, box: Box);
             progress?.Report(new(tip, i + 1, count));
         }
     }

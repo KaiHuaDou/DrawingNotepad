@@ -303,4 +303,33 @@ public class TimerViewModelTests
             }
         });
     }
+
+    [Fact]
+    public void Finish_AtZero_RaisesFinishedOnce( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var timer = new TimerViewModel( );
+            try
+            {
+                var raised = 0;
+                timer.Finished += (_, _) => raised++;
+
+                timer.SetMinutes(1);
+                timer.Adjust(TimeSpan.FromSeconds(-59));
+                timer.Toggle( );
+
+                Assert.True(timer.IsAlerting);
+
+                UiThread.Pump(TimeSpan.FromSeconds(2));
+
+                Assert.True(timer.IsIdle);
+                Assert.Equal(1, raised);
+            }
+            finally
+            {
+                timer.Stop( );
+            }
+        });
+    }
 }

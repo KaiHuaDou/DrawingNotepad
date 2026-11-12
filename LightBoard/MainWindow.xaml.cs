@@ -45,7 +45,7 @@ public partial class MainWindow : Window
         SettingsStore.Load( );
         ApplyToolbarScale( );
 
-        CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset, SettingsStore.Current.CanvasOptions)
+        CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset, SettingsStore.Current.CreateCanvasOptions( ))
         {
             Background = MajorGridBrush
         };
