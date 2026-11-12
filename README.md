@@ -3,10 +3,10 @@
 [![Release](https://img.shields.io/github/v/release/KaiHuaDou/DrawingNotepad)](https://github.com/KaiHuaDou/DrawingNotepad/releases/latest)
 [![Build](https://img.shields.io/github/actions/workflow/status/KaiHuaDou/DrawingNotepad/build.yml?branch=master&label=Build)](https://github.com/KaiHuaDou/DrawingNotepad/actions/workflows/build.yml)
 [![License](https://img.shields.io/github/license/KaiHuaDou/DrawingNotepad)](LICENSE)
-[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/10.0)
+[![.NET](https://img.shields.io/badge/.NET-11.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/11.0)
 [![Platform](https://img.shields.io/badge/Windows-7%20SP1%2B-0078D6)](#系统要求)
 
-基于 .NET 10 和 WPF 的全屏白板，用于课堂书写与课件批注。
+基于 .NET 11 和 WPF 的全屏白板，用于课堂书写与课件批注。
 
 - 即开即用
 - 设计经过实地课堂检验，按课堂反馈持续改进
@@ -109,12 +109,12 @@
 
 从 [Releases](https://github.com/KaiHuaDou/DrawingNotepad/releases/latest) 下载：
 
-- `LightBoard-x64-<版本>.zip`：免安装（框架依赖），需要 .NET 10 桌面运行时
+- `LightBoard-x64-<版本>.zip`：免安装（框架依赖），需要 .NET 11 桌面运行时
 - `LightBoard-runtime-x64-<版本>.zip`：免安装（自包含）
 - `LightBoard-nocv-x64-<版本>.zip`、`LightBoard-nocv-runtime-x64-<版本>.zip`：同上，不含 OpenCV（无视频展台）
 - `LightBoard-arm64-<版本>.zip`、`LightBoard-runtime-arm64-<版本>.zip`：Windows Arm64，其余同上
 - `LightBoard-nocv-arm64-<版本>.zip`、`LightBoard-nocv-runtime-arm64-<版本>.zip`：Windows Arm64，不含 OpenCV
-- `LightBoard-installer-x64-<版本>.exe`：安装包（框架依赖），需要 .NET 10 桌面运行时
+- `LightBoard-installer-x64-<版本>.exe`：安装包（框架依赖），需要 .NET 11 桌面运行时
 - `LightBoard-installer-runtime-x64-<版本>.exe`：安装包（自包含）
 - `LightBoard-installer-nocv-x64-<版本>.exe`、`LightBoard-installer-nocv-runtime-x64-<版本>.exe`：同上，不含 OpenCV（无视频展台）
 - `LightBoard-installer-arm64-<版本>.exe`、`LightBoard-installer-runtime-arm64-<版本>.exe`：Windows Arm64 安装包
@@ -125,12 +125,12 @@
 ## 系统要求
 
 - Windows 7 SP1 或更新版本
-    - 已测试：Windows 7 SP1 上可安装 .NET 10.0 Desktop Runtime 并运行本程序
+    - 已测试：Windows 7 SP1 上可安装 .NET 11.0 Desktop Runtime 并运行本程序
     - 安装包（`LightBoard-installer-*.exe`）需要 Windows 10 或更新版本
 - Windows 11 Arm（Arm64 变体）
     - 安装包（`LightBoard-installer-*-arm64.exe`）需要 Windows 11 Arm
-    - 免安装包需要 Arm64 版 .NET 10 桌面运行时，Windows 10 Arm 未测试
-- .NET 10.0 Desktop Runtime（x64 或 Arm64）或更新版本
+    - 免安装包需要 Arm64 版 .NET 11 桌面运行时，Windows 10 Arm 未测试
+- .NET 11.0 Desktop Runtime（x64 或 Arm64）或更新版本
     - 使用 `runtime` 版本可免安装运行时
 - Microsoft Office（打开 Office 文档时需要）
     - 需要已激活版本，部分绿色版本需确认 COM 组件已注册
@@ -141,7 +141,7 @@
 
 - IDE：Visual Studio Community 2026 或更新版本
   - 工作负载 「C# 桌面开发」
-- .NET **10.0** SDK 或更新版本（`LangVersion` 为 `preview`）
+- .NET **11.0** SDK 或更新版本（`LangVersion` 为 `preview`）
 
 ```bash
 dotnet publish LightBoard -p:PublishProfile=FolderProfile -c Release    # 框架依赖

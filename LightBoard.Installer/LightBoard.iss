@@ -11,7 +11,7 @@
 ;   自包含版 ← LightBoard/bin/publish[-nocv][-runtime]-<架构>
 ;   架构取 x64 或 arm64，发布命令见 README 的「构建」。
 ;
-; 框架依赖版在运行时缺失时，在 PrepareToInstall 阶段从 aka.ms 下载最新 .NET 10 Desktop Runtime
+; 框架依赖版在运行时缺失时，在 PrepareToInstall 阶段从 aka.ms 下载最新 .NET 11 Desktop Runtime
 ; 并静默安装，普通模式与静默模式（/SILENT、/VERYSILENT）行为一致。
 
 #ifndef AppVersion
@@ -50,10 +50,10 @@
 #define AppDisplayName "轻白板"
 #ifndef SelfContained
     #ifdef Arm64
-        #define DesktopRuntimeUrl "https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-arm64.exe"
+        #define DesktopRuntimeUrl "https://aka.ms/dotnet/11.0/windowsdesktop-runtime-win-arm64.exe"
         #define DesktopRuntimeName "windowsdesktop-runtime-win-arm64.exe"
     #else
-        #define DesktopRuntimeUrl "https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe"
+        #define DesktopRuntimeUrl "https://aka.ms/dotnet/11.0/windowsdesktop-runtime-win-x64.exe"
         #define DesktopRuntimeName "windowsdesktop-runtime-win-x64.exe"
     #endif
 #endif
@@ -146,14 +146,14 @@ end;
 const
     DesktopRuntimeUrl = '{#DesktopRuntimeUrl}';
     DesktopRuntimeName = '{#DesktopRuntimeName}';
-    DesktopRuntimeMajor = 10;
-    ManualDownloadUrl = 'https://dotnet.microsoft.com/download/dotnet/10.0';
+    DesktopRuntimeMajor = 11;
+    ManualDownloadUrl = 'https://dotnet.microsoft.com/download/dotnet/11.0';
 
 var
     RuntimeChecked: Boolean;
     RuntimePresent: Boolean;
 
-// 目录中存在主版本号匹配的子目录（如 10.0.13）即认为已安装。
+// 目录中存在主版本号匹配的子目录（如 11.0.0）即认为已安装。
 function DirHasDesktopRuntime(const DotNetRoot: String): Boolean;
 var
     FindRec: TFindRec;
@@ -213,9 +213,9 @@ begin
     if not WizardSilent then
     begin
         if ProgressMax <> 0 then
-        WizardForm.StatusLabel.Caption := Format('正在下载 .NET 10 Desktop Runtime……%d/%d MB', [Progress div 1048576, ProgressMax div 1048576])
+        WizardForm.StatusLabel.Caption := Format('正在下载 .NET 11 Desktop Runtime……%d/%d MB', [Progress div 1048576, ProgressMax div 1048576])
         else
-        WizardForm.StatusLabel.Caption := Format('正在下载 .NET 10 Desktop Runtime……%d MB', [Progress div 1048576]);
+        WizardForm.StatusLabel.Caption := Format('正在下载 .NET 11 Desktop Runtime……%d MB', [Progress div 1048576]);
         WizardForm.Repaint;
     end;
     Result := True;
@@ -232,22 +232,22 @@ begin
 
     InstallerPath := AddBackslash(ExpandConstant('{tmp}')) + DesktopRuntimeName;
     if not WizardSilent then
-        WizardForm.StatusLabel.Caption := '正在下载 .NET 10 Desktop Runtime……';
+        WizardForm.StatusLabel.Caption := '正在下载 .NET 11 Desktop Runtime……';
 
     try
         // aka.ms 是常青链接，运行时每次补丁更新都会改变文件哈希，无法固定 RequiredSHA256；
         // 传输完整性由 TLS 与微软官方域名承担
         DownloadTemporaryFile(DesktopRuntimeUrl, DesktopRuntimeName, '', @OnDownloadProgress);
     except
-        Result := '下载 .NET 10 Desktop Runtime 失败：' + GetExceptionMessage + #13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
+        Result := '下载 .NET 11 Desktop Runtime 失败：' + GetExceptionMessage + #13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
         Exit;
     end;
 
     if not WizardSilent then
-        WizardForm.StatusLabel.Caption := '正在安装 .NET 10 Desktop Runtime……';
+        WizardForm.StatusLabel.Caption := '正在安装 .NET 11 Desktop Runtime……';
     if not Exec(InstallerPath, '/install /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
     begin
-        Result := '无法启动 .NET 10 Desktop Runtime 安装程序。'#13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
+        Result := '无法启动 .NET 11 Desktop Runtime 安装程序。'#13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
         Exit;
     end;
 
@@ -257,14 +257,14 @@ begin
         1641, 3010: NeedsRestart := True;
     else
         begin
-            Result := '.NET 10 Desktop Runtime 安装失败（退出码 ' + IntToStr(ResultCode) + '）。'#13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
+            Result := '.NET 11 Desktop Runtime 安装失败（退出码 ' + IntToStr(ResultCode) + '）。'#13#10 + '可从以下地址手动安装后再运行：' + ManualDownloadUrl;
             Exit;
         end;
     end;
 
     RuntimeChecked := False;
     if not DesktopRuntimeInstalled then
-        Result := '.NET 10 Desktop Runtime 安装后仍未检测到，请查看安装日志，或从以下地址手动安装后再运行：' + ManualDownloadUrl;
+        Result := '.NET 11 Desktop Runtime 安装后仍未检测到，请查看安装日志，或从以下地址手动安装后再运行：' + ManualDownloadUrl;
 end;
 
 #endif
