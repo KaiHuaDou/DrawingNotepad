@@ -80,23 +80,6 @@ public partial class InkCanvasNext
         panPoint0 = first!.Value;
     }
 
-    /// <summary>
-    /// 平移/缩放手势结束时保证视口右/下方至少留有一屏余量：
-    /// 距右/下边缘不足一屏（视口单位）则把画布扩展一屏（换算为内容坐标）
-    /// </summary>
-    private void EnsureEdgeMargin( )
-    {
-        var scale = CurrentView.Scale;
-        var extendWidth = CanvasScroll.ScrollableWidth - CanvasScroll.HorizontalOffset < CanvasScroll.ViewportWidth
-            ? CanvasScroll.ViewportWidth / scale
-            : 0;
-        var extendHeight = CanvasScroll.ScrollableHeight - CanvasScroll.VerticalOffset < CanvasScroll.ViewportHeight
-            ? CanvasScroll.ViewportHeight / scale
-            : 0;
-
-        ExtendCanvas(extendWidth, extendHeight);
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static double Smooth(double x)
     {

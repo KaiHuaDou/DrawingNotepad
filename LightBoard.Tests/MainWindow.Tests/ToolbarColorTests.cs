@@ -94,11 +94,12 @@ public class ToolbarColorTests
         UiThread.Run(( ) =>
         {
             using var host = new MainWindowHost( );
-            ToolEntry.Enter(host, InkCanvasNextMode.Highlighter);
-            Assert.Equal(InkCanvasNextMode.Highlighter, host.Window.Mode);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
+            Assert.True(host.Window.HighlighterActive);
 
             ToolDriver.ClickRadio(host, host.FindColor(Red));
 
+            Assert.False(host.Window.HighlighterActive);
             Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
             Assert.Equal(Red, host.Canvas.DefaultDrawingAttributes.Color);
             ToolbarAssertions.AssertConsistent(host);

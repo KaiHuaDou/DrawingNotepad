@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Media;
@@ -68,6 +69,26 @@ public static class StrokeCollectionExtension
         image.Freeze( );
 
         return image;
+    }
+
+    /// <summary>
+    /// 按缩放比例导出 PNG 文件；canvas 为画布底色
+    /// </summary>
+    public static void ExportPng(
+        this StrokeCollection strokes,
+        string fileName,
+        DpiScale dpi,
+        int scale = 100,
+        Color? canvas = null,
+        ImageSource? background = null,
+        Rect? box = null)
+    {
+        var image = strokes.Render(dpi, scale, canvas, background, box);
+        var encoder = new PngBitmapEncoder( );
+        encoder.Frames.Add(BitmapFrame.Create(image));
+
+        using var stream = new FileStream(fileName, FileMode.Create);
+        encoder.Save(stream);
     }
 
     /// <summary>

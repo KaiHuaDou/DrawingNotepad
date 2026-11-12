@@ -3,9 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Ink;
 using System.Windows.Media;
 
 using InkCanvasNext;
@@ -18,7 +20,10 @@ public partial class App
 {
     public static void ExportAllPdf(string fileName, DpiScale dpi, int scale, IProgress<ExportProgress>? progress = null)
     {
-        PdfWriter.Export(fileName, Pages, dpi, scale, progress);
+        // 页集合在 UI 线程取快照：导出在后台线程进行，期间仍可翻页与编辑
+        var pages = Current.Dispatcher.Invoke(( ) => Pages.ToArray( ));
+
+        PdfWriter.Export(fileName, pages, dpi, scale, progress);
     }
 }
 
@@ -26,7 +31,7 @@ internal static class PdfWriter
 {
     static PdfWriter( )
     {
-        fpdfview.FPDF_InitLibrary( );
+        Pdfium.EnsureInitialized( );
     }
 
     public static void Export(string path, IList<Page> pages, DpiScale dpi, int scale, IProgress<ExportProgress>? progress = null)
@@ -44,7 +49,8 @@ internal static class PdfWriter
             {
                 for (var i = 0; i < count; i++)
                 {
-                    var bitmap = AddPage(pdf, i, pages[i], FetchBackground(pages[i].Background), dpi, scale);
+                    var (Number, Strokes, Background, Box) = Application.Current.Dispatcher.Invoke(( ) => App.SnapshotPage(pages[i]));
+                    var bitmap = AddPage(pdf, i, Strokes, Background, Box, dpi, scale);
                     bitmaps.Add(bitmap);
                     progress?.Report(new(pageTip, i + 1, count));
                 }
@@ -68,9 +74,16 @@ internal static class PdfWriter
         }
     }
 
-    private static FpdfBitmapT AddPage(FpdfDocumentT pdf, int index, Page page, ImageSource? background, DpiScale dpi, int scale)
+    private static FpdfBitmapT AddPage(
+        FpdfDocumentT pdf,
+        int index,
+        StrokeCollection strokes,
+        ImageSource? background,
+        Rect? box,
+        DpiScale dpi,
+        int scale)
     {
-        var content = page.Strokes.Render(dpi, scale, Colors.White, background, page.Background?.Box);
+        var content = strokes.Render(dpi, scale, Colors.White, background, box);
         var ptW = content.PixelWidth * 72d / dpi.PixelsPerInchX;
         var ptH = content.PixelHeight * 72d / dpi.PixelsPerInchY;
 
@@ -151,34 +164,15 @@ internal static class PdfWriter
             },
         };
 
-        var saved = fpdf_save.FPDF_SaveAsCopy(pdf, writer, 0) == 0;
+        var failed = fpdf_save.FPDF_SaveAsCopy(pdf, writer, 0) == 0;
         if (error is not null)
         {
             ExceptionDispatchInfo.Capture(error).Throw( );
         }
 
-        if (saved)
+        if (failed)
         {
             throw new InvalidDataException($"PDF 保存失败，FPDF 错误码：{fpdfview.FPDF_GetLastError( )}");
         }
-    }
-
-    private static ImageSource? FetchBackground(DocumentBackground? background)
-    {
-        if (background is null)
-        {
-            return null;
-        }
-
-        return Application.Current.Dispatcher.Invoke(( ) =>
-        {
-            var page = App.BackgroundImage(background);
-            if (page?.CanFreeze == true)
-            {
-                page.Freeze( );
-            }
-
-            return page;
-        });
     }
 }

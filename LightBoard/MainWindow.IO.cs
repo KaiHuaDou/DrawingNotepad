@@ -187,7 +187,7 @@ public partial class MainWindow
     {
         if (App.IsBoardEmpty( ))
         {
-            App.ShowInfo("没有可以导出的墨迹");
+            App.ShowInfo("没有可以导出的内容");
             return;
         }
 
@@ -243,7 +243,7 @@ public partial class MainWindow
 
     private void ExportPdfClick(object o, RoutedEventArgs e)
     {
-        if (App.IsBoardEmpty( ) && !App.HasBackground)
+        if (App.IsBoardEmpty( ))
         {
             App.ShowInfo("没有可以导出的内容");
             return;

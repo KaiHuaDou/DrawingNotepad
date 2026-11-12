@@ -5,7 +5,7 @@ using LightBoard;
 namespace InkCanvasNext.Tests;
 
 /// <summary>
-/// 平移/缩放手势结束时按视口与画布边缘的距离扩展画布：右/下余量不足一屏则各扩展一屏
+/// 画布余量：视图变化（缩放、拖动、恢复视图）后右/下方向不足一屏时按一屏补足
 /// 宿主 1280x800、缩放 1，一屏即 1280x800
 /// </summary>
 public class EdgeMarginTests
@@ -13,18 +13,49 @@ public class EdgeMarginTests
     private static readonly Point P1 = new(100, 100);
 
     [Fact]
-    public void Pan_ReleaseAtRightBottomEdge_ExtendsCanvasByOneViewport( )
+    public void ZoomToMinScale_KeepsOneViewportMargin( )
     {
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            // 滚动到右下角，视口贴住画布右/下边缘
+            var viewport = host.Canvas.ViewportSize;
+
+            host.Canvas.CurrentView = new View(InkCanvasNext.MinScale, 0, 0);
+
+            Assert.True(host.Canvas.CanvasSize.Width * InkCanvasNext.MinScale >= viewport.Width * 2);
+            Assert.True(host.Canvas.CanvasSize.Height * InkCanvasNext.MinScale >= viewport.Height * 2);
+        });
+    }
+
+    [Fact]
+    public void SettingsViewNearCanvasEnd_KeepsOneViewportMargin( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var viewport = host.Canvas.ViewportSize;
+
+            // 视图偏移超出当前画布：设置时先夹到边缘，再由扩展补足一屏余量
+            host.Canvas.CurrentView = new View(1.0, double.MaxValue, double.MaxValue);
+            host.Canvas.UpdateLayout( );
+
+            Assert.True(host.Canvas.CanvasSize.Width >= host.Canvas.OffsetX + viewport.Width * 2);
+            Assert.True(host.Canvas.CanvasSize.Height >= host.Canvas.OffsetY + viewport.Height * 2);
+        });
+    }
+
+    [Fact]
+    public void Pan_ToRightBottomEdge_KeepsOneViewportMargin( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var viewport = host.Canvas.ViewportSize;
+
+            // 滚动到右下角：视口贴住边缘时自动补一屏余量
             host.Canvas.OffsetX = double.MaxValue;
             host.Canvas.OffsetY = double.MaxValue;
             host.Canvas.UpdateLayout( );
-
-            var widthBefore = host.Canvas.InnerCanvas.Width;
-            var heightBefore = host.Canvas.InnerCanvas.Height;
 
             var a = host.Device( );
             var b = host.Device( );
@@ -42,8 +73,9 @@ public class EdgeMarginTests
             c.Up(host.Target, cluster[2]);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
 
-            Assert.Equal(1280, host.Canvas.InnerCanvas.Width - widthBefore, 5);
-            Assert.Equal(800, host.Canvas.InnerCanvas.Height - heightBefore, 5);
+            host.Canvas.UpdateLayout( );
+            Assert.True(host.Canvas.CanvasSize.Width - host.Canvas.OffsetX >= viewport.Width * 2);
+            Assert.True(host.Canvas.CanvasSize.Height - host.Canvas.OffsetY >= viewport.Height * 2);
         });
     }
 

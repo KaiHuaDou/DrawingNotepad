@@ -91,7 +91,7 @@ public partial class App
             offsetY / scale,
             viewport.Width / scale,
             viewport.Height / scale);
-        box.Intersect(new Rect(0, 0, CanvasSize.Width, CanvasSize.Height));
+        box.Intersect(new Rect(0, 0, canvas.CanvasSize.Width, canvas.CanvasSize.Height));
 
         return (scale, offsetX, offsetY, box);
     }

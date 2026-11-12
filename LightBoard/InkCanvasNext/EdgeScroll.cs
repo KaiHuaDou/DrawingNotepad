@@ -89,43 +89,32 @@ public partial class InkCanvasNext
         var crossStart = alongX ? band.Top : band.Left;
         var crossEnd = alongX ? band.Bottom : band.Right;
 
+        // 取所有与热区相交的笔画所需位移的最大值：位移到最远那条笔画的边界时，
+        // 其余笔画都在反方向之外，一次遍历即可，结果与逐笔推进到不再相交相同
         var delta = 0.0;
-
-        // 相交条件里 d 取开区间，跳到区间端点即脱离该笔画；每次跳跃严格增大，笔画有限，必然结束
-        while (true)
+        foreach (var b in bounds)
         {
-            var moved = false;
-            foreach (var b in bounds)
+            var crossFrom = alongX ? b.Top : b.Left;
+            var crossTo = alongX ? b.Bottom : b.Right;
+            if (crossFrom >= crossEnd || crossTo <= crossStart)
             {
-                var crossFrom = alongX ? b.Top : b.Left;
-                var crossTo = alongX ? b.Bottom : b.Right;
-                if (crossFrom >= crossEnd || crossTo <= crossStart)
-                {
-                    continue;
-                }
-
-                var from = alongX ? b.Left : b.Top;
-                var to = alongX ? b.Right : b.Bottom;
-
-                if (forward)
-                {
-                    if (from < start + length + delta && to > start + delta)
-                    {
-                        delta = to - start;
-                        moved = true;
-                    }
-                }
-                else if (from < start + length - delta && to > start - delta)
-                {
-                    delta = start + length - from;
-                    moved = true;
-                }
+                continue;
             }
 
-            if (!moved)
+            var from = alongX ? b.Left : b.Top;
+            var to = alongX ? b.Right : b.Bottom;
+            if (from >= start + length || to <= start)
             {
-                return delta;
+                continue;
+            }
+
+            var shift = forward ? to - start : start + length - from;
+            if (shift > delta)
+            {
+                delta = shift;
             }
         }
+
+        return delta;
     }
 }

@@ -199,6 +199,12 @@ public partial class InkCanvasNext
     {
         selection.ApplyCanvasChanges(e.Added, e.Removed);
 
+        // 原生书写、多指书写与形状提交产生的墨迹可以超出画布右/下边界：新增笔画越界时画布随之扩展
+        if (e.Added.Count > 0)
+        {
+            EnsureBoundsFit(e.Added.GetBounds( ));
+        }
+
         if (e.Removed.Count > 0)
         {
             selection.Prune( );

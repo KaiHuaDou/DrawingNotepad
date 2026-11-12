@@ -42,10 +42,11 @@ public enum InkCanvasNextMode
     EraseArea,    // 按区域擦除
     Select,       // 选择（自绘选择层 + 套索）
     Line,         // 绘制直线
-    Circle,       // 绘制圆形
-    Highlighter   // 荧光笔（收笔路径与 Ink 相同，半透明由 DefaultDrawingAttributes.IsHighlighter 表达）
+    Circle        // 绘制圆形
 }
 ```
+
+荧光笔不是编辑模式：高亮外观由 `DefaultDrawingAttributes` 的 `IsHighlighter`、`StylusTip`、`FitToCurve`、`IgnorePressure` 与颜色、宽度共同表达，落笔走 `Ink`。
 
 ## 构造函数
 
@@ -112,6 +113,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `CurrentView`            | `View`             | 当前视口；赋值时校验、夹取并写入缩放与偏移 |
 | `CurrentScale`           | `double`           | 当前缩放比例，范围 0.1~10                 |
 | `OffsetX` / `OffsetY`    | `double`           | 画布滚动偏移（视口单位）                  |
+| `CanvasSize`             | `Size`             | 当前画布尺寸（内容 DIP），随内容扩展       |
 | `ViewportSize`           | `Size`             | 当前视口尺寸（DIP），布局完成前为 0       |
 
 ## 边缘墨迹滚动提示

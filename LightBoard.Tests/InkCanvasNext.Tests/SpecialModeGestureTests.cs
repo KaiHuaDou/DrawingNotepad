@@ -742,7 +742,7 @@ public class SpecialModeGestureTests
             Assert.Equal(TouchState.Draw, host.Canvas.State);
             Assert.Empty(host.Canvas.Strokes);
 
-            host.Canvas.Mode = InkCanvasNextMode.Highlighter;
+            host.Canvas.Mode = InkCanvasNextMode.Ink;
 
             Assert.Equal(Visibility.Collapsed, host.Canvas.EraserFeedback.Visibility);
         });
@@ -766,7 +766,7 @@ public class SpecialModeGestureTests
 
             Assert.Equal(TouchState.Eraser, host.Canvas.State);
 
-            host.Canvas.Mode = InkCanvasNextMode.Highlighter;
+            host.Canvas.Mode = InkCanvasNextMode.Ink;
             Assert.Equal(Visibility.Visible, host.Canvas.EraserFeedback.Visibility);
 
             for (var i = 0; i < cluster.Length; i++)

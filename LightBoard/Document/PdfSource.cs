@@ -13,7 +13,7 @@ internal sealed class PdfSource : PageSource
     // PDFium 是进程级库，首次使用前初始化一次；FPDF_DestroyLibrary 由进程退出回收。
     static PdfSource( )
     {
-        fpdfview.FPDF_InitLibrary( );
+        Pdfium.EnsureInitialized( );
     }
 
     private const ulong FpdfErrPassword = 4; // FPDF_ERR_PASSWORD：文档已加密

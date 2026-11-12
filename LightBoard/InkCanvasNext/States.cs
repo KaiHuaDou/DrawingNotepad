@@ -237,13 +237,6 @@ public partial class InkCanvasNext
             EndSelectionTouch( );
         }
 
-        // 迁出平移/缩放手势族（含回 Idle 或转擦除/多指）即视为手势结束，补足右/下边距
-        if (from is TouchState.EvalPan or TouchState.Pan or TouchState.PanZoom
-            && to is not (TouchState.EvalPan or TouchState.Pan or TouchState.PanZoom))
-        {
-            EnsureEdgeMargin( );
-        }
-
         // 离开覆盖编辑模式的手势态：把编辑模式恢复为当前工具；回 Idle 时同时释放捕获
         if (to == TouchState.Idle)
         {

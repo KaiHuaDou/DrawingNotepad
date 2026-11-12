@@ -92,10 +92,11 @@ public partial class MainWindow
 
         var page = App.CurrentPage;
 
+        // 先建立内容边界再恢复视图：背景页可能扩展画布，视图要按最终尺寸限制
         CanvasNext.Strokes = page.Strokes;
+        CanvasNext.SetDocumentPage(App.BackgroundImage(page.Background), page.Background?.Box);
         CanvasNext.CurrentView = new View(page.Scale, page.OffsetX, page.OffsetY);
         CanvasNext.SwapHistory(out _, page.History);
-        CanvasNext.SetDocumentPage(App.BackgroundImage(page.Background), page.Background?.Box);
 
         // 视频层显隐与背景单选随页面走
         RefreshVideoBackground( );

@@ -93,7 +93,6 @@ public partial class InkCanvasNext
         var clone = new StrokeCollection([.. selection.SelectedStrokes.Select(s => s.Clone( ))]);
         CenterAt(clone, point);
         InnerCanvas.Strokes.Add(clone);
-        EnsureStrokesFit( );
     }
 
     /// <summary>
@@ -123,7 +122,6 @@ public partial class InkCanvasNext
 
             CenterAt(strokes, point);
             InnerCanvas.Strokes.Add(strokes);
-            EnsureStrokesFit( );
             return true;
         }
         catch (ExternalException)
@@ -172,7 +170,14 @@ public partial class InkCanvasNext
     /// </summary>
     public void EnsureStrokesFit( )
     {
-        var bounds = InnerCanvas.Strokes.GetBounds( );
+        EnsureBoundsFit(InnerCanvas.Strokes.GetBounds( ));
+    }
+
+    /// <summary>
+    /// 把画布扩展到容纳指定包围盒；空矩形或包围盒不越界时不变
+    /// </summary>
+    private void EnsureBoundsFit(Rect bounds)
+    {
         if (bounds.IsEmpty)
         {
             return;
@@ -183,6 +188,11 @@ public partial class InkCanvasNext
 
     private void ExtendCanvas(double extendWidth, double extendHeight)
     {
+        if (!double.IsFinite(extendWidth) || !double.IsFinite(extendHeight))
+        {
+            return;
+        }
+
         extendWidth = Math.Max(0, extendWidth);
         extendHeight = Math.Max(0, extendHeight);
 

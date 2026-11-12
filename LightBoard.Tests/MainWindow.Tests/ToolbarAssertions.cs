@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using System.Windows.Ink;
 using System.Windows.Media;
 
 using InkCanvasNext;
@@ -6,7 +7,7 @@ using InkCanvasNext;
 namespace LightBoard.Tests.Toolbar;
 
 /// <summary>
-/// 状态机一致性不变量：mode、画布模式、DrawingAttributes、全部控件勾选与 StampAction 必须同构
+/// 状态机一致性不变量：高亮开关、mode、画布模式、DrawingAttributes、全部控件勾选与 StampAction 必须同构
 /// </summary>
 internal static class ToolbarAssertions
 {
@@ -18,7 +19,7 @@ internal static class ToolbarAssertions
         var mode = window.Mode;
         var attrs = canvas.DefaultDrawingAttributes;
 
-        if (mode == InkCanvasNextMode.Highlighter)
+        if (window.HighlighterActive)
         {
             Assert.True(window.HighlighterToggle.IsChecked);
             Assert.Equal(InkCanvasNextMode.Ink, canvas.Mode);
@@ -26,6 +27,9 @@ internal static class ToolbarAssertions
             Assert.Equal(36, attrs.Width);
             Assert.Equal(36, attrs.Height);
             Assert.True(attrs.IsHighlighter);
+            Assert.Equal(StylusTip.Ellipse, attrs.StylusTip);
+            Assert.True(attrs.FitToCurve);
+            Assert.True(attrs.IgnorePressure);
             AssertToolbarRadiosUnchecked(host);
         }
         else
@@ -33,6 +37,9 @@ internal static class ToolbarAssertions
             Assert.False(window.HighlighterToggle.IsChecked);
             Assert.Equal(mode, canvas.Mode);
             Assert.False(attrs.IsHighlighter);
+            Assert.Equal(StylusTip.Ellipse, attrs.StylusTip);
+            Assert.True(attrs.FitToCurve);
+            Assert.False(attrs.IgnorePressure);
 
             // 印章激活期间画笔单选与工具模式同样不勾选
             if (IsToolMode(mode) || stamp is not null and not StampAction.None)

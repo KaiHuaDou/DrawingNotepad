@@ -78,6 +78,9 @@ public partial class InkCanvasNext
 {
     private readonly ScaleTransform canvasScaleTransform = new(1.0, 1.0);
 
+    // 防止扩展画布引起的滚动通知再次进入判定
+    private bool fillingCanvas;
+
     /// <summary>
     /// 视口左上角在控件坐标系中的位置；控件根坐标换算到视口坐标时使用
     /// </summary>
@@ -100,6 +103,53 @@ public partial class InkCanvasNext
             CurrentScale = value.Scale;
             CanvasScroll.ScrollToHorizontalOffset(value.OffsetX);
             CanvasScroll.ScrollToVerticalOffset(value.OffsetY);
+            EnsureCanvasFill(value);
+        }
+    }
+
+    /// <summary>
+    /// 画布在视口右/下方向不足一屏时按一屏步进补足：缩放、拖动与翻页恢复视图都经过这里，
+    /// 保证视口落在画布内并能继续拖动；每个方向最多补四屏，嵌套调用直接返回
+    /// </summary>
+    private void EnsureCanvasFill(View view)
+    {
+        if (fillingCanvas)
+        {
+            return;
+        }
+
+        var viewport = ViewportSize;
+        if (viewport.Width <= 0 || viewport.Height <= 0 || !double.IsFinite(view.Scale) || view.Scale <= 0)
+        {
+            return;
+        }
+
+        var screenWidth = viewport.Width / view.Scale;
+        var screenHeight = viewport.Height / view.Scale;
+
+        fillingCanvas = true;
+        try
+        {
+            for (var i = 0; i < 4; i++)
+            {
+                var extendWidth = InnerCanvas.Width - (view.OffsetX + viewport.Width) / view.Scale < screenWidth
+                    ? screenWidth
+                    : 0;
+                var extendHeight = InnerCanvas.Height - (view.OffsetY + viewport.Height) / view.Scale < screenHeight
+                    ? screenHeight
+                    : 0;
+
+                if (extendWidth == 0 && extendHeight == 0)
+                {
+                    break;
+                }
+
+                ExtendCanvas(extendWidth, extendHeight);
+            }
+        }
+        finally
+        {
+            fillingCanvas = false;
         }
     }
 
@@ -139,6 +189,11 @@ public partial class InkCanvasNext
         get => CanvasScroll.VerticalOffset;
         set => CanvasScroll.ScrollToVerticalOffset(value);
     }
+
+    /// <summary>
+    /// 获取画布尺寸，内容 DIP
+    /// </summary>
+    public Size CanvasSize => new(InnerCanvas.Width, InnerCanvas.Height);
 
     /// <summary>
     /// 获取当前视口尺寸，视口 DIP

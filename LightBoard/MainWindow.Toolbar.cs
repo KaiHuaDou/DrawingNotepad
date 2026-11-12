@@ -1,16 +1,21 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Ink;
 using System.Windows.Media;
 
 using InkCanvasNext;
 
 namespace LightBoard;
 
+// 宿主保存的笔预设（不可变值）：切换工具时整体写入画布的 DrawingAttributes
 internal sealed record PenProfile(
     Color Color,
     double Width,
-    bool IsHighlighter
+    bool IsHighlighter,
+    StylusTip StylusTip,
+    bool FitToCurve,
+    bool IgnorePressure
 );
 
 internal sealed record HighlighterReturn(
@@ -23,10 +28,18 @@ public partial class MainWindow
 {
     internal InkCanvasNextMode Mode { get; private set; } = InkCanvasNextMode.Ink;
 
+    /// <summary>
+    /// 当前是否使用荧光笔：高亮不是画布的编辑模式，由笔属性表达
+    /// </summary>
+    internal bool HighlighterActive { get; private set; }
+
     private StampAction stamp = StampAction.None;
 
-    private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false);
-    private static readonly PenProfile HighlighterProfile = new(Colors.Yellow, 36, true);
+    private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false, StylusTip.Ellipse, true, false);
+
+    // 荧光笔是圆头、平滑、固定宽度的半透明笔：笔尖与曲线来自 DrawingAttributes，IsHighlighter 只给 50% 不透明度
+    private static readonly PenProfile HighlighterProfile =
+        new(Colors.Yellow, 36, true, StylusTip.Ellipse, true, true);
 
     private RadioButton? colorRadio;
     private RadioButton? thicknessRadio;
@@ -51,17 +64,19 @@ public partial class MainWindow
 
     private void EnterHighlighter( )
     {
-        if (Mode == InkCanvasNextMode.Highlighter)
+        if (HighlighterActive)
         {
             return;
         }
 
         highlighterReturn = new(Mode, colorRadio, thicknessRadio);
-        Mode = InkCanvasNextMode.Highlighter;
+        HighlighterActive = true;
     }
 
     private void ExitHighlighter( )
     {
+        HighlighterActive = false;
+
         if (highlighterReturn is { } saved)
         {
             Mode = saved.Mode;
@@ -124,7 +139,7 @@ public partial class MainWindow
             stamp = StampAction.None;
         }
 
-        var highlighter = Mode == InkCanvasNextMode.Highlighter;
+        var highlighter = HighlighterActive;
         var profile = highlighter ? HighlighterProfile : pen;
 
         // 印章先写：OnModeChanged 的编辑模式判定要读到当前的 StampAction
@@ -135,6 +150,9 @@ public partial class MainWindow
         attrs.Color = profile.Color;
         attrs.Width = attrs.Height = profile.Width;
         attrs.IsHighlighter = profile.IsHighlighter;
+        attrs.StylusTip = profile.StylusTip;
+        attrs.FitToCurve = profile.FitToCurve;
+        attrs.IgnorePressure = profile.IgnorePressure;
 
         HighlighterToggle?.IsChecked = highlighter;
         CloneButton?.IsChecked = stamp == StampAction.Clone;

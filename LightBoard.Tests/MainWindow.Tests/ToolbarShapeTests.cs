@@ -191,8 +191,8 @@ public class ToolbarShapeTests
         UiThread.Run(( ) =>
         {
             using var host = new MainWindowHost( );
-            ToolEntry.Enter(host, InkCanvasNextMode.Highlighter);
-            Assert.Equal(InkCanvasNextMode.Highlighter, host.Window.Mode);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
+            Assert.True(host.Window.HighlighterActive);
 
             ToolDriver.ClickRadio(host, host.Window.LineRadio);
 

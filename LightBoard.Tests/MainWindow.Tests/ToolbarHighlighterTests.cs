@@ -1,3 +1,4 @@
+using System.Windows.Ink;
 using System.Windows.Media;
 
 using InkCanvasNext;
@@ -18,10 +19,14 @@ public class ToolbarHighlighterTests
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
-            Assert.Equal(InkCanvasNextMode.Highlighter, host.Window.Mode);
+            Assert.True(host.Window.HighlighterActive);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
             Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
             Assert.Equal(Colors.Yellow, host.Canvas.DefaultDrawingAttributes.Color);
             Assert.True(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
+            Assert.Equal(StylusTip.Ellipse, host.Canvas.DefaultDrawingAttributes.StylusTip);
+            Assert.True(host.Canvas.DefaultDrawingAttributes.FitToCurve);
+            Assert.True(host.Canvas.DefaultDrawingAttributes.IgnorePressure);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -36,7 +41,7 @@ public class ToolbarHighlighterTests
             ToolDriver.ClickRadio(host, host.FindThickness(5));
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            Assert.Equal(InkCanvasNextMode.Highlighter, host.Window.Mode);
+            Assert.True(host.Window.HighlighterActive);
             ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
             Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
@@ -60,7 +65,7 @@ public class ToolbarHighlighterTests
             ToolEntry.Enter(host, tool);
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            Assert.Equal(InkCanvasNextMode.Highlighter, host.Window.Mode);
+            Assert.True(host.Window.HighlighterActive);
             ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
             Assert.Equal(tool, host.Window.Mode);
@@ -133,7 +138,7 @@ public class ToolbarHighlighterTests
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
-            Assert.Equal(InkCanvasNextMode.Highlighter, host.Window.Mode);
+            Assert.True(host.Window.HighlighterActive);
             ToolbarAssertions.AssertConsistent(host);
         });
     }

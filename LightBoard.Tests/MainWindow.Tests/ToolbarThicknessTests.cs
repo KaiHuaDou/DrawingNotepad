@@ -85,7 +85,7 @@ public class ToolbarThicknessTests
         UiThread.Run(( ) =>
         {
             using var host = new MainWindowHost( );
-            ToolEntry.Enter(host, InkCanvasNextMode.Highlighter);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
             ToolDriver.ClickRadio(host, host.FindThickness(5));
 

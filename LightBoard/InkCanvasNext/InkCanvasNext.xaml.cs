@@ -35,11 +35,7 @@ public enum InkCanvasNextMode
     /// <summary>
     /// 绘制圆形
     /// </summary>
-    Circle,
-    /// <summary>
-    /// 使用高亮笔触绘制墨迹
-    /// </summary>
-    Highlighter
+    Circle
 }
 
 /// <summary>
@@ -125,7 +121,11 @@ public partial class InkCanvasNext : UserControl
 
         CurrentView = new View(1.0, initialOffset.X, initialOffset.Y);
 
-        CanvasScroll.ScrollChanged += (_, _) => RaiseViewOrSelectionChanged( );
+        CanvasScroll.ScrollChanged += (_, _) =>
+        {
+            EnsureCanvasFill(CurrentView);
+            RaiseViewOrSelectionChanged( );
+        };
         canvasScaleTransform.Changed += (_, _) => RaiseViewOrSelectionChanged( );
 
         edgeScrollTimer.Interval = TimeSpan.FromMilliseconds(EdgeScrollTickMilliseconds);
@@ -288,7 +288,6 @@ public partial class InkCanvasNext : UserControl
         switch (mode)
         {
             case InkCanvasNextMode.Ink:
-            case InkCanvasNextMode.Highlighter:
                 InnerCanvas.EditingMode = InkCanvasEditingMode.Ink;
                 ConfigureSelectMode(false);
                 break;

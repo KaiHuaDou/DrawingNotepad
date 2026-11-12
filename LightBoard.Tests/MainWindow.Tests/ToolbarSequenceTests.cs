@@ -26,7 +26,7 @@ public class ToolbarSequenceTests
             ToolDriver.ClickRadio(host, window.CircleRadio);
             ToolbarAssertions.AssertConsistent(host);
 
-            ToolEntry.Enter(host, InkCanvasNextMode.Highlighter);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
             ToolbarAssertions.AssertConsistent(host);
 
             ToolDriver.ClickRadio(host, host.FindColor(Red));
@@ -38,7 +38,7 @@ public class ToolbarSequenceTests
             ToolEntry.Enter(host, InkCanvasNextMode.EraseArea);
             ToolbarAssertions.AssertConsistent(host);
 
-            ToolEntry.Enter(host, InkCanvasNextMode.Highlighter);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
             ToolbarAssertions.AssertConsistent(host);
 
             ToolDriver.Toggle(window.HighlighterToggle, false);

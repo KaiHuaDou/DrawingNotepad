@@ -17,7 +17,10 @@ public partial class InkCanvasNext
     /// <summary>空白处按下（鼠标/触摸共用）：清空当前选型，以按下点为起点开始增量套索测试</summary>
     private void BeginLasso(Point p)
     {
+        // 选中集合与路径都按本次套索重新累积：跨次残留会让第二次套索带上上一次的笔画
         selection.Clear( );
+        lassoPath.Clear( );
+        lassoSelected.Clear( );
         selectionGesture = SelectionGesture.Lasso;
         lassoPath.Add(p);
         lassoTester = InnerCanvas.Strokes.GetIncrementalLassoHitTester(LassoHitPercentage);

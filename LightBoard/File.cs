@@ -115,8 +115,6 @@ public partial class MainWindow
         // 墨迹落入视口：不完全在可见内容区域内时平移到视口中心（与粘贴落点同一语义），保证附加后可见
         CanvasNext.EnsureStrokesVisible(strokes);
         CanvasNext.Strokes.Add(strokes);
-        // 直接向活动集合追加不经过 ApplyStrokes，画布尺寸保障需单独调用
-        CanvasNext.EnsureStrokesFit( );
     }
 
     private void CloseDocumentViewer( )

@@ -116,6 +116,10 @@ public partial class InkCanvasNext
         if (selectionTarget is { Count: > 0 } && !IsNearIdentity(selectionTotal))
         {
             PushChange(new TransformChanges(selectionTarget, selectionTotal));
+
+            // 选中内容可以被拖到画布外：手势结束时按最终包围盒扩展，拖动中途扩展只会放大画布
+            EnsureBoundsFit(selection.Bounds);
+
             // 变换不触发 StrokesChanged，手动上报以更新外部脏标记（无增删，仅 TransformOnly）
             StrokesChanged?.Invoke(
                 this,

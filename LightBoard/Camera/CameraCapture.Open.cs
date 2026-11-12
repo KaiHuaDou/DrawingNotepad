@@ -113,19 +113,27 @@ internal sealed partial class CameraCapture
     // 打开动作可能阻塞远超时限；超时放弃等待后，完成的实例转入 lateCaptures 由 Dispose 回收
     private async Task<VideoCapture?> AwaitOpen(Task<VideoCapture?> openTask)
     {
-        var done = await Task.WhenAny(openTask, Task.Delay(OpenTimeout));
-        if (done == openTask)
+        try
         {
-            return await openTask;
+            return await openTask.WaitAsync(OpenTimeout);
+        }
+        catch (TimeoutException)
+        {
+            // WaitAsync 在完成与超时两条路径上都会释放计时器，超时后原任务继续执行
         }
 
-        _ = openTask.ContinueWith(t =>
-        {
-            if (t.Result is not null)
+        _ = openTask.ContinueWith(
+            t =>
             {
-                DiscardLate(t.Result);
-            }
-        }, TaskScheduler.Default);
+                if (t.Result is not null)
+                {
+                    DiscardLate(t.Result);
+                }
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnRanToCompletion,
+            TaskScheduler.Default);
+
         return null;
     }
 

@@ -112,10 +112,10 @@ public class AppPagesTests
 
             App.DeletePage(1);
 
-            Assert.Single(App.Pages);
+            var item = Assert.Single(App.Pages);
             Assert.Equal(0, App.PageIndex);
             Assert.Same(previous, App.CurrentPage);
-            Assert.Equal(1, App.Pages[0].Number);
+            Assert.Equal(1, item.Number);
         });
     }
 

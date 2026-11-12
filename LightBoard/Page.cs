@@ -6,7 +6,6 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 using InkCanvasNext;
 
@@ -47,17 +46,6 @@ public partial class Page : INotifyPropertyChanged
         History = null;
         InvalidatePreview( );
         App.BoardRevision++;
-    }
-
-    public void ExportStrokes(string fileName, DpiScale dpi, int scale, ImageSource? background, Rect? box)
-    {
-        // TODO: PNG 导出的默认底色是深色，是否跟随页面背景待定
-        var image = Strokes.Render(dpi, scale, background: background, box: box);
-        var encoder = new PngBitmapEncoder( );
-        encoder.Frames.Add(BitmapFrame.Create(image));
-
-        using var stream = new FileStream(fileName, FileMode.Create);
-        encoder.Save(stream);
     }
 }
 
@@ -148,7 +136,7 @@ public partial class App
 
     public static bool IsBoardEmpty( )
     {
-        return !Pages.Any(p => p.Strokes.Count != 0);
+        return !Pages.Any(p => p.Strokes.Count != 0 || p.Background is not null);
     }
 
     public static void ExportAllImage(int scale, string directory, DpiScale dpi, IProgress<ExportProgress>? progress = null)
@@ -157,28 +145,39 @@ public partial class App
 
         Directory.CreateDirectory(directory);
 
-        var count = Pages.Count;
+        // 页集合与每页内容都在 UI 线程取快照：导出在后台线程进行，期间仍可翻页与编辑
+        var pages = Current.Dispatcher.Invoke(( ) => Pages.ToArray( ));
+
+        var count = pages.Length;
+        var pad = (int) (Math.Log10(count) + 1);
         progress?.Report(new(tip, 0, count));
+
+        // 与 PDF 导出一致：空白页与只有背景的页同样导出，页码与页面列表一一对应
         for (var i = 0; i < count; i++)
         {
-            var page = Pages[i];
-            if (page.Strokes.Count > 0)
-            {
-                var pad = (int) (Math.Log10(count) + 1);
-                var fileName = Path.Join(directory, $"{page.Number.ToString( ).PadLeft(pad, '0')}.png");
+            var snapshot = Current.Dispatcher.Invoke(( ) => SnapshotPage(pages[i]));
+            var fileName = Path.Join(directory, $"{snapshot.Number.ToString( ).PadLeft(pad, '0')}.png");
 
-                // XPS 页树具有线程亲和性，背景统一派发到 UI 线程渲染（结果已冻结），再回后台线程合成。
-                var source = page.Background;
-                ImageSource? background = null;
-                if (source is not null)
-                {
-                    background = Current.Dispatcher.Invoke(( ) => BackgroundImage(source));
-                }
-
-                page.ExportStrokes(fileName, dpi, scale, background, source?.Box);
-            }
-
+            snapshot.Strokes.ExportPng(fileName, dpi, scale, background: snapshot.Background, box: snapshot.Box);
             progress?.Report(new(tip, i + 1, count));
         }
+    }
+
+    // 导出用页快照：笔画克隆与背景取图都要求 UI 线程，调用方负责在 UI 线程执行
+    // 背景图要冻结后才能交给导出线程渲染
+    internal static (int Number, StrokeCollection Strokes, ImageSource? Background, Rect? Box) SnapshotPage(Page page)
+    {
+        var background = page.Background;
+        var image = background is null ? null : BackgroundImage(background);
+        if (image?.CanFreeze == true)
+        {
+            image.Freeze( );
+        }
+
+        return (
+            page.Number,
+            new StrokeCollection([.. page.Strokes.Select(s => s.Clone( ))]),
+            image,
+            background?.Box);
     }
 }

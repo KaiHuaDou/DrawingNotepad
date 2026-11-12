@@ -242,7 +242,7 @@ public class ToolbarStampTests
         {
             PutInkOnClipboard( );
             using var host = new MainWindowHost( );
-            ToolEntry.Enter(host, InkCanvasNextMode.Highlighter);
+            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
             ToolDriver.Toggle(host.Window.PasteButton, true);
 

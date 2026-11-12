@@ -238,6 +238,7 @@ public partial class MainWindow
         videoPage = page;
         App.SwitchPage(App.Pages.Count - 1);
         App.BoardRevision++;
+        Dirty = true;
         return true;
     }
 #endif

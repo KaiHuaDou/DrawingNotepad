@@ -85,8 +85,8 @@ public partial class MainWindow
         ApplyBackground( );
     }
 
-    // 视频背景仅在含 OpenCV 的构建中存在；nocv 构建的画布底色只随背景单选走
 #if !OPENCV
+    // 视频背景仅在含 OpenCV 的构建中存在；nocv 构建的画布底色只随背景单选走
     private void RefreshVideoBackground( )
     {
         CanvasNext.Background = BackgroundBrush(CurrentBackground( ));

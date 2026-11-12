@@ -33,32 +33,42 @@ internal static class CameraDevices
         List<CameraDevice> devices = [];
         unsafe
         {
+            IMFAttributes? attributes = null;
+            IMFActivate_unmanaged** sources = null;
+            var deviceCount = 0;
+            var released = 0;
             try
             {
                 PInvoke.MFStartup(MfVersion, MfStartupLite).ThrowOnFailure( );
 
-                PInvoke.MFCreateAttributes(out var attributes, 1).ThrowOnFailure( );
-                attributes.SetGUID(PInvoke.MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, PInvoke.MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID);
-                PInvoke.MFEnumDeviceSources(attributes, out var sources, out var count).ThrowOnFailure( );
+                PInvoke.MFCreateAttributes(out var created, 1).ThrowOnFailure( );
+                attributes = created;
+                created.SetGUID(PInvoke.MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, PInvoke.MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID);
+                PInvoke.MFEnumDeviceSources(created, out sources, out var count).ThrowOnFailure( );
 
-                var deviceCount = (int) count;
+                deviceCount = (int) count;
                 var selected = deviceCount > 0 ? Resolve(preferred, deviceCount) : -1;
 
                 for (var i = 0; i < deviceCount; i++)
                 {
                     var source = sources[i];
-                    source->GetAllocatedString(PInvoke.MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, out var name, out _);
-                    var nameText = name.Value is null ? "" : name.ToString( );
-                    Marshal.FreeCoTaskMem((nint) name.Value);
+                    try
+                    {
+                        source->GetAllocatedString(PInvoke.MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, out var name, out _);
+                        var nameText = name.Value is null ? "" : name.ToString( );
+                        Marshal.FreeCoTaskMem((nint) name.Value);
 
-                    // 表长必须与设备数一致：OpenCV 按同一次枚举的下标开设备，跳过空名会让两者错位
-                    var deviceName = nameText.Length > 0 ? nameText : $"摄像头 {i + 1}";
-                    var format = i == selected ? Probe(deviceName, source) : Known.GetValueOrDefault(deviceName);
-                    devices.Add(new CameraDevice(i, deviceName, format));
-                    source->Release( );
+                        // 表长必须与设备数一致：OpenCV 按同一次枚举的下标开设备，跳过空名会让两者错位
+                        var deviceName = nameText.Length > 0 ? nameText : $"摄像头 {i + 1}";
+                        var format = i == selected ? Probe(deviceName, source) : Known.GetValueOrDefault(deviceName);
+                        devices.Add(new CameraDevice(i, deviceName, format));
+                    }
+                    finally
+                    {
+                        source->Release( );
+                        released = i + 1;
+                    }
                 }
-
-                Marshal.FreeCoTaskMem((nint) sources);
             }
             catch (Exception e)
             {
@@ -66,6 +76,25 @@ internal static class CameraDevices
             }
             finally
             {
+                // 中途失败时释放尚未处理到的设备与枚举数组，否则每次失败都留下 COM 对象
+                if (sources is not null)
+                {
+                    for (var i = released; i < deviceCount; i++)
+                    {
+                        if (sources[i] is not null)
+                        {
+                            sources[i]->Release( );
+                        }
+                    }
+
+                    Marshal.FreeCoTaskMem((nint) sources);
+                }
+
+                if (attributes is not null)
+                {
+                    Marshal.ReleaseComObject(attributes);
+                }
+
                 PInvoke.MFShutdown( );
             }
         }

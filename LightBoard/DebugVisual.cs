@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -35,19 +36,15 @@ internal sealed class DebugVisual : FrameworkElement
         MakeBrush("#FFECD201"),
         MakeBrush("#FFFF9F43"),
         MakeBrush("#FFF25767"),
+        MakeBrush("#FFA0AAB8"),
     ];
 
     private static readonly Pen ThinPen = MakePen(MakeBrush("#66FFFFFF"), 1);
     private static readonly Pen DashPen = MakePen(MakeBrush("#CCFFFFFF"), 2, new DashStyle([4, 3], 0));
     private static readonly Pen EdgeScrollPen = MakePen(MakeBrush("#E0FF3B30"), 1.5, new DashStyle([6, 4], 0));
-    private static readonly Pen[] RowPens =
-    [
-        MakePen(Palette[0], 2),
-        MakePen(Palette[1], 2),
-        MakePen(Palette[2], 2),
-        MakePen(Palette[3], 2),
-        MakePen(Palette[4], 2),
-    ];
+
+    // 与 Palette 等长：距离行的调色板索引直接取数组下标
+    private static readonly Pen[] RowPens = [.. Palette.Select(color => MakePen(color, 2))];
 
     private readonly InkCanvasNext.InkCanvasNext canvas;
     private readonly DispatcherTimer countTimer;

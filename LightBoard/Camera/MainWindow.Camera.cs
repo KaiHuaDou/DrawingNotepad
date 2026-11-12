@@ -90,6 +90,17 @@ public partial class MainWindow
         }
 
         var onVideoPage = videoPage is not null && ReferenceEquals(App.CurrentPage, videoPage);
+
+        // 渲染节拍只在视频页订阅：其余页相机继续采集，但不驱动界面重绘
+        if (onVideoPage && camera is not null)
+        {
+            SubscribeCameraRendering( );
+        }
+        else
+        {
+            UnsubscribeCameraRendering( );
+        }
+
         CameraBar.Visibility = onVideoPage ? Visibility.Visible : Visibility.Collapsed;
         CameraTipText.Text = cameraTip ?? "";
         CameraTipText.Visibility = onVideoPage && cameraTip is not null ? Visibility.Visible : Visibility.Collapsed;

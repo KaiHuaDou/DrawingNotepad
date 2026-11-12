@@ -33,11 +33,17 @@ internal static class NativeMethods
 
         var hRgnWindow = PInvoke.CreateRectRgn(0, 0, winW, winH);
         var hRgnHole = PInvoke.CreateRectRgn(holeL, holeT, holeR, holeB);
-        _ = PInvoke.CombineRgn(hRgnWindow, hRgnWindow, hRgnHole, RGN_COMBINE_MODE.RGN_DIFF);
+        var combined = PInvoke.CombineRgn(hRgnWindow, hRgnWindow, hRgnHole, RGN_COMBINE_MODE.RGN_DIFF);
 
-        _ = PInvoke.SetWindowRgn((HWND) hWnd, hRgnWindow, true);
+        // 成功时窗口 region 由系统接管，失败时必须自行删除
+        var applied = combined != GDI_REGION_TYPE.RGN_ERROR
+            && PInvoke.SetWindowRgn((HWND) hWnd, hRgnWindow, true) != 0;
 
         PInvoke.DeleteObject(hRgnHole);
+        if (!applied)
+        {
+            PInvoke.DeleteObject(hRgnWindow);
+        }
     }
 
     public static void SwitchTo(string processName)

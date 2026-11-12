@@ -63,5 +63,6 @@
         <PackageReference Include="OpenCvSharp5.WpfExtensions" Version="5.0.0.20261109" Condition="'$(WithOpenCv)' == 'true'" />
         <PackageReference Include="PDFiumCore" Version="157.0.8100" />
         <PackageReference Include="SingleInstanceCore" Version="2.2.2" />
+        <PackageReference Include="WpfLab.WpfRuntime" Version="1.1.0" />
     </ItemGroup>
 </Project>
