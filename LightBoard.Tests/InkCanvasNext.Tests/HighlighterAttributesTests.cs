@@ -2,8 +2,6 @@ using System.Windows.Controls;
 using System.Windows.Ink;
 using System.Windows.Media;
 
-using LightBoard;
-
 namespace InkCanvasNext.Tests;
 
 /// <summary>
@@ -11,20 +9,6 @@ namespace InkCanvasNext.Tests;
 /// </summary>
 public class HighlighterAttributesTests
 {
-    [Fact]
-    public void HighlighterAttribute_KeepsEditingMode( )
-    {
-        StaTest.Run(( ) =>
-        {
-            using var host = new TouchHost( );
-
-            host.Canvas.DefaultDrawingAttributes.IsHighlighter = true;
-
-            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
-        });
-    }
-
     [Fact]
     public void HighlighterAttribute_KeepsColorWidthAndTip( )
     {
@@ -43,6 +27,7 @@ public class HighlighterAttributesTests
             Assert.Equal(24, attrs.Width);
             Assert.Equal(StylusTip.Rectangle, attrs.StylusTip);
             Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
         });
     }
 }

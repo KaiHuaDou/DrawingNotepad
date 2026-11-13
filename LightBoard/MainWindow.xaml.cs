@@ -145,9 +145,17 @@ public partial class MainWindow : Window
         WindowState = WindowState.Minimized;
     }
 
+    // 也由 InvokeAsync 延迟调用：那里的异常只进返回的 DispatcherOperation，没人观察就丢失
     private void RefreshSwitchOutIcon( )
     {
-        SwitchOutButton.Content = ProgramIcon.FromProcess(SettingsStore.Current.SwitchOutProcessName, 48);
+        try
+        {
+            SwitchOutButton.Content = ProgramIcon.FromProcess(SettingsStore.Current.SwitchOutProcessName, 48);
+        }
+        catch (Exception e)
+        {
+            App.LogException(e);
+        }
     }
 
     private void SwitchOutClick(object o, RoutedEventArgs e)

@@ -24,7 +24,7 @@ public static class StrokeCollectionExtension
     private static readonly SolidColorBrush Background = CreateBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
 
     /// <summary>
-    /// 按缩放比例导出位图；canvas 为画布底色
+    /// 按缩放比例导出位图；canvas 为画布底色，background 须已冻结
     /// </summary>
     public static RenderTargetBitmap Render(
         this StrokeCollection strokes,
@@ -109,7 +109,7 @@ public static class StrokeCollectionExtension
     }
 
     /// <summary>
-    /// 生成页面缩略图；canvas 为底色。可在后台线程调用，颜色是值类型，不涉及 Freezable 的线程亲和
+    /// 生成页面缩略图；canvas 为底色。可在后台线程调用，background 须已冻结
     /// </summary>
     public static RenderTargetBitmap Preview(
         this StrokeCollection strokes,

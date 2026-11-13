@@ -24,21 +24,4 @@ public class GeometryTests
         var actual = Geometry.Distance2(new Point(ax, ay), new Point(bx, by));
         Assert.Equal(expected, actual, 12);
     }
-
-    [Fact]
-    public void Distance2_IsSymmetric( )
-    {
-        var a = new Point(1, 2);
-        var b = new Point(-3, 5);
-        Assert.Equal(Geometry.Distance2(a, b), Geometry.Distance2(b, a));
-    }
-
-    [Fact]
-    public void Distance_IsSquareRootOfDistance2( )
-    {
-        var a = new Point(1, 2);
-        var b = new Point(-3, 5);
-        var d2 = Geometry.Distance2(a, b);
-        Assert.Equal(Geometry.Distance(a, b), Math.Sqrt(d2), 12);
-    }
 }

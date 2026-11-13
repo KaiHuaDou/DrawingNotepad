@@ -3,13 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:LightBoard"
         Title="{Binding Title}"
-        MinWidth="512"
-        MinHeight="600"
         Background="#141414"
         Foreground="#E6E6E6"
         MouseLeftButtonDown="WindowMouseLeftButtonDown"
         PreviewKeyDown="WindowKeyDown"
-        ResizeMode="CanMinimize"
+        ResizeMode="NoResize"
         ShowInTaskbar="False"
         SizeToContent="WidthAndHeight"
         Topmost="True"
@@ -115,34 +113,30 @@
         <local:TimerViewModel />
     </Window.DataContext>
 
-    <StackPanel Margin="50,0,50,0" VerticalAlignment="Center">
+    <StackPanel Margin="50,50,50,50" VerticalAlignment="Center">
         <StackPanel Margin="0,0,0,25" HorizontalAlignment="Center"
-                    Orientation="Horizontal"
-                    Style="{StaticResource HideInFullscreen}">
+                    Style="{StaticResource HideInFullscreen}"
+                    Orientation="Horizontal">
             <RadioButton x:Name="CountdownRadio"
                          Margin="0,0,10,0"
                          IsChecked="True"
                          IsEnabled="{Binding IsIdle}"
                          Style="{StaticResource LabelledRadioStyle}"
-                         ToolTip="倒计时"
-                         Click="ModeClick" Content="倒计时" GroupName="TimeModeRadio" />
+                         Click="ModeClick" Content="倒计时" GroupName="TimeModeRadio" ToolTip="倒计时" />
             <RadioButton x:Name="CountupRadio"
                          Margin="10,0,10,0"
                          IsEnabled="{Binding IsIdle}"
                          Style="{StaticResource LabelledRadioStyle}"
-                         ToolTip="计时器"
-                         Click="ModeClick" Content="计时器" GroupName="TimeModeRadio" />
+                         Click="ModeClick" Content="计时器" GroupName="TimeModeRadio" ToolTip="计时器" />
             <Button x:Name="ResetButton"
                     Margin="10,0,0,0"
                     IsEnabled="{Binding CanReset}"
                     Style="{StaticResource ButtonStyle}"
-                    ToolTip="重置本轮"
-                    Click="ResetClick" Tag="&#xE72C;" />
+                    Click="ResetClick" Tag="&#xE72C;" ToolTip="重置本轮" />
             <Button x:Name="FullscreenButton"
                     Margin="10,0,0,0"
                     Style="{StaticResource ButtonStyle}"
-                    ToolTip="全屏"
-                    Click="FullscreenClick" Tag="&#xE740;" />
+                    Click="FullscreenClick" Tag="&#xE740;" ToolTip="全屏" />
         </StackPanel>
         <Grid x:Name="ClockGrid"
               Margin="0,25,0,25" HorizontalAlignment="Center"
@@ -177,24 +171,22 @@
                                 Grid.Row="0" Grid.Column="0"
                                 HorizontalAlignment="Center"
                                 Style="{StaticResource TimerAdjustButtonStyle}"
-                                ToolTip="加一小时"
-                                Click="HourClick" Tag="&#xE710;" />
+                                Click="HourClick" Tag="&#xE710;" ToolTip="加一小时" />
                         <Button x:Name="MinuteUpButton"
                                 Grid.Row="0" Grid.Column="2"
                                 HorizontalAlignment="Center"
                                 Style="{StaticResource TimerAdjustButtonStyle}"
-                                ToolTip="加一分钟"
-                                Click="MinuteClick" Tag="&#xE710;" />
+                                Click="MinuteClick" Tag="&#xE710;" ToolTip="加一分钟" />
                         <TextBlock Grid.Row="1" Grid.Column="0"
-                                   Margin="0,20,0,20" HorizontalAlignment="Center"
+                                   Margin="0,15,0,15" HorizontalAlignment="Center"
                                    Style="{StaticResource TimerDigitStyle}"
                                    Text="{Binding Hours, StringFormat={}{0:00}}" />
                         <TextBlock Grid.Row="1" Grid.Column="1"
-                                   Margin="0,20,0,20" HorizontalAlignment="Center"
+                                   Margin="0,15,0,15" HorizontalAlignment="Center"
                                    Style="{StaticResource TimerDigitStyle}"
                                    Text=":" />
                         <TextBlock Grid.Row="1" Grid.Column="2"
-                                   Margin="0,20,0,20" HorizontalAlignment="Center"
+                                   Margin="0,15,0,15" HorizontalAlignment="Center"
                                    Style="{StaticResource TimerDigitStyle}"
                                    Text="{Binding Minutes, StringFormat={}{0:00}}" />
                         <Button x:Name="HourDownButton"
@@ -202,20 +194,18 @@
                                 HorizontalAlignment="Center"
                                 IsEnabled="{Binding CanDecreaseHour}"
                                 Style="{StaticResource TimerAdjustButtonStyle}"
-                                ToolTip="减一小时"
-                                Click="HourClick" Tag="&#xE738;" />
+                                Click="HourClick" Tag="&#xE738;" ToolTip="减一小时" />
                         <Button x:Name="MinuteDownButton"
                                 Grid.Row="2" Grid.Column="2"
                                 HorizontalAlignment="Center"
                                 IsEnabled="{Binding CanDecreaseMinute}"
                                 Style="{StaticResource TimerAdjustButtonStyle}"
-                                ToolTip="减一分钟"
-                                Click="MinuteClick" Tag="&#xE738;" />
+                                Click="MinuteClick" Tag="&#xE738;" ToolTip="减一分钟" />
                     </Grid>
                     <StackPanel x:Name="FullLayer"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Orientation="Horizontal"
-                                Style="{StaticResource TimerFullLayerStyle}">
+                                Style="{StaticResource TimerFullLayerStyle}"
+                                Orientation="Horizontal">
                         <TextBlock Margin="0,20,0,20" HorizontalAlignment="Center"
                                    Style="{StaticResource TimerDigitStyle}"
                                    Text="{Binding Hours, StringFormat={}{0:00}}" />

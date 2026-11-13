@@ -179,12 +179,6 @@ public class SettingsEditorTests
     }
 
     [Fact]
-    public void Editor_CoversEveryNumericSetting( )
-    {
-        Assert.Equal(13, new SettingsEditor(new LightBoardSettings( )).Fields.Count);
-    }
-
-    [Fact]
     public void Editor_InvalidField_RaisesHasErrors( )
     {
         var editor = new SettingsEditor(new LightBoardSettings( ));

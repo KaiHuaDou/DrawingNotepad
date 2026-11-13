@@ -1,10 +1,9 @@
-using System;
 using System.Windows;
 
 namespace LightBoard.Tests;
 
 /// <summary>
-/// 钟面的纯计算：指针角度到 5 分钟档的换算，剩余量到扫过角度
+/// 钟面的纯计算：指针角度到分钟档的换算，剩余量到扫过角度
 /// </summary>
 public class TimerDialTests
 {
@@ -13,18 +12,18 @@ public class TimerDialTests
     [InlineData(1, 0, 15)]
     [InlineData(0, 1, 30)]
     [InlineData(-1, 0, 45)]
-    [InlineData(-0.1, -1, 0)]
+    [InlineData(-0.1, -1, 59)]
     public void MinutesAt_ClockFacePositions(double x, double y, int expected)
     {
         Assert.Equal(expected, TimerDial.MinutesAt(new Vector(x, y)));
     }
 
     [Fact]
-    public void MinutesAt_JustBeforeTwelve_RoundsToZero( )
+    public void MinutesAt_OneTickBeforeTwelve_IsFiftyNine( )
     {
-        var radians = 354 * Math.PI / 180;
+        const double radians = 354 * Math.PI / 180;
 
-        Assert.Equal(0, TimerDial.MinutesAt(new Vector(Math.Sin(radians), -Math.Cos(radians))));
+        Assert.Equal(59, TimerDial.MinutesAt(new Vector(Math.Sin(radians), -Math.Cos(radians))));
     }
 
     [Theory]

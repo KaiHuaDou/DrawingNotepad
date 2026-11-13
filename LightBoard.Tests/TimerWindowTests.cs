@@ -1,4 +1,3 @@
-using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -151,7 +150,7 @@ public class TimerWindowTests
     }
 
     [Fact]
-    public void Start_KeepsWindowSize( )
+    public void RoundStateChanges_KeepWindowSize( )
     {
         UiThread.Run(( ) =>
         {
@@ -162,20 +161,32 @@ public class TimerWindowTests
                 UiThread.Pump(TimeSpan.FromMilliseconds(200));
 
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                var before = window.RenderSize;
+                var idle = window.RenderSize;
 
                 timer.SetMinutes(5);
                 timer.Toggle( );
                 UiThread.Pump(TimeSpan.FromMilliseconds(400));
 
                 // 秒位不参与宽度：两个状态各自居中，开始计时不改变窗口尺寸
-                Assert.Equal(before.Width, window.RenderSize.Width, 1);
-                Assert.Equal(before.Height, window.RenderSize.Height, 1);
+                Assert.Equal(idle.Width, window.RenderSize.Width, 1);
+                Assert.Equal(idle.Height, window.RenderSize.Height, 1);
 
                 var shortLayer = Assert.IsType<Grid>(window.FindName("ShortLayer"));
                 var fullLayer = Assert.IsType<StackPanel>(window.FindName("FullLayer"));
                 Assert.Equal(Visibility.Hidden, shortLayer.Visibility);
                 Assert.Equal(Visibility.Visible, fullLayer.Visibility);
+
+                timer.Toggle( );
+                UiThread.Pump(TimeSpan.FromMilliseconds(200));
+
+                var paused = window.RenderSize;
+
+                timer.Reset( );
+                UiThread.Pump(TimeSpan.FromMilliseconds(200));
+
+                Assert.True(timer.IsIdle);
+                Assert.Equal(paused.Width, window.RenderSize.Width, 1);
+                Assert.Equal(paused.Height, window.RenderSize.Height, 1);
             }
             finally
             {
@@ -331,39 +342,6 @@ public class TimerWindowTests
 
                 Assert.True(timer.IsIdle);
                 Assert.Equal(5, timer.Minutes);
-            }
-            finally
-            {
-                window.Close( );
-            }
-        });
-    }
-
-    [Fact]
-    public void Reset_KeepsWindowSize( )
-    {
-        UiThread.Run(( ) =>
-        {
-            var window = new TimerWindow( );
-            try
-            {
-                window.Show( );
-                UiThread.Pump(TimeSpan.FromMilliseconds(200));
-
-                var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                timer.SetMinutes(5);
-                timer.Toggle( );
-                timer.Toggle( );
-                UiThread.Pump(TimeSpan.FromMilliseconds(200));
-
-                var paused = window.RenderSize;
-
-                timer.Reset( );
-                UiThread.Pump(TimeSpan.FromMilliseconds(200));
-
-                Assert.True(timer.IsIdle);
-                Assert.Equal(paused.Width, window.RenderSize.Width, 1);
-                Assert.Equal(paused.Height, window.RenderSize.Height, 1);
             }
             finally
             {

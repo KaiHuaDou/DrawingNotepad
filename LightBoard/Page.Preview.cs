@@ -18,7 +18,6 @@ public partial class Page
 
     /// <summary>
     /// 页面缩略图；尚未生成时为占位图
-    /// getter 有副作用：读取代表"这一页即将被看到"（页面列表的行被虚拟化实现时才读），
     /// 过期时在后台重建，完成后触发绑定刷新
     /// </summary>
     public ImageSource Preview
@@ -32,9 +31,6 @@ public partial class Page
         private set;
     } = StrokeCollectionExtension.PreviewEmpty( );
 
-    /// <summary>
-    /// 缩略图是否已过期
-    /// </summary>
     internal bool PreviewStale { get; private set; }
 
     /// <summary>
@@ -60,15 +56,15 @@ public partial class Page
         previewRendering = true;
         var version = previewVersion;
 
-        // 快照必须由持有这些墨迹的线程取，因此排在调用方自己的 Dispatcher 上
-        Dispatcher.CurrentDispatcher.BeginInvoke(
+        // 取应用 Dispatcher：CurrentDispatcher 在非 UI 线程首次调用会新建一个不泵送的实例
+        Application.Current.Dispatcher.BeginInvoke(
             DispatcherPriority.Background,
-            ( ) => StartPreviewRender(version));
+            ( ) => StartPreviewRender(version)
+        );
     }
 
     private void StartPreviewRender(int version)
     {
-        // 快照必须在 UI 线程取：渲染期间画布仍可被编辑（选区变换会就地改触点）；背景图同理。
         var strokes = new StrokeCollection([.. Strokes.Select(s => s.Clone( ))]);
         var background = Background;
         var image = background is null ? null : App.BackgroundImage(background);
@@ -88,16 +84,22 @@ public partial class Page
             }
 
             // 失败时同样要复位 previewRendering，否则这一页的缩略图此后再无重建机会
-            Application.Current.Dispatcher.BeginInvoke(( ) =>
+            // 回填会触发列表项重新布局，让输入与渲染先走
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, ( ) =>
             {
-                if (rendered is not null)
+                try
                 {
-                    Preview = rendered;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Preview)));
+                    if (rendered is not null)
+                    {
+                        Preview = rendered;
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Preview)));
+                    }
                 }
-
-                previewRendering = false;
-                PreviewStale = previewVersion != version;
+                finally
+                {
+                    previewRendering = false;
+                    PreviewStale = previewVersion != version;
+                }
             });
         });
     }

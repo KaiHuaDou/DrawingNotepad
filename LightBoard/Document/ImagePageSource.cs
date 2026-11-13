@@ -15,6 +15,10 @@ internal sealed class ImagePageSource : PageSource
     private ImagePageSource(BitmapFrame frame)
     {
         this.frame = frame;
+
+        // 缩略图与导出在后台线程渲染，位图须先脱离创建线程的亲和
+        frame.Freeze( );
+
         PageCount = 1;
     }
 

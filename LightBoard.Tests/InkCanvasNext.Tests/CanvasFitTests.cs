@@ -85,27 +85,18 @@ public class CanvasFitTests
         });
     }
 
-    [Fact]
-    public void EnsureStrokesFit_StrokesWithinCanvas_KeepsCanvasSize( )
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EnsureStrokesFit_WithinCanvas_KeepsCanvasSize(bool withStroke)
     {
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Strokes.Add(StrokeAt(100, 100, 400, 300));
-
-            host.Canvas.EnsureStrokesFit( );
-
-            Assert.Equal(App.CanvasSize.Width, host.Canvas.InnerCanvas.Width, 5);
-            Assert.Equal(App.CanvasSize.Height, host.Canvas.InnerCanvas.Height, 5);
-        });
-    }
-
-    [Fact]
-    public void EnsureStrokesFit_EmptyCanvas_KeepsCanvasSize( )
-    {
-        StaTest.Run(( ) =>
-        {
-            using var host = new TouchHost( );
+            if (withStroke)
+            {
+                host.Canvas.Strokes.Add(StrokeAt(100, 100, 400, 300));
+            }
 
             host.Canvas.EnsureStrokesFit( );
 

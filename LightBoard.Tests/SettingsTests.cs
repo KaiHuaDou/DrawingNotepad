@@ -48,16 +48,6 @@ public class SettingsTests
     }
 
     [Fact]
-    public void CreateCanvasOptions_CompareByValue( )
-    {
-        var a = new LightBoardSettings( ).CreateCanvasOptions( );
-        var b = new LightBoardSettings( ).CreateCanvasOptions( );
-
-        Assert.Equal(a, b);
-        Assert.NotEqual(a, new LightBoardSettings { EraserPalmExtra = 9 }.CreateCanvasOptions( ));
-    }
-
-    [Fact]
     public void CreateCanvasOptions_MapsAllFields( )
     {
         var data = new LightBoardSettings

@@ -145,17 +145,15 @@ public partial class App
 
         Directory.CreateDirectory(directory);
 
-        // 页集合与每页内容都在 UI 线程取快照：导出在后台线程进行，期间仍可翻页与编辑
+        // 导出在后台线程进行，页集合在 UI 线程取快照
         var pages = Current.Dispatcher.Invoke(( ) => Pages.ToArray( ));
-
         var count = pages.Length;
         var pad = (int) (Math.Log10(count) + 1);
         progress?.Report(new(tip, 0, count));
 
-        // 与 PDF 导出一致：空白页与只有背景的页同样导出，页码与页面列表一一对应
         for (var i = 0; i < count; i++)
         {
-            var (Number, Strokes, Background, Box) = Current.Dispatcher.Invoke(( ) => SnapshotPage(pages[i]));
+            var (Number, Strokes, Background, Box) = SnapshotPage(pages[i]);
             var fileName = Path.Join(directory, $"{Number.ToString( ).PadLeft(pad, '0')}.png");
 
             Strokes.ExportPng(fileName, dpi, scale, background: Background, box: Box);
@@ -163,21 +161,22 @@ public partial class App
         }
     }
 
-    // 导出用页快照：笔画克隆与背景取图都要求 UI 线程，调用方负责在 UI 线程执行
-    // 背景图要冻结后才能交给导出线程渲染
+    /// <summary>
+    /// 导出用页快照
+    /// </summary>
     internal static (int Number, StrokeCollection Strokes, ImageSource? Background, Rect? Box) SnapshotPage(Page page)
     {
-        var background = page.Background;
-        var image = background is null ? null : BackgroundImage(background);
-        if (image?.CanFreeze == true)
+        return Current.Dispatcher.Invoke(( ) =>
         {
-            image.Freeze( );
-        }
+            var background = page.Background;
+            var image = background is null ? null : BackgroundImage(background);
 
-        return (
-            page.Number,
-            new StrokeCollection([.. page.Strokes.Select(s => s.Clone( ))]),
-            image,
-            background?.Box);
+            return (
+                page.Number,
+                new StrokeCollection([.. page.Strokes.Select(s => s.Clone( ))]),
+                image,
+                background?.Box
+            );
+        });
     }
 }

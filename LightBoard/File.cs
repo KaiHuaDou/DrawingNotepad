@@ -21,10 +21,10 @@ public partial class MainWindow
         set;
     }
 
-    private async Task AttachBoard(string fileName)
+    private async Task AttachBoardAsync(string fileName)
     {
         var first = App.Pages.Count;
-        var invalid = await RunWithLoading("正在附加", ( ) => App.AttachBoard(fileName));
+        var invalid = await RunWithLoading("正在附加", ( ) => App.AttachBoardAsync(fileName));
 
         // 空白板（无页）不切换，避免跳到既有末页
         if (first < App.Pages.Count)
@@ -68,7 +68,7 @@ public partial class MainWindow
         {
             if (IsBoardFile(fileName))
             {
-                await AttachBoard(fileName);
+                await AttachBoardAsync(fileName);
             }
             else if (IsInkFile(fileName))
             {
@@ -76,7 +76,7 @@ public partial class MainWindow
             }
             else
             {
-                await AttachDocument(fileName);
+                await AttachDocumentAsync(fileName);
             }
         }
         catch (Exception ex)
@@ -90,11 +90,11 @@ public partial class MainWindow
         }
     }
 
-    private async Task AttachDocument(string fileName)
+    private async Task AttachDocumentAsync(string fileName)
     {
         try
         {
-            await RunWithLoading("正在附加文档", ( ) => App.AttachDocument(fileName));
+            await RunWithLoading("正在附加文档", ( ) => App.AttachDocumentAsync(fileName));
 
             // 不走 OnPageChanged：ApplyStrokes 会清空撤销历史。新页的背景盒取附加时的可见内容区域，
             // 画布视图无需移动；页视图已在 AttachDocument 中与画布视图同步
@@ -171,7 +171,7 @@ public partial class MainWindow
             {
                 Board.Write(
                     Path.Join(App.AppPath, "fastsave", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"),
-                    App.SnapshotPages(cloneStrokes: false));
+                    App.SnapshotPages( ));
                 Dirty = false;
                 return false;
             }
@@ -211,7 +211,7 @@ public partial class App
     /// </summary>
     private static int RecoverRevision { get; set; }
 
-    public static async Task<IReadOnlyList<string>> AttachBoard(string path)
+    public static async Task<IReadOnlyList<string>> AttachBoardAsync(string path)
     {
         var content = Board.Read(path);
         await RegisterBackgroundsAsync(content.Pages);
@@ -225,7 +225,7 @@ public partial class App
     }
 
     // 背景服务先注册完再动 Pages：OpenFile 在 await 处提前返回时，Pages 不能停在半空状态。
-    public static async Task<IReadOnlyList<string>> LoadBoard(string path)
+    public static async Task<IReadOnlyList<string>> LoadBoardAsync(string path)
     {
         var content = Board.Read(path);
         await RegisterBackgroundsAsync(content.Pages);
@@ -241,16 +241,28 @@ public partial class App
         return content.InvalidBackgrounds;
     }
 
-    internal static BoardPage[] SnapshotPages(bool cloneStrokes)
+    internal static BoardPage[] SnapshotPages( )
     {
         return
         [
             .. Pages.Select(page => new BoardPage(
-                cloneStrokes ? [.. page.Strokes.Select(s => s.Clone( ))] : page.Strokes,
+                page.Strokes,
                 page.Scale,
                 page.OffsetX,
                 page.OffsetY,
                 page.Background)),
+        ];
+    }
+
+    // 笔迹克隆不要求 UI 线程：Stroke 不是 DependencyObject
+    private static BoardPage[] ClonePages(BoardPage[] pages)
+    {
+        return
+        [
+            .. pages.Select(page => page with
+            {
+                Strokes = [.. page.Strokes.Select(s => s.Clone( ))],
+            }),
         ];
     }
 
@@ -287,11 +299,11 @@ public partial class App
 
         WriteRecover(
             Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"),
-            SnapshotPages(false));
+            SnapshotPages( ));
     }
 
     /// <summary>
-    /// 定时备份：内容未变化时跳过，写盘放到后台；交互期间跳过（全量克隆会卡住交互帧），推到下一次定时
+    /// 定时备份：内容未变化时跳过；交互期间跳过
     /// </summary>
     private static void SaveRecoverInBackground( )
     {
@@ -307,9 +319,9 @@ public partial class App
 
         RecoverRevision = BoardRevision;
         var path = Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf");
-        var snapshot = SnapshotPages(cloneStrokes: true);
+        var pages = SnapshotPages( );
 
-        Task.Run(( ) => WriteRecover(path, snapshot));
+        Task.Run(( ) => WriteRecover(path, ClonePages(pages)));
     }
 
     private static void WriteRecover(string path, IReadOnlyList<BoardPage> pages)

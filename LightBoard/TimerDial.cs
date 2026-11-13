@@ -36,36 +36,24 @@ public sealed class TimerDial : FrameworkElement
         typeof(TimerDial),
         new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
 
-    /// <summary>
-    /// 剩余量占本轮的比例，0~1；0 不画弧，1 画整圈
-    /// </summary>
     public double Progress
     {
         get => (double) GetValue(ProgressProperty);
         set => SetValue(ProgressProperty, value);
     }
 
-    /// <summary>
-    /// 剩余量进入告警区间，弧改红色
-    /// </summary>
     public bool IsAlerting
     {
         get => (bool) GetValue(IsAlertingProperty);
         set => SetValue(IsAlertingProperty, value);
     }
 
-    /// <summary>
-    /// 本轮暂停，弧半透明
-    /// </summary>
     public bool IsPaused
     {
         get => (bool) GetValue(IsPausedProperty);
         set => SetValue(IsPausedProperty, value);
     }
 
-    /// <summary>
-    /// 把从圆心出发的向量换算成 5 分钟档的分钟数，12 点方向为 0
-    /// </summary>
     internal static int MinutesAt(Vector offset)
     {
         var degrees = Math.Atan2(offset.X, -offset.Y) * 180 / Math.PI;
@@ -74,12 +62,9 @@ public sealed class TimerDial : FrameworkElement
             degrees += 360;
         }
 
-        return (int) Math.Round(degrees / 30) * 5 % 60;
+        return (int) Math.Round(degrees / 6) % 60;
     }
 
-    /// <summary>
-    /// 剩余量对应的扫过的角度，顺时针，自 12 点起算
-    /// </summary>
     internal static double SweepDegrees(double progress)
     {
         return Math.Clamp(progress, 0, 1) * 360;

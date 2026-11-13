@@ -26,8 +26,8 @@ internal sealed partial class CameraCapture
     // 打开设备并按它的原生档协商；两种后端都失败返回 false。必须在后台线程 await。
     public async Task<bool> OpenAsync(int index, CameraFormat format)
     {
-        var capture = await AwaitOpen(Task.Run(( ) => TryOpen(VideoCaptureAPIs.MSMF, index, format)))
-            ?? await AwaitOpen(Task.Run(( ) => TryOpen(VideoCaptureAPIs.DSHOW, index, format)));
+        var capture = await AwaitOpenAsync(Task.Run(( ) => TryOpen(VideoCaptureAPIs.MSMF, index, format)))
+            ?? await AwaitOpenAsync(Task.Run(( ) => TryOpen(VideoCaptureAPIs.DSHOW, index, format)));
 
         if (capture is null)
         {
@@ -111,7 +111,7 @@ internal sealed partial class CameraCapture
     }
 
     // 打开动作可能阻塞远超时限；超时放弃等待后，完成的实例转入 lateCaptures 由 Dispose 回收
-    private async Task<VideoCapture?> AwaitOpen(Task<VideoCapture?> openTask)
+    private async Task<VideoCapture?> AwaitOpenAsync(Task<VideoCapture?> openTask)
     {
         try
         {

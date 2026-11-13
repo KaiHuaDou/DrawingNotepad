@@ -1,6 +1,8 @@
 using System.Windows.Ink;
 using System.Windows.Input;
 
+using LightBoard.Tests.Toolbar;
+
 namespace LightBoard.Tests;
 
 // 缩略图的重建本身在后台线程进行，这里只断言与线程无关的行为：
@@ -34,15 +36,19 @@ public class PagePreviewTests
     [Fact]
     public void RefreshPreview_LeavesPageStrokesUntouched( )
     {
-        var page = new Page( );
-        page.Strokes.Add(new Stroke(
-            [new StylusPoint(10, 10), new StylusPoint(120, 80)],
-            new DrawingAttributes( )));
-        page.InvalidatePreview( );
+        // 排队目标取应用 Dispatcher，页面要在 App 线程上创建
+        UiThread.Run(( ) =>
+        {
+            var page = new Page( );
+            page.Strokes.Add(new Stroke(
+                [new StylusPoint(10, 10), new StylusPoint(120, 80)],
+                new DrawingAttributes( )));
+            page.InvalidatePreview( );
 
-        page.RefreshPreview( );
+            page.RefreshPreview( );
 
-        Assert.Single(page.Strokes);
-        Assert.NotNull(page.Preview);
+            Assert.Single(page.Strokes);
+            Assert.NotNull(page.Preview);
+        });
     }
 }

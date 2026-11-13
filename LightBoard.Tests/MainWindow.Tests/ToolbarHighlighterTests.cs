@@ -75,35 +75,21 @@ public class ToolbarHighlighterTests
         });
     }
 
-    [Fact]
-    public void Line_EnterExitHighlighter_FallsBackToInk( )
+    [Theory]
+    [InlineData(InkCanvasNextMode.Line)]
+    [InlineData(InkCanvasNextMode.Circle)]
+    public void Shape_EnterExitHighlighter_FallsBackToInk(InkCanvasNextMode shape)
     {
         UiThread.Run(( ) =>
         {
             using var host = new MainWindowHost( );
-            ToolEntry.Enter(host, InkCanvasNextMode.Line);
+            ToolEntry.Enter(host, shape);
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
             ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
             Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
             Assert.False(host.Window.LineRadio.IsChecked);
-            ToolbarAssertions.AssertConsistent(host);
-        });
-    }
-
-    [Fact]
-    public void Circle_EnterExitHighlighter_FallsBackToInk( )
-    {
-        UiThread.Run(( ) =>
-        {
-            using var host = new MainWindowHost( );
-            ToolEntry.Enter(host, InkCanvasNextMode.Circle);
-
-            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            ToolDriver.Toggle(host.Window.HighlighterToggle, false);
-
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
             Assert.False(host.Window.CircleRadio.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });

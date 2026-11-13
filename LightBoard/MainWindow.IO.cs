@@ -91,7 +91,7 @@ public partial class MainWindow
 
     private async Task LoadBoard(string fileName)
     {
-        var invalid = await RunWithLoading("正在打开", ( ) => App.LoadBoard(fileName));
+        var invalid = await RunWithLoading("正在打开", ( ) => App.LoadBoardAsync(fileName));
 
         ShowInvalidBackgrounds(invalid);
     }
@@ -169,7 +169,7 @@ public partial class MainWindow
 
         try
         {
-            Board.Write(dialog.FileName, App.SnapshotPages(cloneStrokes: false));
+            Board.Write(dialog.FileName, App.SnapshotPages( ));
             Dirty = false;
         }
         catch (Exception ex)
@@ -224,7 +224,7 @@ public partial class MainWindow
             catch (Exception ex)
             {
                 App.LogException(ex);
-                Dispatcher.Invoke(( ) => App.ShowException(ex, "导出失败。错误日志已记录。"));
+                App.ShowException(ex, "导出失败。错误日志已记录。");
                 return;
             }
             finally
@@ -237,7 +237,7 @@ public partial class MainWindow
                 });
             }
 
-            Dispatcher.Invoke(( ) => App.ShowInfo("导出图片成功"));
+            App.ShowInfo("导出图片成功");
         });
     }
 
@@ -283,7 +283,7 @@ public partial class MainWindow
             catch (Exception ex)
             {
                 App.LogException(ex);
-                Dispatcher.Invoke(( ) => App.ShowException(ex, "导出失败。错误日志已记录。"));
+                App.ShowException(ex, "导出失败。错误日志已记录。");
                 return;
             }
             finally
@@ -296,7 +296,7 @@ public partial class MainWindow
                 });
             }
 
-            Dispatcher.Invoke(( ) => App.ShowInfo("导出 PDF 成功"));
+            App.ShowInfo("导出 PDF 成功");
         });
     }
 

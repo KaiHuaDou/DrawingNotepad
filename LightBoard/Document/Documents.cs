@@ -39,7 +39,7 @@ public partial class App
         Pages.Add(page);
     }
 
-    public static async Task AttachDocument(string path)
+    public static async Task AttachDocumentAsync(string path)
     {
         var fullPath = Path.GetFullPath(path);
         var document = await OpenDocumentSourceAsync(fullPath);

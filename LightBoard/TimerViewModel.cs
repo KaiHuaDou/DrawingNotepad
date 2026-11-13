@@ -173,9 +173,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         Refresh( );
     }
 
-    /// <summary>
-    /// 只在未开始时切换模式，暂停中与推进中保持当前模式
-    /// </summary>
     public void SetMode(TimerMode value)
     {
         if (mode == value || !IsIdle)
@@ -189,9 +186,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         Refresh( );
     }
 
-    /// <summary>
-    /// 倒计时未开始时增减时长
-    /// </summary>
     public void Adjust(TimeSpan delta)
     {
         if (!IsAdjustable)
@@ -203,9 +197,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         Refresh( );
     }
 
-    /// <summary>
-    /// 只替换分钟字段，保留小时；倒计时可调整时生效
-    /// </summary>
     public void SetMinutes(int minutes)
     {
         if (!IsAdjustable || minutes == Minutes)
@@ -308,9 +299,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         state = newState;
     }
 
-    /// <summary>
-    /// 从暂停恢复时若已进入告警区间，直接进入告警状态
-    /// </summary>
     private TimerState StartState( )
     {
         return mode == TimerMode.Countdown && DisplayValue( ) <= AlertSpan
@@ -318,7 +306,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
             : TimerState.Running;
     }
 
-    /// <summary>当前显示的时长：倒计时为剩余，正计时为累计</summary>
     private TimeSpan DisplayValue( )
     {
         var used = Elapsed( );
@@ -328,7 +315,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
             : Clamp(countupElapsed + used, TimeSpan.Zero, MaxSpan);
     }
 
-    /// <summary>本轮已运行的时长；取单调时钟，不受系统时间调整影响</summary>
     private TimeSpan Elapsed( )
     {
         return IsActive ? Stopwatch.GetElapsedTime(startedAt) : TimeSpan.Zero;
@@ -339,7 +325,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         return mode == TimerMode.Countup ? countupElapsed < MaxSpan : countdownRemaining > TimeSpan.Zero;
     }
 
-    /// <summary>把本轮已运行时长结算进当前模式的数值</summary>
     private void Settle( )
     {
         var used = Elapsed( );

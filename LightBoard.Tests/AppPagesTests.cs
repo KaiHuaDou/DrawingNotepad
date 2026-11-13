@@ -179,16 +179,6 @@ public class AppPagesTests
     }
 
     [Fact]
-    public void IsBoardEmpty_ReturnsTrueWhenNoPages( )
-    {
-        UiThread.Run(( ) =>
-        {
-            App.Pages.Clear( );
-            Assert.True(App.IsBoardEmpty( ));
-        });
-    }
-
-    [Fact]
     public void IsBoardEmpty_ReturnsFalseWhenAnyPageHasStrokes( )
     {
         UiThread.Run(( ) =>

@@ -23,6 +23,9 @@ internal abstract class PageSource : IDisposable
 {
     public abstract int PageCount { get; }
 
+    /// <summary>
+    /// 取第 index 页（0 基）；返回的图已冻结，可跨线程使用
+    /// </summary>
     public abstract ImageSource? GetPage(int index);
 
     public abstract void Dispose( );

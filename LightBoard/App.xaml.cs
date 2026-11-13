@@ -73,43 +73,50 @@ public partial class App : Application, ISingleInstance
 
     public static void ShowException(Exception e, string message)
     {
-        var details = $"{e.Message}\n{e.StackTrace}";
-        using TaskDialog dialog = new( )
+        Current.Dispatcher.Invoke(( ) =>
         {
-            WindowTitle = "轻白板",
-            MainInstruction = "程序出现错误",
-            MainIcon = TaskDialogIcon.Error,
-            Content = message,
-            ExpandedInformation = details,
-        };
-        var copyButton = new TaskDialogButton("复制错误信息");
-        dialog.Buttons.Add(copyButton);
-        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
-        var result = dialog.ShowDialog( );
-        if (result == copyButton)
-        {
-            SetClipboard(details);
-        }
+            var details = $"{e.Message}\n{e.StackTrace}";
+            using TaskDialog dialog = new( )
+            {
+                WindowTitle = "轻白板",
+                MainInstruction = "程序出现错误",
+                MainIcon = TaskDialogIcon.Error,
+                Content = message,
+                ExpandedInformation = details,
+            };
+            var copyButton = new TaskDialogButton("复制错误信息");
+            dialog.Buttons.Add(copyButton);
+            dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+            var result = dialog.ShowDialog( );
+            if (result == copyButton)
+            {
+                SetClipboard(details);
+            }
+        });
     }
 
     public static void ShowInfo(string message, string? content = null)
     {
-        using TaskDialog dialog = new( )
+        Current.Dispatcher.Invoke(( ) =>
         {
-            WindowTitle = "轻白板",
-            MainInstruction = message,
-            MainIcon = TaskDialogIcon.Information,
-            Content = content ?? message,
-        };
-        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
-        dialog.ShowDialog( );
+            using TaskDialog dialog = new( )
+            {
+                WindowTitle = "轻白板",
+                MainInstruction = message,
+                MainIcon = TaskDialogIcon.Information,
+                Content = content ?? message,
+            };
+            dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+            dialog.ShowDialog( );
+        });
     }
 
-    // SingleInstanceCore 发布的是 Environment.GetCommandLineArgs() 全量数组：args[0] 是程序自身路径，
-    // args[1] 才是第一个真参数；与 Main(string[]) 的 args（不含程序路径）索引语义相反，勿"统一"。
+    // SingleInstanceCore 发布的是 Environment.GetCommandLineArgs() 全量数组
+    // args[0] 是程序自身路径，args[1] 才是第一个参数
     public void OnInstanceInvoked(string[] args)
     {
-        Current.Dispatcher.Invoke(( ) =>
+        // 回调在 IPC 线程：打开文件可能读盘并弹确认框，不能阻塞它
+        Current.Dispatcher.BeginInvoke(( ) =>
         {
             Current.MainWindow.Show( );
             Current.MainWindow.Activate( );
@@ -120,17 +127,15 @@ public partial class App : Application, ISingleInstance
         });
     }
 
+    // 调用方都在 UI 线程
     private static void SetClipboard(string details)
     {
-        Current.Dispatcher.Invoke(( ) =>
+        try
         {
-            try
-            {
-                Clipboard.Clear( );
-                Clipboard.SetDataObject(details, true);
-            }
-            catch { }
-        });
+            Clipboard.Clear( );
+            Clipboard.SetDataObject(details, true);
+        }
+        catch { }
     }
 
     private void AppDispatcherUnhandledException(object o, DispatcherUnhandledExceptionEventArgs e)
