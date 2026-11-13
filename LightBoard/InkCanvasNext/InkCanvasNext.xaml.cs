@@ -8,81 +8,14 @@ using System.Windows.Media;
 namespace InkCanvasNext;
 
 /// <summary>
-/// 画布编辑工具模式
-/// </summary>
-public enum InkCanvasNextMode
-{
-    /// <summary>
-    /// 使用默认笔触绘制墨迹
-    /// </summary>
-    Ink,
-    /// <summary>
-    /// 按笔画擦除墨迹
-    /// </summary>
-    EraseStroke,
-    /// <summary>
-    /// 按区域擦除墨迹
-    /// </summary>
-    EraseArea,
-    /// <summary>
-    /// 选择墨迹笔画
-    /// </summary>
-    Select,
-    /// <summary>
-    /// 绘制直线
-    /// </summary>
-    Line,
-    /// <summary>
-    /// 绘制圆形
-    /// </summary>
-    Circle
-}
-
-/// <summary>
-/// 盖章动作（克隆选区或粘贴剪贴板墨迹）
-/// </summary>
-public enum StampAction
-{
-    /// <summary>
-    /// 无盖章动作
-    /// </summary>
-    None,
-    /// <summary>
-    /// 克隆选区墨迹
-    /// </summary>
-    Clone,
-    /// <summary>
-    /// 粘贴剪贴板中的墨迹
-    /// </summary>
-    Paste
-}
-
-/// <summary>
-/// 鼠标滚轮动作模式
-/// </summary>
-public enum MouseWheelAction
-{
-    /// <summary>
-    /// 滚动画布
-    /// </summary>
-    Scroll,
-    /// <summary>
-    /// 缩放画布
-    /// </summary>
-    Zoom,
-    /// <summary>
-    /// 忽略鼠标滚轮
-    /// </summary>
-    None
-}
-
-/// <summary>
 /// 支持绘制、擦除、选择、直线、圆形、高亮等模式的墨迹画布控件
 /// </summary>
 public partial class InkCanvasNext : UserControl
 {
     private readonly SelectionController selection;
     private readonly SelectionVisual selectionVisual;
+
+    internal TaperInkCanvas InnerCanvas { get; private set; } = null!;
 
     /// <summary>
     /// 初始化 InkCanvasNext 控件并装配内部画布与选择控制器
@@ -96,6 +29,7 @@ public partial class InkCanvasNext : UserControl
         InitializeCommands( );
 
         this.options = options ?? new( );
+        CreateInnerCanvas(this.options.Taper);
 
         history = new RingBuffer<IHistoryChange>(this.options.MaxHistoryCount);
 
@@ -142,8 +76,40 @@ public partial class InkCanvasNext : UserControl
         UnhookMultiTouchFrame( );
     }
 
+    // InkCanvas 不写进 XAML：x:Class 与命名空间同名，XAML 编译器生成的元素类型引用在类内无法解析
+    private void CreateInnerCanvas(TaperParameters taper)
+    {
+        InnerCanvas = new TaperInkCanvas
+        {
+            Background = Brushes.Transparent,
+            UseCustomCursor = true
+        };
+
+        Stylus.SetIsPressAndHoldEnabled(InnerCanvas, false);
+        Panel.SetZIndex(InnerCanvas, 36); // 与 XAML 的 SelectionLayer(37)、ShapePreviewLayer(38) 衔接
+        InnerCanvas.DefaultDrawingAttributes = new DrawingAttributes
+        {
+            Width = 3,
+            Height = 3,
+            FitToCurve = true,
+            StylusTip = StylusTip.Ellipse,
+            Color = Color.FromRgb(0xE6, 0xE6, 0xE6)
+        };
+        InnerCanvas.LostTouchCapture += CanvasLostTouchCapture;
+        InnerCanvas.PreviewMouseDown += CanvasPreviewMouseDown;
+        InnerCanvas.PreviewMouseMove += CanvasPreviewMouseMove;
+        InnerCanvas.PreviewMouseUp += CanvasPreviewMouseUp;
+        InnerCanvas.PreviewTouchDown += CanvasPreviewTouchDown;
+        InnerCanvas.PreviewTouchMove += CanvasPreviewTouchMove;
+        InnerCanvas.PreviewTouchUp += CanvasPreviewTouchUp;
+        InnerCanvas.TouchLeave += CanvasTouchLeave;
+        CanvasGrid.Children.Insert(1, InnerCanvas);
+
+        InnerCanvas.Configure(taper);
+    }
+
     /// <summary>
-    /// 供 internal 协作对象（SelectionController 等）回调，外部消费者请订阅对应事件
+    /// 协作对象回调用
     /// </summary>
     internal void RaiseSelectionChanged( )
     {
@@ -372,7 +338,6 @@ public partial class InkCanvasNext : UserControl
         DocumentHost.Child = new Image { Source = page, Stretch = Stretch.Uniform };
         DocumentHost.Visibility = Visibility.Visible;
 
-        // 页面盒可能大于画布：先扩展画布，避免固定尺寸的 CanvasGrid 把墨迹层挤到中间
         ExtendCanvas(box.Right - InnerCanvas.Width, box.Bottom - InnerCanvas.Height);
     }
 }

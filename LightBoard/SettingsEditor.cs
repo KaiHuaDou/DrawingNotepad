@@ -17,6 +17,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
     private readonly LightBoardSettings baseline;
     private bool edgeScrollHint;
     private bool smoothZoom;
+    private bool taperEnabled;
     private int palmEraseFingers;
     private string switchOutProcess;
 
@@ -25,6 +26,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
         baseline = settings;
         edgeScrollHint = settings.EdgeScrollHint;
         smoothZoom = settings.SmoothZoom;
+        taperEnabled = settings.Taper;
         palmEraseFingers = settings.PalmEraseFingers;
         switchOutProcess = settings.SwitchOutProcessName;
 
@@ -36,6 +38,12 @@ public sealed class SettingsEditor : INotifyPropertyChanged
                 s => s.PanZoomDisplaceThreshold, (s, v) => s with { PanZoomDisplaceThreshold = v }),
             new("双指捏合锁定间距", ViewportDIP, InkCanvasNextOptions.GestureMin, InkCanvasNextOptions.GestureMax, 1, false,
                 s => s.PinchLockDistance, (s, v) => s with { PinchLockDistance = v }),
+        ];
+
+        TaperFields =
+        [
+            new("末端采样点数", "点", TaperParameters.PointsMin, TaperParameters.PointsMax, 1, true,
+                s => s.TaperPoints, (s, v) => s with { TaperPoints = (int) v }),
         ];
 
         EdgeFields =
@@ -74,7 +82,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
                 s => s.ToolbarScale, (s, v) => s with { ToolbarScale = v }),
         ];
 
-        Fields = [.. GestureFields, .. EdgeFields, .. EraserFields, .. UndoFields, .. ToolbarFields];
+        Fields = [.. GestureFields, .. TaperFields, .. EdgeFields, .. EraserFields, .. UndoFields, .. ToolbarFields];
 
         foreach (var field in Fields)
         {
@@ -86,6 +94,8 @@ public sealed class SettingsEditor : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public IReadOnlyList<SettingsField> GestureFields { get; }
+
+    public IReadOnlyList<SettingsField> TaperFields { get; }
 
     public IReadOnlyList<SettingsField> EdgeFields { get; }
 
@@ -126,6 +136,21 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
             smoothZoom = value;
             Raise(nameof(SmoothZoom));
+        }
+    }
+
+    public bool TaperEnabled
+    {
+        get => taperEnabled;
+        set
+        {
+            if (taperEnabled == value)
+            {
+                return;
+            }
+
+            taperEnabled = value;
+            Raise(nameof(TaperEnabled));
         }
     }
 
@@ -174,6 +199,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
         {
             EdgeScrollHint = edgeScrollHint,
             SmoothZoom = smoothZoom,
+            Taper = taperEnabled,
             PalmEraseFingers = palmEraseFingers,
             SwitchOutProcessName = string.IsNullOrWhiteSpace(switchOutProcess) ? baseline.SwitchOutProcessName : switchOutProcess.Trim( )
         };
@@ -195,6 +221,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
         EdgeScrollHint = defaults.EdgeScrollHint;
         SmoothZoom = defaults.SmoothZoom;
+        TaperEnabled = defaults.Taper;
         SetPalmEraseFingers(defaults.PalmEraseFingers);
         SwitchOutProcess = defaults.SwitchOutProcessName;
     }

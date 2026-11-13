@@ -35,6 +35,8 @@ public class SettingsTests
         Assert.NotNull(data);
         Assert.False(data.EdgeScrollHint);
         Assert.True(data.SmoothZoom);
+        Assert.True(data.Taper);
+        Assert.Equal(InkCanvasNext.TaperParameters.PointsDefault, data.TaperPoints);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollTopDefault, data.EdgeScrollTopThreshold);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollBottomDefault, data.EdgeScrollBottomThreshold);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollLeftDefault, data.EdgeScrollLeftThreshold);
@@ -61,6 +63,8 @@ public class SettingsTests
             PanZoomDisplaceThreshold = 31,
             PinchLockDistance = 25,
             SmoothZoom = false,
+            Taper = false,
+            TaperPoints = 9,
             MaxHistoryCount = 201,
             PalmEraseFingers = 4,
             EraserDiameter = 80,
@@ -76,6 +80,8 @@ public class SettingsTests
         Assert.Equal(31, options.PanZoomDisplaceThreshold);
         Assert.Equal(25, options.PinchLockDistance);
         Assert.False(options.SmoothZoom);
+        Assert.False(options.Taper.Enabled);
+        Assert.Equal(9, options.Taper.Points);
         Assert.Equal(0, options.EdgeScrollTopThreshold);
         Assert.Equal(0, options.EdgeScrollBottomThreshold);
         Assert.Equal(0, options.EdgeScrollLeftThreshold);
@@ -113,6 +119,7 @@ public class SettingsTests
             EdgeScrollTopThreshold = -5,
             EdgeScrollBottomThreshold = 5000,
             TouchDisplacementThreshold = 0,
+            TaperPoints = 0,
             MaxHistoryCount = 5,
             PalmEraseFingers = 9,
             EraserDiameter = 0,
@@ -127,6 +134,7 @@ public class SettingsTests
         Assert.Equal(0, normalized.EdgeScrollTopThreshold);
         Assert.Equal(1000, normalized.EdgeScrollBottomThreshold);
         Assert.Equal(1, normalized.TouchDisplacementThreshold);
+        Assert.Equal(InkCanvasNext.TaperParameters.PointsMin, normalized.TaperPoints);
         Assert.Equal(10, normalized.MaxHistoryCount);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersMax, normalized.PalmEraseFingers);
         Assert.Equal(1, normalized.EraserDiameter);

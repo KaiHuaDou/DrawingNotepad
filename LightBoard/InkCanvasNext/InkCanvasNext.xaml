@@ -7,22 +7,6 @@
                 <Border x:Name="DocumentHost"
                         HorizontalAlignment="Left" VerticalAlignment="Top"
                         Visibility="Collapsed" />
-                <InkCanvas x:Name="InnerCanvas"
-                           Panel.ZIndex="36"
-                           Background="Transparent"
-                           LostTouchCapture="CanvasLostTouchCapture"
-                           PreviewMouseDown="CanvasPreviewMouseDown"
-                           PreviewMouseMove="CanvasPreviewMouseMove" PreviewMouseUp="CanvasPreviewMouseUp"
-                           PreviewTouchDown="CanvasPreviewTouchDown"
-                           PreviewTouchMove="CanvasPreviewTouchMove" PreviewTouchUp="CanvasPreviewTouchUp"
-                           Stylus.IsPressAndHoldEnabled="False" TouchLeave="CanvasTouchLeave"
-                           UseCustomCursor="True">
-                    <InkCanvas.DefaultDrawingAttributes>
-                        <DrawingAttributes Width="3" Height="3"
-                                           FitToCurve="True" StylusTip="Ellipse"
-                                           Color="#E6E6E6" />
-                    </InkCanvas.DefaultDrawingAttributes>
-                </InkCanvas>
                 <Canvas x:Name="SelectionLayer" Panel.ZIndex="37" IsHitTestVisible="False" />
                 <Canvas x:Name="ShapePreviewLayer" Panel.ZIndex="38" IsHitTestVisible="False">
                     <Line x:Name="ShapePreviewLine"
@@ -35,9 +19,7 @@
             </Grid>
         </ScrollViewer>
 
-        <Canvas x:Name="EraserOverlayCanvas"
-                Panel.ZIndex="1"
-                IsHitTestVisible="False">
+        <Canvas x:Name="EraserOverlayCanvas" Panel.ZIndex="1" IsHitTestVisible="False">
             <Ellipse x:Name="EraserFeedback"
                      Width="0" Height="0"
                      Visibility="Collapsed"

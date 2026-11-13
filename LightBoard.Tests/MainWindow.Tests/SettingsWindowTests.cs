@@ -49,7 +49,7 @@ public class SettingsWindowTests
                 var boxes = Descendants(root).OfType<TextBox>( ).ToList( );
                 var fieldBoxes = boxes.Where(box => box.DataContext is SettingsField).ToList( );
 
-                Assert.Equal(13, fieldBoxes.Count);
+                Assert.Equal(14, fieldBoxes.Count);
                 Assert.Contains(boxes, box => box.DataContext is SettingsEditor);
             }
             finally

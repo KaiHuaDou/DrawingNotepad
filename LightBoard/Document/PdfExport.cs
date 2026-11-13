@@ -49,7 +49,7 @@ internal static class PdfWriter
             {
                 for (var i = 0; i < count; i++)
                 {
-                    var (Number, Strokes, Background, Box) =  App.SnapshotPage(pages[i]);
+                    var (Number, Strokes, Background, Box) = App.SnapshotPage(pages[i]);
                     var bitmap = AddPage(pdf, i, Strokes, Background, Box, dpi, scale);
                     bitmaps.Add(bitmap);
                     progress?.Report(new(pageTip, i + 1, count));

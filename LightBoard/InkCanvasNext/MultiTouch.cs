@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -30,7 +29,7 @@ public partial class InkCanvasNext
 
         var attributes = InnerCanvas.DefaultDrawingAttributes.Clone( );
         var initialPoint = new StylusPoint(canvasPoint.X, canvasPoint.Y, DefaultPressure);
-        var strokeVisual = new StrokeVisual(attributes, initialPoint);
+        var strokeVisual = new StrokeVisual(attributes, initialPoint, Taper.Effective(options.Taper, attributes));
         strokeVisual.SetVisualCanvas(multiTouchCanvas);
 
         multiTouchStrokes[touchId] = strokeVisual;
@@ -164,177 +163,5 @@ public partial class InkCanvasNext
         {
             UnhookMultiTouchFrame( );
         }
-    }
-}
-
-/// <summary>
-/// 多指笔画预览层
-/// </summary>
-internal sealed class VisualCanvas : FrameworkElement
-{
-    private readonly List<DrawingVisual> visuals = [];
-
-    internal int VisualCount => visuals.Count;
-
-    internal void AddVisual(DrawingVisual visual)
-    {
-        visuals.Add(visual);
-        AddVisualChild(visual);
-    }
-
-    internal void RemoveVisual(DrawingVisual visual)
-    {
-        visuals.Remove(visual);
-        RemoveVisualChild(visual);
-    }
-
-    protected override Visual GetVisualChild(int index)
-    {
-        return visuals[index];
-    }
-
-    protected override int VisualChildrenCount => visuals.Count;
-}
-
-internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, StylusPoint initialPoint)
-{
-    private const int SegmentPoints = 64;
-
-    private readonly DrawingAttributes drawingAttributes = drawingAttributes;
-
-    // 高亮笔的笔迹半透明，段间共享的接头点会被两段各画一次而叠色，因此整笔重绘
-    private readonly bool segmentable = !drawingAttributes.IsHighlighter;
-
-    private readonly List<DrawingVisual> segments = [];
-
-    private VisualCanvas? visualCanvas;
-    private DrawingVisual? activeVisual;
-    private SolidColorBrush? brush;
-
-    /// <summary>
-    /// 已画进冻结段的点数
-    /// </summary>
-    private int frozenCount;
-
-    internal Stroke Stroke { get; } = new Stroke([initialPoint], drawingAttributes);
-
-    /// <summary>
-    /// 自上次重绘以来有新触点
-    /// </summary>
-    internal bool NeedsRedraw { get; private set; }
-
-    internal void SetVisualCanvas(VisualCanvas visualCanvas)
-    {
-        this.visualCanvas = visualCanvas;
-    }
-
-    internal void Add(StylusPoint point)
-    {
-        Stroke.StylusPoints.Add(point);
-        NeedsRedraw = true;
-
-        if (segmentable && Stroke.StylusPoints.Count - frozenCount >= SegmentPoints)
-        {
-            FreezeSegment( );
-        }
-    }
-
-    internal void Redraw( )
-    {
-        NeedsRedraw = false;
-
-        if (visualCanvas == null || Stroke.StylusPoints.Count == 0)
-        {
-            return;
-        }
-
-        activeVisual ??= CreateAndAttachVisual( );
-
-        // 只重建活动段
-        using var context = activeVisual.RenderOpen( );
-        if (SegmentGeometry(frozenCount, Stroke.StylusPoints.Count) is { } geometry)
-        {
-            context.DrawGeometry(brush ??= CreateBrush( ), null, geometry);
-        }
-    }
-
-    internal Stroke? BuildStroke( )
-    {
-        return Stroke.StylusPoints.Count > 0 ? Stroke : null;
-    }
-
-    internal void Cleanup( )
-    {
-        foreach (var segment in segments)
-        {
-            visualCanvas?.RemoveVisual(segment);
-        }
-
-        segments.Clear( );
-
-        if (activeVisual is null || visualCanvas is null)
-        {
-            return;
-        }
-
-        visualCanvas.RemoveVisual(activeVisual);
-        activeVisual = null;
-    }
-
-    private void FreezeSegment( )
-    {
-        var end = Stroke.StylusPoints.Count;
-        if (visualCanvas is null || SegmentGeometry(frozenCount, end) is not { } geometry)
-        {
-            return;
-        }
-
-        var visual = new DrawingVisual( );
-        using (var context = visual.RenderOpen( ))
-        {
-            context.DrawGeometry(brush ??= CreateBrush( ), null, geometry);
-        }
-
-        visualCanvas.AddVisual(visual);
-        segments.Add(visual);
-
-        // 同一点留在下一段起点，避免接头处出现缺口；两段的端帽重合，不透明笔刷下看不出接缝
-        frozenCount = end - 1;
-    }
-
-    private System.Windows.Media.Geometry? SegmentGeometry(int start, int end)
-    {
-        if (end <= start)
-        {
-            return null;
-        }
-
-        var points = new StylusPointCollection(end - start);
-        for (var i = start; i < end; i++)
-        {
-            points.Add(Stroke.StylusPoints[i]);
-        }
-
-        return new Stroke(points, drawingAttributes).GetGeometry(drawingAttributes);
-    }
-
-    private DrawingVisual CreateAndAttachVisual( )
-    {
-        var visual = new DrawingVisual( );
-        visualCanvas!.AddVisual(visual);
-        return visual;
-    }
-
-    private SolidColorBrush CreateBrush( )
-    {
-        var brush = new SolidColorBrush(drawingAttributes.Color);
-
-        if (drawingAttributes.IsHighlighter)
-        {
-            brush.Opacity = HighlighterOpacity;
-        }
-
-        brush.Freeze( );
-        return brush;
     }
 }

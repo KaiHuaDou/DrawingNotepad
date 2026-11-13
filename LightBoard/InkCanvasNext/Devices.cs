@@ -36,6 +36,7 @@ public partial class InkCanvasNext
             touchStarts.Clear( );
             MousePointer.Reset( );
             SetState(TouchState.Idle);
+            InnerCanvas.AbortWetInk( );
             CancelSelectionGesture( );
             CancelShape( );
             CancelEdgeScroll( );
@@ -53,7 +54,7 @@ public partial class InkCanvasNext
         UpdateAreaEraser( );
     }
 
-    private void CanvasLostTouchCapture(object o, TouchEventArgs e)
+    private void CanvasLostTouchCapture(object? o, TouchEventArgs e)
     {
         if (releasingCaptures)
         {
@@ -70,7 +71,7 @@ public partial class InkCanvasNext
         TouchEpilogue( );
     }
 
-    private void CanvasPreviewTouchDown(object o, TouchEventArgs e)
+    private void CanvasPreviewTouchDown(object? o, TouchEventArgs e)
     {
         CancelEdgeScroll( );
         var position = e.GetTouchPoint(this).Position;
@@ -107,7 +108,7 @@ public partial class InkCanvasNext
         TouchEpilogue( );
     }
 
-    private void CanvasPreviewTouchMove(object o, TouchEventArgs e)
+    private void CanvasPreviewTouchMove(object? o, TouchEventArgs e)
     {
         if (!touches.ContainsKey(e.TouchDevice.Id))
         {
@@ -172,7 +173,7 @@ public partial class InkCanvasNext
         e.Handled = true;
     }
 
-    private void CanvasPreviewTouchUp(object o, TouchEventArgs e)
+    private void CanvasPreviewTouchUp(object? o, TouchEventArgs e)
     {
         var wasHandled = HandlesEvent(State);
         var wasMultiTouch = multiTouchStrokes.ContainsKey(e.TouchDevice.Id);
@@ -203,7 +204,7 @@ public partial class InkCanvasNext
         TouchEpilogue( );
     }
 
-    private void CanvasTouchLeave(object o, TouchEventArgs e)
+    private void CanvasTouchLeave(object? o, TouchEventArgs e)
     {
         if (releasingCaptures || e.TouchDevice.Captured == InnerCanvas)
         {

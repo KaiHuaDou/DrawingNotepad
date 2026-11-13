@@ -23,7 +23,7 @@
 ## 公开类型
 
 - `InkCanvasNext`：主控件
-- `InkCanvasNextOptions`、`EraserParameters`：构造期选项
+- `InkCanvasNextOptions`、`EraserParameters`、`TaperParameters`：构造期选项
 - `InkCanvasNextMode`：编辑模式
 - `StampAction`：盖章开关（克隆 / 粘贴）
 - `MouseWheelAction`：滚轮交互方式
@@ -77,6 +77,8 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `Eraser.PalmExtra`   | 8      | 掌擦圆在触点包络外的外扩量，视口 DIP |
 | `Eraser.MinLogicalDiameter` | 1 | 缩放后逻辑直径的下限，内容 DIP |
 | `Eraser.RebuildThreshold`   | 0.5 | 逻辑直径变化超过此值才重建命中测试器，内容 DIP |
+| `Taper.Enabled` | `true` | 笔锋开关：笔画末端按采样点渐细 |
+| `Taper.Points` | 8 | 末端渐细的采样点数，取值 2~40 |
 
 ## 依赖属性
 
@@ -202,6 +204,8 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `EraserParameters.PalmExtraDefault` | 8 | 掌擦圆外扩量，视口 DIP |
 | `EraserParameters.MinLogicalDiameterDefault` | 1 | 缩放后逻辑直径下限，内容 DIP |
 | `EraserParameters.RebuildThresholdDefault` | 0.5 | 命中测试器重建阈值，内容 DIP |
+| `TaperParameters.EnabledDefault` | `true` | 笔锋开关 |
+| `TaperParameters.PointsMin` / `PointsMax` / `PointsDefault` | 2 / 40 / 8 | 渐细点数 |
 | `EdgeScrollTopDefault` / `EdgeScrollBottomDefault` / `EdgeScrollLeftDefault` / `EdgeScrollRightDefault` | 64 / 192 / 64 / 96 | 热区宽度，视口 DIP |
 
 各选项属性在 init 时把越界值收拢到对应范围。

@@ -106,6 +106,7 @@ public class SettingsEditorTests
     {
         var editor = new SettingsEditor(new LightBoardSettings( ));
         editor.GestureFields[0].Text = "25";
+        editor.TaperFields[0].Text = "12";
         editor.EdgeFields[3].Text = "128";
         editor.EraserFields[2].Text = "2.5";
         editor.UndoFields[0].Text = "300";
@@ -113,10 +114,12 @@ public class SettingsEditorTests
         editor.FourFingerErase = true;
         editor.EdgeScrollHint = false;
         editor.SmoothZoom = false;
+        editor.TaperEnabled = false;
 
         var settings = editor.Build( );
 
         Assert.Equal(25, settings.TouchDisplacementThreshold);
+        Assert.Equal(12, settings.TaperPoints);
         Assert.Equal(128, settings.EdgeScrollRightThreshold);
         Assert.Equal(2.5, settings.EraserMinLogicalDiameter);
         Assert.Equal(300, settings.MaxHistoryCount);
@@ -124,6 +127,7 @@ public class SettingsEditorTests
         Assert.Equal(4, settings.PalmEraseFingers);
         Assert.False(settings.EdgeScrollHint);
         Assert.False(settings.SmoothZoom);
+        Assert.False(settings.Taper);
     }
 
     [Fact]
