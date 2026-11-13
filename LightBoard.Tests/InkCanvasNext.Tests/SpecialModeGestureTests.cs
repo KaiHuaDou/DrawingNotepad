@@ -16,7 +16,7 @@ public class SpecialModeGestureTests
     /// <summary>双指几何断言用笔画：中间两个触点恰好落在两指基线上</summary>
     private static readonly Point[] PinchStrokePoints = [new(180, 96), new(200, 100), new(300, 100), new(320, 104)];
 
-    // ---------- Select 模式 ----------
+    // Select 模式
 
     [Fact]
     public void SelectMode_TwoFingers_StaysSelection( )
@@ -422,7 +422,97 @@ public class SpecialModeGestureTests
         });
     }
 
-    // ---------- 橡皮模式 ----------
+    /// <summary>3 指全落在选区内：保持选区手势但降为只平移，后续移动仅平移选区，不缩放旋转</summary>
+    [Fact]
+    public void SelectMode_ThreeFingersInsideSelection_TranslatesOnly( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateSelectHost(PinchStrokePoints);
+
+            var a = host.Device( );
+            var b = host.Device( );
+            var c = host.Device( );
+            // 三指全部落在选区包围盒内
+            a.Down(host.Target, new Point(200, 100));
+            b.Down(host.Target, new Point(205, 100));
+            c.Down(host.Target, new Point(210, 100));
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+
+            a.Move(host.Target, new Point(250, 100));
+            a.Up(host.Target, new Point(250, 100));
+            b.Up(host.Target, new Point(205, 100));
+            c.Up(host.Target, new Point(210, 100));
+
+            // 只平移 (+50, 0)：点间距与形状不变
+            AssertPoints(host.Canvas.Strokes[0].StylusPoints,
+                new Point(230, 96), new Point(250, 100), new Point(350, 100), new Point(370, 104));
+        });
+    }
+
+    /// <summary>选区手势进行中附加手指横跨选区内外：不升级双指变换、不迁入平移评估，移动手势继续</summary>
+    [Fact]
+    public void SelectMode_MixedFingers_KeepsSelectionGesture( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateSelectHost(PinchStrokePoints);
+
+            var a = host.Device( );
+            a.Down(host.Target, new Point(200, 100));
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+
+            // 第二指落在选区外：横跨内外，不升级为双指变换
+            var b = host.Device( );
+            b.Down(host.Target, new Point(500, 100));
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+
+            // 第三指仍在选区外：横跨内外，不迁入平移评估
+            var c = host.Device( );
+            c.Down(host.Target, new Point(505, 100));
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+
+            a.Move(host.Target, new Point(250, 100));
+            a.Up(host.Target, new Point(250, 100));
+            b.Up(host.Target, new Point(500, 100));
+            c.Up(host.Target, new Point(505, 100));
+
+            // 移动手势未被接管：选区只平移 (+50, 0)，点间距不变
+            AssertPoints(host.Canvas.Strokes[0].StylusPoints,
+                new Point(230, 96), new Point(250, 100), new Point(350, 100), new Point(370, 104));
+        });
+    }
+
+    /// <summary>选区手势中全部触点都落在选区外（旋转手柄在包围盒上方）：附加并拢手指按一般手势迁入平移评估</summary>
+    [Fact]
+    public void SelectMode_AllFingersOutsideSelection_EntersEvalPan( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateSelectHost(PinchStrokePoints);
+
+            // 旋转手柄悬于选区正上方，触点在选区包围盒外
+            var a = host.Device( );
+            a.Down(host.Target, new Point(250, 54.5));
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+
+            var bPoint = TestPoints.CloseTo(host, new Point(250, 54.5));
+            var cPoint = TestPoints.CloseTo(host, bPoint);
+            var b = host.Device( );
+            var c = host.Device( );
+            b.Down(host.Target, bPoint);
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+            c.Down(host.Target, cPoint);
+            Assert.Equal(TouchState.EvalPan, host.Canvas.State);
+
+            a.Up(host.Target, new Point(250, 54.5));
+            b.Up(host.Target, bPoint);
+            c.Up(host.Target, cPoint);
+            Assert.NotNull(host.Canvas.GetSelectionScreenBounds(host.Canvas));
+        });
+    }
+
+    // 橡皮模式
 
     /// <summary>面积擦落指即擦除：单击不移动也擦掉橡皮圈内的笔画，抬手结算为一步撤销</summary>
     [Fact]
@@ -779,7 +869,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    // ---------- 盖章模式 ----------
+    // 盖章模式
 
     /// <summary>盖章期间迁入 MultiDraw：多指不创建笔画、抬手不落章</summary>
     [Fact]
@@ -804,7 +894,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    // ---------- 形状模式 ----------
+    // 形状模式
 
     [Fact]
     public void ShapeLineMode_SingleFinger_CommitsStroke( )
@@ -860,7 +950,7 @@ public class SpecialModeGestureTests
         });
     }
 
-    // ---------- PanZoom 手势可用性 ----------
+    // PanZoom 手势可用性
 
     [Fact]
     public void PanZoom_TwoFingers_SymmetricPinchChangesScale( )

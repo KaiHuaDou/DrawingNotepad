@@ -171,6 +171,15 @@ public sealed record InkCanvasNextOptions
     } = MouseWheelAction.Scroll;
 
     /// <summary>
+    /// 空白处拖动创建选区的方式；赋值超出枚举范围时取 Lasso
+    /// </summary>
+    public SelectionDragMode SelectionDragMode
+    {
+        get;
+        init => field = Enum.IsDefined(value) ? value : SelectionDragModeDefault;
+    } = SelectionDragModeDefault;
+
+    /// <summary>
     /// 橡皮参数
     /// </summary>
     public EraserParameters Eraser
@@ -232,6 +241,11 @@ public sealed record InkCanvasNextOptions
     /// 双指缩放平滑曲线开关默认值
     /// </summary>
     public const bool SmoothZoomDefault = true;
+
+    /// <summary>
+    /// 选区方式默认值
+    /// </summary>
+    public const SelectionDragMode SelectionDragModeDefault = SelectionDragMode.Lasso;
 
     /// <summary>
     /// 触点间距阈值相对主屏工作区宽度的派生比例

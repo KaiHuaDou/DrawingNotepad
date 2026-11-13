@@ -51,6 +51,21 @@ public enum StampAction
 }
 
 /// <summary>
+/// 空白处拖动创建选区的方式
+/// </summary>
+public enum SelectionDragMode
+{
+    /// <summary>
+    /// 套索圈选
+    /// </summary>
+    Lasso,
+    /// <summary>
+    /// 对角线矩形框选
+    /// </summary>
+    Rectangle
+}
+
+/// <summary>
 /// 鼠标滚轮动作模式
 /// </summary>
 public enum MouseWheelAction

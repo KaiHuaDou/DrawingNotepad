@@ -25,13 +25,13 @@
 - `d > l` 若无新手指落下则不会发生：
     - 状态机面向足够大的屏幕设计；
     - `d > l` 进入 `MultiDraw`，供两人在大屏两侧各落一指同时书写。
-- 选区入口仅在 `count in {1, 2}` 且 `Mode == Select && StampAction == None` 时考虑；3+ 指不进入选区。
+- 选区入口仅在 `count in {1, 2}` 且 `Mode == Select && StampAction == None` 时考虑；3+ 指不进入选区。双指入口要求触点全部落在选区包围盒内（`ClassifyTouchesAgainstSelection`，经 `InnerCanvas` 把根可视坐标换算为内容坐标）；无选区时双指直接进入套索；触点横跨选区内外时不进入任何手势（保持 `Idle`）。
 - 优先级（自上而下，即 switch 臂顺序）：`Idle` 与 `EvalDraw` 中选区、单指先于手势态（例：`Idle` 下 `count == 1` 且选区候选成立 → `Selection`；`count == 2` 同理压过 `PanZoom`）；掌擦臂先于平移臂；`MultiDraw` 由 `d > l` 把关，排在其后。
     - 掌擦与平移的触点区间随 `p` 重叠（`p = 4` 时四指两者都满足），顺序决定结果。
 - `EvalPan` 是多指平移的评估态（3 指及以上并拢进入，与 `EvalDraw` 对单指的角色相同）：平移随 Move 实时生效；位移超过 `c` 提交为 `Pan`；提交前可迁 `Eraser`（掌擦判定与 `EvalDraw` 同款：`count >= p and (d <= l or IsErase)`）与 `MultiDraw`（张开且非擦除工具）；无回 `PanZoom` 的迁移，减为单指/双指仍停留并继续平移。
 - `Pan` 是已提交的平移态：无论触点如何增减、间距如何变化，仅 `count == 0` 回 `Idle`（掌擦与多指书写都只在评估期可达）。
 - `PanZoom` 的手势执行只用前两指（`GetMajorTouches`）：并拢的附加指迁 `EvalPan`；张开的附加指不参与迁移（不迁 `MultiDraw`）；减为单指迁 `EvalPan`，此后落下第二指不回 `PanZoom`，需全部抬起重新开始双指手势。
-- `Selection` 内部不做 `d`/`l` 分析（`count in {1,2}` 时维持选区手势）；`count == 0` 回 `Idle`。附加手指触发画布级手势：`count >= p` 且 `d <= l` → `Eraser`（掌擦）；其余 `count >= 3` 且 `d <= l` → `EvalPan`（Select 模式下附加手指平移画布，退出时 `EndSelectionTouch` 提交当前变换）。
+- `Selection` 内部不做 `d`/`l` 分析（`count in {1,2}` 时维持选区手势）；`count == 0` 回 `Idle`。附加手指按触点与选区包围盒的位置关系分派（有选区时）：全部在选区内 → 保持选区手势，且 `RefreshSelectionGesture` 把 3+ 指的双指变换降为只平移（两指全在选区内才升级为双指相似变换）；横跨选区内外 → 不改变手势（无行为）；全部在选区外 → 按一般手势处理（`count >= p` 且 `d <= l` → `Eraser`；其余 `count >= 3` 且 `d <= l` → `EvalPan`；`d > l` 且非擦除工具 → `MultiDraw`）。无选区（套索在途）视为全部在选区外，保持原并拢迁移规则，不迁 `MultiDraw`。
 - 擦除工具（`Mode in {EraseArea, EraseStroke}`，`Tool.IsErase`）的多指手势与普通模式同款（并拢判定：2 指 → `PanZoom`、3 指及以上（不足 `p`）→ `EvalPan`），差异：`count >= p` 无论间距均迁 `Eraser`（手掌压屏常呈张开）；多指张开（`d > l`）不迁 `MultiDraw` 起笔画，保持当前擦除上下文。
 - `Draw` 不迁 `Eraser`：绘制一旦提交，掌擦不可达，擦除工具下多指保持原地擦除上下文（`Draw --> MultiDraw` 由 `AllowsMultiDraw` 把关，擦除工具不满足）。
 - `Eraser` 中 `count > p` 且 `d > l` 迁 `MultiDraw`（仅非擦除工具）：手掌张开超过掌擦触点数即视为多指书写。
@@ -78,7 +78,7 @@
 stateDiagram-v2
     [*] --> Idle
 
-    Idle --> Selection: count in {1,2} and SelectionCandidate
+    Idle --> Selection: count in {1,2} and SelectionCandidate and touches in selection
     Idle --> EvalDraw: count == 1
     Idle --> PanZoom: count == 2 and d <= l
     Idle --> Eraser: count >= p and d <= l
@@ -111,6 +111,7 @@ stateDiagram-v2
     Eraser --> MultiDraw: count > p and d > l and not IsErase
 
     Selection --> Idle: count == 0
-    Selection --> Eraser: count >= p and d <= l
-    Selection --> EvalPan: count >= 3 and d <= l
+    Selection --> Eraser: no selection or all touches outside, count >= p and d <= l
+    Selection --> EvalPan: no selection or all touches outside, count >= 3 and d <= l
+    Selection --> MultiDraw: selection exists and all touches outside, count >= 2 and d > l and not IsErase
 ```

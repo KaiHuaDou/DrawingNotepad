@@ -115,14 +115,22 @@ public partial class InkCanvasNext
         var x2 = Get1stFingerDispl2( );
         var tool = Tool;
         var palm = !tool.IsReadOnly && count >= options.PalmEraseFingers;
+        var (selectionAllInside, selectionMixed) = tool.IsSelectionEntry && count >= 2
+            ? ClassifyTouchesAgainstSelection( )
+            : (false, false);
+        var selectionAllOutside = !selectionAllInside && !selectionMixed;
 
         var newState = State switch
         {
             TouchState.Idle => count switch
             {
                 0 => TouchState.Idle,
-                // 选区入口是高优先级候选：仅 count in {1,2} 时评估（3+ 指不误入）
-                1 or 2 when tool.IsSelectionEntry => TouchState.Selection,
+                // 选区入口是高优先级候选：仅 count in {1,2} 时评估（3+ 指不误入）；
+                // 双指须全部落在选区内才进入选区（无选区时直接进入套索）
+                1 when tool.IsSelectionEntry => TouchState.Selection,
+                2 when tool.IsSelectionEntry && (!selection.HasSelection || selectionAllInside) => TouchState.Selection,
+                // 触点横跨选区内外：不进入任何手势
+                2 when tool.IsSelectionEntry && selectionMixed => State,
                 1 => TouchState.EvalDraw,
                 2 when d2 <= l2 => TouchState.PanZoom,
                 >= 3 when palm && d2 <= l2 => TouchState.Eraser,
@@ -195,9 +203,13 @@ public partial class InkCanvasNext
             TouchState.Selection => count switch
             {
                 0 => TouchState.Idle,
-                // 选区手势中附加手指：并拢平移画布、达到掌擦触点数切换为掌擦（与 Idle 入口优先级一致）
-                >= 3 when palm && d2 <= l2 => TouchState.Eraser,
-                >= 3 when d2 <= l2 => TouchState.EvalPan,
+                // 选区手势中附加手指：全在选区内保持选区手势（RefreshSelectionGesture 把 3+ 指降为只平移），
+                // 横跨选区内外不改变手势，全在选区外按一般手势处理；
+                // 无选区（套索在途）视为全在外，保持原并拢迁移规则
+                >= 3 when selectionMixed => TouchState.Selection,
+                >= 3 when selectionAllOutside && palm && d2 <= l2 => TouchState.Eraser,
+                >= 3 when selectionAllOutside && d2 <= l2 => TouchState.EvalPan,
+                >= 2 when selection.HasSelection && selectionAllOutside && d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => TouchState.Selection,
             },
 

@@ -27,6 +27,7 @@ internal enum SelectionGesture
     Scale,
     Rotate,
     Lasso,
+    Rectangle,
     Pinch
 }
 
@@ -40,7 +41,33 @@ public partial class InkCanvasNext
     /// </summary>
     internal Point? RotateHandleLive { get; private set; }
 
-    // ---------- 选择手势（触摸与合流后的鼠标共用，配合 TouchState.Selection） ----------
+    // 触点与选区位置
+
+    /// <summary>
+    /// 触点与选区的位置关系：AllInside 全部落在选区内，Mixed 横跨选区内外；无选区时两者皆 false（全部按选区外处理）
+    /// </summary>
+    private (bool AllInside, bool Mixed) ClassifyTouchesAgainstSelection( )
+    {
+        if (!selection.HasSelection)
+        {
+            return (false, false);
+        }
+
+        var bounds = selection.Bounds;
+        var inside = 0;
+        foreach (var kv in touches)
+        {
+            // touches 存根可视坐标，选区包围盒是内容坐标：经 InnerCanvas 换算后比较
+            if (bounds.Contains(kv.Value.Device.GetTouchPoint(InnerCanvas).Position))
+            {
+                inside++;
+            }
+        }
+
+        return (inside == touches.Count, inside > 0 && inside < touches.Count);
+    }
+
+    // 选择手势（触摸与合流后的鼠标共用，配合 TouchState.Selection）
 
     private void BeginSelectionTouch( )
     {
@@ -56,7 +83,7 @@ public partial class InkCanvasNext
 
         if (!selection.HasSelection)
         {
-            BeginLasso(canvasPos);
+            BeginSelectionDrag(canvasPos);
             return;
         }
 
@@ -75,6 +102,10 @@ public partial class InkCanvasNext
         {
             case SelectionGesture.Lasso:
                 UpdateLassoTrack(GetFirstCanvasPoint( ));
+                break;
+
+            case SelectionGesture.Rectangle:
+                UpdateRectangleTrack(GetFirstCanvasPoint( ));
                 break;
 
             case SelectionGesture.Pinch:
@@ -99,6 +130,10 @@ public partial class InkCanvasNext
         {
             EndLasso( );
         }
+        else if (selectionGesture == SelectionGesture.Rectangle)
+        {
+            EndRectangle( );
+        }
 
         selectionGesture = SelectionGesture.None;
         selectionTarget = null;
@@ -116,7 +151,7 @@ public partial class InkCanvasNext
 
         if (handle == SelectionHandle.None && !inBounds)
         {
-            BeginLasso(canvasPos);
+            BeginSelectionDrag(canvasPos);
             return;
         }
 
@@ -135,7 +170,7 @@ public partial class InkCanvasNext
         selectionCenter = new Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2);
     }
 
-    // ---------- 手柄命中 ----------
+    // 手柄命中
 
     private SelectionHandle HitTestHandle(Point p)
     {
@@ -207,7 +242,7 @@ public partial class InkCanvasNext
         };
     }
 
-    // ---------- 手势生命周期 ----------
+    // 手势生命周期
 
     private void ResetSelectionGesture( )
     {
@@ -221,6 +256,8 @@ public partial class InkCanvasNext
 
         lassoPath.Clear( );
         lassoSelected.Clear( );
+        rectangleCorner = default;
+        rectangleDragged = false;
 
         if (lassoTester is not null)
         {
@@ -230,7 +267,6 @@ public partial class InkCanvasNext
         }
     }
 
-    /// <summary>取消进行中的鼠标选择手势（不记录变换），并释放捕获。用于离开 Select 模式/重置输入</summary>
     private void CancelSelectionGesture( )
     {
         if (selectionGesture == SelectionGesture.None)

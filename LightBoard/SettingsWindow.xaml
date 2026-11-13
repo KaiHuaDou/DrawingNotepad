@@ -294,6 +294,20 @@
                 <ItemsControl ItemTemplate="{StaticResource FieldTemplate}" ItemsSource="{Binding GestureFields}" />
                 <CheckBox IsChecked="{Binding SmoothZoom}" Style="{StaticResource RowCheckBoxStyle}" Content="双指缩放按平滑曲线跟随" />
 
+                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="选择" />
+                <DockPanel MinHeight="40">
+                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                        <RadioButton Margin="0,0,20,0"
+                                     IsChecked="{Binding LassoDrag}"
+                                     Style="{StaticResource FlatRadioStyle}"
+                                     Content="圈选" GroupName="SelectionDrag" />
+                        <RadioButton IsChecked="{Binding RectangleDrag}"
+                                     Style="{StaticResource FlatRadioStyle}"
+                                     Content="框选" GroupName="SelectionDrag" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="空白处拖动选区" />
+                </DockPanel>
+
                 <TextBlock Style="{StaticResource SectionTitleStyle}" Text="笔锋" />
                 <CheckBox IsChecked="{Binding TaperEnabled}" Style="{StaticResource RowCheckBoxStyle}" Content="笔画末端渐细" />
                 <ItemsControl IsEnabled="{Binding TaperEnabled}" ItemTemplate="{StaticResource FieldTemplate}" ItemsSource="{Binding TaperFields}" />

@@ -15,7 +15,7 @@ public class MouseMachineTests
 {
     private static readonly Point P1 = new(100, 100);
 
-    // ---------- 翻译层冒烟 ----------
+    // 翻译层冒烟
 
     [Fact]
     public void ShapeTool_MouseDown_EntersEvalDraw_AndHandled( )
@@ -46,7 +46,7 @@ public class MouseMachineTests
         });
     }
 
-    // ---------- 状态机集成（MousePointer 直驱） ----------
+    // 状态机集成（MousePointer 直驱）
 
     [Fact]
     public void ShapeLine_Mouse_CommitsStrokeAtUp( )

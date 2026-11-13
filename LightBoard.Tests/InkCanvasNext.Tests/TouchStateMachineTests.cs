@@ -219,7 +219,7 @@ public class TouchStateMachineTests
         });
     }
 
-    // ---------- 掌擦触点数（设置项：四指 / 五指） ----------
+    // 掌擦触点数（设置项：四指 / 五指）
 
     /// <summary>默认掌擦触点数五：四指并拢仍进入平移评估</summary>
     [Fact]
@@ -355,7 +355,7 @@ public class TouchStateMachineTests
         });
     }
 
-    // ---------- PanZoom（附加指不参与迁移，减为单指迁平移评估） ----------
+    // PanZoom（附加指不参与迁移，减为单指迁平移评估）
 
     [Fact]
     public void PanZoom_StaysPanZoom_WhileTwoFingers( )
@@ -478,7 +478,7 @@ public class TouchStateMachineTests
         });
     }
 
-    // ---------- EvalPan（多指平移评估：位移提交前可迁掌擦与多指书写，提交后锁定） ----------
+    // EvalPan（多指平移评估：位移提交前可迁掌擦与多指书写，提交后锁定）
 
     /// <summary>三指并拢进入评估，位移超过阈值提交为 Pan；提交后张开与附加指均不迁移，触点清空才回 Idle</summary>
     [Fact]
@@ -563,7 +563,7 @@ public class TouchStateMachineTests
         });
     }
 
-    // ---------- MultiDraw ----------
+    // MultiDraw
 
     /// <summary>多指书写抬到单指后仍留在 MultiDraw，剩下的人继续画</summary>
     [Fact]
@@ -674,7 +674,7 @@ public class TouchStateMachineTests
         });
     }
 
-    // ---------- 编辑模式的覆盖与恢复（OverridesEditing 元数据） ----------
+    // 编辑模式的覆盖与恢复（OverridesEditing 元数据）
 
     /// <summary>MultiDraw --> Draw：迁出覆盖编辑模式的接管态时，把编辑模式恢复为当前工具</summary>
     [Fact]
@@ -751,7 +751,7 @@ public class TouchStateMachineTests
         });
     }
 
-    // ---------- ResetTouchState（换页/窗口失活路径） ----------
+    // ResetTouchState（换页/窗口失活路径）
 
     [Fact]
     public void PanZoom_ResetTouchState_RestoresEditingMode( )
@@ -798,7 +798,7 @@ public class TouchStateMachineTests
         });
     }
 
-    // ---------- Selection ----------
+    // Selection
 
     [Fact]
     public void Selection_Release_ReturnsIdle( )

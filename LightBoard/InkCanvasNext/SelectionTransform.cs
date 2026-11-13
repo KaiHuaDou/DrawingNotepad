@@ -25,7 +25,7 @@ public partial class InkCanvasNext
     private double pinchStartDist;
     private double pinchStartAngle;
 
-    // ---------- 变换 ----------
+    // 变换
 
     private void UpdateSelectionTransform(Point p)
     {
@@ -127,7 +127,7 @@ public partial class InkCanvasNext
         }
     }
 
-    // ---------- 双指 ----------
+    // 双指
 
     /// <summary>
     /// 进入双指手势：以当前两指几何重建基线，并把段基线归零
@@ -143,16 +143,25 @@ public partial class InkCanvasNext
 
     /// <summary>
     /// 触点数变化后重建手势基线（触点数只在 Down/Up 变化，故由 TrackTouchDown/TrackTouchUp 调用）：
-    /// 双指落在单指手势上即升级为双指相似变换，双指手势减为单指即降级为拖动
+    /// 两指全落在选区内才升级为双指相似变换，3 指及以上全在选区内降为只平移，
+    /// 横跨选区内外不改变手势；双指手势减为单指即降级为拖动
     /// 基线取变化瞬间的触点位置，手势从新的触点组合无缝续接
     /// </summary>
     private void RefreshSelectionGesture( )
     {
-        if (touches.Count >= 2 && selectionGesture is SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate)
+        if (touches.Count == 1 && selectionGesture == SelectionGesture.Pinch)
+        {
+            RebaseToMove( );
+        }
+        else if (touches.Count == 2
+            && selectionGesture is SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate
+            && ClassifyTouchesAgainstSelection( ).AllInside)
         {
             BeginPinch( );
         }
-        else if (touches.Count == 1 && selectionGesture == SelectionGesture.Pinch)
+        else if (touches.Count >= 3
+            && selectionGesture == SelectionGesture.Pinch
+            && ClassifyTouchesAgainstSelection( ).AllInside)
         {
             RebaseToMove( );
         }

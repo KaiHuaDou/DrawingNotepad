@@ -1,3 +1,7 @@
+using System.Text.Json;
+
+using InkCanvasNext;
+
 namespace LightBoard.Tests;
 
 public class SettingsEditorTests
@@ -115,6 +119,7 @@ public class SettingsEditorTests
         editor.EdgeScrollHint = false;
         editor.SmoothZoom = false;
         editor.TaperEnabled = false;
+        editor.RectangleDrag = true;
 
         var settings = editor.Build( );
 
@@ -128,6 +133,48 @@ public class SettingsEditorTests
         Assert.False(settings.EdgeScrollHint);
         Assert.False(settings.SmoothZoom);
         Assert.False(settings.Taper);
+        Assert.Equal(SelectionDragMode.Rectangle, settings.SelectionDragMode);
+    }
+
+    [Fact]
+    public void Editor_SelectionDrag_RoundTrips( )
+    {
+        var editor = new SettingsEditor(new LightBoardSettings( ))
+        {
+            RectangleDrag = true
+        };
+        Assert.True(editor.RectangleDrag);
+        Assert.False(editor.LassoDrag);
+        Assert.Equal(SelectionDragMode.Rectangle, editor.Build( ).SelectionDragMode);
+
+        editor.Reset( );
+        Assert.True(editor.LassoDrag);
+        Assert.False(editor.RectangleDrag);
+        Assert.Equal(SelectionDragMode.Lasso, editor.Build( ).SelectionDragMode);
+    }
+
+    [Fact]
+    public void Editor_Build_ReturnsBaselineWithRectangleMode( )
+    {
+        var settings = new LightBoardSettings { SelectionDragMode = SelectionDragMode.Rectangle };
+
+        Assert.Equal(settings, new SettingsEditor(settings).Build( ));
+    }
+
+    [Fact]
+    public void SettingsJson_MissingSelectionDragMode_FallsBackToLasso( )
+    {
+        var settings = JsonSerializer.Deserialize("{}", SettingsSerializerContext.Default.LightBoardSettings);
+
+        Assert.Equal(SelectionDragMode.Lasso, settings!.SelectionDragMode);
+    }
+
+    [Fact]
+    public void SettingsJson_SelectionDragMode_UsesEnumName( )
+    {
+        var json = JsonSerializer.Serialize(new LightBoardSettings { SelectionDragMode = SelectionDragMode.Rectangle }, SettingsSerializerContext.Default.LightBoardSettings);
+
+        Assert.Contains("\"SelectionDragMode\": \"Rectangle\"", json);
     }
 
     [Fact]

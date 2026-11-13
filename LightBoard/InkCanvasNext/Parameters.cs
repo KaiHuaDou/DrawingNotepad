@@ -9,7 +9,7 @@ public partial class InkCanvasNext
     /// </summary>
     internal readonly InkCanvasNextOptions options;
 
-    // ---------- 画布与视图 ----------
+    // 画布与视图
 
     /// <summary>
     /// 缩放下限
@@ -31,7 +31,7 @@ public partial class InkCanvasNext
     /// </summary>
     public const double ScrollStep = 25;
 
-    // ---------- 手势 ----------
+    // 手势
 
     // Smooth 缩放曲线：|k - 1| ≤ T 时输出 1，≥ Q 时原样输出，S 为过渡段指数
     public const double T = 0.2;
@@ -43,7 +43,7 @@ public partial class InkCanvasNext
     /// </summary>
     public const float DefaultPressure = 0.5f;
 
-    // ---------- 选区 ----------
+    // 选区
 
     /// <summary>
     /// 视口 DIP，使用时除以缩放转内容
@@ -70,7 +70,7 @@ public partial class InkCanvasNext
     /// </summary>
     public const double MinSelectionScale = 0.05;
 
-    // ---------- 形状 ----------
+    // 形状
 
     /// <summary>
     /// 内容 DIP

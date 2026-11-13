@@ -12,7 +12,20 @@ public partial class InkCanvasNext
     private readonly HashSet<Stroke> lassoSelected = [];
     private IncrementalLassoHitTester? lassoTester;
 
-    // ---------- 套索 ----------
+    // 套索
+
+    /// <summary>按选项分发空白处起手：矩形框选或套索圈选</summary>
+    private void BeginSelectionDrag(Point p)
+    {
+        if (options.SelectionDragMode == SelectionDragMode.Rectangle)
+        {
+            BeginRectangle(p);
+        }
+        else
+        {
+            BeginLasso(p);
+        }
+    }
 
     /// <summary>空白处按下（鼠标/触摸共用）：清空当前选型，以按下点为起点开始增量套索测试</summary>
     private void BeginLasso(Point p)

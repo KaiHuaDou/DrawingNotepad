@@ -19,6 +19,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
     private bool smoothZoom;
     private bool taperEnabled;
     private int palmEraseFingers;
+    private SelectionDragMode selectionDragMode;
     private string switchOutProcess;
 
     public SettingsEditor(LightBoardSettings settings)
@@ -28,6 +29,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
         smoothZoom = settings.SmoothZoom;
         taperEnabled = settings.Taper;
         palmEraseFingers = settings.PalmEraseFingers;
+        selectionDragMode = settings.SelectionDragMode;
         switchOutProcess = settings.SwitchOutProcessName;
 
         GestureFields =
@@ -193,6 +195,30 @@ public sealed class SettingsEditor : INotifyPropertyChanged
         }
     }
 
+    public bool LassoDrag
+    {
+        get => selectionDragMode == SelectionDragMode.Lasso;
+        set
+        {
+            if (value)
+            {
+                SetSelectionDragMode(SelectionDragMode.Lasso);
+            }
+        }
+    }
+
+    public bool RectangleDrag
+    {
+        get => selectionDragMode == SelectionDragMode.Rectangle;
+        set
+        {
+            if (value)
+            {
+                SetSelectionDragMode(SelectionDragMode.Rectangle);
+            }
+        }
+    }
+
     public LightBoardSettings Build( )
     {
         var result = baseline with
@@ -201,6 +227,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
             SmoothZoom = smoothZoom,
             Taper = taperEnabled,
             PalmEraseFingers = palmEraseFingers,
+            SelectionDragMode = selectionDragMode,
             SwitchOutProcessName = string.IsNullOrWhiteSpace(switchOutProcess) ? baseline.SwitchOutProcessName : switchOutProcess.Trim( )
         };
         foreach (var field in Fields)
@@ -223,7 +250,20 @@ public sealed class SettingsEditor : INotifyPropertyChanged
         SmoothZoom = defaults.SmoothZoom;
         TaperEnabled = defaults.Taper;
         SetPalmEraseFingers(defaults.PalmEraseFingers);
+        SetSelectionDragMode(defaults.SelectionDragMode);
         SwitchOutProcess = defaults.SwitchOutProcessName;
+    }
+
+    private void SetSelectionDragMode(SelectionDragMode mode)
+    {
+        if (selectionDragMode == mode)
+        {
+            return;
+        }
+
+        selectionDragMode = mode;
+        Raise(nameof(LassoDrag));
+        Raise(nameof(RectangleDrag));
     }
 
     private void SetPalmEraseFingers(int fingers)

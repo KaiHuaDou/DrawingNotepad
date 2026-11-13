@@ -5,7 +5,7 @@ namespace LightBoard;
 
 public partial class TimerWindow
 {
-    // ---------- 钟面 ----------
+    // 钟面
 
     private void ClockMouseLeftButtonDown(object o, MouseButtonEventArgs e)
     {

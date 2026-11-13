@@ -26,7 +26,8 @@ public record LightBoardSettings(
     double EraserMinLogicalDiameter = EraserParameters.MinLogicalDiameterDefault,
     double EraserRebuildThreshold = EraserParameters.RebuildThresholdDefault,
     double ToolbarScale = SettingsLimits.ToolbarScaleDefault,
-    string SwitchOutProcessName = SettingsLimits.SwitchOutProcessDefault
+    string SwitchOutProcessName = SettingsLimits.SwitchOutProcessDefault,
+    SelectionDragMode SelectionDragMode = InkCanvasNextOptions.SelectionDragModeDefault
 )
 {
     public const double ToolbarScaleDefault = SettingsLimits.ToolbarScaleDefault;
@@ -49,6 +50,7 @@ public record LightBoardSettings(
             EdgeScrollLeftThreshold = EdgeScrollHint ? EdgeScrollLeftThreshold : 0,
             EdgeScrollRightThreshold = EdgeScrollHint ? EdgeScrollRightThreshold : 0,
             MaxHistoryCount = MaxHistoryCount,
+            SelectionDragMode = SelectionDragMode,
             Eraser = new( )
             {
                 Diameter = EraserDiameter,
@@ -80,7 +82,8 @@ public record LightBoardSettings(
             EraserPalmExtra = Math.Clamp(data.EraserPalmExtra, EraserParameters.PalmExtraMin, EraserParameters.PalmExtraMax),
             EraserMinLogicalDiameter = Math.Clamp(data.EraserMinLogicalDiameter, EraserParameters.MinLogicalDiameterMin, EraserParameters.MinLogicalDiameterMax),
             EraserRebuildThreshold = Math.Clamp(data.EraserRebuildThreshold, EraserParameters.RebuildThresholdMin, EraserParameters.RebuildThresholdMax),
-            ToolbarScale = Math.Clamp(data.ToolbarScale, SettingsLimits.ToolbarScaleMin, SettingsLimits.ToolbarScaleMax)
+            ToolbarScale = Math.Clamp(data.ToolbarScale, SettingsLimits.ToolbarScaleMin, SettingsLimits.ToolbarScaleMax),
+            SelectionDragMode = Enum.IsDefined(data.SelectionDragMode) ? data.SelectionDragMode : InkCanvasNextOptions.SelectionDragModeDefault
         };
     }
 }
