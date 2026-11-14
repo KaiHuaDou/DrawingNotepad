@@ -41,16 +41,39 @@ public class SettingsWindowTests
                 window.Content = null;
                 root.DataContext = window.DataContext;
 
-                var parameters = new HwndSourceParameters("settings-test") { Width = 520, Height = 1000 };
+                // 脱离窗口后行模板（隐式 DataTemplate）仍在窗口资源里，合并进来才能实例化
+                root.Resources.MergedDictionaries.Add(window.Resources);
+                var editor = Assert.IsType<SettingsEditor>(window.DataContext);
+
+                var parameters = new HwndSourceParameters("settings-test") { Width = 780, Height = 620 };
                 using var source = new HwndSource(parameters);
                 source.RootVisual = root;
                 root.UpdateLayout( );
 
-                var boxes = Descendants(root).OfType<TextBox>( ).ToList( );
-                var fieldBoxes = boxes.Where(box => box.DataContext is SettingsField).ToList( );
+                // 侧栏一次只显示一个分区，逐个切换核对每种条目的控件数量
+                foreach (var section in editor.Sections)
+                {
+                    editor.SelectedSection = section;
+                    root.UpdateLayout( );
 
-                Assert.Equal(14, fieldBoxes.Count);
-                Assert.Contains(boxes, box => box.DataContext is SettingsEditor);
+                    var controls = Descendants(root).ToList( );
+
+                    Assert.Equal(section.Items.OfType<SettingsField>( ).Count( ), controls.OfType<TextBox>( ).Count(box => box.DataContext is SettingsField));
+                    Assert.Equal(section.Items.OfType<SettingsText>( ).Count( ), controls.OfType<TextBox>( ).Count(box => box.DataContext is SettingsText));
+                    Assert.Equal(section.Items.OfType<SettingsToggle>( ).Count( ), controls.OfType<CheckBox>( ).Count(box => box.DataContext is SettingsToggle));
+                    Assert.Equal(section.Items.OfType<SettingsChoice>( ).Count( ) * 2, controls.OfType<RadioButton>( ).Count(box => box.DataContext is SettingsChoice));
+
+                    // 绑定确实把值送到控件上
+                    foreach (var box in controls.OfType<TextBox>( ).Where(box => box.DataContext is SettingsField))
+                    {
+                        Assert.Equal(((SettingsField) box.DataContext).Text, box.Text);
+                    }
+
+                    foreach (var checkBox in controls.OfType<CheckBox>( ).Where(box => box.DataContext is SettingsToggle))
+                    {
+                        Assert.Equal(((SettingsToggle) checkBox.DataContext).Checked, checkBox.IsChecked);
+                    }
+                }
             }
             finally
             {

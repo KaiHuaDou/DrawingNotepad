@@ -14,16 +14,31 @@ public partial class SettingsWindow : Window
 
     public SettingsWindow( )
     {
-        MaxHeight = SystemParameters.PrimaryScreenHeight * 3 / 4;
-
         InitializeComponent( );
+
+        MaxHeight = SystemParameters.PrimaryScreenHeight * 3 / 4;
+        Height = Math.Min(Height, MaxHeight);
+
         editor = new SettingsEditor(SettingsStore.Current);
         DataContext = editor;
+    }
+
+    private void SectionListSelectionChanged(object o, SelectionChangedEventArgs e)
+    {
+        ContentScroll.ScrollToTop( );
     }
 
     private void ResetClick(object o, RoutedEventArgs e)
     {
         editor.Reset( );
+    }
+
+    private void RowResetClick(object o, RoutedEventArgs e)
+    {
+        if (o is Button { Tag: ISettingItem item })
+        {
+            item.Clear( );
+        }
     }
 
     private void StepDownClick(object o, RoutedEventArgs e)
@@ -72,9 +87,17 @@ public partial class SettingsWindow : Window
 
     private void FocusFirstInvalid( )
     {
+        if (editor.FirstError is not { } error)
+        {
+            return;
+        }
+
+        editor.SelectedSection = error.Section;
+        UpdateLayout( );
+
         foreach (var box in FindTextBoxes(this))
         {
-            if (box.DataContext is SettingsField { HasErrors: true })
+            if (ReferenceEquals(box.DataContext, error.Item))
             {
                 box.Focus( );
                 box.BringIntoView( );

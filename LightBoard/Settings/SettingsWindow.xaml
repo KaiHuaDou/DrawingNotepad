@@ -1,13 +1,13 @@
 <Window x:Class="LightBoard.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:LightBoard"
         Title="设置"
-        Width="520"
-        MinHeight="420"
-        Background="#141414"
-        Foreground="#E8E8E8"
+        Width="780"
+        Height="620"
+        Background="#111111"
+        Foreground="#EEEEEE"
         ResizeMode="NoResize"
-        SizeToContent="Height"
         WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
@@ -32,22 +32,12 @@
             <Setter Property="FontSize" Value="16" />
             <Setter Property="Foreground" Value="#E8E8E8" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Style.Triggers>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Foreground" Value="#7A7A7A" />
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
         <Style x:Key="UnitTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="16" />
             <Setter Property="Foreground" Value="#E8E8E8" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Style.Triggers>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Foreground" Value="#7A7A7A" />
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
         <Style x:Key="ValueBoxStyle" TargetType="TextBox">
@@ -75,11 +65,6 @@
                             </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                 <Setter TargetName="PART_Border" Property="BorderBrush" Value="#4C8BF5" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Foreground" Value="#7A7A7A" />
-                                <Setter TargetName="PART_Border" Property="Background" Value="#171717" />
-                                <Setter TargetName="PART_Border" Property="BorderBrush" Value="#2C2C2C" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -131,7 +116,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="PART_Border" CornerRadius="6">
+                        <Border x:Name="PART_Border" CornerRadius="5">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -148,6 +133,40 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style x:Key="ResetButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Foreground" Value="#7A7A7A" />
+            <Setter Property="Visibility" Value="Hidden" />
+            <Setter Property="ToolTip" Value="清除此项设置，按程序默认值生效" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="PART_Border" Background="Transparent" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#F0F0F0" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="PART_Border" Property="Background" Value="#2A2A2A" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSet}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="RowCheckBoxStyle" TargetType="CheckBox">
@@ -180,9 +199,6 @@
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="PART_Mark" Property="Visibility" Value="Visible" />
                                 <Setter TargetName="PART_Box" Property="BorderBrush" Value="#4C8BF5" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.45" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -221,8 +237,40 @@
                                 <Setter TargetName="PART_Dot" Property="Visibility" Value="Visible" />
                                 <Setter TargetName="PART_Ring" Property="BorderBrush" Value="#4C8BF5" />
                             </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.45" />
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="NavItemStyle" TargetType="ListBoxItem">
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Padding" Value="9,0" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Foreground" Value="#B8B8B8" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource DotFocusVisualStyle}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="PART_Bg" Background="Transparent" CornerRadius="6">
+                            <DockPanel Margin="{TemplateBinding Padding}">
+                                <Border x:Name="PART_Bar"
+                                        DockPanel.Dock="Left"
+                                        Width="3"
+                                        Margin="0,3,10,3"
+                                        Background="Transparent"
+                                        CornerRadius="3" />
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="PART_Bg" Property="Background" Value="#1B1B1B" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="PART_Bg" Property="Background" Value="#1F1F1F" />
+                                <Setter TargetName="PART_Bar" Property="Background" Value="#4C8BF5" />
+                                <Setter Property="Foreground" Value="#F0F0F0" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -230,8 +278,19 @@
             </Setter>
         </Style>
 
-        <DataTemplate x:Key="FieldTemplate">
+        <DataTemplate x:Key="SectionTemplate">
+            <StackPanel Margin="24,16,24,24">
+                <TextBlock Margin="0,0,0,10" Style="{StaticResource SectionTitleStyle}" Text="{Binding Title}" />
+                <ItemsControl Focusable="False" ItemsSource="{Binding Items}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type local:SettingsField}">
             <DockPanel MinHeight="40">
+                <Button DockPanel.Dock="Right"
+                        Style="{StaticResource ResetButtonStyle}"
+                        Click="RowResetClick" Content="&#xE72C;"
+                        Tag="{Binding}" />
                 <TextBlock DockPanel.Dock="Right"
                            Width="72"
                            Margin="12,0,0,0"
@@ -258,8 +317,56 @@
                 <TextBlock Style="{StaticResource FieldLabelStyle}" Text="{Binding Label}" />
             </DockPanel>
         </DataTemplate>
+
+        <DataTemplate DataType="{x:Type local:SettingsToggle}">
+            <DockPanel MinHeight="40">
+                <Button DockPanel.Dock="Right"
+                        Style="{StaticResource ResetButtonStyle}"
+                        Click="RowResetClick" Content="&#xE72C;"
+                        Tag="{Binding}" />
+                <CheckBox IsChecked="{Binding Checked}" Style="{StaticResource RowCheckBoxStyle}" Content="{Binding Label}" />
+            </DockPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type local:SettingsChoice}">
+            <DockPanel MinHeight="40">
+                <Button DockPanel.Dock="Right"
+                        Style="{StaticResource ResetButtonStyle}"
+                        Click="RowResetClick" Content="&#xE72C;"
+                        Tag="{Binding}" />
+                <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                    <RadioButton Margin="0,0,20,0"
+                                 IsChecked="{Binding First}"
+                                 Style="{StaticResource FlatRadioStyle}"
+                                 Content="{Binding FirstLabel}"
+                                 GroupName="{Binding GroupName}" />
+                    <RadioButton IsChecked="{Binding Second}"
+                                 Style="{StaticResource FlatRadioStyle}"
+                                 Content="{Binding SecondLabel}"
+                                 GroupName="{Binding GroupName}" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource FieldLabelStyle}" Text="{Binding Label}" />
+            </DockPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type local:SettingsText}">
+            <DockPanel MinHeight="40">
+                <Button DockPanel.Dock="Right"
+                        Style="{StaticResource ResetButtonStyle}"
+                        Click="RowResetClick" Content="&#xE72C;"
+                        Tag="{Binding}" />
+                <TextBlock DockPanel.Dock="Right" Width="72" Margin="12,0,0,0" />
+                <TextBox DockPanel.Dock="Right"
+                         Width="172" Height="36"
+                         VerticalContentAlignment="Center"
+                         Style="{StaticResource ValueBoxStyle}"
+                         Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                         TextAlignment="Center" />
+                <TextBlock Style="{StaticResource FieldLabelStyle}" Text="{Binding Label}" />
+            </DockPanel>
+        </DataTemplate>
     </Window.Resources>
-    <DockPanel>
+    <DockPanel Margin="0,15,0,0">
         <Border DockPanel.Dock="Bottom" Background="#141414">
             <DockPanel Margin="20,15">
                 <Button DockPanel.Dock="Left"
@@ -282,73 +389,18 @@
                            Text="有输入不合范围" />
             </DockPanel>
         </Border>
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="30,25,30,25">
-                <TextBlock Style="{StaticResource NoteTextStyle}" Text="所有设置保存后重启轻白板生效。" />
-
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="手势" />
-                <ItemsControl ItemTemplate="{StaticResource FieldTemplate}" ItemsSource="{Binding GestureFields}" />
-                <CheckBox IsChecked="{Binding SmoothZoom}" Style="{StaticResource RowCheckBoxStyle}" Content="双指缩放按平滑曲线跟随" />
-
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="选择" />
-                <DockPanel MinHeight="40">
-                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Orientation="Horizontal">
-                        <RadioButton Margin="0,0,20,0"
-                                     IsChecked="{Binding LassoDrag}"
-                                     Style="{StaticResource FlatRadioStyle}"
-                                     Content="圈选" GroupName="SelectionDrag" />
-                        <RadioButton IsChecked="{Binding RectangleDrag}"
-                                     Style="{StaticResource FlatRadioStyle}"
-                                     Content="框选" GroupName="SelectionDrag" />
-                    </StackPanel>
-                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="空白处拖动选区" />
-                </DockPanel>
-
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="书写" />
-                <CheckBox IsChecked="{Binding FitToCurve}" Style="{StaticResource RowCheckBoxStyle}" Content="笔画按曲线拟合" />
-
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="笔锋" />
-                <CheckBox IsChecked="{Binding TaperEnabled}" Style="{StaticResource RowCheckBoxStyle}" Content="笔画末端渐细" />
-                <ItemsControl IsEnabled="{Binding TaperEnabled}" ItemTemplate="{StaticResource FieldTemplate}" ItemsSource="{Binding TaperFields}" />
-
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="边缘滚动提示" />
-                <CheckBox IsChecked="{Binding EdgeScrollHint}" Style="{StaticResource RowCheckBoxStyle}" Content="热区内有墨迹时显示滚动按钮" />
-                <ItemsControl IsEnabled="{Binding EdgeScrollHint}" ItemTemplate="{StaticResource FieldTemplate}" ItemsSource="{Binding EdgeFields}" />
-
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="橡皮" />
-                <CheckBox IsEnabled="False" Style="{StaticResource RowCheckBoxStyle}" Content="手指最小距离小于阈值 → 激活手掌擦" />
-                <DockPanel MinHeight="40">
-                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Orientation="Horizontal">
-                        <RadioButton Margin="0,0,20,0"
-                                     IsChecked="{Binding FourFingerErase}"
-                                     Style="{StaticResource FlatRadioStyle}"
-                                     Content="四指及以上" GroupName="PalmErase" />
-                        <RadioButton IsChecked="{Binding FiveFingerErase}"
-                                     Style="{StaticResource FlatRadioStyle}"
-                                     Content="五指及以上" GroupName="PalmErase" />
-                    </StackPanel>
-                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="掌擦触点数量" />
-                </DockPanel>
-                <ItemsControl ItemTemplate="{StaticResource FieldTemplate}" ItemsSource="{Binding EraserFields}" />
-
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="撤销" />
-                <ItemsControl ItemTemplate="{StaticResource FieldTemplate}" ItemsSource="{Binding UndoFields}" />
-
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="工具栏" />
-                <ItemsControl ItemTemplate="{StaticResource FieldTemplate}" ItemsSource="{Binding ToolbarFields}" />
-
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="切换目标" />
-                <DockPanel MinHeight="40">
-                    <TextBlock DockPanel.Dock="Right" Width="72" Margin="12,0,0,0" />
-                    <TextBox DockPanel.Dock="Right"
-                             Width="172" Height="36"
-                             VerticalContentAlignment="Center"
-                             Style="{StaticResource ValueBoxStyle}"
-                             Text="{Binding SwitchOutProcess, UpdateSourceTrigger=PropertyChanged}"
-                             TextAlignment="Center" />
-                    <TextBlock Style="{StaticResource FieldLabelStyle}" Text="切换目标进程" />
-                </DockPanel>
-            </StackPanel>
+        <Border DockPanel.Dock="Left" Padding="6" Background="#171717">
+            <ListBox x:Name="SectionList"
+                     Width="150"
+                     Background="Transparent" BorderThickness="0"
+                     DisplayMemberPath="Title"
+                     ItemContainerStyle="{StaticResource NavItemStyle}"
+                     ItemsSource="{Binding Sections}"
+                     SelectedItem="{Binding SelectedSection}"
+                     SelectionChanged="SectionListSelectionChanged" />
+        </Border>
+        <ScrollViewer x:Name="ContentScroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <ContentControl Focusable="False" Content="{Binding SelectedSection}" ContentTemplate="{StaticResource SectionTemplate}" />
         </ScrollViewer>
     </DockPanel>
 </Window>

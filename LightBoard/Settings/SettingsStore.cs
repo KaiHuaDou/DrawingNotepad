@@ -44,6 +44,11 @@ public static class SettingsStore
     }
 }
 
-[JsonSourceGenerationOptions(AllowTrailingCommas = true, WriteIndented = true, UseStringEnumConverter = true)]
+[JsonSourceGenerationOptions(
+    AllowTrailingCommas = true,
+    WriteIndented = true,
+    UseStringEnumConverter = true,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+)]
 [JsonSerializable(typeof(LightBoardSettings))]
 public partial class SettingsSerializerContext : JsonSerializerContext;

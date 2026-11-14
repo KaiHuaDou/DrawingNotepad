@@ -21,6 +21,7 @@
         <StartupObject>LightBoard.App.Program</StartupObject>
         <WarningLevel>8</WarningLevel>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <NoWarn>$(NoWarn);NU1701</NoWarn>
     </PropertyGroup>
     <PropertyGroup Condition="$(Configuration)==Debug">
         <DebugType>full</DebugType>

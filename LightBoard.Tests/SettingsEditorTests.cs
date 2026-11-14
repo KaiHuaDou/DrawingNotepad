@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json;
 
 using InkCanvasNext;
@@ -86,11 +87,25 @@ public class SettingsEditorTests
         field.Text = "42";
 
         Assert.Equal(42, field.Apply(new LightBoardSettings( )).EraserPalmExtra);
-        Assert.Equal(1, field.Apply(new LightBoardSettings( )).ToolbarScale);
     }
 
     [Fact]
-    public void Editor_Build_ReturnsBaselineWhenUntouched( )
+    public void Field_Clear_ReturnsToUnset( )
+    {
+        var field = Number(0, 100);
+
+        field.Text = "42";
+        Assert.True(field.IsSet);
+
+        field.Clear( );
+
+        Assert.False(field.IsSet);
+        Assert.Null(field.Apply(new LightBoardSettings( )).EraserPalmExtra);
+        Assert.Equal(EraserParameters.PalmExtraDefault.ToString("0.####"), field.Text);
+    }
+
+    [Fact]
+    public void Editor_Build_ReturnsSameWhenUntouched( )
     {
         var settings = new LightBoardSettings
         {
@@ -106,21 +121,21 @@ public class SettingsEditorTests
     }
 
     [Fact]
-    public void Editor_Build_CollectsEveryField( )
+    public void Editor_Build_CollectsEveryItem( )
     {
         var editor = new SettingsEditor(new LightBoardSettings( ));
-        editor.GestureFields[0].Text = "25";
-        editor.TaperFields[0].Text = "12";
-        editor.EdgeFields[3].Text = "128";
-        editor.EraserFields[2].Text = "2.5";
-        editor.UndoFields[0].Text = "300";
-        editor.ToolbarFields[0].Text = "1.5";
-        editor.FourFingerErase = true;
-        editor.EdgeScrollHint = false;
-        editor.SmoothZoom = false;
-        editor.FitToCurve = false;
-        editor.TaperEnabled = false;
-        editor.RectangleDrag = true;
+
+        Item<SettingsField>(editor, nameof(LightBoardSettings.TouchDisplacementThreshold)).Text = "25";
+        Item<SettingsField>(editor, nameof(LightBoardSettings.TaperPoints)).Text = "12";
+        Item<SettingsField>(editor, nameof(LightBoardSettings.EdgeScrollRightThreshold)).Text = "128";
+        Item<SettingsField>(editor, nameof(LightBoardSettings.EraserMinLogicalDiameter)).Text = "2.5";
+        Item<SettingsField>(editor, nameof(LightBoardSettings.MaxHistoryCount)).Text = "300";
+        Item<SettingsField>(editor, nameof(LightBoardSettings.ToolbarScale)).Text = "1.5";
+        Item<SettingsChoice>(editor, nameof(LightBoardSettings.PalmEraseFingers)).First = true;
+        Item<SettingsChoice>(editor, nameof(LightBoardSettings.SelectionDragMode)).Second = true;
+        Item<SettingsToggle>(editor, nameof(LightBoardSettings.EdgeScrollHint)).Checked = false;
+        Item<SettingsToggle>(editor, nameof(LightBoardSettings.SmoothZoom)).Checked = false;
+        Item<SettingsToggle>(editor, nameof(LightBoardSettings.Taper)).Checked = false;
 
         var settings = editor.Build( );
 
@@ -131,59 +146,41 @@ public class SettingsEditorTests
         Assert.Equal(300, settings.MaxHistoryCount);
         Assert.Equal(1.5, settings.ToolbarScale);
         Assert.Equal(4, settings.PalmEraseFingers);
+        Assert.Equal(SelectionDragMode.Rectangle, settings.SelectionDragMode);
         Assert.False(settings.EdgeScrollHint);
         Assert.False(settings.SmoothZoom);
-        Assert.False(settings.FitToCurve);
         Assert.False(settings.Taper);
-        Assert.Equal(SelectionDragMode.Rectangle, settings.SelectionDragMode);
+        Assert.Null(settings.PinchLockDistance);
     }
 
     [Fact]
-    public void Editor_SelectionDrag_RoundTrips( )
+    public void Editor_Choice_RoundTripsAndClears( )
     {
-        var editor = new SettingsEditor(new LightBoardSettings( ))
-        {
-            RectangleDrag = true
-        };
-        Assert.True(editor.RectangleDrag);
-        Assert.False(editor.LassoDrag);
+        var editor = new SettingsEditor(new LightBoardSettings( ));
+        var choice = Item<SettingsChoice>(editor, nameof(LightBoardSettings.SelectionDragMode));
+
+        Assert.True(choice.First);
+        Assert.False(choice.Second);
+        Assert.False(choice.IsSet);
+
+        choice.Second = true;
+
+        Assert.False(choice.First);
+        Assert.True(choice.IsSet);
         Assert.Equal(SelectionDragMode.Rectangle, editor.Build( ).SelectionDragMode);
 
-        editor.Reset( );
-        Assert.True(editor.LassoDrag);
-        Assert.False(editor.RectangleDrag);
-        Assert.Equal(SelectionDragMode.Lasso, editor.Build( ).SelectionDragMode);
-    }
+        choice.Clear( );
 
-    [Fact]
-    public void Editor_Build_ReturnsBaselineWithRectangleMode( )
-    {
-        var settings = new LightBoardSettings { SelectionDragMode = SelectionDragMode.Rectangle };
-
-        Assert.Equal(settings, new SettingsEditor(settings).Build( ));
-    }
-
-    [Fact]
-    public void SettingsJson_MissingSelectionDragMode_FallsBackToLasso( )
-    {
-        var settings = JsonSerializer.Deserialize("{}", SettingsSerializerContext.Default.LightBoardSettings);
-
-        Assert.Equal(SelectionDragMode.Lasso, settings!.SelectionDragMode);
-    }
-
-    [Fact]
-    public void SettingsJson_SelectionDragMode_UsesEnumName( )
-    {
-        var json = JsonSerializer.Serialize(new LightBoardSettings { SelectionDragMode = SelectionDragMode.Rectangle }, SettingsSerializerContext.Default.LightBoardSettings);
-
-        Assert.Contains("\"SelectionDragMode\": \"Rectangle\"", json);
+        Assert.True(choice.First);
+        Assert.False(choice.IsSet);
+        Assert.Null(editor.Build( ).SelectionDragMode);
     }
 
     [Fact]
     public void Editor_Reset_RestoresDefaults( )
     {
         var editor = new SettingsEditor(new LightBoardSettings { ToolbarScale = 1.5, PalmEraseFingers = 4 });
-        editor.GestureFields[0].Text = "99";
+        Item<SettingsField>(editor, nameof(LightBoardSettings.TouchDisplacementThreshold)).Text = "99";
 
         editor.Reset( );
 
@@ -202,23 +199,21 @@ public class SettingsEditorTests
     [Fact]
     public void Editor_ProcessName_TrimsAndApplies( )
     {
-        var editor = new SettingsEditor(new LightBoardSettings( ))
-        {
-            SwitchOutProcess = "  notepad  "
-        };
+        var editor = new SettingsEditor(new LightBoardSettings( ));
+
+        Item<SettingsText>(editor, nameof(LightBoardSettings.SwitchOutProcessName)).Text = "  notepad  ";
 
         Assert.Equal("notepad", editor.Build( ).SwitchOutProcessName);
     }
 
     [Fact]
-    public void Editor_EmptyProcessName_KeepsBaseline( )
+    public void Editor_EmptyProcessName_StaysUnset( )
     {
-        var editor = new SettingsEditor(new LightBoardSettings { SwitchOutProcessName = "chrome" })
-        {
-            SwitchOutProcess = "   "
-        };
+        var editor = new SettingsEditor(new LightBoardSettings { SwitchOutProcessName = "chrome" });
 
-        Assert.Equal("chrome", editor.Build( ).SwitchOutProcessName);
+        Item<SettingsText>(editor, nameof(LightBoardSettings.SwitchOutProcessName)).Text = "   ";
+
+        Assert.Null(editor.Build( ).SwitchOutProcessName);
     }
 
     [Fact]
@@ -228,7 +223,8 @@ public class SettingsEditorTests
 
         editor.Reset( );
 
-        Assert.Equal(new LightBoardSettings( ).SwitchOutProcessName, editor.Build( ).SwitchOutProcessName);
+        Assert.Null(editor.Build( ).SwitchOutProcessName);
+        Assert.Equal(new LightBoardSettings( ).EffectiveSwitchOutProcess, Item<SettingsText>(editor, nameof(LightBoardSettings.SwitchOutProcessName)).Text);
     }
 
     [Fact]
@@ -244,15 +240,63 @@ public class SettingsEditorTests
             }
         };
 
-        editor.GestureFields[0].Text = "abc";
+        Item<SettingsField>(editor, nameof(LightBoardSettings.TouchDisplacementThreshold)).Text = "abc";
 
         Assert.True(editor.HasErrors);
         Assert.True(raised > 0);
     }
 
+    [Fact]
+    public void Editor_FirstError_ReportsSectionAndItem( )
+    {
+        var editor = new SettingsEditor(new LightBoardSettings( ));
+
+        Item<SettingsField>(editor, nameof(LightBoardSettings.ToolbarScale)).Text = "9";
+
+        var error = editor.FirstError;
+
+        Assert.NotNull(error);
+        Assert.Equal("工具栏", error.Value.Section.Title);
+        Assert.Equal(nameof(LightBoardSettings.ToolbarScale), error.Value.Item.Key);
+    }
+
+    [Fact]
+    public void Items_CoverEverySettingProperty( )
+    {
+        var editor = new SettingsEditor(new LightBoardSettings( ));
+        var keys = editor.Sections.SelectMany(section => section.Items).Select(item => item.Key).ToHashSet( );
+        var properties = typeof(LightBoardSettings).GetProperties( )
+            .Where(property => property.CanWrite)
+            .Select(property => property.Name)
+            .ToHashSet( );
+
+        Assert.Empty(properties.Except(keys));
+        Assert.Empty(keys.Except(properties));
+    }
+
+    [Fact]
+    public void SettingsJson_MissingSelectionDragMode_StaysUnset( )
+    {
+        var settings = JsonSerializer.Deserialize("{}", SettingsSerializerContext.Default.LightBoardSettings);
+
+        Assert.Null(settings!.SelectionDragMode);
+        Assert.Equal(SelectionDragMode.Lasso, settings.EffectiveSelectionDragMode);
+    }
+
     private static SettingsField Number(double min, double max, double step = 1, bool isInteger = false)
     {
-        return new SettingsField("项", "DIP", min, max, step, isInteger,
-            s => s.EraserPalmExtra, (s, v) => s with { EraserPalmExtra = v });
+        return new SettingsField("项", nameof(LightBoardSettings.EraserPalmExtra), "DIP", min, max, step, isInteger,
+            settings => settings.EffectiveEraserPalmExtra,
+            settings => settings.EraserPalmExtra,
+            (settings, value) => settings with { EraserPalmExtra = value });
+    }
+
+    private static T Item<T>(SettingsEditor editor, string key)
+        where T : class, ISettingItem
+    {
+        return editor.Sections
+            .SelectMany(section => section.Items)
+            .OfType<T>( )
+            .First(item => item.Key == key);
     }
 }

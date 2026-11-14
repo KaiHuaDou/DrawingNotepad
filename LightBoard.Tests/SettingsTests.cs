@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json;
 
 namespace LightBoard.Tests;
@@ -5,19 +6,14 @@ namespace LightBoard.Tests;
 public class SettingsTests
 {
     [Fact]
-    public void RoundTrip_KeepsCanvasOptions( )
+    public void RoundTrip_KeepsOnlySetValues( )
     {
         var data = new LightBoardSettings
         {
             EdgeScrollTopThreshold = 64,
-            EdgeScrollBottomThreshold = 240,
-            EdgeScrollLeftThreshold = 120,
-            EdgeScrollRightThreshold = 8,
             PalmEraseFingers = 4,
             EraserDiameter = 80,
-            EraserPalmExtra = 12,
             EraserMinLogicalDiameter = 2,
-            EraserRebuildThreshold = 0.25,
             ToolbarScale = 1.25
         };
 
@@ -25,32 +21,55 @@ public class SettingsTests
         var roundTrip = JsonSerializer.Deserialize(json, SettingsSerializerContext.Default.LightBoardSettings);
 
         Assert.Equal(data, roundTrip);
+        Assert.Equal(5, JsonDocument.Parse(json).RootElement.EnumerateObject( ).Count( ));
 
         // 投影成员不进设置文件
         Assert.DoesNotContain("Effective", json);
     }
 
     [Fact]
-    public void Deserialize_MissingFields_UseDefaults( )
+    public void EmptySettings_WritesEmptyObject( )
+    {
+        var json = JsonSerializer.Serialize(new LightBoardSettings( ), SettingsSerializerContext.Default.LightBoardSettings);
+
+        Assert.Equal("{}", json.Trim( ));
+    }
+
+    [Fact]
+    public void OnlySetValues_Written( )
+    {
+        var json = JsonSerializer.Serialize(
+            new LightBoardSettings { SmoothZoom = false, MaxHistoryCount = 50, SelectionDragMode = InkCanvasNext.SelectionDragMode.Rectangle },
+            SettingsSerializerContext.Default.LightBoardSettings);
+
+        Assert.Contains("\"SmoothZoom\": false", json);
+        Assert.Contains("\"MaxHistoryCount\": 50", json);
+        Assert.Contains("\"SelectionDragMode\": \"Rectangle\"", json);
+        Assert.Equal(3, JsonDocument.Parse(json).RootElement.EnumerateObject( ).Count( ));
+    }
+
+    [Fact]
+    public void Deserialize_MissingFields_FollowDefaults( )
     {
         var data = JsonSerializer.Deserialize("""{"EdgeScrollHint": false}""", SettingsSerializerContext.Default.LightBoardSettings);
 
         Assert.NotNull(data);
-        Assert.False(data.EdgeScrollHint);
-        Assert.True(data.SmoothZoom);
-        Assert.True(data.FitToCurve);
-        Assert.True(data.Taper);
-        Assert.Equal(InkCanvasNext.TaperParameters.PointsDefault, data.TaperPoints);
-        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollTopDefault, data.EdgeScrollTopThreshold);
-        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollBottomDefault, data.EdgeScrollBottomThreshold);
-        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollLeftDefault, data.EdgeScrollLeftThreshold);
-        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollRightDefault, data.EdgeScrollRightThreshold);
-        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersDefault, data.PalmEraseFingers);
-        Assert.Equal(InkCanvasNext.EraserParameters.DiameterDefault, data.EraserDiameter);
-        Assert.Equal(InkCanvasNext.EraserParameters.PalmExtraDefault, data.EraserPalmExtra);
-        Assert.Equal(InkCanvasNext.EraserParameters.MinLogicalDiameterDefault, data.EraserMinLogicalDiameter);
-        Assert.Equal(InkCanvasNext.EraserParameters.RebuildThresholdDefault, data.EraserRebuildThreshold);
-        Assert.Equal(LightBoardSettings.ToolbarScaleDefault, data.ToolbarScale);
+        Assert.False(data.EffectiveEdgeScrollHint);
+        Assert.Null(data.SmoothZoom);
+        Assert.True(data.EffectiveSmoothZoom);
+        Assert.True(data.EffectiveFitToCurve);
+        Assert.True(data.EffectiveTaper);
+        Assert.Equal(InkCanvasNext.TaperParameters.PointsDefault, data.EffectiveTaperPoints);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollTopDefault, data.EffectiveEdgeScrollTopThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollBottomDefault, data.EffectiveEdgeScrollBottomThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollLeftDefault, data.EffectiveEdgeScrollLeftThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollRightDefault, data.EffectiveEdgeScrollRightThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersDefault, data.EffectivePalmEraseFingers);
+        Assert.Equal(InkCanvasNext.EraserParameters.DiameterDefault, data.EffectiveEraserDiameter);
+        Assert.Equal(InkCanvasNext.EraserParameters.PalmExtraDefault, data.EffectiveEraserPalmExtra);
+        Assert.Equal(InkCanvasNext.EraserParameters.MinLogicalDiameterDefault, data.EffectiveEraserMinLogicalDiameter);
+        Assert.Equal(InkCanvasNext.EraserParameters.RebuildThresholdDefault, data.EffectiveEraserRebuildThreshold);
+        Assert.Equal(LightBoardSettings.ToolbarScaleDefault, data.EffectiveToolbarScale);
     }
 
     [Fact]
