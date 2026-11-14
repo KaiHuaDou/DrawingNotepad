@@ -6,7 +6,7 @@
 
 本文件的内容基于对代码实际差异的比对（而非提交信息），以准确反映用户可见的行为变化。
 
-## [v1.3.1]
+## [v1.4.0]
 
 ### 新增
 
@@ -33,7 +33,12 @@
 - 进出荧光笔都停在画笔模式，不恢复进出之前选择的橡皮、选择或形状工具。
 - 切换目标按钮的图标每分钟核对一次目标进程的主模块路径，进程晚启动、退出或换图标都会跟着更新。
 - 在绘笔画的分段由 64 点改为 16 点，长笔画绘制时已画部分的形状变化更小。
-- 橡皮按钮补充文字标签，与面积擦按钮并排。
+- 橡皮按钮补充文字标签。
+- 主工具栏按钮占满整个布局格：控件由 36 DIP 改为 42 DIP，落在按钮外边的点击也响应，悬停底色同步变大，图标位置不变。
+- 主工具栏图标统一为 28 号：撤销、重做、清屏等原为 25 号。
+- 主工具栏尾部重排：展开与收起移到最左，清屏移到最右，撤销与重做相邻，橡皮与撤销之间留出间隔。
+- 主工具栏的展开与收起只翻转箭头，不再与工具共用选中底色；右栏的收起按钮同样处理，箭头随收起状态翻转。
+- 工具按钮补充按下反馈。
 
 ### 修复
 
@@ -292,7 +297,7 @@
 
 - 删除内部设计文档 `docs/EraserReference.md`、`docs/MultiTouchReference.md`。
 
-[v1.3.1]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.3.0...v1.3.1
+[v1.4.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.3.0...v1.4.0
 [v1.3.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.1.0...v1.1.1

@@ -21,7 +21,7 @@ public class SettingsTests
         var roundTrip = JsonSerializer.Deserialize(json, SettingsSerializerContext.Default.LightBoardSettings);
 
         Assert.Equal(data, roundTrip);
-        Assert.Equal(5, JsonDocument.Parse(json).RootElement.EnumerateObject( ).Count( ));
+        Assert.Equal(5, JsonElement.Parse(json).EnumerateObject( ).Count( ));
 
         // 投影成员不进设置文件
         Assert.DoesNotContain("Effective", json);
@@ -45,7 +45,7 @@ public class SettingsTests
         Assert.Contains("\"SmoothZoom\": false", json);
         Assert.Contains("\"MaxHistoryCount\": 50", json);
         Assert.Contains("\"SelectionDragMode\": \"Rectangle\"", json);
-        Assert.Equal(3, JsonDocument.Parse(json).RootElement.EnumerateObject( ).Count( ));
+        Assert.Equal(3, JsonElement.Parse(json).EnumerateObject( ).Count( ));
     }
 
     [Fact]

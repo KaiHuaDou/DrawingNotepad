@@ -67,7 +67,7 @@
                 Margin="5,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"
                 Panel.ZIndex="64"
                 Style="{StaticResource ContainerStyle}"
-                CornerRadius="12,12,12,12">
+                CornerRadius="5">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="LeftTransform" />
             </Border.RenderTransform>
@@ -93,7 +93,7 @@
                PopupAnimation="Slide" StaysOpen="False">
             <Border Margin="0,0,0,8" Padding="6"
                     Background="#FB2B2C31" BorderBrush="#33FFFFFF" BorderThickness="1"
-                    CornerRadius="12">
+                    CornerRadius="5">
                 <Border.Effect>
                     <DropShadowEffect Opacity="0.5"
                                       BlurRadius="16" Direction="270" ShadowDepth="5"
@@ -151,7 +151,7 @@
                PopupAnimation="Slide" StaysOpen="False">
             <Border Margin="0,0,0,8" Padding="6"
                     Background="#FB2B2C31" BorderBrush="#33FFFFFF" BorderThickness="1"
-                    CornerRadius="12">
+                    CornerRadius="5">
                 <Border.Effect>
                     <DropShadowEffect Opacity="0.5"
                                       BlurRadius="16" Direction="270" ShadowDepth="5"
@@ -187,7 +187,7 @@
                 Margin="0,0,0,5" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Panel.ZIndex="64"
                 Style="{StaticResource ContainerStyle}"
-                CornerRadius="8">
+                CornerRadius="5">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="CenterTransform" />
             </Border.RenderTransform>
@@ -197,7 +197,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <StackPanel Orientation="Horizontal">
-                    <Border Width="0" Visibility="Hidden" />
+                    <Border Width="50" Visibility="Hidden" />
                     <RadioButton MinWidth="1"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
@@ -222,7 +222,7 @@
                     <RadioButton x:Name="CircleRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEA3A;" />
-                    <Border Width="75" Visibility="Hidden" />
+                    <Border Width="69" Visibility="Hidden" />
                     <RadioButton x:Name="SelectRadio"
                                  Style="{StaticResource LabelledRadioStyle}"
                                  Click="ModeRadioChecked" Content=" 选择" GroupName="EditGroup"
@@ -232,6 +232,10 @@
                                   Click="PasteClick" Content=" 粘贴" Tag="&#xE77F;" />
                 </StackPanel>
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
+                    <ToggleButton x:Name="MoreToggle"
+                                  Style="{StaticResource ChevronToggleStyle}"
+                                  Click="MoreToggleClick" Tag="&#xE70E;" />
+                    <Border Width="4" Visibility="Hidden" />
                     <RadioButton Style="{StaticResource ColorRadioStyle}"
                                  Background="#1E1E1E"
                                  Click="ColorRadioChecked" GroupName="ColorGroup" />
@@ -263,7 +267,7 @@
                     <ToggleButton x:Name="HighlighterToggle"
                                   Style="{StaticResource ToggleStyle}"
                                   Click="HighlighterBoxClicked" Tag="&#xE7E6;" />
-                    <Border Width="36" Visibility="Hidden" />
+                    <Border Width="32" Visibility="Hidden" />
                     <RadioButton x:Name="EraseAreaRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" Content=" 橡皮" GroupName="EditGroup"
@@ -272,15 +276,15 @@
                                  Visibility="Collapsed"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED61;" />
+                    <Border Width="24" Visibility="Hidden" />
+                    <Button x:Name="UndoButton" Style="{StaticResource ButtonStyle}" Tag="&#xE7A7;" />
+                    <Border Width="4" Visibility="Hidden" />
+                    <Button x:Name="RedoButton" Style="{StaticResource ButtonStyle}" Tag="&#xE7A6;" />
+                    <Border Width="8" Visibility="Hidden" />
                     <Button x:Name="EraseAllButton"
                             Style="{StaticResource ButtonStyle}"
                             Foreground="#F25767"
                             Click="EraseAll" Tag="&#xE894;" />
-                    <Button x:Name="UndoButton" Style="{StaticResource ButtonStyle}" Tag="&#xE7A7;" />
-                    <Button x:Name="RedoButton" Style="{StaticResource ButtonStyle}" Tag="&#xE7A6;" />
-                    <ToggleButton x:Name="MoreToggle"
-                                  Style="{StaticResource ToggleStyle}"
-                                  Click="MoreToggleClick" Tag="&#xE712;" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -288,7 +292,7 @@
                 Margin="0,0,5,5" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Panel.ZIndex="64"
                 Style="{StaticResource ContainerStyle}"
-                CornerRadius="12,12,12,12">
+                CornerRadius="5">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="RightTransform" />
             </Border.RenderTransform>
@@ -298,7 +302,7 @@
                             HorizontalAlignment="Right"
                             Orientation="Horizontal">
                     <ToggleButton x:Name="CollapseExpandButton"
-                                  Style="{StaticResource ToggleStyle}"
+                                  Style="{StaticResource ChevronToggleStyle}"
                                   Click="CollapseExpandClick" Tag="&#xE70D;" />
                     <ToggleButton x:Name="MenuButton" Style="{StaticResource ToggleStyle}" Tag="&#xE700;" />
                     <Button x:Name="PrevPageButton"
@@ -361,6 +365,7 @@
                                                        FontSize="19"
                                                        Text="{Binding Number}" />
                                             <Button Margin="0,5,5,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                    FontSize="25"
                                                     Click="DeletePageClick" Tag="&#xE894;">
                                                 <Button.Style>
                                                     <Style BasedOn="{StaticResource ButtonStyle}" TargetType="Button">
@@ -389,7 +394,7 @@
                PopupAnimation="Slide" StaysOpen="False">
             <Border Margin="0,0,0,8" Padding="6"
                     Background="#FB2B2C31" BorderBrush="#33FFFFFF" BorderThickness="1"
-                    CornerRadius="12">
+                    CornerRadius="5">
                 <Border.Effect>
                     <DropShadowEffect Opacity="0.5"
                                       BlurRadius="16" Direction="270" ShadowDepth="5"
@@ -444,8 +449,7 @@
                 HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="4"
                 Visibility="Collapsed"
                 Style="{StaticResource ContainerStyle}"
-                BorderThickness="1"
-                CornerRadius="12">
+                CornerRadius="5">
             <StackPanel Margin="24,20">
                 <TextBlock x:Name="LoadingText"
                            HorizontalAlignment="Center"
@@ -462,8 +466,7 @@
                 HorizontalAlignment="Left" VerticalAlignment="Top" Panel.ZIndex="4"
                 Visibility="Collapsed"
                 Style="{StaticResource ContainerStyle}"
-                BorderThickness="1"
-                CornerRadius="8">
+                CornerRadius="5">
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="CopyButton" Style="{StaticResource ButtonStyle}" Tag="&#xE8C8;" />
                 <Button x:Name="CutButton" Style="{StaticResource ButtonStyle}" Tag="&#xE8C6;" />
@@ -489,7 +492,7 @@
                 Panel.ZIndex="64"
                 Visibility="Collapsed"
                 Style="{StaticResource ContainerStyle}"
-                CornerRadius="12">
+                CornerRadius="5">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="CameraBarTransform" />
             </Border.RenderTransform>

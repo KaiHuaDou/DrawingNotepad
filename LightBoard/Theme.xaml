@@ -36,7 +36,6 @@
 
     <SolidColorBrush x:Key="IconBrush" Color="#E3E3E3" />
 
-    <!--深色控件：取 aero-theme-for-avalonia 的 Dark 变体配色，尺寸与行为由 BasedOn 继承-->
     <LinearGradientBrush x:Key="ButtonFaceBrush" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Offset="0" Color="#3E3E3E" />
         <GradientStop Offset="0.5" Color="#373737" />
@@ -87,17 +86,14 @@
         <GradientStop Offset="1" Color="#A0FFFFFF" />
     </LinearGradientBrush>
 
-    <DropShadowEffect x:Key="ContainerShadow"
-                      Opacity="0.5"
-                      BlurRadius="15" Direction="270" ShadowDepth="6"
-                      Color="#333333" />
-
     <Style x:Key="IconTextStyle" TargetType="TextBlock">
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="FontFamily" Value="pack://application:,,,/LightBoard;component/#Segoe Fluent Icons" />
         <Setter Property="FontSize" Value="28" />
         <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="LineHeight" Value="28" />
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
         <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
         <Setter Property="UseLayoutRounding" Value="True" />
@@ -105,14 +101,14 @@
     </Style>
 
     <Style x:Key="ColorRadioStyle" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="35" />
-        <Setter Property="Height" Value="35" />
+        <Setter Property="Width" Value="41" />
+        <Setter Property="Height" Value="41" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Margin" Value="3" />
+        <Setter Property="Margin" Value="0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Grid>
+                    <Grid Width="35" Height="35">
                         <Border x:Name="PART_Border"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="#EEEEEEEE" BorderThickness="1"
@@ -134,12 +130,12 @@
                             </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Border" Property="Width" Value="33" />
                             <Setter TargetName="PART_Border" Property="Height" Value="33" />
-                            <Setter TargetName="PART_Border" Property="CornerRadius" Value="8" />
+                            <Setter TargetName="PART_Border" Property="CornerRadius" Value="5" />
                         </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="PART_Border" Property="Width" Value="30" />
                             <Setter TargetName="PART_Border" Property="Height" Value="30" />
-                            <Setter TargetName="PART_Border" Property="CornerRadius" Value="8" />
+                            <Setter TargetName="PART_Border" Property="CornerRadius" Value="5" />
                             <Setter TargetName="PART_CheckMark" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="MinWidth" Value="1">
@@ -154,10 +150,11 @@
         </Setter>
     </Style>
 
+    <!--控件占满整格以便整格响应悬停与点击；高度吃掉容器去掉边框后的余量-->
     <Style x:Key="ToolButtonBaseStyle" TargetType="Control">
-        <Setter Property="Width" Value="36" />
-        <Setter Property="Height" Value="36" />
-        <Setter Property="Margin" Value="3" />
+        <Setter Property="Width" Value="42" />
+        <Setter Property="Height" Value="44" />
+        <Setter Property="Margin" Value="0" />
         <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
         <Setter Property="Background" Value="Transparent" />
     </Style>
@@ -187,6 +184,13 @@
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
                         </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>
@@ -220,6 +224,13 @@
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
                         </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>
@@ -254,6 +265,13 @@
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
                         </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>
@@ -263,9 +281,45 @@
         </Setter>
     </Style>
 
+    <!--展开开关与工具共用选中底色会被当成当前工具；箭头方向由宿主写 Tag 决定-->
+    <Style x:Key="ChevronToggleStyle" BasedOn="{StaticResource ToolButtonBaseStyle}" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="PART_Border"
+                            Background="Transparent" BorderThickness="1"
+                            CornerRadius="5">
+                        <TextBlock x:Name="PART_Icon"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Style="{StaticResource IconTextStyle}"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   Text="{TemplateBinding Tag}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="ButtonStyle" BasedOn="{StaticResource ToolButtonBaseStyle}" TargetType="{x:Type Button}">
         <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
-        <Setter Property="FontSize" Value="25" />
+        <Setter Property="FontSize" Value="28" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -400,10 +454,7 @@
     <Style x:Key="ContainerStyle" TargetType="{x:Type Border}">
         <Setter Property="Padding" Value="5" />
         <Setter Property="Panel.ZIndex" Value="36" />
-        <Setter Property="BorderBrush" Value="#66DDEEFF" />
-        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Background" Value="{StaticResource ContainerBrush}" />
-        <Setter Property="Effect" Value="{StaticResource ContainerShadow}" />
     </Style>
 
     <Style x:Key="PageTabStyle" TargetType="{x:Type ToggleButton}">
@@ -431,6 +482,13 @@
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
                         </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>
@@ -457,7 +515,7 @@
                     <Border x:Name="PART_Border"
                             Margin="2" Padding="8,4"
                             Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
-                            CornerRadius="7">
+                            CornerRadius="5">
                         <DockPanel>
                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" ContentSource="Icon" />
                             <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center" ContentSource="Header" />
@@ -495,6 +553,7 @@
     <Style x:Key="LabelledToggleStyle" BasedOn="{StaticResource ToggleStyle}" TargetType="{x:Type ToggleButton}">
         <Setter Property="Width" Value="Auto" />
         <Setter Property="Height" Value="38" />
+        <Setter Property="Margin" Value="3" />
         <Setter Property="Padding" Value="10,0,10,0" />
         <Setter Property="Template">
             <Setter.Value>
@@ -523,6 +582,13 @@
                             <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
                             <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
                         </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
                         </Trigger>

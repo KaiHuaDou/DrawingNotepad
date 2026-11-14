@@ -196,6 +196,7 @@ public partial class MainWindow
     private void ApplyMoreToggle(bool expanded)
     {
         MoreToggle.IsChecked = expanded;
+        MoreToggle.Tag = expanded ? "\uE70D" : "\uE70E";
 
         var heightAnimation = new DoubleAnimation
         {
