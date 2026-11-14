@@ -17,6 +17,7 @@ public record LightBoardSettings(
     double PanZoomDisplaceThreshold = InkCanvasNextOptions.PanZoomDisplaceThresholdDefault,
     double PinchLockDistance = InkCanvasNextOptions.PinchLockDistanceDefault,
     bool SmoothZoom = InkCanvasNextOptions.SmoothZoomDefault,
+    bool FitToCurve = InkCanvasNextOptions.FitToCurveDefault,
     bool Taper = TaperParameters.EnabledDefault,
     int TaperPoints = TaperParameters.PointsDefault,
     int MaxHistoryCount = InkCanvasNextOptions.MaxHistoryCountDefault,
@@ -44,6 +45,7 @@ public record LightBoardSettings(
             PanZoomDisplaceThreshold = PanZoomDisplaceThreshold,
             PinchLockDistance = PinchLockDistance,
             SmoothZoom = SmoothZoom,
+            FitToCurve = FitToCurve,
             Taper = new( ) { Enabled = Taper, Points = TaperPoints },
             EdgeScrollTopThreshold = EdgeScrollHint ? EdgeScrollTopThreshold : 0,
             EdgeScrollBottomThreshold = EdgeScrollHint ? EdgeScrollBottomThreshold : 0,
@@ -62,39 +64,35 @@ public record LightBoardSettings(
     }
 
     /// <summary>
-    /// 把手工改过的越界值收进可选范围：设置窗口与画布都按返回值工作
+    /// 工具栏倍率，手工改过的越界值取边界
     /// </summary>
-    internal static LightBoardSettings Normalize(LightBoardSettings data)
-    {
-        return data with
-        {
-            EdgeScrollTopThreshold = Math.Clamp(data.EdgeScrollTopThreshold, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax),
-            EdgeScrollBottomThreshold = Math.Clamp(data.EdgeScrollBottomThreshold, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax),
-            EdgeScrollLeftThreshold = Math.Clamp(data.EdgeScrollLeftThreshold, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax),
-            EdgeScrollRightThreshold = Math.Clamp(data.EdgeScrollRightThreshold, InkCanvasNextOptions.EdgeScrollThresholdMin, InkCanvasNextOptions.EdgeScrollThresholdMax),
-            TouchDisplacementThreshold = Math.Clamp(data.TouchDisplacementThreshold, InkCanvasNextOptions.GestureMin, InkCanvasNextOptions.GestureMax),
-            PanZoomDisplaceThreshold = Math.Clamp(data.PanZoomDisplaceThreshold, InkCanvasNextOptions.GestureMin, InkCanvasNextOptions.GestureMax),
-            PinchLockDistance = Math.Clamp(data.PinchLockDistance, InkCanvasNextOptions.GestureMin, InkCanvasNextOptions.GestureMax),
-            TaperPoints = Math.Clamp(data.TaperPoints, TaperParameters.PointsMin, TaperParameters.PointsMax),
-            MaxHistoryCount = Math.Clamp(data.MaxHistoryCount, SettingsLimits.HistoryMin, InkCanvasNextOptions.MaxHistoryCountMax),
-            PalmEraseFingers = Math.Clamp(data.PalmEraseFingers, InkCanvasNextOptions.PalmEraseFingersMin, InkCanvasNextOptions.PalmEraseFingersMax),
-            EraserDiameter = Math.Clamp(data.EraserDiameter, EraserParameters.DiameterMin, EraserParameters.DiameterMax),
-            EraserPalmExtra = Math.Clamp(data.EraserPalmExtra, EraserParameters.PalmExtraMin, EraserParameters.PalmExtraMax),
-            EraserMinLogicalDiameter = Math.Clamp(data.EraserMinLogicalDiameter, EraserParameters.MinLogicalDiameterMin, EraserParameters.MinLogicalDiameterMax),
-            EraserRebuildThreshold = Math.Clamp(data.EraserRebuildThreshold, EraserParameters.RebuildThresholdMin, EraserParameters.RebuildThresholdMax),
-            ToolbarScale = Math.Clamp(data.ToolbarScale, SettingsLimits.ToolbarScaleMin, SettingsLimits.ToolbarScaleMax),
-            SelectionDragMode = Enum.IsDefined(data.SelectionDragMode) ? data.SelectionDragMode : InkCanvasNextOptions.SelectionDragModeDefault
-        };
-    }
+    internal double EffectiveToolbarScale => Math.Clamp(ToolbarScale, SettingsLimits.ToolbarScaleMin, SettingsLimits.ToolbarScaleMax);
+
+    /// <summary>
+    /// 切换目标进程名，空白时取默认值
+    /// </summary>
+    internal string EffectiveSwitchOutProcess =>
+        string.IsNullOrWhiteSpace(SwitchOutProcessName) ? SettingsLimits.SwitchOutProcessDefault : SwitchOutProcessName.Trim( );
+
+    /// <summary>
+    /// 选区方式，未定义的值取默认
+    /// </summary>
+    internal SelectionDragMode EffectiveSelectionDragMode =>
+        Enum.IsDefined(SelectionDragMode) ? SelectionDragMode : InkCanvasNextOptions.SelectionDragModeDefault;
+
+    /// <summary>
+    /// 掌擦触点数，取值收进 4 或 5
+    /// </summary>
+    internal int EffectivePalmEraseFingers =>
+        Math.Clamp(PalmEraseFingers, InkCanvasNextOptions.PalmEraseFingersMin, InkCanvasNextOptions.PalmEraseFingersMax);
 }
 
 /// <summary>
-/// 应用层设置项的范围，设置窗口与 <see cref="LightBoardSettings.Normalize"/> 共用；
+/// 应用层设置项的范围，设置窗口与消费点共用；
 /// 画布参数的范围由 InkCanvasNextOptions 与 EraserParameters 的常数给出
 /// </summary>
 internal static class SettingsLimits
 {
-    public const int HistoryMin = 10;
     public const double ToolbarScaleDefault = 1;
     public const double ToolbarScaleMin = 0.75;
     public const double ToolbarScaleMax = 1.5;

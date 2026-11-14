@@ -19,6 +19,8 @@ public sealed class SettingsField(
     Func<LightBoardSettings, double, LightBoardSettings> set)
     : INotifyPropertyChanged, INotifyDataErrorInfo
 {
+    private static readonly LightBoardSettings Defaults = new( );
+
     public string Label { get; } = label;
 
     public string Unit { get; } = unit;
@@ -26,7 +28,7 @@ public sealed class SettingsField(
     /// <summary>
     /// 悬停提示：范围与默认值
     /// </summary>
-    public string Hint => $"{Format(min)} ~ {Format(max)}，默认 {Format(get(new LightBoardSettings( )))}";
+    public string Hint => $"{Format(min)} ~ {Format(max)}，默认 {Format(get(Defaults))}";
 
     public string Text
     {
@@ -71,7 +73,7 @@ public sealed class SettingsField(
     /// </summary>
     public void Step(int direction)
     {
-        var current = TryParse(out var value) ? value : get(new LightBoardSettings( ));
+        var current = TryParse(out var value) ? value : get(Defaults);
         Text = Format(Math.Clamp(Math.Round(current + step * direction, 4), min, max));
     }
 

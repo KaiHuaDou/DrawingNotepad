@@ -8,8 +8,6 @@
         Foreground="#E8E8E8"
         ResizeMode="NoResize"
         SizeToContent="Height"
-        TextOptions.TextFormattingMode="Display"
-        UseLayoutRounding="True"
         WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
@@ -64,7 +62,7 @@
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="PART_Border"
                                 Background="#1F1F1F" BorderBrush="#3A3A3A" BorderThickness="1"
-                                CornerRadius="4" SnapsToDevicePixels="True">
+                                CornerRadius="4">
                             <ScrollViewer x:Name="PART_ContentHost"
                                           Margin="{TemplateBinding Padding}"
                                           VerticalAlignment="Center"
@@ -100,7 +98,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="PART_Border"
                                 Background="#1F1F1F" BorderBrush="#3A3A3A" BorderThickness="1"
-                                CornerRadius="4" SnapsToDevicePixels="True">
+                                CornerRadius="4">
                             <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -133,9 +131,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="PART_Border"
-                                Background="#1F1F1F"
-                                CornerRadius="4" SnapsToDevicePixels="True">
+                        <Border x:Name="PART_Border" CornerRadius="6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -161,7 +157,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <DockPanel MinHeight="40" Background="Transparent" SnapsToDevicePixels="True">
+                        <DockPanel MinHeight="40" Background="Transparent">
                             <Border x:Name="PART_Box"
                                     DockPanel.Dock="Right"
                                     Width="23" Height="23"
@@ -202,7 +198,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <BulletDecorator Background="Transparent" SnapsToDevicePixels="True">
+                        <BulletDecorator Background="Transparent">
                             <BulletDecorator.Bullet>
                                 <Border x:Name="PART_Ring"
                                         Width="18" Height="18"
@@ -307,6 +303,9 @@
                     </StackPanel>
                     <TextBlock Style="{StaticResource FieldLabelStyle}" Text="空白处拖动选区" />
                 </DockPanel>
+
+                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="书写" />
+                <CheckBox IsChecked="{Binding FitToCurve}" Style="{StaticResource RowCheckBoxStyle}" Content="笔画按曲线拟合" />
 
                 <TextBlock Style="{StaticResource SectionTitleStyle}" Text="笔锋" />
                 <CheckBox IsChecked="{Binding TaperEnabled}" Style="{StaticResource RowCheckBoxStyle}" Content="笔画末端渐细" />

@@ -223,10 +223,6 @@
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEA3A;" />
                     <Border Width="75" Visibility="Hidden" />
-                    <RadioButton x:Name="EraseStrokeRadio"
-                                 Visibility="Collapsed"
-                                 Style="{StaticResource RadioStyle}"
-                                 Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED61;" />
                     <RadioButton x:Name="SelectRadio"
                                  Style="{StaticResource LabelledRadioStyle}"
                                  Click="ModeRadioChecked" Content=" 选择" GroupName="EditGroup"
@@ -270,7 +266,12 @@
                     <Border Width="36" Visibility="Hidden" />
                     <RadioButton x:Name="EraseAreaRadio"
                                  Style="{StaticResource RadioStyle}"
-                                 Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED60;" />
+                                 Click="ModeRadioChecked" Content=" 橡皮" GroupName="EditGroup"
+                                 Tag="&#xED60;" />
+                    <RadioButton x:Name="EraseStrokeRadio"
+                                 Visibility="Collapsed"
+                                 Style="{StaticResource RadioStyle}"
+                                 Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xED61;" />
                     <Button x:Name="EraseAllButton"
                             Style="{StaticResource ButtonStyle}"
                             Foreground="#F25767"
@@ -360,10 +361,9 @@
                                                        FontSize="19"
                                                        Text="{Binding Number}" />
                                             <Button Margin="0,5,5,0" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                                    Click="DeletePageClick"
-                                                    Tag="&#xE894;">
+                                                    Click="DeletePageClick" Tag="&#xE894;">
                                                 <Button.Style>
-                                                    <Style TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
+                                                    <Style BasedOn="{StaticResource ButtonStyle}" TargetType="Button">
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding Items.Count, RelativeSource={RelativeSource AncestorType=ListView}}" Value="1">
                                                                 <Setter Property="IsEnabled" Value="False" />

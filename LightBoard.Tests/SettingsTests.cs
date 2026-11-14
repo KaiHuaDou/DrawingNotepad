@@ -25,6 +25,9 @@ public class SettingsTests
         var roundTrip = JsonSerializer.Deserialize(json, SettingsSerializerContext.Default.LightBoardSettings);
 
         Assert.Equal(data, roundTrip);
+
+        // 投影成员不进设置文件
+        Assert.DoesNotContain("Effective", json);
     }
 
     [Fact]
@@ -35,6 +38,7 @@ public class SettingsTests
         Assert.NotNull(data);
         Assert.False(data.EdgeScrollHint);
         Assert.True(data.SmoothZoom);
+        Assert.True(data.FitToCurve);
         Assert.True(data.Taper);
         Assert.Equal(InkCanvasNext.TaperParameters.PointsDefault, data.TaperPoints);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollTopDefault, data.EdgeScrollTopThreshold);
@@ -63,6 +67,7 @@ public class SettingsTests
             PanZoomDisplaceThreshold = 31,
             PinchLockDistance = 25,
             SmoothZoom = false,
+            FitToCurve = false,
             Taper = false,
             TaperPoints = 9,
             MaxHistoryCount = 201,
@@ -80,6 +85,7 @@ public class SettingsTests
         Assert.Equal(31, options.PanZoomDisplaceThreshold);
         Assert.Equal(25, options.PinchLockDistance);
         Assert.False(options.SmoothZoom);
+        Assert.False(options.FitToCurve);
         Assert.False(options.Taper.Enabled);
         Assert.Equal(9, options.Taper.Points);
         Assert.Equal(0, options.EdgeScrollTopThreshold);
@@ -112,7 +118,7 @@ public class SettingsTests
     }
 
     [Fact]
-    public void Normalize_ClampsOutOfRangeValues( )
+    public void OutOfRangeValues_ClampedByConsumers( )
     {
         var data = new LightBoardSettings
         {
@@ -120,29 +126,36 @@ public class SettingsTests
             EdgeScrollBottomThreshold = 5000,
             TouchDisplacementThreshold = 0,
             TaperPoints = 0,
-            MaxHistoryCount = 5,
+            MaxHistoryCount = 5000,
             PalmEraseFingers = 9,
             EraserDiameter = 0,
             EraserPalmExtra = -3,
             EraserMinLogicalDiameter = 0,
             EraserRebuildThreshold = 99,
-            ToolbarScale = 0
+            ToolbarScale = 0,
+            SwitchOutProcessName = "   ",
+            SelectionDragMode = (InkCanvasNext.SelectionDragMode) 99
         };
 
-        var normalized = LightBoardSettings.Normalize(data);
+        var options = data.CreateCanvasOptions( );
 
-        Assert.Equal(0, normalized.EdgeScrollTopThreshold);
-        Assert.Equal(1000, normalized.EdgeScrollBottomThreshold);
-        Assert.Equal(1, normalized.TouchDisplacementThreshold);
-        Assert.Equal(InkCanvasNext.TaperParameters.PointsMin, normalized.TaperPoints);
-        Assert.Equal(10, normalized.MaxHistoryCount);
-        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersMax, normalized.PalmEraseFingers);
-        Assert.Equal(1, normalized.EraserDiameter);
-        Assert.Equal(0, normalized.EraserPalmExtra);
-        Assert.Equal(0.1, normalized.EraserMinLogicalDiameter);
-        Assert.Equal(10, normalized.EraserRebuildThreshold);
-        Assert.Equal(0.75, normalized.ToolbarScale);
-        Assert.Equal(1.5, LightBoardSettings.Normalize(data with { ToolbarScale = 99 }).ToolbarScale);
+        Assert.Equal(0, options.EdgeScrollTopThreshold);
+        Assert.Equal(1000, options.EdgeScrollBottomThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.GestureMin, options.TouchDisplacementThreshold);
+        Assert.Equal(InkCanvasNext.TaperParameters.PointsMin, options.Taper.Points);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.MaxHistoryCountMax, options.MaxHistoryCount);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersMax, options.PalmEraseFingers);
+        Assert.Equal(InkCanvasNext.EraserParameters.DiameterMin, options.Eraser.Diameter);
+        Assert.Equal(InkCanvasNext.EraserParameters.PalmExtraMin, options.Eraser.PalmExtra);
+        Assert.Equal(InkCanvasNext.EraserParameters.MinLogicalDiameterMin, options.Eraser.MinLogicalDiameter);
+        Assert.Equal(InkCanvasNext.EraserParameters.RebuildThresholdMax, options.Eraser.RebuildThreshold);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.SelectionDragModeDefault, options.SelectionDragMode);
+        Assert.Equal(0, (data with { MaxHistoryCount = 0 }).CreateCanvasOptions( ).MaxHistoryCount);
+        Assert.Equal(SettingsLimits.ToolbarScaleMin, data.EffectiveToolbarScale);
+        Assert.Equal(1.5, (data with { ToolbarScale = 99 }).EffectiveToolbarScale);
+        Assert.Equal(SettingsLimits.SwitchOutProcessDefault, data.EffectiveSwitchOutProcess);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.SelectionDragModeDefault, data.EffectiveSelectionDragMode);
+        Assert.Equal(InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersMax, data.EffectivePalmEraseFingers);
     }
 
     [Fact]

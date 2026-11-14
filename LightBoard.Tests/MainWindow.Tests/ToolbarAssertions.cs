@@ -28,7 +28,6 @@ internal static class ToolbarAssertions
             Assert.Equal(36, attrs.Height);
             Assert.True(attrs.IsHighlighter);
             Assert.Equal(StylusTip.Ellipse, attrs.StylusTip);
-            Assert.True(attrs.FitToCurve);
             Assert.True(attrs.IgnorePressure);
             AssertToolbarRadiosUnchecked(host);
         }
@@ -38,7 +37,6 @@ internal static class ToolbarAssertions
             Assert.Equal(mode, canvas.Mode);
             Assert.False(attrs.IsHighlighter);
             Assert.Equal(StylusTip.Ellipse, attrs.StylusTip);
-            Assert.True(attrs.FitToCurve);
             Assert.False(attrs.IgnorePressure);
 
             // 印章激活期间画笔单选与工具模式同样不勾选

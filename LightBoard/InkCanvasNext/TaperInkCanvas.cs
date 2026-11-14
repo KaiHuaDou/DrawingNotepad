@@ -57,6 +57,14 @@ internal sealed class TaperInkCanvas : InkCanvas
 
     internal WetInk? Wet { get; private set; }
 
+    /// <summary>
+    /// 测试接缝：在绘笔画是否由原生渲染器显示
+    /// </summary>
+    internal bool UsesNativeRenderer => DynamicRenderer is not null;
+
+    // 荧光笔等忽略压力的笔由原生渲染器显示在绘笔画
+    private WetInk? DrawingWet => DefaultDrawingAttributes.IgnorePressure ? null : Wet;
+
     protected override void OnStrokeCollected(InkCanvasStrokeCollectedEventArgs e)
     {
         Taper.Apply(e.Stroke, Taper.Effective(taper, e.Stroke.DrawingAttributes));
@@ -68,12 +76,12 @@ internal sealed class TaperInkCanvas : InkCanvas
     {
         base.OnStylusDown(e);
 
-        if (Wet is null || !IsWetStylus(e.StylusDevice))
+        if (DrawingWet is not { } wet || !IsWetStylus(e.StylusDevice))
         {
             return;
         }
 
-        Wet.Begin(e.StylusDevice.Id, DefaultDrawingAttributes, e.GetStylusPoints(this));
+        wet.Begin(e.StylusDevice.Id, DefaultDrawingAttributes, e.GetStylusPoints(this));
     }
 
     protected override void OnStylusMove(StylusEventArgs e)
@@ -107,13 +115,13 @@ internal sealed class TaperInkCanvas : InkCanvas
         base.OnPreviewMouseDown(e);
 
         // 提升为笔事件的鼠标由笔管线绘制，这里只接无笔服务机器的纯鼠标
-        if (Wet is null || e.StylusDevice is not null || e.ChangedButton != MouseButton.Left
+        if (DrawingWet is not { } wet || e.StylusDevice is not null || e.ChangedButton != MouseButton.Left
             || EditingMode != InkCanvasEditingMode.Ink)
         {
             return;
         }
 
-        Wet.Begin(MouseWetId, DefaultDrawingAttributes, MousePoints(e));
+        wet.Begin(MouseWetId, DefaultDrawingAttributes, MousePoints(e));
     }
 
     protected override void OnPreviewMouseMove(MouseEventArgs e)
@@ -160,13 +168,17 @@ internal sealed class TaperInkCanvas : InkCanvas
 
     private void SyncRenderer( )
     {
-        // 荧光笔忽略压力，湿墨仍交给原生渲染器
-        var takeOver = Wet is not null && !DefaultDrawingAttributes.IgnorePressure;
+        var takeOver = DrawingWet is not null;
         var target = takeOver ? null : nativeRenderer;
 
         if (DynamicRenderer != target)
         {
             DynamicRenderer = target;
+        }
+
+        if (!takeOver)
+        {
+            Wet?.Abort( );
         }
     }
 

@@ -29,7 +29,7 @@ public partial class InkCanvasNext : UserControl
         InitializeCommands( );
 
         this.options = options ?? new( );
-        CreateInnerCanvas(this.options.Taper);
+        CreateInnerCanvas( );
 
         history = new RingBuffer<IHistoryChange>(this.options.MaxHistoryCount);
 
@@ -77,7 +77,7 @@ public partial class InkCanvasNext : UserControl
     }
 
     // InkCanvas 不写进 XAML：x:Class 与命名空间同名，XAML 编译器生成的元素类型引用在类内无法解析
-    private void CreateInnerCanvas(TaperParameters taper)
+    private void CreateInnerCanvas( )
     {
         InnerCanvas = new TaperInkCanvas
         {
@@ -91,7 +91,7 @@ public partial class InkCanvasNext : UserControl
         {
             Width = 3,
             Height = 3,
-            FitToCurve = true,
+            FitToCurve = options.FitToCurve,
             StylusTip = StylusTip.Ellipse,
             Color = Color.FromRgb(0xE6, 0xE6, 0xE6)
         };
@@ -105,7 +105,7 @@ public partial class InkCanvasNext : UserControl
         InnerCanvas.TouchLeave += CanvasTouchLeave;
         CanvasGrid.Children.Insert(1, InnerCanvas);
 
-        InnerCanvas.Configure(taper);
+        InnerCanvas.Configure(options.Taper);
     }
 
     /// <summary>

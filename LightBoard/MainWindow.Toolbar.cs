@@ -14,14 +14,7 @@ internal sealed record PenProfile(
     double Width,
     bool IsHighlighter,
     StylusTip StylusTip,
-    bool FitToCurve,
     bool IgnorePressure
-);
-
-internal sealed record HighlighterReturn(
-    InkCanvasNextMode Mode,
-    RadioButton? ColorRadio,
-    RadioButton? ThicknessRadio
 );
 
 public partial class MainWindow
@@ -35,15 +28,14 @@ public partial class MainWindow
 
     private StampAction stamp = StampAction.None;
 
-    private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false, StylusTip.Ellipse, true, false);
+    private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false, StylusTip.Ellipse, false);
 
     // 荧光笔是圆头、平滑、固定宽度的半透明笔：笔尖与曲线来自 DrawingAttributes，IsHighlighter 只给 50% 不透明度
     private static readonly PenProfile HighlighterProfile =
-        new(Colors.Yellow, 36, true, StylusTip.Ellipse, true, true);
+        new(Colors.Yellow, 36, true, StylusTip.Ellipse, true);
 
     private RadioButton? colorRadio;
     private RadioButton? thicknessRadio;
-    private HighlighterReturn? highlighterReturn;
 
     private Size? selectionBorderSize;
     private bool selectionBorderUpdating;
@@ -62,35 +54,6 @@ public partial class MainWindow
         return m is InkCanvasNextMode.Line or InkCanvasNextMode.Circle;
     }
 
-    private void EnterHighlighter( )
-    {
-        if (HighlighterActive)
-        {
-            return;
-        }
-
-        highlighterReturn = new(Mode, colorRadio, thicknessRadio);
-        HighlighterActive = true;
-    }
-
-    private void ExitHighlighter( )
-    {
-        HighlighterActive = false;
-
-        if (highlighterReturn is { } saved)
-        {
-            Mode = saved.Mode;
-            colorRadio = saved.ColorRadio;
-            thicknessRadio = saved.ThicknessRadio;
-        }
-
-        // Line/Circle 是 Pen 的附加，退出 Highlighter 时不恢复
-        if (IsShapeMode(Mode))
-        {
-            Mode = InkCanvasNextMode.Ink;
-        }
-    }
-
     private void ExitStamp( )
     {
         stamp = StampAction.None;
@@ -100,16 +63,10 @@ public partial class MainWindow
     private void HighlighterBoxClicked(object o, RoutedEventArgs e)
     {
         stamp = StampAction.None;
+        HighlighterActive = HighlighterToggle.IsChecked == true;
 
-        if (HighlighterToggle.IsChecked == true)
-        {
-            EnterHighlighter( );
-        }
-        else
-        {
-            ExitHighlighter( );
-        }
-
+        // 荧光笔只作用于画笔：进出都停在绘制
+        Mode = InkCanvasNextMode.Ink;
         SyncToolState( );
     }
 
@@ -144,42 +101,28 @@ public partial class MainWindow
 
         // 印章先写：OnModeChanged 的编辑模式判定要读到当前的 StampAction
         CanvasNext.StampAction = stamp;
-        CanvasNext.Mode = highlighter ? InkCanvasNextMode.Ink : Mode;
+        CanvasNext.Mode = Mode;
 
         var attrs = CanvasNext.DefaultDrawingAttributes;
         attrs.Color = profile.Color;
         attrs.Width = attrs.Height = profile.Width;
         attrs.IsHighlighter = profile.IsHighlighter;
         attrs.StylusTip = profile.StylusTip;
-        attrs.FitToCurve = profile.FitToCurve;
         attrs.IgnorePressure = profile.IgnorePressure;
 
         HighlighterToggle?.IsChecked = highlighter;
         CloneButton?.IsChecked = stamp == StampAction.Clone;
         PasteButton?.IsChecked = stamp == StampAction.Paste;
 
-        if (highlighter)
-        {
-            colorRadio?.IsChecked = false;
-            thicknessRadio?.IsChecked = false;
-            EraseAreaRadio?.IsChecked = false;
-            EraseStrokeRadio?.IsChecked = false;
-            SelectRadio?.IsChecked = false;
-            LineRadio?.IsChecked = false;
-            CircleRadio?.IsChecked = false;
-        }
-        else
-        {
-            // 印章激活期间单指落章而非绘制，画笔单选与工具模式同样不勾选
-            var penHidden = IsToolMode(Mode) || stamp != StampAction.None;
-            colorRadio?.IsChecked = !penHidden;
-            thicknessRadio?.IsChecked = !penHidden;
-            EraseAreaRadio?.IsChecked = Mode == InkCanvasNextMode.EraseArea;
-            EraseStrokeRadio?.IsChecked = Mode == InkCanvasNextMode.EraseStroke;
-            SelectRadio?.IsChecked = Mode == InkCanvasNextMode.Select;
-            LineRadio?.IsChecked = Mode == InkCanvasNextMode.Line;
-            CircleRadio?.IsChecked = Mode == InkCanvasNextMode.Circle;
-        }
+        // 荧光笔、工具模式与印章激活期间单指不落画笔，画笔单选不勾选
+        var penHidden = highlighter || IsToolMode(Mode) || stamp != StampAction.None;
+        colorRadio?.IsChecked = !penHidden;
+        thicknessRadio?.IsChecked = !penHidden;
+        EraseAreaRadio?.IsChecked = Mode == InkCanvasNextMode.EraseArea;
+        EraseStrokeRadio?.IsChecked = Mode == InkCanvasNextMode.EraseStroke;
+        SelectRadio?.IsChecked = Mode == InkCanvasNextMode.Select;
+        LineRadio?.IsChecked = Mode == InkCanvasNextMode.Line;
+        CircleRadio?.IsChecked = Mode == InkCanvasNextMode.Circle;
     }
 
     /// <summary>

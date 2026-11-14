@@ -96,8 +96,11 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="FontFamily" Value="pack://application:,,,/LightBoard;component/#Segoe Fluent Icons" />
-        <Setter Property="FontSize" Value="25" />
+        <Setter Property="FontSize" Value="28" />
         <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+        <Setter Property="UseLayoutRounding" Value="True" />
         <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
     </Style>
 
@@ -270,8 +273,8 @@
                         <TextBlock x:Name="PART_IconText"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Style="{StaticResource IconTextStyle}"
-                                   FontSize="{TemplateBinding FontSize}"
                                    Foreground="{TemplateBinding Foreground}"
+                                   FontSize="{TemplateBinding FontSize}"
                                    Text="{TemplateBinding Tag}" />
                     </Border>
                     <ControlTemplate.Triggers>

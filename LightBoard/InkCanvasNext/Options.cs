@@ -189,6 +189,15 @@ public sealed record InkCanvasNextOptions
     } = new( );
 
     /// <summary>
+    /// 笔画是否按曲线拟合；关闭后按采样点连折线
+    /// </summary>
+    public bool FitToCurve
+    {
+        get;
+        init;
+    } = FitToCurveDefault;
+
+    /// <summary>
     /// 笔锋参数
     /// </summary>
     public TaperParameters Taper
@@ -241,6 +250,11 @@ public sealed record InkCanvasNextOptions
     /// 双指缩放平滑曲线开关默认值
     /// </summary>
     public const bool SmoothZoomDefault = true;
+
+    /// <summary>
+    /// 曲线拟合开关默认值
+    /// </summary>
+    public const bool FitToCurveDefault = true;
 
     /// <summary>
     /// 选区方式默认值

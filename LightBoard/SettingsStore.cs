@@ -20,7 +20,7 @@ public static class SettingsStore
         try
         {
             using var stream = new FileStream(SettingsJson, FileMode.Open, FileAccess.Read);
-            Current = LightBoardSettings.Normalize(JsonSerializer.Deserialize(stream, SettingsSerializerContext.Default.LightBoardSettings) ?? Current);
+            Current = JsonSerializer.Deserialize(stream, SettingsSerializerContext.Default.LightBoardSettings) ?? Current;
         }
         catch (FileNotFoundException)
         {

@@ -37,6 +37,17 @@ public class OptionsTests
     }
 
     [Fact]
+    public void FitToCurve_Option_ReachesDrawingAttributes( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost(options: new InkCanvasNextOptions { FitToCurve = false });
+
+            Assert.False(host.Canvas.DefaultDrawingAttributes.FitToCurve);
+        });
+    }
+
+    [Fact]
     public void SquaredThresholds_FollowInitValues( )
     {
         var options = new InkCanvasNextOptions

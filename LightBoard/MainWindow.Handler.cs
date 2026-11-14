@@ -126,17 +126,14 @@ public partial class MainWindow
         stamp = StampAction.None;
 
         // 形状模式下点当前已选中的颜色即取消形状回画笔；点其他颜色仅换笔保持形状
-        if (!HighlighterActive && IsShapeMode(Mode) && ReferenceEquals(radio, colorRadio))
+        if (IsShapeMode(Mode) && ReferenceEquals(radio, colorRadio))
         {
             Mode = InkCanvasNextMode.Ink;
             SyncToolState( );
             return;
         }
 
-        if (HighlighterActive)
-        {
-            ExitHighlighter( );
-        }
+        HighlighterActive = false;
 
         if (IsToolMode(Mode))
         {
@@ -173,14 +170,9 @@ public partial class MainWindow
 
         stamp = StampAction.None;
 
-        // 记录点击前的模式：用于识别"再点当前已激活的模式"（回退到画笔） 不能在退出高亮后再判断：从高亮态点模式 radio 属于新勾选，radio 也会被选中。
+        // 再点当前已激活的模式即回画笔；荧光笔期间模式停在绘制，点任何模式都算新激活
         var wasMode = Mode;
-        var wasHighlighter = HighlighterActive;
-
-        if (wasHighlighter)
-        {
-            ExitHighlighter( );
-        }
+        HighlighterActive = false;
 
         var mode = radio.Tag switch
         {
@@ -192,7 +184,7 @@ public partial class MainWindow
             _ => InkCanvasNextMode.Ink
         };
 
-        Mode = !wasHighlighter && wasMode == mode ? InkCanvasNextMode.Ink : mode;
+        Mode = wasMode == mode ? InkCanvasNextMode.Ink : mode;
         SyncToolState( );
     }
 
@@ -223,11 +215,7 @@ public partial class MainWindow
             if (Clipboard.ContainsData(StrokeCollection.InkSerializedFormat))
             {
                 // 激活粘贴印章时退出其他模式回画笔
-                if (HighlighterActive)
-                {
-                    ExitHighlighter( );
-                }
-
+                HighlighterActive = false;
                 Mode = InkCanvasNextMode.Ink;
                 stamp = StampAction.Paste;
             }
@@ -256,17 +244,14 @@ public partial class MainWindow
         stamp = StampAction.None;
 
         // 形状模式下点当前已选中的粗细即取消形状回画笔；点其他粗细仅换笔保持形状
-        if (!HighlighterActive && IsShapeMode(Mode) && ReferenceEquals(radio, thicknessRadio))
+        if (IsShapeMode(Mode) && ReferenceEquals(radio, thicknessRadio))
         {
             Mode = InkCanvasNextMode.Ink;
             SyncToolState( );
             return;
         }
 
-        if (HighlighterActive)
-        {
-            ExitHighlighter( );
-        }
+        HighlighterActive = false;
 
         if (IsToolMode(Mode))
         {

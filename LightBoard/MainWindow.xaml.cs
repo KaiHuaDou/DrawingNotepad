@@ -19,8 +19,10 @@ public partial class MainWindow : Window
     internal readonly InkCanvasNext.InkCanvasNext CanvasNext;
 
     private readonly DispatcherTimer timeTimer;
+    private readonly DispatcherTimer iconTimer;
 
     private TimerWindow? timerWindow;
+    private string? switchOutIconPath;
 
     public MainWindow( )
     {
@@ -90,6 +92,15 @@ public partial class MainWindow : Window
             Dispatcher.CurrentDispatcher
         );
         timeTimer.Start( );
+
+        // 目标进程可能在首次提取之后才启动或退出，低优先级轮询不抢占输入
+        iconTimer = new(
+            TimeSpan.FromMinutes(1),
+            DispatcherPriority.Background,
+            (o, e) => RefreshSwitchOutIcon( ),
+            Dispatcher.CurrentDispatcher
+        );
+        iconTimer.Start( );
     }
 
     /// <summary>
@@ -150,7 +161,24 @@ public partial class MainWindow : Window
     {
         try
         {
-            SwitchOutButton.Content = ProgramIcon.FromProcess(SettingsStore.Current.SwitchOutProcessName, 48);
+            var path = ProgramIcon.ProcessPath(SettingsStore.Current.EffectiveSwitchOutProcess);
+
+            // 每分钟只核对主模块路径，路径未变不重复走 Shell 提取
+            if (path == switchOutIconPath)
+            {
+                return;
+            }
+
+            var icon = path is null ? null : ProgramIcon.FromFile(path, 48);
+
+            // 提取失败不记路径，下一分钟重试
+            if (path is not null && icon is null)
+            {
+                return;
+            }
+
+            switchOutIconPath = path;
+            SwitchOutButton.Content = icon;
         }
         catch (Exception e)
         {
@@ -160,7 +188,7 @@ public partial class MainWindow : Window
 
     private void SwitchOutClick(object o, RoutedEventArgs e)
     {
-        NativeMethods.SwitchTo(SettingsStore.Current.SwitchOutProcessName);
+        NativeMethods.SwitchTo(SettingsStore.Current.EffectiveSwitchOutProcess);
         RefreshSwitchOutIcon( );
     }
 

@@ -8,7 +8,7 @@ public partial class MainWindow
 
     private void ApplyToolbarScale( )
     {
-        toolbarScale = SettingsStore.Current.ToolbarScale;
+        toolbarScale = SettingsStore.Current.EffectiveToolbarScale;
         if (toolbarScale == 1)
         {
             return;

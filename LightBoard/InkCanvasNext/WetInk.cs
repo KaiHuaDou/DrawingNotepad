@@ -153,7 +153,8 @@ internal sealed class VisualCanvas : FrameworkElement
 
 internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, StylusPoint initialPoint, TaperParameters? taper)
 {
-    private const int SegmentPoints = 64;
+    // 活动段每帧整段重建并重新拟合，窗口越短，已画部分的形状变化越小
+    private const int SegmentPoints = 16;
 
     private readonly DrawingAttributes drawingAttributes = drawingAttributes;
 
@@ -171,7 +172,11 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
     /// </summary>
     private int frozenCount;
 
-    internal Stroke Stroke { get; } = new Stroke([initialPoint], drawingAttributes);
+    // 触点描述由设备决定，点集沿用首点描述才能继续收点
+    internal Stroke Stroke { get; } = new Stroke(
+        [with(initialPoint.Description), initialPoint],
+        drawingAttributes
+    );
 
     /// <summary>
     /// 自上次重绘以来有新触点

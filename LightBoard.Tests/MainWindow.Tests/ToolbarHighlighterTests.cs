@@ -25,7 +25,6 @@ public class ToolbarHighlighterTests
             Assert.Equal(Colors.Yellow, host.Canvas.DefaultDrawingAttributes.Color);
             Assert.True(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
             Assert.Equal(StylusTip.Ellipse, host.Canvas.DefaultDrawingAttributes.StylusTip);
-            Assert.True(host.Canvas.DefaultDrawingAttributes.FitToCurve);
             Assert.True(host.Canvas.DefaultDrawingAttributes.IgnorePressure);
             ToolbarAssertions.AssertConsistent(host);
         });

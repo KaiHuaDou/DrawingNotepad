@@ -118,6 +118,7 @@ public class SettingsEditorTests
         editor.FourFingerErase = true;
         editor.EdgeScrollHint = false;
         editor.SmoothZoom = false;
+        editor.FitToCurve = false;
         editor.TaperEnabled = false;
         editor.RectangleDrag = true;
 
@@ -132,6 +133,7 @@ public class SettingsEditorTests
         Assert.Equal(4, settings.PalmEraseFingers);
         Assert.False(settings.EdgeScrollHint);
         Assert.False(settings.SmoothZoom);
+        Assert.False(settings.FitToCurve);
         Assert.False(settings.Taper);
         Assert.Equal(SelectionDragMode.Rectangle, settings.SelectionDragMode);
     }

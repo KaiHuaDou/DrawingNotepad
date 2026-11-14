@@ -7,7 +7,7 @@ using InkCanvasNext;
 namespace LightBoard;
 
 /// <summary>
-/// 设置窗口的表单状态：字段文本、边缘滚动开关、掌擦触点数，以及折叠回设置的入口
+/// 设置窗口的表单状态：一份草稿记录承载开关与下拉，数值项各自成项
 /// </summary>
 public sealed class SettingsEditor : INotifyPropertyChanged
 {
@@ -15,22 +15,12 @@ public sealed class SettingsEditor : INotifyPropertyChanged
     private const string ContentDIP = "内容 DIP";
 
     private readonly LightBoardSettings baseline;
-    private bool edgeScrollHint;
-    private bool smoothZoom;
-    private bool taperEnabled;
-    private int palmEraseFingers;
-    private SelectionDragMode selectionDragMode;
-    private string switchOutProcess;
+    private LightBoardSettings draft;
 
     public SettingsEditor(LightBoardSettings settings)
     {
         baseline = settings;
-        edgeScrollHint = settings.EdgeScrollHint;
-        smoothZoom = settings.SmoothZoom;
-        taperEnabled = settings.Taper;
-        palmEraseFingers = settings.PalmEraseFingers;
-        selectionDragMode = settings.SelectionDragMode;
-        switchOutProcess = settings.SwitchOutProcessName;
+        draft = settings;
 
         GestureFields =
         [
@@ -74,8 +64,8 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
         UndoFields =
         [
-            new("撤销历史条数", "条", SettingsLimits.HistoryMin, InkCanvasNextOptions.MaxHistoryCountMax, 10, true,
-                s => s.MaxHistoryCount, (s, v) => s with { MaxHistoryCount = (int)v }),
+            new("撤销历史条数", "条", InkCanvasNextOptions.MaxHistoryCountMin, InkCanvasNextOptions.MaxHistoryCountMax, 10, true,
+                s => s.MaxHistoryCount, (s, v) => s with { MaxHistoryCount = (int) v }),
         ];
 
         ToolbarFields =
@@ -88,7 +78,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
         foreach (var field in Fields)
         {
-            field.Load(settings);
+            field.Load(draft);
             field.PropertyChanged += FieldChanged;
         }
     }
@@ -113,67 +103,37 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
     public bool EdgeScrollHint
     {
-        get => edgeScrollHint;
-        set
-        {
-            if (edgeScrollHint == value)
-            {
-                return;
-            }
-
-            edgeScrollHint = value;
-            Raise(nameof(EdgeScrollHint));
-        }
+        get => draft.EdgeScrollHint;
+        set => Update(draft with { EdgeScrollHint = value }, nameof(EdgeScrollHint));
     }
 
     public bool SmoothZoom
     {
-        get => smoothZoom;
-        set
-        {
-            if (smoothZoom == value)
-            {
-                return;
-            }
-
-            smoothZoom = value;
-            Raise(nameof(SmoothZoom));
-        }
+        get => draft.SmoothZoom;
+        set => Update(draft with { SmoothZoom = value }, nameof(SmoothZoom));
     }
 
     public bool TaperEnabled
     {
-        get => taperEnabled;
-        set
-        {
-            if (taperEnabled == value)
-            {
-                return;
-            }
+        get => draft.Taper;
+        set => Update(draft with { Taper = value }, nameof(TaperEnabled));
+    }
 
-            taperEnabled = value;
-            Raise(nameof(TaperEnabled));
-        }
+    public bool FitToCurve
+    {
+        get => draft.FitToCurve;
+        set => Update(draft with { FitToCurve = value }, nameof(FitToCurve));
     }
 
     public string SwitchOutProcess
     {
-        get => switchOutProcess;
-        set
-        {
-            if (switchOutProcess == value)
-            {
-                return;
-            }
-
-            switchOutProcess = value;
-            Raise(nameof(SwitchOutProcess));
-        }
+        get => draft.SwitchOutProcessName;
+        set => Update(draft with { SwitchOutProcessName = value }, nameof(SwitchOutProcess));
     }
 
     public bool FourFingerErase
     {
-        get => palmEraseFingers == InkCanvasNextOptions.PalmEraseFingersMin;
+        get => draft.EffectivePalmEraseFingers == InkCanvasNextOptions.PalmEraseFingersMin;
         set
         {
             if (value)
@@ -185,7 +145,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
     public bool FiveFingerErase
     {
-        get => palmEraseFingers == InkCanvasNextOptions.PalmEraseFingersMax;
+        get => draft.EffectivePalmEraseFingers == InkCanvasNextOptions.PalmEraseFingersMax;
         set
         {
             if (value)
@@ -197,7 +157,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
     public bool LassoDrag
     {
-        get => selectionDragMode == SelectionDragMode.Lasso;
+        get => draft.EffectiveSelectionDragMode == SelectionDragMode.Lasso;
         set
         {
             if (value)
@@ -209,7 +169,7 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
     public bool RectangleDrag
     {
-        get => selectionDragMode == SelectionDragMode.Rectangle;
+        get => draft.EffectiveSelectionDragMode == SelectionDragMode.Rectangle;
         set
         {
             if (value)
@@ -221,59 +181,50 @@ public sealed class SettingsEditor : INotifyPropertyChanged
 
     public LightBoardSettings Build( )
     {
-        var result = baseline with
-        {
-            EdgeScrollHint = edgeScrollHint,
-            SmoothZoom = smoothZoom,
-            Taper = taperEnabled,
-            PalmEraseFingers = palmEraseFingers,
-            SelectionDragMode = selectionDragMode,
-            SwitchOutProcessName = string.IsNullOrWhiteSpace(switchOutProcess) ? baseline.SwitchOutProcessName : switchOutProcess.Trim( )
-        };
+        var result = draft;
         foreach (var field in Fields)
         {
             result = field.Apply(result);
         }
 
-        return result;
+        return result with
+        {
+            SwitchOutProcessName = string.IsNullOrWhiteSpace(result.SwitchOutProcessName) ? baseline.SwitchOutProcessName : result.SwitchOutProcessName.Trim( )
+        };
     }
 
     public void Reset( )
     {
-        var defaults = new LightBoardSettings( );
+        draft = new LightBoardSettings( );
         foreach (var field in Fields)
         {
-            field.Load(defaults);
+            field.Load(draft);
         }
 
-        EdgeScrollHint = defaults.EdgeScrollHint;
-        SmoothZoom = defaults.SmoothZoom;
-        TaperEnabled = defaults.Taper;
-        SetPalmEraseFingers(defaults.PalmEraseFingers);
-        SetSelectionDragMode(defaults.SelectionDragMode);
-        SwitchOutProcess = defaults.SwitchOutProcessName;
+        // 空属性名表示所有属性都已变化
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
     }
 
     private void SetSelectionDragMode(SelectionDragMode mode)
     {
-        if (selectionDragMode == mode)
+        if (draft.EffectiveSelectionDragMode == mode)
         {
             return;
         }
 
-        selectionDragMode = mode;
+        draft = draft with { SelectionDragMode = mode };
         Raise(nameof(LassoDrag));
         Raise(nameof(RectangleDrag));
     }
 
     private void SetPalmEraseFingers(int fingers)
     {
-        if (palmEraseFingers == fingers)
+        if (draft.EffectivePalmEraseFingers == fingers)
         {
             return;
         }
 
-        palmEraseFingers = fingers;
+        draft = draft with { PalmEraseFingers = fingers };
         Raise(nameof(FourFingerErase));
         Raise(nameof(FiveFingerErase));
     }
@@ -281,6 +232,12 @@ public sealed class SettingsEditor : INotifyPropertyChanged
     private void FieldChanged(object? o, PropertyChangedEventArgs e)
     {
         Raise(nameof(HasErrors));
+    }
+
+    private void Update(LightBoardSettings next, string name)
+    {
+        draft = next;
+        Raise(name);
     }
 
     private void Raise(string name)
