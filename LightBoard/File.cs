@@ -51,18 +51,6 @@ public partial class MainWindow
 
         var fileName = dialog.FileName;
 
-        // 有背景时文档附加按替换式打开处理，OpenFile 自带同一把闸
-        if (!IsBoardFile(fileName) && !IsInkFile(fileName) && App.HasBackground)
-        {
-            if (WhetherCloseFile( ))
-            {
-                return;
-            }
-
-            OpenFile(fileName);
-            return;
-        }
-
         opening = true;
         try
         {
@@ -171,7 +159,8 @@ public partial class MainWindow
             {
                 Board.Write(
                     Path.Join(App.AppPath, "fastsave", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"),
-                    App.SnapshotPages( ));
+                    App.SnapshotPages( ),
+                    App.Underlay);
                 Dirty = false;
                 return false;
             }
@@ -236,6 +225,7 @@ public partial class App
             AddBoardPage(p);
         }
 
+        Underlay = content.Underlay;
         PageIndex = 0;
 
         return content.InvalidBackgrounds;
@@ -299,7 +289,8 @@ public partial class App
 
         WriteRecover(
             Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf"),
-            SnapshotPages( ));
+            SnapshotPages( ),
+            Underlay);
     }
 
     /// <summary>
@@ -321,14 +312,14 @@ public partial class App
         var path = Path.Join(AppPath, "recover", $"{DateTime.Now:yyyyMMdd-HHmmss}.lbf");
         var pages = SnapshotPages( );
 
-        Task.Run(( ) => WriteRecover(path, ClonePages(pages)));
+        Task.Run(( ) => WriteRecover(path, ClonePages(pages), Underlay));
     }
 
-    private static void WriteRecover(string path, IReadOnlyList<BoardPage> pages)
+    private static void WriteRecover(string path, IReadOnlyList<BoardPage> pages, Underlay underlay)
     {
         try
         {
-            Board.Write(path, pages);
+            Board.Write(path, pages, underlay);
         }
         catch (Exception e)
         {

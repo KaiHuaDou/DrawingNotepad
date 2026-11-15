@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -46,19 +47,22 @@ public partial class App
 
         var (scale, offsetX, offsetY, box) = CanvasView( );
 
-        // 已有页按页序取文档对应页，与追加的新页保持同一份背景来源
-        foreach (var page in Pages)
+        // 从当前页起铺：已有页按页序取文档对应页，与追加的新页保持同一份背景来源
+        var start = PageIndex;
+        foreach (var page in Pages.Skip(start))
         {
-            if (page.Number <= document.PageCount)
+            if (page.Number - start > document.PageCount)
             {
-                page.Background = new DocumentBackground(fullPath, page.Number, box);
-                page.InvalidatePreview( );
+                break;
             }
+
+            page.Background = new DocumentBackground(fullPath, page.Number - start, box);
+            page.InvalidatePreview( );
         }
 
-        while (Pages.Count < document.PageCount)
+        while (Pages.Count - start < document.PageCount)
         {
-            AddDocumentPage(scale, offsetX, offsetY, new DocumentBackground(fullPath, Pages.Count + 1, box));
+            AddDocumentPage(scale, offsetX, offsetY, new DocumentBackground(fullPath, Pages.Count - start + 1, box));
         }
 
         // 当前页视图同步为捕获视图（即画布当前视图），换页往返后背景仍落在视口内

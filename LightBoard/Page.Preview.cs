@@ -69,14 +69,14 @@ public partial class Page
         var background = Background;
         var image = background is null ? null : App.BackgroundImage(background);
         var box = background?.Box;
+        var canvas = App.UnderlayColor;
 
         Task.Run(( ) =>
         {
             ImageSource? rendered = null;
             try
             {
-                // TODO: 缩略图底色跟随「纯白／纯黑」背景；Preview 在后台线程执行，底色以 Color 传递
-                rendered = strokes.Preview(image, box);
+                rendered = strokes.Preview(image, box, canvas);
             }
             catch (Exception e)
             {

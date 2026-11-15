@@ -23,9 +23,8 @@ public partial class MainWindow
     // 页面列表面板的开合本体：事件处理器与折叠联动共用
     private void ApplyPagePanel(bool isChecked)
     {
-        TimeText.Visibility = isChecked ? Visibility.Collapsed : Visibility.Visible;
         PagePreviewsBox.Visibility = isChecked ? Visibility.Visible : Visibility.Collapsed;
-        RightBorder.Background = isChecked ? ContainerBrushSolid : ContainerBrush;
+        SyncChrome( );
 
         var chrome = RightBorder.Padding.Left * 2 + RightBorder.BorderThickness.Left * 2;
         var fromWidth = RightBorder.ActualWidth;
@@ -97,8 +96,10 @@ public partial class MainWindow
         CanvasNext.CurrentView = new View(page.Scale, page.OffsetX, page.OffsetY);
         CanvasNext.SwapHistory(out _, page.History);
 
-        // 视频层显隐与背景单选随页面走
-        RefreshVideoBackground( );
+        // 视频层显隐随页面走
+#if OPENCV
+        SyncVideoOverlay( );
+#endif
     }
 
     private void PagePreviewsBoxSelectionChanged(object o, SelectionChangedEventArgs e)
@@ -118,7 +119,9 @@ public partial class MainWindow
         Dirty = true;
 
         // 视频页可能是被删的那一页
-        RefreshVideoBackground( );
+#if OPENCV
+        SyncVideoOverlay( );
+#endif
     }
 
     private void PrevPage(object o, RoutedEventArgs e)

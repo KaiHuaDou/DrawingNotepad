@@ -39,7 +39,45 @@ public partial class App
 {
     private static readonly Dictionary<string, DocumentService> OpenedDocuments = [with(StringComparer.OrdinalIgnoreCase)];
 
-    internal static bool HasBackground => Pages.Any(p => p.Background is not null);
+    /// <summary>
+    /// 拍照后照片落在原页还是新页
+    /// </summary>
+    internal enum PhotoPlacement
+    {
+        OriginalPage,
+        NewPage,
+    }
+
+    /// <summary>
+    /// 原页没有背景时照片留在原页，否则另开一页追加到最后
+    /// </summary>
+    internal static PhotoPlacement PhotoPlacementFor(Page page)
+    {
+        return page.Background is null ? PhotoPlacement.OriginalPage : PhotoPlacement.NewPage;
+    }
+
+    /// <summary>
+    /// 把当前页的背景换成指定图片；盒子取当前视口，与打开文档时一致
+    /// </summary>
+    internal static async Task SetPageBackgroundAsync(Page page, string path)
+    {
+        var fullPath = Path.GetFullPath(path);
+        await OpenDocumentSourceAsync(fullPath);          // 打不开时抛异常，由调用方提示
+
+        page.Background = new DocumentBackground(fullPath, 1, CanvasView( ).Box);
+        page.InvalidatePreview( );
+        BoardRevision++;
+    }
+
+    /// <summary>
+    /// 清掉一页的背景
+    /// </summary>
+    internal static void ClearPageBackground(Page page)
+    {
+        page.Background = null;
+        page.InvalidatePreview( );
+        BoardRevision++;
+    }
 
     internal static async Task<DocumentService> OpenDocumentSourceAsync(string path)
     {

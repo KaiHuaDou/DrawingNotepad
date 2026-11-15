@@ -26,16 +26,12 @@ public partial class MainWindow
     // 视频画面在内容坐标中的区域，进入视频背景时取当前视口；画面随之随画布缩放平移
     private Rect videoArea;
 
-    // 最近勾选的全局背景（网格 / 纯白 / 纯黑 / 透明），离开视频页与退出展台时恢复勾选。
-    // 组互斥在 Click 之前就取消了其余单选，所以只能在点击处记录，不能事后读 IsChecked
-    private RadioButton? globalBackgroundRadio;
-
     // 打开可能很慢：cameraOpening 期间禁用按钮；cameraGeneration 让切换走之后的迟到结果就地销毁
     private bool cameraOpening;
     private int cameraGeneration;
     private bool cameraFrozen;
 
-    // 展台提示文字；null 即不显示。显隐由 RefreshVideoBackground 按当前页决定，翻页时联动
+    // 展台提示文字；null 即不显示。显隐由 SyncVideoOverlay 按当前页决定，翻页时联动
     private string? cameraTip;
     private readonly DispatcherTimer cameraTipTimer = new( )
     {
@@ -68,18 +64,18 @@ public partial class MainWindow
             cameraTipTimer.Stop( );
         }
 
-        RefreshVideoBackground( );
+        SyncVideoOverlay( );
     }
 
     private void HideCameraTip( )
     {
         cameraTip = null;
         cameraTipTimer.Stop( );
-        RefreshVideoBackground( );
+        SyncVideoOverlay( );
     }
 
-    // 视频背景仅在视频页上显示；翻页、换背景或清板时同步背景页、提示与背景单选
-    private void RefreshVideoBackground( )
+    // 视频层只随当前页走；翻页、换背景或清板时同步背景页、提示与菜单勾选
+    private void SyncVideoOverlay( )
     {
         if (videoPage is not null && !App.Pages.Contains(videoPage))
         {
@@ -103,7 +99,6 @@ public partial class MainWindow
         CameraBar.Visibility = onVideoPage ? Visibility.Visible : Visibility.Collapsed;
         CameraTipText.Text = cameraTip ?? "";
         CameraTipText.Visibility = onVideoPage && cameraTip is not null ? Visibility.Visible : Visibility.Collapsed;
-        CanvasNext.Background = BackgroundBrush(CurrentBackground( ));
 
         // 视频页让位页自身的文档背景：视频画面占住画布内的背景位
         var page = App.CurrentPage;
@@ -111,12 +106,8 @@ public partial class MainWindow
             onVideoPage ? cameraBitmap : App.BackgroundImage(page.Background),
             onVideoPage ? videoArea : page.Background?.Box);
 
-        // 背景单选跟随当前页：视频页勾「视频」，其余页回到最近勾选的全局背景
-        VideoBackgroundRadio.IsChecked = onVideoPage;
-        if (!onVideoPage)
-        {
-            (globalBackgroundRadio ?? DefaultBackgroundRadio).IsChecked = true;
-        }
+        // 菜单勾选表示展台开着，与当前页无关
+        VideoMenuItem.IsChecked = videoPage is not null;
     }
 
     private async void StartVideoStand( )
@@ -134,7 +125,7 @@ public partial class MainWindow
         }
 
         UpdateCameraBarMargin( );
-        RefreshVideoBackground( );
+        SyncVideoOverlay( );
 
         if (camera is not null)
         {
@@ -165,7 +156,7 @@ public partial class MainWindow
             }
 
             // 打不开：回退进入前的背景并提示
-            ReturnToGlobalBackground( );
+            StopVideo( );
             App.ShowInfo(devices.Count == 0 ? "未找到摄像头设备" : "无法打开摄像头设备");
         }
         finally
@@ -193,13 +184,31 @@ public partial class MainWindow
         SetCameraButtonsEnabled(true);
     }
 
-    // 离开视频背景：停采集并把背景单选还给最近勾选的全局背景
-    private void ReturnToGlobalBackground( )
+    // 离开展台：停采集并解绑视频页
+    private void StopVideo( )
     {
         videoPage = null;
         StopVideoStand( );
-        (globalBackgroundRadio ?? DefaultBackgroundRadio).IsChecked = true;
-        ApplyBackground( );
+        VideoMenuItem.IsChecked = false;
+        SyncVideoOverlay( );
+    }
+
+    // 更多菜单里的展台开关：勾上开展台，取消关展台
+    private void VideoMenuItemClick(object o, RoutedEventArgs e)
+    {
+        if (o is not MenuItem { IsChecked: bool isChecked })
+        {
+            return;
+        }
+
+        if (isChecked)
+        {
+            StartVideoStand( );
+        }
+        else
+        {
+            StopVideo( );
+        }
     }
 
     // 展台工具栏恰在 CenterBorder 上方：两者都不遮挡，随 CenterBorder 折叠位移与倍率一起移动
@@ -258,7 +267,7 @@ public partial class MainWindow
                 return;
             }
 
-            ReturnToGlobalBackground( );
+            StopVideo( );
             App.ShowInfo("摄像头已断开");
         });
     }

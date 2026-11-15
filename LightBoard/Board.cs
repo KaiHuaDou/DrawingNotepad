@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -20,12 +21,13 @@ internal sealed record BoardPage(
 internal sealed record BoardContent(
     int Version,
     IReadOnlyList<BoardPage> Pages,
-    IReadOnlyList<string> InvalidBackgrounds
-);
+    IReadOnlyList<string> InvalidBackgrounds,
+    Underlay Underlay);
 
-internal sealed class BoardManifest(int version, IReadOnlyList<BoardPageInfo> pages)
+internal sealed class BoardManifest(int version, string? underlay, IReadOnlyList<BoardPageInfo> pages)
 {
     public int Version { get; set; } = version;
+    public string? Underlay { get; set; } = underlay;
     public IReadOnlyList<BoardPageInfo> Pages { get; set; } = pages;
 }
 
@@ -49,7 +51,7 @@ internal static class Board
 {
     public const string Ext = ".lbf";
 
-    internal const int CurrentVersion = 2;
+    internal const int CurrentVersion = 3;
 
     private const string Manifest = "manifest.json";
 
@@ -99,10 +101,10 @@ internal static class Board
                 ReadBackground(info, i, invalidBackgrounds)));
         }
 
-        return new BoardContent(manifest.Version, pages, invalidBackgrounds);
+        return new BoardContent(manifest.Version, pages, invalidBackgrounds, ReadUnderlay(manifest));
     }
 
-    public static void Write(string path, IReadOnlyList<BoardPage> pages)
+    public static void Write(string path, IReadOnlyList<BoardPage> pages, Underlay underlay)
     {
         var tempPath = $"{path}.tmp";
 
@@ -117,7 +119,7 @@ internal static class Board
             // 归档必须在 File.Move 之前关闭，否则临时文件句柄仍被占用
             using (var zip = ZipFile.Open(tempPath, ZipArchiveMode.Create))
             {
-                var manifest = new BoardManifest(CurrentVersion, [.. pages.Select(ToPageInfo)]);
+                var manifest = new BoardManifest(CurrentVersion, underlay.ToString(), [.. pages.Select(ToPageInfo)]);
 
                 var manifestEntry = zip.CreateEntry(Manifest);
                 // 流必须在后续 CreateEntry 之前关闭，ZipArchive 不允许多个条目同时处于打开状态
@@ -176,6 +178,12 @@ internal static class Board
         invalid.Add($"第 {index + 1} 页：{spec}");
 
         return null;
+    }
+
+    // 底色认不出来时按网格处理：只影响外观，不算文件损坏
+    private static Underlay ReadUnderlay(BoardManifest manifest)
+    {
+        return Enum.TryParse<Underlay>(manifest.Underlay, true, out var underlay) ? underlay : Underlay.Grid;
     }
 }
 

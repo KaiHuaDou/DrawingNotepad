@@ -40,7 +40,7 @@ public class BoardFileTests
         var path = TempPath( );
         try
         {
-            Board.Write(path, pages);
+            Board.Write(path, pages, Underlay.Grid);
 
             using (var zip = ZipFile.OpenRead(path))
             using (var reader = new StreamReader(zip.GetEntry("manifest.json")!.Open( )))
@@ -69,7 +69,7 @@ public class BoardFileTests
         var path = TempPath( );
         try
         {
-            Board.Write(path, [MakePage(1.0, 0, 0, withStroke: false)]);
+            Board.Write(path, [MakePage(1.0, 0, 0, withStroke: false)], Underlay.Grid);
             RewriteManifestVersion(path, Board.CurrentVersion + 1);
 
             Assert.Throws<InvalidDataException>(( ) => Board.Read(path));
@@ -90,7 +90,7 @@ public class BoardFileTests
             [
                 MakePage(1.0, 0, 0, withStroke: false),
                 MakePage(1.0, 0, 0, withStroke: false),
-            ]);
+            ], Underlay.Grid);
 
             using (var zip = ZipFile.Open(path, ZipArchiveMode.Update))
             {
@@ -117,7 +117,7 @@ public class BoardFileTests
             {
                 var entry = zip.CreateEntry("manifest.json");
                 using var stream = entry.Open( );
-                JsonSerializer.Serialize(stream, new BoardManifest(Board.CurrentVersion, []), BoardSerializerContext.Default.BoardManifest);
+                JsonSerializer.Serialize(stream, new BoardManifest(Board.CurrentVersion, null, []), BoardSerializerContext.Default.BoardManifest);
             }
 
             Assert.Throws<InvalidDataException>(( ) => Board.Read(path));
@@ -134,7 +134,7 @@ public class BoardFileTests
         var name = $"lb-board-{Guid.NewGuid( ):N}.lbf";
         try
         {
-            Board.Write(name, [MakePage(1.0, 0, 0, withStroke: false)]);
+            Board.Write(name, [MakePage(1.0, 0, 0, withStroke: false)], Underlay.Grid);
 
             Assert.True(File.Exists(name));
         }
@@ -164,7 +164,7 @@ public class BoardFileTests
         var path = TempPath( );
         try
         {
-            Board.Write(path, [new BoardPage(strokes, 1.0, 0, 0)]);
+            Board.Write(path, [new BoardPage(strokes, 1.0, 0, 0)], Underlay.Grid);
 
             using (var zip = ZipFile.OpenRead(path))
             {
@@ -199,7 +199,7 @@ public class BoardFileTests
         var path = TempPath( );
         try
         {
-            Board.Write(path, [MakePage(1.0, 0, 0, withStroke: false, background)]);
+            Board.Write(path, [MakePage(1.0, 0, 0, withStroke: false, background)], Underlay.Grid);
 
             using (var zip = ZipFile.OpenRead(path))
             using (var reader = new StreamReader(zip.GetEntry("manifest.json")!.Open( )))
@@ -229,7 +229,7 @@ public class BoardFileTests
         var path = TempPath( );
         try
         {
-            WriteRawBoard(path, new BoardManifest(1, [new BoardPageInfo(1.0, 0, 0, null, null)]));
+            WriteRawBoard(path, new BoardManifest(1, null, [new BoardPageInfo(1.0, 0, 0, null, null)]));
 
             var content = Board.Read(path);
 
@@ -246,7 +246,7 @@ public class BoardFileTests
     [Fact]
     public void Read_InvalidBackground_ReportsAndIgnores( )
     {
-        BoardManifest manifest = new(Board.CurrentVersion,
+        BoardManifest manifest = new(Board.CurrentVersion, null,
         [
             new BoardPageInfo(1.0, 0, 0, @"C:\a.pdf::0", new BoardBox(0, 0, 100, 100)),
             new BoardPageInfo(1.0, 0, 0, @"C:\a.pdf", new BoardBox(0, 0, 100, 100)),
@@ -264,6 +264,70 @@ public class BoardFileTests
             Assert.All(content.Pages, page => Assert.Null(page.Background));
             Assert.Equal(4, content.InvalidBackgrounds.Count);
             Assert.Contains("第 1 页", content.InvalidBackgrounds[0]);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Theory]
+    [InlineData("Grid")]
+    [InlineData("White")]
+    [InlineData("Black")]
+    public void Write_Read_RoundTrip_Underlay(string underlay)
+    {
+        var path = TempPath( );
+        try
+        {
+            Board.Write(path, [MakePage(1.0, 0, 0, withStroke: false)], Enum.Parse<Underlay>(underlay));
+
+            using (var zip = ZipFile.OpenRead(path))
+            using (var reader = new StreamReader(zip.GetEntry("manifest.json")!.Open( )))
+            {
+                Assert.Contains($"\"{underlay}\"", reader.ReadToEnd( ));
+            }
+
+            var content = Board.Read(path);
+
+            Assert.Equal(Enum.Parse<Underlay>(underlay), content.Underlay);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Read_UnderlayMissing_FallsBackToGrid( )
+    {
+        var path = TempPath( );
+        try
+        {
+            WriteRawBoard(path, new BoardManifest(2, null, [new BoardPageInfo(1.0, 0, 0, null, null)]));
+
+            var content = Board.Read(path);
+
+            Assert.Equal(Underlay.Grid, content.Underlay);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Read_UnderlayUnknown_FallsBackToGrid( )
+    {
+        var path = TempPath( );
+        try
+        {
+            WriteRawBoard(path, new BoardManifest(Board.CurrentVersion, "Neon", [new BoardPageInfo(1.0, 0, 0, null, null)]));
+
+            var content = Board.Read(path);
+
+            Assert.Equal(Underlay.Grid, content.Underlay);
+            Assert.Empty(content.InvalidBackgrounds);
         }
         finally
         {

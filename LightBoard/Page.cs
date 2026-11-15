@@ -153,10 +153,10 @@ public partial class App
 
         for (var i = 0; i < count; i++)
         {
-            var (Number, Strokes, Background, Box) = SnapshotPage(pages[i]);
+            var (Number, Strokes, Background, Box, Canvas) = SnapshotPage(pages[i]);
             var fileName = Path.Join(directory, $"{Number.ToString( ).PadLeft(pad, '0')}.png");
 
-            Strokes.ExportPng(fileName, dpi, scale, background: Background, box: Box);
+            Strokes.ExportPng(fileName, dpi, scale, canvas: Canvas, background: Background, box: Box);
             progress?.Report(new(tip, i + 1, count));
         }
     }
@@ -164,7 +164,7 @@ public partial class App
     /// <summary>
     /// 导出用页快照
     /// </summary>
-    internal static (int Number, StrokeCollection Strokes, ImageSource? Background, Rect? Box) SnapshotPage(Page page)
+    internal static (int Number, StrokeCollection Strokes, ImageSource? Background, Rect? Box, Color? Canvas) SnapshotPage(Page page)
     {
         return Current.Dispatcher.Invoke(( ) =>
         {
@@ -175,7 +175,8 @@ public partial class App
                 page.Number,
                 new StrokeCollection([.. page.Strokes.Select(s => s.Clone( ))]),
                 image,
-                background?.Box
+                background?.Box,
+                UnderlayColor
             );
         });
     }

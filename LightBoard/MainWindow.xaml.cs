@@ -29,7 +29,7 @@ public partial class MainWindow : Window
 
 #if !OPENCV
         // 不含 OpenCV 的构建没有视频展台
-        VideoBackgroundRadio.Visibility = Visibility.Collapsed;
+        VideoMenuItem.Visibility = Visibility.Collapsed;
 #else
         WireCameraOverlay( );
 #endif
@@ -84,6 +84,8 @@ public partial class MainWindow : Window
         }
 
         OnPageChanged(this, EventArgs.Empty);
+
+        ApplyAppearance( );
 
         RefreshToolChecks( );
         TrackToolIdentity( );

@@ -1,5 +1,9 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+
+using LightBoard.Tests.Toolbar;
 
 namespace LightBoard.Tests;
 
@@ -58,5 +62,76 @@ public class BackgroundsTests
             App.CloseDocuments( );
             File.Delete(path);
         }
+    }
+
+    [Fact]
+    public void SetPageBackground_CreatesFromCurrentViewport( )
+    {
+        var path = TempPng( );
+        try
+        {
+            UiThread.Run(( ) =>
+            {
+                var page = new Page( ) { Number = 1 };
+
+                // 图片打开没有真正的异步等待，方法在本次调用内同步完成
+                App.SetPageBackgroundAsync(page, path).GetAwaiter( ).GetResult( );
+
+                Assert.NotNull(page.Background);
+                Assert.Equal(1, page.Background!.PageNumber);
+                Assert.Equal(App.CanvasView( ).Box, page.Background.Box);
+            });
+        }
+        finally
+        {
+            UiThread.Run(App.CloseDocuments);
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void ClearPageBackground_LeavesOtherPages( )
+    {
+        var page = new Page( ) { Number = 1 };
+        page.Background = new DocumentBackground(@"C:\a.png", 1, new Rect(0, 0, 10, 10));
+
+        App.ClearPageBackground(page);
+
+        Assert.Null(page.Background);
+    }
+
+    [Fact]
+    public void PhotoPlacementFor_NoBackground_StaysOnOriginalPage( )
+    {
+        var page = new Page( ) { Number = 1 };
+
+        Assert.Equal(App.PhotoPlacement.OriginalPage, App.PhotoPlacementFor(page));
+    }
+
+    [Fact]
+    public void PhotoPlacementFor_HasBackground_GoesToNewPage( )
+    {
+        var page = new Page( ) { Number = 1 };
+        page.Background = new DocumentBackground(@"C:\a.png", 1, new Rect(0, 0, 10, 10));
+
+        Assert.Equal(App.PhotoPlacement.NewPage, App.PhotoPlacementFor(page));
+    }
+
+    /// <summary>
+    /// 造一张临时 PNG：单页背景动作只接受图片
+    /// </summary>
+    internal static string TempPng( )
+    {
+        var path = Path.Join(Path.GetTempPath( ), $"lb-bg-{Guid.NewGuid( ):N}.png");
+
+        var bitmap = new RenderTargetBitmap(4, 4, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Freeze( );
+
+        var encoder = new PngBitmapEncoder( );
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var stream = File.Create(path);
+        encoder.Save(stream);
+
+        return path;
     }
 }

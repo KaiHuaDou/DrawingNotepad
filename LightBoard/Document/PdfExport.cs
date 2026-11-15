@@ -49,8 +49,8 @@ internal static class PdfWriter
             {
                 for (var i = 0; i < count; i++)
                 {
-                    var (Number, Strokes, Background, Box) = App.SnapshotPage(pages[i]);
-                    var bitmap = AddPage(pdf, i, Strokes, Background, Box, dpi, scale);
+                    var (Number, Strokes, Background, Box, Canvas) = App.SnapshotPage(pages[i]);
+                    var bitmap = AddPage(pdf, i, Strokes, Background, Box, Canvas, dpi, scale);
                     bitmaps.Add(bitmap);
                     progress?.Report(new(pageTip, i + 1, count));
                 }
@@ -80,10 +80,11 @@ internal static class PdfWriter
         StrokeCollection strokes,
         ImageSource? background,
         Rect? box,
+        Color? canvas,
         DpiScale dpi,
         int scale)
     {
-        var content = strokes.Render(dpi, scale, Colors.White, background, box);
+        var content = strokes.Render(dpi, scale, canvas ?? Colors.White, background, box);
         var ptW = content.PixelWidth * 72d / dpi.PixelsPerInchX;
         var ptH = content.PixelHeight * 72d / dpi.PixelsPerInchY;
 

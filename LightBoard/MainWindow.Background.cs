@@ -4,92 +4,113 @@ using System.Windows.Media;
 
 namespace LightBoard;
 
-internal enum BackgroundKind
+public partial class App
 {
-    Grid,
-    White,
-    Black,
-    Transparent,
-    Video,
+    /// <summary>
+    /// 底色对应的画布底色；null 表示网格，导出与缩略图沿用各自的默认底色
+    /// </summary>
+    internal static Color? UnderlayColor => Underlay switch
+    {
+        Underlay.White => Colors.White,
+        Underlay.Black => Colors.Black,
+        _ => null,
+    };
 }
 
 public partial class MainWindow
 {
     /// <summary>
-    /// 背景单选的唯一解码点：画布底色、窗口穿透与视频启停都按这里的结果分派
+    /// 底色单选的唯一解码点：画布底衬按这里的结果分派
     /// </summary>
-    private BackgroundKind CurrentBackground( )
+    private Underlay CurrentUnderlay( )
     {
-        return VideoBackgroundRadio.IsChecked == true ? BackgroundKind.Video
-            : WhiteBackgroundRadio.IsChecked == true ? BackgroundKind.White
-            : BlackBackgroundRadio.IsChecked == true ? BackgroundKind.Black
-            : TransparentBackgroundRadio.IsChecked == true ? BackgroundKind.Transparent
-            : BackgroundKind.Grid;
+        return WhiteUnderlayRadio.IsChecked == true ? Underlay.White
+            : BlackUnderlayRadio.IsChecked == true ? Underlay.Black
+            : Underlay.Grid;
     }
 
-    private void ApplyBackground( )
+    /// <summary>
+    /// 外观应用：画布底色与透明演示的窗口行为
+    /// </summary>
+    private void ApplyAppearance( )
     {
-        var kind = CurrentBackground( );
+        var transparent = TransparentMenuItem.IsChecked == true;
+        var underlay = CurrentUnderlay( );
+        App.Underlay = underlay;
 
-#if OPENCV
-        if (kind == BackgroundKind.Video)
+        CanvasNext.Background = transparent ? Brushes.Transparent : UnderlayBrush(underlay);
+        Topmost = transparent;
+        PassThroughBorder.Visibility = transparent ? Visibility.Visible : Visibility.Collapsed;
+
+        // 透明演示时画布不画底衬，底色单选没有意义
+        DefaultUnderlayRadio.IsEnabled = !transparent;
+        WhiteUnderlayRadio.IsEnabled = !transparent;
+        BlackUnderlayRadio.IsEnabled = !transparent;
+
+        SyncChrome( );
+    }
+
+    /// <summary>
+    /// 板子的底色写回单选：打开 .lbf 后按记录选中对应项
+    /// </summary>
+    internal void SyncUnderlay( )
+    {
+        (App.Underlay switch
         {
-            StartVideoStand( );
-        }
-        else if (videoPage is not null)
-        {
-            videoPage = null;
-            StopVideoStand( );
-        }
-#endif
+            Underlay.White => WhiteUnderlayRadio,
+            Underlay.Black => BlackUnderlayRadio,
+            _ => DefaultUnderlayRadio,
+        }).IsChecked = true;
 
-        RefreshVideoBackground( );
+        ApplyAppearance( );
+    }
 
-        var transparent = kind == BackgroundKind.Transparent;
-        TimeText.Visibility = transparent || AllPageToggle.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
+    // 窗口 chrome 的唯一写入口：计时、切换按钮与三块边框的显隐与底色
+    private void SyncChrome( )
+    {
+        var transparent = TransparentMenuItem.IsChecked == true;
+        var panel = AllPageToggle.IsChecked == true;
+
+        TimeText.Visibility = transparent || panel ? Visibility.Collapsed : Visibility.Visible;
         SwitchOutButton.Visibility = transparent ? Visibility.Collapsed : Visibility.Visible;
         LeftBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
         CenterBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
-        RightBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
-        PassThroughBorder.Visibility = transparent ? Visibility.Visible : Visibility.Collapsed;
-        Topmost = transparent;
+        RightBorder.Background = transparent || panel ? ContainerBrushSolid : ContainerBrush;
     }
 
-    // 视频页的画布底色仍是网格，视频画面由 SetDocumentPage 盖在其上
-    private static Brush BackgroundBrush(BackgroundKind kind)
+    private static Brush UnderlayBrush(Underlay underlay)
     {
-        return kind switch
+        return underlay switch
         {
-            BackgroundKind.White => Brushes.White,
-            BackgroundKind.Black => Brushes.Black,
-            BackgroundKind.Transparent => Brushes.Transparent,
+            Underlay.White => Brushes.White,
+            Underlay.Black => Brushes.Black,
             _ => MajorGridBrush,
         };
     }
 
-    private void BackgroundRadioClick(object o, RoutedEventArgs e)
+    private void UnderlayRadioClick(object o, RoutedEventArgs e)
     {
         if (o is not RadioButton { IsChecked: true })
         {
             return;
         }
 
-#if OPENCV
-        // 组互斥在 Click 之前已取消其余单选，最近勾选的全局背景只能在这里记录
-        if (!ReferenceEquals(o, VideoBackgroundRadio))
+        ApplyAppearance( );
+
+        // 缩略图按底色重画
+        foreach (var page in App.Pages)
         {
-            globalBackgroundRadio = (RadioButton) o;
+            page.InvalidatePreview( );
         }
-#endif
-
-        ApplyBackground( );
     }
 
-#if !OPENCV
-    // 视频背景仅在含 OpenCV 的构建中存在；nocv 构建的画布底色只随背景单选走
-    private void RefreshVideoBackground( )
+    private void TransparentMenuItemClick(object o, RoutedEventArgs e)
     {
-        CanvasNext.Background = BackgroundBrush(CurrentBackground( ));
+        if (o is not MenuItem { IsChecked: bool isChecked })
+        {
+            return;
+        }
+
+        ApplyAppearance( );
     }
-#endif
 }

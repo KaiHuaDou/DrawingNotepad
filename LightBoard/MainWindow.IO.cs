@@ -18,6 +18,8 @@ public partial class MainWindow
     private const string FileFilter =
         "可打开的文件|*.lbf;*.isf;*.pptx;*.ppt;*.docx;*.doc;*.xps;*.pdf;*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|轻白板文件|*.lbf|Windows 墨迹文件|*.isf|演示文稿|*.pptx;*.ppt|Word 文档|*.docx;*.doc|XPS 文档|*.xps|PDF 文档|*.pdf|图片|*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff|所有文件|*.*";
 
+    private const string ImageFilter = "图片|*.bmp;*.gif;*.ico;*.jpg;*.jpeg;*.png;*.tiff";
+
     private void OpenFileClick(object o, RoutedEventArgs e)
     {
         if (WhetherCloseFile( ))
@@ -93,6 +95,7 @@ public partial class MainWindow
     {
         var invalid = await RunWithLoading("正在打开", ( ) => App.LoadBoardAsync(fileName));
 
+        SyncUnderlay( );
         ShowInvalidBackgrounds(invalid);
     }
 
@@ -169,7 +172,7 @@ public partial class MainWindow
 
         try
         {
-            Board.Write(dialog.FileName, App.SnapshotPages( ));
+            Board.Write(dialog.FileName, App.SnapshotPages( ), App.Underlay);
             Dirty = false;
         }
         catch (Exception ex)

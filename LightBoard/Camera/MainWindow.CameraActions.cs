@@ -67,7 +67,7 @@ public partial class MainWindow
             cameraBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr24, null);
             camera.SetOrientation(cameraAngle, CameraMirrorButton.IsChecked == true);
             BlitCamera( );
-            RefreshVideoBackground( );
+            SyncVideoOverlay( );
         }
     }
 
@@ -135,7 +135,7 @@ public partial class MainWindow
 
     private void CameraCloseClick(object o, RoutedEventArgs e)
     {
-        ReturnToGlobalBackground( );
+        StopVideo( );
     }
 
     // 冻结期间不向位图写帧，画面与拍照都停在冻结那一刻；新开的设备从解冻开始，残留的勾选会让预览一直空着
@@ -209,8 +209,8 @@ public partial class MainWindow
             : $"{name}  {capture.FrameWidth}×{capture.FrameHeight}";
     }
 
-    // 拍照翻页：当前帧冻结为视频页的静态背景，新增页并切换过去，视频背景接续在新页上。
-    // 拍照只动背景与新页，不算未保存的墨迹
+    // 拍照落页：原页没有背景时照片留在原页，视频与人移到新页；原页已有背景时不覆盖，
+    // 照片另开一页追加到最后，展台留在原页。拍照只动背景与新页，不算未保存的墨迹
     private bool FreezeVideoPage(Page? target, string photoPath, BitmapSource photo)
     {
         if (target is null || videoArea.IsEmpty)
@@ -221,10 +221,6 @@ public partial class MainWindow
         // 位图随拍照带回：登记后画布、缩略图与导出直接取内存位图，路径供保存与下次打开解码
         App.RegisterPhotoSource(photoPath, photo);
 
-        // 照片与原视频画面重合在同一块内容区域
-        target.Background = new DocumentBackground(photoPath, 1, videoArea);
-        target.InvalidatePreview( );
-
         // 新页沿用拍照时的缩放与平移；视频区域不随视口重算，画面在内容坐标里原地不动
         var view = CanvasNext.CurrentView;
         var page = new Page
@@ -234,9 +230,24 @@ public partial class MainWindow
             OffsetX = view.OffsetX,
             OffsetY = view.OffsetY,
         };
-        App.Pages.Add(page);
-        videoPage = page;
-        App.SwitchPage(App.Pages.Count - 1);
+
+        if (App.PhotoPlacementFor(target) == App.PhotoPlacement.OriginalPage)
+        {
+            // 照片与原视频画面重合在同一块内容区域
+            target.Background = new DocumentBackground(photoPath, 1, videoArea);
+            target.InvalidatePreview( );
+
+            App.Pages.Add(page);
+            videoPage = page;
+            App.SwitchPage(App.Pages.Count - 1);
+        }
+        else
+        {
+            page.Background = new DocumentBackground(photoPath, 1, videoArea);
+            page.InvalidatePreview( );
+            App.Pages.Add(page);
+        }
+
         App.BoardRevision++;
         Dirty = true;
         return true;

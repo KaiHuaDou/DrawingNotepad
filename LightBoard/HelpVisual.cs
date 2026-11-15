@@ -256,7 +256,7 @@ public partial class MainWindow
                     new(ExitButton, "关闭"),
                     new(WindowMinimizeButton, "最小化"),
                     new(MoreButton, "文件"),
-                    new(BackgroundButton, "背景"),
+                    new(BackgroundButton, "底色"),
                     new(SwitchOutButton, "切换窗口"),
                 ],
                 [

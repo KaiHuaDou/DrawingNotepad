@@ -139,6 +139,32 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEA90;" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                    <MenuItem Header="设为背景" Style="{StaticResource MenuItemStyle}" Click="SetBackgroundClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE91B;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="清除本页背景" Style="{StaticResource MenuItemStyle}" Click="ClearBackgroundClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE74D;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                    <MenuItem x:Name="TransparentMenuItem" Header="透明演示"
+                              Style="{StaticResource MenuItemStyle}"
+                              Click="TransparentMenuItemClick" IsCheckable="True">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE7A1;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="VideoMenuItem" Header="视频展台"
+                              Style="{StaticResource MenuItemStyle}"
+                              Click="VideoMenuItemClick" IsCheckable="True">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE714;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                 </Menu>
             </Border>
         </Popup>
@@ -157,27 +183,19 @@
                                       Color="#000000" />
                 </Border.Effect>
                 <StackPanel Orientation="Vertical">
-                    <RadioButton x:Name="DefaultBackgroundRadio"
+                    <RadioButton x:Name="DefaultUnderlayRadio"
                                  IsChecked="True"
                                  Style="{StaticResource LabelledRadioStyle}"
-                                 Click="BackgroundRadioClick" Content=" 默认" GroupName="BackgroundGroup"
+                                 Click="UnderlayRadioClick" Content=" 网格" GroupName="UnderlayGroup"
                                  Tag="&#xE71D;" />
-                    <RadioButton x:Name="WhiteBackgroundRadio"
+                    <RadioButton x:Name="WhiteUnderlayRadio"
                                  Style="{StaticResource LabelledRadioStyle}"
-                                 Click="BackgroundRadioClick" Content=" 纯白" GroupName="BackgroundGroup"
+                                 Click="UnderlayRadioClick" Content=" 纯白" GroupName="UnderlayGroup"
                                  Tag="&#xE706;" />
-                    <RadioButton x:Name="BlackBackgroundRadio"
+                    <RadioButton x:Name="BlackUnderlayRadio"
                                  Style="{StaticResource LabelledRadioStyle}"
-                                 Click="BackgroundRadioClick" Content=" 纯黑" GroupName="BackgroundGroup"
+                                 Click="UnderlayRadioClick" Content=" 纯黑" GroupName="UnderlayGroup"
                                  Tag="&#xE708;" />
-                    <RadioButton x:Name="TransparentBackgroundRadio"
-                                 Style="{StaticResource LabelledRadioStyle}"
-                                 Click="BackgroundRadioClick" Content=" 透明" GroupName="BackgroundGroup"
-                                 Tag="&#xE7A1;" />
-                    <RadioButton x:Name="VideoBackgroundRadio"
-                                 Style="{StaticResource LabelledRadioStyle}"
-                                 Click="BackgroundRadioClick" Content=" 视频" GroupName="BackgroundGroup"
-                                 Tag="&#xE714;" />
                 </StackPanel>
             </Border>
         </Popup>
