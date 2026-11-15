@@ -153,22 +153,6 @@ public sealed class InkCanvasStrokesChangedEventArgs : EventArgs
     public bool TransformOnly { get; }
 }
 
-public sealed class HistorySnapshot
-{
-    internal HistorySnapshot(IHistoryChange[] changes, int position)
-    {
-        Changes = changes;
-        Position = position;
-    }
-
-    internal IReadOnlyList<IHistoryChange> Changes { get; }
-
-    /// <summary>
-    /// 历史位置：之前的条目为可撤销项，之后的条目为可重做项
-    /// </summary>
-    public int Position { get; }
-}
-
 public partial class InkCanvasNext
 {
     private readonly RingBuffer<IHistoryChange> history;
@@ -228,6 +212,11 @@ public partial class InkCanvasNext
         StrokesChanged?.Invoke(this, new InkCanvasStrokesChangedEventArgs([.. e.Added], [.. e.Removed], transformOnly: false));
 
         UpdateEdgeHints( );
+
+        if (!eraser.Recording && !applyingUndoRedo && e.Added.Count > 0)
+        {
+            RaiseOperationCompleted(InkCanvasOperation.Stroke);
+        }
     }
 
     /// <summary>

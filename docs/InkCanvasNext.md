@@ -32,6 +32,7 @@
 - `InkCanvasNextCommands`：默认命令（撤销、重做、删除、复制、剪切、粘贴、取消、放大、缩小、实际大小）
 - `StrokeCollectionExtension`：墨迹导出与缩略图渲染
 - `InkCanvasStrokesChangedEventArgs`：`StrokesChanged` 的载荷（只读的 Added / Removed 列表；选区整体变换时 `TransformOnly` 为 true）
+- `InkCanvasOperation`、`InkCanvasOperationEventArgs`：`OperationCompleted` 的载荷（落笔或擦除）
 - `HistorySnapshot`：撤销 / 重做历史栈快照，`Position` 为当前指针（`SwapHistory` 使用）
 
 ```csharp
@@ -90,6 +91,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `DefaultDrawingAttributes` | `DrawingAttributes` | 默认笔触属性（颜色 / 粗细 / 荧光笔均在此表达）    |
 | `Mode`                     | `InkCanvasNextMode` | 当前编辑模式，默认 `Ink`                          |
 | `EraserDiameter`           | `double`            | 面积擦直径，初值取自构造期选项（默认 75）         |
+| `EraserLabel`              | `string?`           | 橡皮反馈圆上显示的文本，null 或空串时不显示       |
 | `IsReadOnly`               | `bool`              | 只读模式：输入不改墨迹与选区，平移缩放仍可用      |
 | `UseDefaultCommands`       | `bool`              | 让控件可聚焦并接管按键，默认 `false`；不影响命令可用性 |
 | `StampAction`              | `StampAction`       | 当前盖章模式（克隆 / 粘贴），默认 `None`          |
@@ -102,6 +104,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `CanRedoChanged`         | `EventHandler<DependencyPropertyChangedEventArgs>` | `CanRedo` 变化时触发                             |
 | `CanUndoChanged`         | `EventHandler<DependencyPropertyChangedEventArgs>` | `CanUndo` 变化时触发                             |
 | `StrokesChanged`         | `EventHandler<InkCanvasStrokesChangedEventArgs>`   | 墨迹增删或选区整体变换时触发，载荷为只读的 Added / Removed 列表 |
+| `OperationCompleted`     | `EventHandler<InkCanvasOperationEventArgs>`        | 一笔书写完成或一次擦除手势结束时触发，擦除是否改动墨迹不影响；撤销与重做的重放不触发 |
 | `SelectionChanged`       | `EventHandler`                                     | 选中内容变化时触发                               |
 | `ViewOrSelectionChanged` | `EventHandler`                                     | 视口（滚动 / 缩放）或选区包围盒变化，供工具栏跟随 |
 | `EdgeHintsChanged`       | `EventHandler`                                     | 边缘提示的显示状态变化，供宿主刷新自绘的提示 |

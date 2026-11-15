@@ -249,6 +249,12 @@ public partial class InkCanvasNext
             EndSelectionTouch( );
         }
 
+        // 擦除周期先于编辑模式恢复结算：周期结束的回调可能换工具，恢复必须按新工具执行
+        if (IsAreaEraserActive(from) && !IsAreaEraserActive(to))
+        {
+            EndEraserCycle( );
+        }
+
         // 离开覆盖编辑模式的手势态：把编辑模式恢复为当前工具；回 Idle 时同时释放捕获
         if (to == TouchState.Idle)
         {
@@ -279,11 +285,6 @@ public partial class InkCanvasNext
         if (to is not (TouchState.EvalDraw or TouchState.Draw))
         {
             stampArmed = false;
-        }
-
-        if (IsAreaEraserActive(from) && !IsAreaEraserActive(to))
-        {
-            EndEraserCycle( );
         }
     }
 

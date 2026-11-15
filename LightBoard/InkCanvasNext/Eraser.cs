@@ -12,10 +12,30 @@ public partial class InkCanvasNext
 {
     private readonly Eraser eraser;
 
+    /// <summary>
+    /// 橡皮反馈圆上显示的文本；null 或空串时不显示
+    /// </summary>
+    public string? EraserLabel
+    {
+        get;
+        set
+        {
+            field = value;
+            eraser.Label = value;
+        }
+    }
+
     private void EndEraserCycle( )
     {
+        var active = eraser.Active;
+
         SealEraseBatch( );
         eraser.End( );
+
+        if (active)
+        {
+            RaiseOperationCompleted(InkCanvasOperation.Erase);
+        }
     }
 
     private bool IsAreaEraserActive(TouchState state)
@@ -55,7 +75,7 @@ public partial class InkCanvasNext
     }
 }
 
-internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameters parameters)
+internal sealed class Eraser(InkCanvas canvas, FrameworkElement feedback, TextBlock label, EraserParameters parameters)
 {
     private readonly double rebuildThreshold = parameters.RebuildThreshold;
 
@@ -66,11 +86,33 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
     internal double Diameter { get; set; } = parameters.Diameter;
 
     /// <summary>
+    /// 反馈圆上显示的文本；null 或空串时只显示圆
+    /// </summary>
+    internal string? Label
+    {
+        get;
+        set
+        {
+            if (field == value)
+            {
+                return;
+            }
+
+            field = value;
+            label.Text = value;
+            label.Visibility = Active && !string.IsNullOrEmpty(value) ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    /// <summary>
     /// 画布缩放，由 CurrentScale 写入，用于视口直径与内容直径换算
     /// </summary>
     internal double Scale { get; set; } = 1.0;
 
-    private bool Active { get; set; }
+    /// <summary>
+    /// 擦除周期是否开着：从本周期第一次推进命中测试到周期结束
+    /// </summary>
+    internal bool Active { get; private set; }
 
     /// <summary>
     /// 命中测试进行中：这段窗口里的画布增删都由擦除器产生
@@ -86,6 +128,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
         Canvas.SetLeft(feedback, screenPosition.X - Diameter / 2);
         Canvas.SetTop(feedback, screenPosition.Y - Diameter / 2);
         feedback.Visibility = Visibility.Visible;
+        label.Visibility = string.IsNullOrEmpty(Label) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void Start(Point canvasPosition)
@@ -154,6 +197,7 @@ internal sealed class Eraser(InkCanvas canvas, Ellipse feedback, EraserParameter
     {
         // 未开擦除周期时也会调用：隐藏先于 Active 判定，否则橡皮圈残留到下一次擦除
         feedback.Visibility = Visibility.Collapsed;
+        label.Visibility = Visibility.Collapsed;
 
         if (!Active)
         {

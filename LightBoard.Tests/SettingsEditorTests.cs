@@ -136,6 +136,9 @@ public class SettingsEditorTests
         Item<SettingsToggle>(editor, nameof(LightBoardSettings.EdgeScrollHint)).Checked = false;
         Item<SettingsToggle>(editor, nameof(LightBoardSettings.SmoothZoom)).Checked = false;
         Item<SettingsToggle>(editor, nameof(LightBoardSettings.Taper)).Checked = false;
+        Item<SettingsToggle>(editor, nameof(LightBoardSettings.ToolAutoRevert)).Checked = true;
+        Item<SettingsField>(editor, nameof(LightBoardSettings.ToolAutoRevertCount)).Text = "2";
+        Item<SettingsToggle>(editor, nameof(LightBoardSettings.ShowRevertCount)).Checked = false;
 
         var settings = editor.Build( );
 
@@ -150,6 +153,9 @@ public class SettingsEditorTests
         Assert.False(settings.EdgeScrollHint);
         Assert.False(settings.SmoothZoom);
         Assert.False(settings.Taper);
+        Assert.True(settings.ToolAutoRevert);
+        Assert.Equal(2, settings.ToolAutoRevertCount);
+        Assert.False(settings.ShowRevertCount);
         Assert.Null(settings.PinchLockDistance);
     }
 

@@ -35,10 +35,6 @@ internal static class SettingsSchema
                     s => s.EffectiveSmoothZoom,
                     s => s.SmoothZoom,
                     (s, v) => s with { SmoothZoom = v }),
-            ]),
-
-            new("选择",
-            [
                 new SettingsChoice("空白处拖动选区", nameof(LightBoardSettings.SelectionDragMode), "圈选", "框选",
                     s => s.EffectiveSelectionDragMode == SelectionDragMode.Lasso,
                     s => s.SelectionDragMode is null ? null : s.SelectionDragMode == SelectionDragMode.Lasso,
@@ -56,10 +52,6 @@ internal static class SettingsSchema
                     s => s.EffectiveFitToCurve,
                     s => s.FitToCurve,
                     (s, v) => s with { FitToCurve = v }),
-            ]),
-
-            new("笔锋",
-            [
                 new SettingsToggle("笔画末端渐细", nameof(LightBoardSettings.Taper),
                     s => s.EffectiveTaper,
                     s => s.Taper,
@@ -139,6 +131,23 @@ internal static class SettingsSchema
                     s => s.EffectiveMaxHistoryCount,
                     s => s.MaxHistoryCount,
                     (s, v) => s with { MaxHistoryCount = v is null ? null : (int) v.Value }),
+            ]),
+
+            new("工具回退",
+            [
+                new SettingsToggle("橡皮、荧光笔、选择用完自动回到画笔", nameof(LightBoardSettings.ToolAutoRevert),
+                    s => s.EffectiveToolAutoRevert,
+                    s => s.ToolAutoRevert,
+                    (s, v) => s with { ToolAutoRevert = v }),
+                new SettingsField("回退前操作次数", nameof(LightBoardSettings.ToolAutoRevertCount), "次",
+                    SettingsLimits.ToolAutoRevertCountMin, SettingsLimits.ToolAutoRevertCountMax, 1, true,
+                    s => s.EffectiveToolAutoRevertCount,
+                    s => s.ToolAutoRevertCount,
+                    (s, v) => s with { ToolAutoRevertCount = v is null ? null : (int) v.Value }),
+                new SettingsToggle("橡皮按钮上显示剩余次数", nameof(LightBoardSettings.ShowRevertCount),
+                    s => s.EffectiveShowRevertCount,
+                    s => s.ShowRevertCount,
+                    (s, v) => s with { ShowRevertCount = v }),
             ]),
 
             new("工具栏",

@@ -38,7 +38,7 @@ public partial class InkCanvasNext : UserControl
         CanvasGrid.Width = canvasSize.Width;
         CanvasGrid.Height = canvasSize.Height;
 
-        eraser = new Eraser(InnerCanvas, EraserFeedback, this.options.Eraser);
+        eraser = new Eraser(InnerCanvas, EraserFeedback, EraserFeedbackLabel, this.options.Eraser);
         EraserDiameter = this.options.Eraser.Diameter;
 
         MousePointer = new MouseTouchDevice(this);

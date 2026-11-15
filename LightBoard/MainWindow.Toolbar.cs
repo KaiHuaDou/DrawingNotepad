@@ -123,6 +123,9 @@ public partial class MainWindow
         SelectRadio?.IsChecked = Mode == InkCanvasNextMode.Select;
         LineRadio?.IsChecked = Mode == InkCanvasNextMode.Line;
         CircleRadio?.IsChecked = Mode == InkCanvasNextMode.Circle;
+
+        TrackToolIdentity( );
+        UpdateRevertLabel( );
     }
 
     /// <summary>

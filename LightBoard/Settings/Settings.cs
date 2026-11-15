@@ -28,7 +28,10 @@ public record LightBoardSettings(
     double? EraserRebuildThreshold = null,
     double? ToolbarScale = null,
     string? SwitchOutProcessName = null,
-    SelectionDragMode? SelectionDragMode = null
+    SelectionDragMode? SelectionDragMode = null,
+    bool? ToolAutoRevert = null,
+    int? ToolAutoRevertCount = null,
+    bool? ShowRevertCount = null
 )
 {
     public const double ToolbarScaleDefault = SettingsLimits.ToolbarScaleDefault;
@@ -107,6 +110,13 @@ public record LightBoardSettings(
 
     internal SelectionDragMode EffectiveSelectionDragMode
         => SelectionDragMode is { } mode && Enum.IsDefined(mode) ? mode : InkCanvasNextOptions.SelectionDragModeDefault;
+
+    internal bool EffectiveToolAutoRevert => ToolAutoRevert ?? SettingsLimits.ToolAutoRevertDefault;
+
+    internal int EffectiveToolAutoRevertCount
+        => Math.Clamp(ToolAutoRevertCount ?? SettingsLimits.ToolAutoRevertCountDefault, SettingsLimits.ToolAutoRevertCountMin, SettingsLimits.ToolAutoRevertCountMax);
+
+    internal bool EffectiveShowRevertCount => ShowRevertCount ?? SettingsLimits.ShowRevertCountDefault;
 }
 
 /// <summary>
@@ -119,6 +129,11 @@ internal static class SettingsLimits
     public const double ToolbarScaleDefault = 1;
     public const double ToolbarScaleMin = 0.75;
     public const double ToolbarScaleMax = 1.5;
+    public const bool ToolAutoRevertDefault = false;
+    public const int ToolAutoRevertCountDefault = 1;
+    public const int ToolAutoRevertCountMin = 1;
+    public const int ToolAutoRevertCountMax = 10;
+    public const bool ShowRevertCountDefault = true;
 #if DEBUG
     public const string SwitchOutProcessDefault = "thorium";
 #else

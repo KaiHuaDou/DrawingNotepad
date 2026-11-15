@@ -70,6 +70,9 @@ public class SettingsTests
         Assert.Equal(InkCanvasNext.EraserParameters.MinLogicalDiameterDefault, data.EffectiveEraserMinLogicalDiameter);
         Assert.Equal(InkCanvasNext.EraserParameters.RebuildThresholdDefault, data.EffectiveEraserRebuildThreshold);
         Assert.Equal(LightBoardSettings.ToolbarScaleDefault, data.EffectiveToolbarScale);
+        Assert.False(data.EffectiveToolAutoRevert);
+        Assert.Equal(SettingsLimits.ToolAutoRevertCountDefault, data.EffectiveToolAutoRevertCount);
+        Assert.True(data.EffectiveShowRevertCount);
     }
 
     [Fact]
@@ -175,6 +178,14 @@ public class SettingsTests
         Assert.Equal(SettingsLimits.SwitchOutProcessDefault, data.EffectiveSwitchOutProcess);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.SelectionDragModeDefault, data.EffectiveSelectionDragMode);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersMax, data.EffectivePalmEraseFingers);
+    }
+
+    [Fact]
+    public void ToolAutoRevertCount_OutOfRange_Clamped( )
+    {
+        Assert.Equal(SettingsLimits.ToolAutoRevertCountMax, new LightBoardSettings { ToolAutoRevertCount = 99 }.EffectiveToolAutoRevertCount);
+        Assert.Equal(SettingsLimits.ToolAutoRevertCountMin, new LightBoardSettings { ToolAutoRevertCount = 0 }.EffectiveToolAutoRevertCount);
+        Assert.Equal(SettingsLimits.ToolAutoRevertCountDefault, new LightBoardSettings( ).EffectiveToolAutoRevertCount);
     }
 
     [Fact]

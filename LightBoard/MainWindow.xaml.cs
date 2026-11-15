@@ -47,12 +47,17 @@ public partial class MainWindow : Window
         SettingsStore.Load( );
         ApplyToolbarScale( );
 
+        AutoRevert = SettingsStore.Current.EffectiveToolAutoRevert;
+        AutoRevertCount = SettingsStore.Current.EffectiveToolAutoRevertCount;
+        ShowRevertCount = SettingsStore.Current.EffectiveShowRevertCount;
+
         CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset, SettingsStore.Current.CreateCanvasOptions( ))
         {
             Background = MajorGridBrush
         };
         CanvasNext.SelectionChanged += CanvasNextSelectionChanged;
         CanvasNext.StrokesChanged += CanvasNextStrokesChanged;
+        CanvasNext.OperationCompleted += CanvasOperationCompleted;
         MainGrid.Children.Insert(0, CanvasNext);
         InitializeCommands( );
 
@@ -113,6 +118,8 @@ public partial class MainWindow : Window
 
     private void CanvasNextSelectionChanged(object? o, EventArgs e)
     {
+        TrackSelectionSession( );
+
         if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
         {
             SelectionBorder.Visibility = Visibility.Collapsed;

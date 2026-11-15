@@ -20,10 +20,16 @@
         </ScrollViewer>
 
         <Canvas x:Name="EraserOverlayCanvas" Panel.ZIndex="1" IsHitTestVisible="False">
-            <Ellipse x:Name="EraserFeedback"
-                     Width="0" Height="0"
-                     Visibility="Collapsed"
-                     Fill="#E6E6E6" Stroke="#1E1E1E" StrokeThickness="2" />
+            <Grid x:Name="EraserFeedback"
+                  Width="0" Height="0"
+                  Visibility="Collapsed">
+                <Ellipse Fill="#E6E6E6" Stroke="#1E1E1E" StrokeThickness="2" />
+                <TextBlock x:Name="EraserFeedbackLabel"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Visibility="Collapsed"
+                           Foreground="#1E1E1E"
+                           FontSize="22" FontWeight="Bold" />
+            </Grid>
         </Canvas>
     </Grid>
 </UserControl>
