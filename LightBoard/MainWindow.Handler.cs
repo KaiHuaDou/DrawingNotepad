@@ -307,4 +307,16 @@ public partial class MainWindow
         timerWindow = new TimerWindow { Owner = this };
         timerWindow.Show( );
     }
+
+    private void LotteryMenuClick(object o, RoutedEventArgs e)
+    {
+        if (lotteryWindow?.IsLoaded == true)
+        {
+            lotteryWindow.Activate( );
+            return;
+        }
+
+        lotteryWindow = new LotteryWindow { Owner = this };
+        lotteryWindow.Show( );
+    }
 }

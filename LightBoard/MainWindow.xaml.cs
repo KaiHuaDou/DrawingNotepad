@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer iconTimer;
 
     private TimerWindow? timerWindow;
+    private LotteryWindow? lotteryWindow;
     private string? switchOutIconPath;
 
     public MainWindow( )

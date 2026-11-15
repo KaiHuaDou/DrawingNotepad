@@ -119,7 +119,7 @@ internal static class Board
             // 归档必须在 File.Move 之前关闭，否则临时文件句柄仍被占用
             using (var zip = ZipFile.Open(tempPath, ZipArchiveMode.Create))
             {
-                var manifest = new BoardManifest(CurrentVersion, underlay.ToString(), [.. pages.Select(ToPageInfo)]);
+                var manifest = new BoardManifest(CurrentVersion, underlay.ToString( ), [.. pages.Select(ToPageInfo)]);
 
                 var manifestEntry = zip.CreateEntry(Manifest);
                 // 流必须在后续 CreateEntry 之前关闭，ZipArchive 不允许多个条目同时处于打开状态

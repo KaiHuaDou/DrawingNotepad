@@ -47,7 +47,11 @@ public class BackgroundsTests
 
         try
         {
-            PdfWriter.Export(path, pages, new DpiScale(1, 1), 100);
+            // 导出在 UI 线程取页快照，需要 App 存在
+            UiThread.Run(( ) =>
+            {
+                PdfWriter.Export(path, pages, new DpiScale(1, 1), 100);
+            });
 
             var first = await App.OpenDocumentSourceAsync(path);
             var second = await App.OpenDocumentSourceAsync(path);

@@ -446,6 +446,11 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE917;" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <MenuItem Header="抽选" Style="{StaticResource MenuItemStyle}" Click="LotteryMenuClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE8B1;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <Separator Style="{StaticResource MenuSeparatorStyle}" />
                     <MenuItem x:Name="DebugLayerMenu" Header="调试"
                               Style="{StaticResource MenuItemStyle}"
