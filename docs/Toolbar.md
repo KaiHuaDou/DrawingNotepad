@@ -2,36 +2,48 @@
 
 范围：主工具栏全部工具控件、选区工具条的克隆、`Esc` / `Delete` / `Ctrl+X` / 翻页入口。左工具栏、右工具栏、背景单选不改变工具态，见 §8。
 
-## 1. 状态量
+## 1. 工具状态
 
-| ID | 名称 | 取值域 | 初值 | 位置 |
-| --- | --- | --- | --- | --- |
-| S1 | `Mode` | `Ink`、`Line`、`Circle`、`EraseArea`、`EraseStroke`、`Select` | `Ink` | `MainWindow.Toolbar.cs` |
-| S2 | `HighlighterActive` | `true`、`false` | `false` | 同上 |
-| S3 | `stamp` | `None`、`Clone`、`Paste` | `None` | 同上 |
-| S4 | `pen` | 颜色、宽度 | `#E6E6E6`、3 DIP | 同上 |
-| S5 | `colorRadio`、`thicknessRadio` | 颜色、粗细单选 | `DefaultColorRadio`、`DefaultThicknessRadio` | 同上 |
+工具态只有一个值 `DrawingAttributesNext`，由画布保存：
 
-`pen` 的其余属性固定为 `IsHighlighter=false`、`StylusTip=Ellipse`、`IgnorePressure=false`。`HighlighterProfile` 固定为黄、36 DIP、`IsHighlighter=true`、`Ellipse`、`IgnorePressure=true`。曲线拟合由设置项与画布选项 `FitToCurve` 决定，工具预设不写。
-
-`SyncToolState` 把状态量写入画布：
-
-| ID | 目标 | 值 |
+| 字段 | 取值 | 初值 |
 | --- | --- | --- |
-| D1 | `CanvasNext.Mode` | `Mode` |
-| D2 | `CanvasNext.StampAction` | `stamp` |
-| D3 | `CanvasNext.DefaultDrawingAttributes` | `HighlighterActive ? HighlighterProfile : pen` |
+| `Mode` | `Ink`、`Line`、`Circle`、`EraseArea`、`EraseStroke`、`Select` | `Ink` |
+| `Stamp` | `None`、`Clone`、`Paste` | `None` |
+| `DrawingAttributes` | 颜色、宽高、笔尖、`FitToCurve`、`IgnorePressure`、`IsHighlighter` | `#E6E6E6`、3、椭圆 |
 
-写入顺序为 D2 → D1 → D3：`OnModeChanged` 会读当前 `StampAction`。
+画布只暴露可读写依赖属性 `DrawingAttributes`；所有写入直接赋值 `DrawingAttributes = DrawingAttributes with { ... }`。切模式并清印章要显式写这两个字段。`DrawingAttributes` 子项在写入与读取时都克隆。依赖属性的 Coerce 归一化非法组合：
+
+| 条件 | 结果 |
+| --- | --- |
+| `Mode` 或 `Stamp` 枚举值未定义 | 分别取 `Ink`、`None` |
+| `Mode ∉ { Ink, Select }` | `Stamp = None` |
+
+宿主保存普通笔预设 `pen`、颜色单选 `colorRadio` 与粗细单选 `thicknessRadio`。高亮预设由 `pen` 派生：
+
+```csharp
+private static DrawingAttributes CreateHighlighter(DrawingAttributes source)
+{
+    var attributes = source.Clone( );
+    attributes.Color = Colors.Yellow;
+    attributes.Width = attributes.Height = 36;
+    attributes.StylusTip = StylusTip.Ellipse;
+    attributes.IgnorePressure = true;
+    attributes.IsHighlighter = true;
+    return attributes;
+}
+```
 
 ## 2. 不变式
 
 | ID | 条件 |
 | --- | --- |
-| I1 | `HighlighterActive` ⇒ `Mode = Ink` |
-| I2 | `SyncToolState` 之后 `stamp ≠ None` ⇒ `Mode ∈ { Ink, Select }` |
-| I3 | 每次 `SyncToolState` 之后 D1–D3 等于 S1–S4 |
-| I4 | 勾选态只由 `SyncToolState` 写入，满足 §6 的公式 |
+| I1 | `Stamp ≠ None` ⇒ `Mode ∈ { Ink, Select }` |
+| I2 | 静止且非只读时，每次写 `DrawingAttributes` 之后画布编辑模式等于 `DrawingAttributes.Mode`，内层笔触属性等于 `DrawingAttributes.DrawingAttributes`；手势进行中编辑模式在迁出 `Idle` 时应用 |
+| I3 | 勾选态与 `DrawingAttributes` 一致，满足 §6 的公式 |
+| I4 | 前置条件不成立的点击不改 `DrawingAttributes`，由 `RefreshToolChecks` 写回勾选 |
+
+高亮与模式互不约束：`IsHighlighter` 只是笔触属性，切高亮由 A4 同时写 `Mode = Ink`。
 
 ## 3. 状态图
 
@@ -54,7 +66,7 @@ stateDiagram-v2
     Ink --> Ink: A4
 ```
 
-`A4` 在两个方向都把 `Mode` 写为 `Ink`，开关值取自 `HighlighterToggle.IsChecked`。
+`A4` 两个方向都把 `DrawingAttributes` 写为高亮预设或 `pen`，同时把 `Mode` 写为 `Ink`，开关值取自 `HighlighterToggle.IsChecked`。
 
 ## 4. 动作
 
@@ -62,11 +74,11 @@ stateDiagram-v2
 | --- | --- | --- | --- |
 | A1 | 颜色单选 `Click` | 发送者 `Background` 是 `SolidColorBrush`，否则不处理 | 按 §5 |
 | A2 | 粗细单选 `Click` | 发送者 `MinWidth` 可读，否则不处理 | 按 §5 |
-| A3 | 模式单选 `Click` | 发送者 `RadioButton` | `stamp=None`；`prev=Mode`；`HighlighterActive=false`；`Mode = prev==X ? Ink : X` |
-| A4 | 荧光笔 `ToggleButton` `Click` | — | `stamp=None`；`HighlighterActive=IsChecked`；`Mode=Ink` |
-| A5 | 粘贴 `ToggleButton` `Click` | 勾选时剪贴板含 `InkSerializedFormat` | 勾选且前置成立：`HighlighterActive=false`、`Mode=Ink`、`stamp=Paste`；勾选但前置不成立：不改印章；取消勾选且 `stamp=Paste`：`stamp=None` |
-| A6 | 克隆 `ToggleButton` `Click` | 勾选时 `CanvasNext.HasSelection` | 勾选且前置成立：`stamp=Clone`；勾选但前置不成立：不改印章；取消勾选且 `stamp=Clone`：`stamp=None` |
-| A7 | 清屏 `Click` | — | `stamp=None`，随后清空当前页墨迹 |
+| A3 | 模式单选 `Click` | 发送者 `RadioButton` | `DrawingAttributes = DrawingAttributes with { Mode = prev == X ? Ink : X, Stamp = None, DrawingAttributes = pen }` |
+| A4 | 荧光笔 `ToggleButton` `Click` | — | 勾选：`DrawingAttributes = DrawingAttributes with { DrawingAttributes = CreateHighlighter(pen), Mode = Ink, Stamp = None }`；取消：`DrawingAttributes = DrawingAttributes with { DrawingAttributes = pen, Mode = Ink, Stamp = None }` |
+| A5 | 粘贴 `ToggleButton` `Click` | 勾选时剪贴板含 `InkSerializedFormat` | 勾选且前置成立：`DrawingAttributes = DrawingAttributes with { DrawingAttributes = pen, Stamp = Paste, Mode = Ink }`；勾选但前置不成立：不改状态，`RefreshToolChecks( )`；取消勾选且 `Stamp = Paste`：`DrawingAttributes = DrawingAttributes with { Stamp = None }` |
+| A6 | 克隆 `ToggleButton` `Click` | 勾选时 `CanvasNext.HasSelection` | 勾选且前置成立：`DrawingAttributes = DrawingAttributes with { Stamp = Clone }`；勾选但前置不成立：不改状态，`RefreshToolChecks( )`；取消勾选且 `Stamp = Clone`：`DrawingAttributes = DrawingAttributes with { Stamp = None }` |
+| A7 | 清屏 `Click` | — | `DrawingAttributes = DrawingAttributes with { Stamp = None }`，随后清空当前页墨迹 |
 
 A3 的 `X` 由控件的 `Tag` 映射：
 
@@ -81,14 +93,19 @@ A3 的 `X` 由控件的 `Tag` 映射：
 
 ## 5. 颜色与粗细的效果
 
-| 条件 | `Mode` | `HighlighterActive` | `stamp` | `pen` |
-| --- | --- | --- | --- | --- |
-| 形状模式 ∧ 点击项等于当前颜色或粗细 | `Ink` | `false` | `None` | 不变 |
-| 形状模式 ∧ 点击项不等于当前项 | 不变 | `false` | `None` | 换色或换宽 |
-| 工具模式 | `Ink` | `false` | `None` | 换色或换宽 |
-| `Ink` | `Ink` | `false` | `None` | 换色或换宽 |
+颜色与粗细点击先写 `colorRadio` / `thicknessRadio`，再写 `DrawingAttributes`；`DrawingAttributesChanged` 处理程序据此刷新勾选。
 
-形状模式与 `HighlighterActive=true` 不可能同时成立（I1），第一行不写开关。
+| 条件 | `Mode` | `Stamp` | 笔触属性 |
+| --- | --- | --- | --- |
+| 形状模式 ∧ 点击项等于当前颜色或粗细 | `Ink` | `None` | `pen` |
+| 形状模式 ∧ 点击项不等于当前项 | 不变 | `None` | `pen` 换色或换宽 |
+| 工具模式 | `Ink` | `None` | `pen` 换色或换宽 |
+| 印章激活 | `IsToolMode(Mode) ? Ink : Mode` | `None` | `pen` 换色或换宽 |
+| `Ink` | `Ink` | `None` | `pen` 换色或换宽 |
+
+高亮期间点颜色或粗细时，以 `pen` 为基准改写，不带上高亮的黄色、36 DIP 与忽略压感。
+
+颜色与粗细单选由宿主点击记录；外部直接写 `DrawingAttributes.DrawingAttributes` 时单选不跟随，下一次工具写入会被覆盖。需要调整画笔时写 `DrawingAttributes`。
 
 ## 6. 勾选态
 
@@ -96,21 +113,21 @@ A3 的 `X` 由控件的 `Tag` 映射：
 
 | 控件 | 勾选 ⇔ |
 | --- | --- |
-| 颜色、粗细 | `¬HighlighterActive ∧ ¬IsToolMode(Mode) ∧ stamp=None` |
-| 直线 | `Mode=Line` |
-| 圆 | `Mode=Circle` |
-| 面积擦除 | `Mode=EraseArea` |
-| 笔迹擦除 | `Mode=EraseStroke` |
-| 选择 | `Mode=Select` |
-| 荧光笔 | `HighlighterActive` |
-| 克隆 | `stamp=Clone` |
-| 粘贴 | `stamp=Paste` |
+| 颜色、粗细 | `¬DrawingAttributes.IsHighlighter ∧ ¬IsToolMode(Mode) ∧ Stamp = None` |
+| 直线 | `Mode = Line` |
+| 圆 | `Mode = Circle` |
+| 面积擦除 | `Mode = EraseArea` |
+| 笔迹擦除 | `Mode = EraseStroke` |
+| 选择 | `Mode = Select` |
+| 荧光笔 | `DrawingAttributes.IsHighlighter` |
+| 克隆 | `Stamp = Clone` |
+| 粘贴 | `Stamp = Paste` |
 
-控件只监听 `Click`；程序写 `IsChecked` 不会再次进入处理程序。
+`CanvasNextDrawingAttributesChanged` 依次调用 `RefreshToolChecks`、`TrackToolIdentity`、`UpdateRevertLabel`；构造期在默认颜色与粗细单选就位后显式调用三者一次。控件只监听 `Click`，程序写 `IsChecked` 不会再次进入处理程序。
 
 ## 7. 模式点击矩阵（A3）
 
-行为当前模式，列为点击的模式，单元格为写入后的 `Mode`。每格同时写 `stamp=None`、`HighlighterActive=false`。
+行为当前模式，列为点击的模式，单元格为写入后的 `Mode`。每格同时清掉印章并把笔触属性写回 `pen`。
 
 | 当前 ＼ 点击 | 直线 | 圆 | 面积擦除 | 笔迹擦除 | 选择 |
 | --- | --- | --- | --- | --- | --- |
@@ -123,17 +140,15 @@ A3 的 `X` 由控件的 `Tag` 映射：
 
 ## 8. 清理与不改变状态的入口
 
-`SyncToolState` 开头执行 N1；其余入口按行写入。
-
 | ID | 入口 | 结果 |
 | --- | --- | --- |
-| N1 | `SyncToolState` | `Mode ∉ { Ink, Select }` 时 `stamp=None` |
-| A8 | `Esc` | `stamp=None`；取消进行中的手势 |
-| A9 | `Delete`、`Ctrl+X` | 命令可执行（有选区且非只读）时先 `stamp=None` |
-| A10 | 翻页 | `stamp=None`；隐藏选区工具条；重置触点 |
+| N1 | `DrawingAttributes` 的 Coerce | 非法组合按 §1 表改回合法值；同值写入返回当前值，不触发事件 |
+| A8 | `Esc` | 窗口 `InputBindings` 把 `Cancel` 命令送到画布，`CancelExecuted` 先重置触点，再 `DrawingAttributes = DrawingAttributes with { Stamp = None }` |
+| A9 | `Delete`、`Ctrl+X` | 命令可执行（有选区且非只读）时先 `DrawingAttributes = DrawingAttributes with { Stamp = None }` |
+| A10 | 翻页 | `Strokes` 替换触发 `ApplyStrokes`，内部 `DrawingAttributes = DrawingAttributes with { Stamp = None }`；隐藏选区工具条；重置触点 |
 | A11 | 窗口失活 | 只重置触点 |
 
-不改变 S1–S5 的控件：
+不改变 `DrawingAttributes` 的控件：
 
 | 区域 | 控件 |
 | --- | --- |
@@ -148,23 +163,27 @@ A3 的 `X` 由控件的 `Tag` 映射：
 
 | 规则 | 代码 |
 | --- | --- |
-| S1–S5、D1–D3、I1–I4、N1、勾选态 | `LightBoard/MainWindow.Toolbar.cs`：字段与 `SyncToolState` |
+| `DrawingAttributesNext`、`DrawingAttributes` 依赖属性、`CoerceDrawingAttributes`、`Normalize` | `LightBoard/InkCanvasNext/DrawingAttributesNext.cs` |
+| 内层笔触属性的观察 | `LightBoard/InkCanvasNext/TaperInkCanvas.cs`：`ObserveDefaultDrawingAttributes` |
+| 状态机的工具快照 | `LightBoard/InkCanvasNext/States.cs`：`Snapshot` |
 | A1 | `LightBoard/MainWindow.Handler.cs`：`ColorRadioChecked` |
 | A2 | 同上：`ThicknessRadioClick` |
 | A3、Tag 映射 | 同上：`ModeRadioChecked` |
-| A4 | `LightBoard/MainWindow.Toolbar.cs`：`HighlighterBoxClicked` |
+| A4 | `LightBoard/MainWindow.Toolbar.cs`：`HighlighterBoxClicked`、`CreateHighlighter` |
 | A5 | `LightBoard/MainWindow.Handler.cs`：`PasteClick` |
 | A6 | 同上：`CloneClick` |
 | A7 | 同上：`EraseAll` |
-| A8 | `LightBoard/MainWindow.xaml.cs`：`MainWindowKeyUp`；`LightBoard/InkCanvasNext/Commands.cs`：`CancelExecuted` |
+| A8 | `LightBoard/InkCanvasNext/Commands.cs`：`CancelExecuted`；窗口绑定在 `LightBoard/MainWindow.Commands.cs` |
 | A9 | `LightBoard/MainWindow.Commands.cs`：`MainWindowPreviewExecuted` |
-| A10 | `LightBoard/MainWindow.Pages.cs`：`OnPageChanged` |
+| A10 | `LightBoard/InkCanvasNext/InkCanvasNext.xaml.cs`：`ApplyStrokes`；翻页在 `LightBoard/MainWindow.Pages.cs` |
 | A11 | `LightBoard/MainWindow.xaml.cs`：`WindowDeactivated` |
+| 勾选刷新 | `LightBoard/MainWindow.Toolbar.cs`：`CanvasNextDrawingAttributesChanged`、`RefreshToolChecks` |
 
 ## 10. 核对顺序
 
-1. §1 的初值与字段声明逐项对照
-2. §2 的不变式逐条对照 `SyncToolState` 与 A1–A6 的写入
-3. §6 的勾选公式逐行对照 `SyncToolState` 的控件赋值
-4. §7 的矩阵逐格对照 A3 的 `Mode = prev == X ? Ink : X`
+1. §1 的字段、初值与 `Normalize` 表逐项对照 `DrawingAttributesNext.cs`
+2. §2 的不变式逐条对照 `DrawingAttributes` 的 Coerce 与 §4 的写入
+3. §6 的勾选公式逐行对照 `RefreshToolChecks`
+4. §7 的矩阵逐格对照 A3 的 `DrawingAttributes = DrawingAttributes with { Mode = prev == X ? Ink : X, Stamp = None, DrawingAttributes = pen }`
 5. §8 的入口逐行对照调用点
+6. 跑控制测试与宿主测试，重点看失败前置、翻页、`Esc` 与自动回退

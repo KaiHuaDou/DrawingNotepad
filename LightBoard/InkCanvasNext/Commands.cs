@@ -196,6 +196,7 @@ public partial class InkCanvasNext
     private void CancelExecuted(object o, ExecutedRoutedEventArgs e)
     {
         ResetTouchState( );
+        DrawingAttributes = DrawingAttributes with { Stamp = StampAction.None };
         e.Handled = true;
     }
 

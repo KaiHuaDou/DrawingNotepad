@@ -5,6 +5,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+using LightBoard.Tests.Toolbar;
+
 namespace LightBoard.Tests;
 
 public class PdfExportTests
@@ -13,36 +15,40 @@ public class PdfExportTests
     [Fact]
     public void ExportAllPdf_ReopenContainsAllPagesIncludingInk( )
     {
-        var pages = new List<Page>
+        // 页快照经 App.Current 派发，用例必须在唯一 App 的线程上执行
+        UiThread.Run(( ) =>
         {
-            new()
+            var pages = new List<Page>
             {
-                Number = 1,
-                Strokes = [new Stroke(
-                    [new StylusPoint(50, 50), new StylusPoint(200, 200)],
-                    new DrawingAttributes { Color = Colors.Red, Width = 20, Height = 20 })],
-            },
-            new() { Number = 2 }, // 空页也应写入，保持页序一一对应
-        };
+                new()
+                {
+                    Number = 1,
+                    Strokes = [new Stroke(
+                        [new StylusPoint(50, 50), new StylusPoint(200, 200)],
+                        new DrawingAttributes { Color = Colors.Red, Width = 20, Height = 20 })],
+                },
+                new() { Number = 2 }, // 空页也应写入，保持页序一一对应
+            };
 
-        var path = Path.Join(Path.GetTempPath( ), $"lb-test-{Guid.NewGuid( ):N}.pdf");
-        try
-        {
-            PdfWriter.Export(path, pages, new DpiScale(1, 1), 100);
+            var path = Path.Join(Path.GetTempPath( ), $"lb-test-{Guid.NewGuid( ):N}.pdf");
+            try
+            {
+                PdfWriter.Export(path, pages, new DpiScale(1, 1), 100);
 
-            Assert.True(File.Exists(path));
-            Assert.True(new FileInfo(path).Length > 0);
+                Assert.True(File.Exists(path));
+                Assert.True(new FileInfo(path).Length > 0);
 
-            using var source = PdfSource.Open(path);
-            Assert.Equal(2, source.PageCount);
+                using var source = PdfSource.Open(path);
+                Assert.Equal(2, source.PageCount);
 
-            Assert.True(HasRedPixel(source.GetPage(0)!), "有墨迹的页应包含红色笔画像素");
-            Assert.False(HasRedPixel(source.GetPage(1)!), "空页应为纯白背景");
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+                Assert.True(HasRedPixel(source.GetPage(0)!), "有墨迹的页应包含红色笔画像素");
+                Assert.False(HasRedPixel(source.GetPage(1)!), "空页应为纯白背景");
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        });
     }
 
     // Bgra32 字节序：B、G、R、A；红笔画判定取 R 高且 G/B 低，避开白色背景（全 255）。

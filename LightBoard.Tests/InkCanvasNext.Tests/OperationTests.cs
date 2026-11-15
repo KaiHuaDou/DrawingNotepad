@@ -52,7 +52,7 @@ public class OperationTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var target = TestPoints.BeyondDisplacement(host, Start);
             host.Canvas.Strokes.Add(HorizontalLine(300, target.X, 150));
@@ -75,14 +75,14 @@ public class OperationTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             // 模拟宿主在周期结束的回调里回退工具
             host.Canvas.OperationCompleted += (_, e) =>
             {
                 if (e.Operation == InkCanvasOperation.Erase)
                 {
-                    host.Canvas.Mode = InkCanvasNextMode.Ink;
+                    host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Ink };
                 }
             };
 
@@ -94,7 +94,7 @@ public class OperationTests
             finger.Move(host.Target, target);
             finger.Up(host.Target, target);
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvas.EditingMode);
         });
     }
@@ -105,7 +105,7 @@ public class OperationTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
             var operations = Track(host);
 
             var finger = host.Device( );

@@ -70,10 +70,10 @@ internal static class ToolDriver
 
     public static void Esc(MainWindow window)
     {
-        // 窗口未显示，没有真实 PresentationSource 派发键盘事件，故传入一个最小桩实现。
+        // 窗口未显示，没有真实 PresentationSource 派发键盘事件，故传入一个最小桩实现
         var e = new KeyEventArgs(Keyboard.PrimaryDevice, new NullPresentationSource( ), 0, Key.Escape)
         {
-            RoutedEvent = Keyboard.KeyUpEvent
+            RoutedEvent = Keyboard.KeyDownEvent
         };
         window.RaiseEvent(e);
     }

@@ -8,34 +8,12 @@ using InkCanvasNext;
 
 namespace LightBoard;
 
-// 宿主保存的笔预设（不可变值）：切换工具时整体写入画布的 DrawingAttributes
-internal sealed record PenProfile(
-    Color Color,
-    double Width,
-    bool IsHighlighter,
-    StylusTip StylusTip,
-    bool IgnorePressure
-);
-
 public partial class MainWindow
 {
-    internal InkCanvasNextMode Mode { get; private set; } = InkCanvasNextMode.Ink;
-
-    /// <summary>
-    /// 当前是否使用荧光笔：高亮不是画布的编辑模式，由笔属性表达
-    /// </summary>
-    internal bool HighlighterActive { get; private set; }
-
-    private StampAction stamp = StampAction.None;
-
-    private PenProfile pen = new(Color.FromRgb(0xE6, 0xE6, 0xE6), 3, false, StylusTip.Ellipse, false);
-
-    // 荧光笔是圆头、平滑、固定宽度的半透明笔：笔尖与曲线来自 DrawingAttributes，IsHighlighter 只给 50% 不透明度
-    private static readonly PenProfile HighlighterProfile =
-        new(Colors.Yellow, 36, true, StylusTip.Ellipse, true);
-
     private RadioButton? colorRadio;
     private RadioButton? thicknessRadio;
+
+    private DrawingAttributes pen = DrawingAttributesNext.CreateDefault( );
 
     private Size? selectionBorderSize;
     private bool selectionBorderUpdating;
@@ -54,20 +32,33 @@ public partial class MainWindow
         return m is InkCanvasNextMode.Line or InkCanvasNextMode.Circle;
     }
 
-    private void ExitStamp( )
-    {
-        stamp = StampAction.None;
-        SyncToolState( );
-    }
-
     private void HighlighterBoxClicked(object o, RoutedEventArgs e)
     {
-        stamp = StampAction.None;
-        HighlighterActive = HighlighterToggle.IsChecked == true;
+        var attributes = HighlighterToggle.IsChecked == true ? CreateHighlighter(pen) : pen;
+        CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with
+        {
+            DrawingAttributes = attributes,
+            Mode = InkCanvasNextMode.Ink,
+            Stamp = StampAction.None
+        };
+    }
 
-        // 荧光笔只作用于画笔：进出都停在绘制
-        Mode = InkCanvasNextMode.Ink;
-        SyncToolState( );
+    private static DrawingAttributes CreateHighlighter(DrawingAttributes source)
+    {
+        var attributes = source.Clone( );
+        attributes.Color = Colors.Yellow;
+        attributes.Width = attributes.Height = 36;
+        attributes.StylusTip = StylusTip.Ellipse;
+        attributes.IgnorePressure = true;
+        attributes.IsHighlighter = true;
+        return attributes;
+    }
+
+    private void CanvasNextDrawingAttributesChanged(object? o, EventArgs e)
+    {
+        RefreshToolChecks( );
+        TrackToolIdentity( );
+        UpdateRevertLabel( );
     }
 
     private Size MeasureSelectionBorder( )
@@ -88,44 +79,23 @@ public partial class MainWindow
         return size;
     }
 
-    // 工具态唯一写入口：印章归一 → 画布模式与印章 → 笔属性 → 控件勾选
-    private void SyncToolState( )
+    private void RefreshToolChecks( )
     {
-        if (Mode is not (InkCanvasNextMode.Ink or InkCanvasNextMode.Select))
-        {
-            stamp = StampAction.None;
-        }
-
-        var highlighter = HighlighterActive;
-        var profile = highlighter ? HighlighterProfile : pen;
-
-        // 印章先写：OnModeChanged 的编辑模式判定要读到当前的 StampAction
-        CanvasNext.StampAction = stamp;
-        CanvasNext.Mode = Mode;
-
-        var attrs = CanvasNext.DefaultDrawingAttributes;
-        attrs.Color = profile.Color;
-        attrs.Width = attrs.Height = profile.Width;
-        attrs.IsHighlighter = profile.IsHighlighter;
-        attrs.StylusTip = profile.StylusTip;
-        attrs.IgnorePressure = profile.IgnorePressure;
+        var tool = CanvasNext.DrawingAttributes;
+        var highlighter = tool.DrawingAttributes.IsHighlighter;
+        // 荧光笔、工具模式与印章激活期间单指不落画笔，画笔单选不勾选
+        var penHidden = highlighter || IsToolMode(tool.Mode) || tool.Stamp != StampAction.None;
 
         HighlighterToggle?.IsChecked = highlighter;
-        CloneButton?.IsChecked = stamp == StampAction.Clone;
-        PasteButton?.IsChecked = stamp == StampAction.Paste;
-
-        // 荧光笔、工具模式与印章激活期间单指不落画笔，画笔单选不勾选
-        var penHidden = highlighter || IsToolMode(Mode) || stamp != StampAction.None;
+        CloneButton?.IsChecked = tool.Stamp == StampAction.Clone;
+        PasteButton?.IsChecked = tool.Stamp == StampAction.Paste;
         colorRadio?.IsChecked = !penHidden;
         thicknessRadio?.IsChecked = !penHidden;
-        EraseAreaRadio?.IsChecked = Mode == InkCanvasNextMode.EraseArea;
-        EraseStrokeRadio?.IsChecked = Mode == InkCanvasNextMode.EraseStroke;
-        SelectRadio?.IsChecked = Mode == InkCanvasNextMode.Select;
-        LineRadio?.IsChecked = Mode == InkCanvasNextMode.Line;
-        CircleRadio?.IsChecked = Mode == InkCanvasNextMode.Circle;
-
-        TrackToolIdentity( );
-        UpdateRevertLabel( );
+        EraseAreaRadio?.IsChecked = tool.Mode == InkCanvasNextMode.EraseArea;
+        EraseStrokeRadio?.IsChecked = tool.Mode == InkCanvasNextMode.EraseStroke;
+        SelectRadio?.IsChecked = tool.Mode == InkCanvasNextMode.Select;
+        LineRadio?.IsChecked = tool.Mode == InkCanvasNextMode.Line;
+        CircleRadio?.IsChecked = tool.Mode == InkCanvasNextMode.Circle;
     }
 
     /// <summary>

@@ -27,8 +27,8 @@ public class ToolbarColorTests
 
             ToolDriver.ClickRadio(host, host.FindColor(color));
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(color, host.Canvas.DefaultDrawingAttributes.Color);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(color, host.Canvas.DrawingAttributes.DrawingAttributes.Color);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -44,8 +44,8 @@ public class ToolbarColorTests
             ToolDriver.ClickRadio(host, radio);
             ToolDriver.ClickRadio(host, radio);
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(Red, host.Canvas.DefaultDrawingAttributes.Color);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(Red, host.Canvas.DrawingAttributes.DrawingAttributes.Color);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -60,12 +60,12 @@ public class ToolbarColorTests
         {
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, tool);
-            Assert.Equal(tool, host.Window.Mode);
+            Assert.Equal(tool, host.Canvas.DrawingAttributes.Mode);
 
             ToolDriver.ClickRadio(host, host.FindColor(Red));
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(Red, host.Canvas.DefaultDrawingAttributes.Color);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(Red, host.Canvas.DrawingAttributes.DrawingAttributes.Color);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -82,8 +82,8 @@ public class ToolbarColorTests
 
             ToolDriver.ClickRadio(host, host.FindColor(Red));
 
-            Assert.Equal(shape, host.Window.Mode);
-            Assert.Equal(Red, host.Canvas.DefaultDrawingAttributes.Color);
+            Assert.Equal(shape, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(Red, host.Canvas.DrawingAttributes.DrawingAttributes.Color);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -95,13 +95,13 @@ public class ToolbarColorTests
         {
             using var host = new MainWindowHost( );
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            Assert.True(host.Window.HighlighterActive);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
 
             ToolDriver.ClickRadio(host, host.FindColor(Red));
 
-            Assert.False(host.Window.HighlighterActive);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(Red, host.Canvas.DefaultDrawingAttributes.Color);
+            Assert.False(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(Red, host.Canvas.DrawingAttributes.DrawingAttributes.Color);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -117,12 +117,12 @@ public class ToolbarColorTests
             canvas.Strokes.Add(TestStrokes.MakeStroke( ));
             TestSelection.ForceSelection(canvas, canvas.Strokes);
             ToolDriver.Toggle(host.Window.CloneButton, true);
-            Assert.Equal(StampAction.Clone, canvas.StampAction);
+            Assert.Equal(StampAction.Clone, canvas.DrawingAttributes.Stamp);
 
             ToolDriver.ClickRadio(host, host.FindColor(Red));
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(StampAction.None, canvas.StampAction);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(StampAction.None, canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.CloneButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });

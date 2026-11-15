@@ -16,7 +16,7 @@ public class SelectionLassoTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
 
             var first = MakeStroke(new Point(200, 150), new Point(250, 350));
             var second = MakeStroke(new Point(600, 150), new Point(650, 350));

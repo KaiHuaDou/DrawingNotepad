@@ -52,8 +52,7 @@ public class ToolbarToolModeTests
 
             ToolEntry.Enter(host, tool);
 
-            Assert.Equal(tool, host.Window.Mode);
-            Assert.Equal(tool, host.Canvas.Mode);
+            Assert.Equal(tool, host.Canvas.DrawingAttributes.Mode);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -66,12 +65,11 @@ public class ToolbarToolModeTests
         {
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, from);
-            Assert.Equal(from, host.Window.Mode);
+            Assert.Equal(from, host.Canvas.DrawingAttributes.Mode);
 
             ToolEntry.Enter(host, to);
 
-            Assert.Equal(to, host.Window.Mode);
-            Assert.Equal(to, host.Canvas.Mode);
+            Assert.Equal(to, host.Canvas.DrawingAttributes.Mode);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -86,7 +84,7 @@ public class ToolbarToolModeTests
         {
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, tool);
-            Assert.Equal(tool, host.Window.Mode);
+            Assert.Equal(tool, host.Canvas.DrawingAttributes.Mode);
 
             var radio = tool switch
             {
@@ -96,8 +94,7 @@ public class ToolbarToolModeTests
             };
             ToolDriver.ClickRadio(host, radio);
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -109,14 +106,13 @@ public class ToolbarToolModeTests
         {
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, InkCanvasNextMode.Select);
-            Assert.Equal(InkCanvasNextMode.Select, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Select, host.Canvas.DrawingAttributes.Mode);
 
             ToolDriver.ClickRadio(host, host.Window.SelectRadio);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
 
             ToolDriver.ClickRadio(host, host.Window.SelectRadio);
-            Assert.Equal(InkCanvasNextMode.Select, host.Window.Mode);
-            Assert.Equal(InkCanvasNextMode.Select, host.Canvas.Mode);
+            Assert.Equal(InkCanvasNextMode.Select, host.Canvas.DrawingAttributes.Mode);
             ToolbarAssertions.AssertConsistent(host);
         });
     }

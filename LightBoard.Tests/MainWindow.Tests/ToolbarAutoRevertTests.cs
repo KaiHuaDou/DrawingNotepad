@@ -16,13 +16,12 @@ public class ToolbarAutoRevertTests
             host.Window.AutoRevert = true;
             host.Window.AutoRevertCount = 1;
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            Assert.True(host.Window.HighlighterActive);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
 
             host.Canvas.Strokes.Add(TestStrokes.MakeStroke( ));
 
-            Assert.False(host.Window.HighlighterActive);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
+            Assert.False(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -39,7 +38,7 @@ public class ToolbarAutoRevertTests
 
             host.Canvas.Strokes.Add(TestStrokes.MakeStroke( ));
 
-            Assert.True(host.Window.HighlighterActive);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -57,8 +56,8 @@ public class ToolbarAutoRevertTests
             host.Canvas.Strokes.Add(TestStrokes.MakeStroke( ));
             host.Canvas.Strokes.Add(TestStrokes.MakeStroke( ));
 
-            Assert.False(host.Window.HighlighterActive);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.False(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
         });
     }
 
@@ -77,7 +76,7 @@ public class ToolbarAutoRevertTests
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
             host.Canvas.Strokes.Add(TestStrokes.MakeStroke( ));
 
-            Assert.True(host.Window.HighlighterActive);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
         });
     }
 
@@ -95,8 +94,8 @@ public class ToolbarAutoRevertTests
                 host.Canvas.Strokes.Add(TestStrokes.MakeStroke( ));
             }
 
-            Assert.True(host.Window.HighlighterActive);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
         });
     }
 
@@ -115,7 +114,7 @@ public class ToolbarAutoRevertTests
             TestSelection.ForceSelection(host.Canvas, [stroke]);
             host.Canvas.DeleteSelected( );
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             Assert.False(host.Window.SelectRadio.IsChecked);
         });
     }
@@ -133,7 +132,7 @@ public class ToolbarAutoRevertTests
             ToolEntry.Enter(host, InkCanvasNextMode.EraseArea);
             ToolEntry.Enter(host, InkCanvasNextMode.Select);
 
-            Assert.Equal(InkCanvasNextMode.Select, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Select, host.Canvas.DrawingAttributes.Mode);
             Assert.True(host.Window.SelectRadio.IsChecked);
         });
     }
@@ -156,11 +155,11 @@ public class ToolbarAutoRevertTests
             host.Window.CountToolOperation( );
 
             Assert.Equal("1", host.Canvas.EraserLabel);
-            Assert.Equal(InkCanvasNextMode.EraseArea, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.EraseArea, host.Canvas.DrawingAttributes.Mode);
 
             host.Window.CountToolOperation( );
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             Assert.Null(host.Canvas.EraserLabel);
         });
     }
@@ -201,7 +200,7 @@ public class ToolbarAutoRevertTests
             host.Window.CountToolOperation( );
             host.Window.CountToolOperation( );
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
         });
     }
 }

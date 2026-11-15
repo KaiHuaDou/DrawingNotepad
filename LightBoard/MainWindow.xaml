@@ -7,7 +7,6 @@
         Height="1080"
         Closing="WindowClosing"
         Deactivated="WindowDeactivated"
-        KeyUp="MainWindowKeyUp"
         ResizeMode="NoResize"
         SourceInitialized="WindowSourceInitialized"
         WindowStartupLocation="CenterScreen"

@@ -26,11 +26,11 @@ public partial class MainWindow
 
     private void CanvasOperationCompleted(object? o, InkCanvasOperationEventArgs e)
     {
-        if (e.Operation == InkCanvasOperation.Stroke && HighlighterActive)
+        if (e.Operation == InkCanvasOperation.Stroke && e.DrawingAttributes.DrawingAttributes.IsHighlighter)
         {
             CountToolOperation( );
         }
-        else if (e.Operation == InkCanvasOperation.Erase && Mode is InkCanvasNextMode.EraseStroke or InkCanvasNextMode.EraseArea)
+        else if (e.Operation == InkCanvasOperation.Erase && e.DrawingAttributes.Mode is InkCanvasNextMode.EraseStroke or InkCanvasNextMode.EraseArea)
         {
             CountToolOperation( );
         }
@@ -41,7 +41,8 @@ public partial class MainWindow
     /// </summary>
     private void TrackToolIdentity( )
     {
-        var identity = (HighlighterActive, Mode, stamp);
+        var tool = CanvasNext.DrawingAttributes;
+        var identity = (tool.DrawingAttributes.IsHighlighter, tool.Mode, tool.Stamp);
 
         if (identity == toolIdentity)
         {
@@ -56,7 +57,8 @@ public partial class MainWindow
     // 选择按会话计数：选区建立不算，清空才算
     private void TrackSelectionSession( )
     {
-        if (Mode != InkCanvasNextMode.Select || stamp != StampAction.None)
+        var tool = CanvasNext.DrawingAttributes;
+        if (tool.Mode != InkCanvasNextMode.Select || tool.Stamp != StampAction.None)
         {
             selectionUsed = false;
             return;
@@ -98,9 +100,12 @@ public partial class MainWindow
 
     private void RevertTool( )
     {
-        HighlighterActive = false;
-        Mode = InkCanvasNextMode.Ink;
-        SyncToolState( );
+        CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with
+        {
+            Mode = InkCanvasNextMode.Ink,
+            Stamp = StampAction.None,
+            DrawingAttributes = pen
+        };
     }
 
     // 剩余次数只在橡皮激活、启用自动回退与显示时出现，到 0 即回退并清空
@@ -109,7 +114,7 @@ public partial class MainWindow
         var remaining = AutoRevertCount - toolOperationCount;
         var visible = AutoRevert
             && ShowRevertCount
-            && Mode == InkCanvasNextMode.EraseArea
+            && CanvasNext.DrawingAttributes.Mode == InkCanvasNextMode.EraseArea
             && remaining > 0;
 
         CanvasNext.EraserLabel = visible ? remaining.ToString( ) : null;

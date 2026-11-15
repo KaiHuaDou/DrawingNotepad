@@ -74,7 +74,7 @@ public class ReadOnlyTests
             host.Canvas.Strokes.Add(new Stroke(
                 [new StylusPoint(100, 100, 0.5f), new StylusPoint(200, 100, 0.5f)],
                 new DrawingAttributes { Color = Colors.Black, Width = 3, Height = 3 }));
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
             host.Canvas.IsReadOnly = true;
 
             var finger = host.Device( );

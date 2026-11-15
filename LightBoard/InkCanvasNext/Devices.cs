@@ -96,7 +96,7 @@ public partial class InkCanvasNext
                 StartMultiTouchStroke(e.TouchDevice.Id, canvasPos);
             }
         }
-        else if (Tool.IsShape && State == TouchState.EvalDraw && !shapeActive)
+        else if (Snapshot.IsShape && State == TouchState.EvalDraw && !shapeActive)
         {
             var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
             StartShape(canvasPos);

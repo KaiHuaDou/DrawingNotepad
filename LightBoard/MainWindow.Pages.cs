@@ -85,7 +85,6 @@ public partial class MainWindow
         UpdatePageUI( );
         PagePreviewsBox.SelectedIndex = target;
 
-        ExitStamp( );
         SelectionBorder.Visibility = Visibility.Collapsed;
 
         CanvasNext.ResetTouchState( );

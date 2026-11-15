@@ -12,6 +12,11 @@
 
 - 新增「工具回退」设置：橡皮、荧光笔、选择完成指定次数操作后回到画笔，次数 1 ~ 10；擦除时橡皮圈上可显示剩余次数。
 
+### 变更
+
+- `InkCanvasNext` 的工具状态合并为一个属性：新增 `DrawingAttributes` 承载模式、印章与笔触属性，移除 `Mode`、`StampAction` 与 `DefaultDrawingAttributes` 三个公开成员；`OperationCompleted` 的载荷附带操作完成时的工具设置。
+- 主工具栏容器底色由偏蓝改为中性深灰。
+
 ## [v1.4.0]
 
 ### 新增

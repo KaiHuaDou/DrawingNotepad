@@ -20,7 +20,7 @@ public class ToolbarStampTests
             ToolDriver.Toggle(host.Window.CloneButton, true);
 
             Assert.False(host.Window.CloneButton.IsChecked);
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
         });
     }
 
@@ -38,7 +38,7 @@ public class ToolbarStampTests
 
             ToolDriver.Toggle(host.Window.CloneButton, true);
 
-            Assert.Equal(StampAction.Clone, canvas.StampAction);
+            Assert.Equal(StampAction.Clone, canvas.DrawingAttributes.Stamp);
             Assert.True(host.Window.CloneButton.IsChecked);
             Assert.False(host.Window.PasteButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host, StampAction.Clone);
@@ -56,7 +56,7 @@ public class ToolbarStampTests
             ToolDriver.Toggle(host.Window.PasteButton, true);
 
             Assert.False(host.Window.PasteButton.IsChecked);
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -71,7 +71,7 @@ public class ToolbarStampTests
 
             ToolDriver.Toggle(host.Window.PasteButton, true);
 
-            Assert.Equal(StampAction.Paste, host.Canvas.StampAction);
+            Assert.Equal(StampAction.Paste, host.Canvas.DrawingAttributes.Stamp);
             Assert.True(host.Window.PasteButton.IsChecked);
             Assert.False(host.Window.CloneButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host, StampAction.Paste);
@@ -86,11 +86,11 @@ public class ToolbarStampTests
             PutInkOnClipboard( );
             using var host = new MainWindowHost( );
             ToolDriver.Toggle(host.Window.PasteButton, true);
-            Assert.Equal(StampAction.Paste, host.Canvas.StampAction);
+            Assert.Equal(StampAction.Paste, host.Canvas.DrawingAttributes.Stamp);
 
             ToolDriver.Toggle(host.Window.PasteButton, false);
 
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.PasteButton.IsChecked);
             Assert.False(host.Window.CloneButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
@@ -107,7 +107,7 @@ public class ToolbarStampTests
 
             ToolDriver.Toggle(host.Window.CloneButton, false);
 
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.CloneButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
@@ -123,7 +123,7 @@ public class ToolbarStampTests
 
             ToolDriver.Esc(host.Window);
 
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.CloneButton.IsChecked);
             Assert.False(host.Window.PasteButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
@@ -141,11 +141,11 @@ public class ToolbarStampTests
             canvas.Strokes.Add(TestStrokes.MakeStroke( ));
             TestSelection.ForceSelection(canvas, canvas.Strokes);
             ToolDriver.Toggle(host.Window.CloneButton, true);
-            Assert.Equal(StampAction.Clone, canvas.StampAction);
+            Assert.Equal(StampAction.Clone, canvas.DrawingAttributes.Stamp);
 
             ToolDriver.Click(host.FindButtonByTag("\uE8C6"));
 
-            Assert.Equal(StampAction.None, canvas.StampAction);
+            Assert.Equal(StampAction.None, canvas.DrawingAttributes.Stamp);
             Assert.Empty(canvas.Strokes);
             ToolbarAssertions.AssertConsistent(host);
         });
@@ -161,7 +161,7 @@ public class ToolbarStampTests
 
             ToolDriver.ClickRadio(host, host.Window.EraseStrokeRadio);
 
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.CloneButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
@@ -177,7 +177,7 @@ public class ToolbarStampTests
 
             ToolDriver.ClickRadio(host, host.Window.LineRadio);
 
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.CloneButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
@@ -193,7 +193,7 @@ public class ToolbarStampTests
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.CloneButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host, StampAction.None);
         });
@@ -210,8 +210,8 @@ public class ToolbarStampTests
 
             ToolDriver.Toggle(host.Window.PasteButton, true);
 
-            Assert.Equal(StampAction.Paste, host.Canvas.StampAction);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(StampAction.Paste, host.Canvas.DrawingAttributes.Stamp);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             Assert.False(host.Window.EraseStrokeRadio.IsChecked);
             ToolbarAssertions.AssertConsistent(host, StampAction.Paste);
         });
@@ -228,8 +228,8 @@ public class ToolbarStampTests
 
             ToolDriver.Toggle(host.Window.PasteButton, true);
 
-            Assert.Equal(StampAction.Paste, host.Canvas.StampAction);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(StampAction.Paste, host.Canvas.DrawingAttributes.Stamp);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             Assert.False(host.Window.LineRadio.IsChecked);
             ToolbarAssertions.AssertConsistent(host, StampAction.Paste);
         });
@@ -246,10 +246,10 @@ public class ToolbarStampTests
 
             ToolDriver.Toggle(host.Window.PasteButton, true);
 
-            Assert.Equal(StampAction.Paste, host.Canvas.StampAction);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(StampAction.Paste, host.Canvas.DrawingAttributes.Stamp);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             Assert.False(host.Window.HighlighterToggle.IsChecked);
-            Assert.False(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
+            Assert.False(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
             ToolbarAssertions.AssertConsistent(host, StampAction.Paste);
         });
     }
@@ -263,13 +263,13 @@ public class ToolbarStampTests
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, InkCanvasNextMode.EraseStroke);
             ToolDriver.Toggle(host.Window.PasteButton, true);
-            Assert.Equal(StampAction.Paste, host.Canvas.StampAction);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(StampAction.Paste, host.Canvas.DrawingAttributes.Stamp);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
 
             ToolDriver.Toggle(host.Window.PasteButton, false);
 
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             Assert.False(host.Window.PasteButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
@@ -287,8 +287,8 @@ public class ToolbarStampTests
             ToolDriver.Toggle(host.Window.PasteButton, true);
 
             Assert.False(host.Window.PasteButton.IsChecked);
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
-            Assert.Equal(InkCanvasNextMode.Line, host.Window.Mode);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
+            Assert.Equal(InkCanvasNextMode.Line, host.Canvas.DrawingAttributes.Mode);
             Assert.True(host.Window.LineRadio.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
@@ -304,7 +304,7 @@ public class ToolbarStampTests
 
             App.NewPage( );
 
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.CloneButton.IsChecked);
             Assert.False(host.Window.PasteButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
@@ -323,7 +323,7 @@ public class ToolbarStampTests
 
             Assert.True(host.ColorRadios.All(r => r.IsChecked == false));
             Assert.True(host.ThicknessRadios.All(r => r.IsChecked == false));
-            Assert.Equal(StampAction.Paste, host.Canvas.StampAction);
+            Assert.Equal(StampAction.Paste, host.Canvas.DrawingAttributes.Stamp);
             ToolbarAssertions.AssertConsistent(host, StampAction.Paste);
         });
     }
@@ -340,7 +340,7 @@ public class ToolbarStampTests
 
             ToolDriver.ClickRadio(host, red);
 
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.PasteButton.IsChecked);
             Assert.True(red.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
@@ -359,7 +359,7 @@ public class ToolbarStampTests
 
             ToolDriver.ClickRadio(host, thickness);
 
-            Assert.Equal(StampAction.None, host.Canvas.StampAction);
+            Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.PasteButton.IsChecked);
             Assert.True(thickness.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
@@ -373,7 +373,7 @@ public class ToolbarStampTests
         canvas.Strokes.Add(TestStrokes.MakeStroke( ));
         TestSelection.ForceSelection(canvas, canvas.Strokes);
         ToolDriver.Toggle(host.Window.CloneButton, true);
-        Assert.Equal(StampAction.Clone, canvas.StampAction);
+        Assert.Equal(StampAction.Clone, canvas.DrawingAttributes.Stamp);
     }
 
     private static void PutInkOnClipboard( )

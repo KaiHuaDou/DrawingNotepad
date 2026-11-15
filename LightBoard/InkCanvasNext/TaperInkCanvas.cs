@@ -1,3 +1,4 @@
+using System;
 using System.Windows.Controls;
 using System.Windows.Ink;
 using System.Windows.Input;
@@ -43,7 +44,26 @@ internal sealed class TaperInkCanvas : InkCanvas
             LostMouseCapture += (_, _) => Wet.Clear(MouseWetId);
         }
 
-        DefaultDrawingAttributes.AttributeChanged += (_, _) => SyncRenderer( );
+        ObserveDefaultDrawingAttributes( );
+    }
+
+    /// <summary>
+    /// 订阅当前笔触属性的变化；替换实例后再次调用
+    /// </summary>
+    internal void ObserveDefaultDrawingAttributes( )
+    {
+        if (!taper.Enabled)
+        {
+            return;
+        }
+
+        DefaultDrawingAttributes.AttributeChanged -= DefaultDrawingAttributesChanged;
+        DefaultDrawingAttributes.AttributeChanged += DefaultDrawingAttributesChanged;
+        SyncRenderer( );
+    }
+
+    private void DefaultDrawingAttributesChanged(object? o, EventArgs e)
+    {
         SyncRenderer( );
     }
 

@@ -41,7 +41,7 @@ public partial class InkCanvasNext
     private bool IsAreaEraserActive(TouchState state)
     {
         var traits = Traits(state);
-        return traits.PalmErase || (Tool.IsAreaErase && traits.AreaEraseHost);
+        return traits.PalmErase || (Snapshot.IsAreaErase && traits.AreaEraseHost);
     }
 
     private void UpdateAreaEraser( )

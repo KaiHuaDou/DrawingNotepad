@@ -26,7 +26,7 @@ public class ShapeTouchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Line;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Line };
             var finger1 = host.Device( );
             var finger2 = host.Device( );
 
@@ -60,7 +60,7 @@ public class ShapeTouchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Line;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Line };
             var finger1 = host.Device( );
             var finger2 = host.Device( );
             var finger3 = host.Device( );
@@ -86,7 +86,7 @@ public class ShapeTouchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Circle;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Circle };
             var finger1 = host.Device( );
             var finger2 = host.Device( );
 
@@ -109,7 +109,7 @@ public class ShapeTouchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Line;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Line };
             var finger = host.Device( );
 
             finger.Down(host.Target, P1);
@@ -127,7 +127,7 @@ public class ShapeTouchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Line;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Line };
             host.Device( ).Down(host.Target, P1);
             host.Device( ).Down(host.Target, TestPoints.CloseTo(host, P1));
 

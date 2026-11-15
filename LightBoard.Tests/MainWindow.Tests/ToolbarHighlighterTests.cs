@@ -19,13 +19,12 @@ public class ToolbarHighlighterTests
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
-            Assert.True(host.Window.HighlighterActive);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
-            Assert.Equal(Colors.Yellow, host.Canvas.DefaultDrawingAttributes.Color);
-            Assert.True(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
-            Assert.Equal(StylusTip.Ellipse, host.Canvas.DefaultDrawingAttributes.StylusTip);
-            Assert.True(host.Canvas.DefaultDrawingAttributes.IgnorePressure);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(Colors.Yellow, host.Canvas.DrawingAttributes.DrawingAttributes.Color);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
+            Assert.Equal(StylusTip.Ellipse, host.Canvas.DrawingAttributes.DrawingAttributes.StylusTip);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IgnorePressure);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -40,13 +39,13 @@ public class ToolbarHighlighterTests
             ToolDriver.ClickRadio(host, host.FindThickness(5));
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            Assert.True(host.Window.HighlighterActive);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
             ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(Red, host.Canvas.DefaultDrawingAttributes.Color);
-            Assert.Equal(5, host.Canvas.DefaultDrawingAttributes.Width);
-            Assert.False(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(Red, host.Canvas.DrawingAttributes.DrawingAttributes.Color);
+            Assert.Equal(5, host.Canvas.DrawingAttributes.DrawingAttributes.Width);
+            Assert.False(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
             Assert.False(host.Window.HighlighterToggle.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
@@ -66,12 +65,11 @@ public class ToolbarHighlighterTests
             ToolEntry.Enter(host, tool);
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            Assert.True(host.Window.HighlighterActive);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
             ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
-            Assert.False(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.False(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
             Assert.False(host.Window.LineRadio.IsChecked);
             Assert.False(host.Window.CircleRadio.IsChecked);
             Assert.False(host.Window.EraseStrokeRadio.IsChecked);
@@ -92,13 +90,13 @@ public class ToolbarHighlighterTests
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
-            Assert.True(host.Window.HighlighterActive);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
             ToolbarAssertions.AssertConsistent(host);
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
-            Assert.False(host.Window.HighlighterActive);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.False(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -114,9 +112,9 @@ public class ToolbarHighlighterTests
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
             ToolDriver.ClickRadio(host, host.FindThickness(10));
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(10, host.Canvas.DefaultDrawingAttributes.Width);
-            Assert.False(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(10, host.Canvas.DrawingAttributes.DrawingAttributes.Width);
+            Assert.False(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
             ToolbarAssertions.AssertConsistent(host);
         });
     }

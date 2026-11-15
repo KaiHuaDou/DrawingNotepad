@@ -30,7 +30,7 @@ public partial class InkCanvasNext
         shapeEnd = point;
         shapeActive = true;
 
-        if (Tool.IsCircle)
+        if (Snapshot.IsCircle)
         {
             Canvas.SetLeft(ShapePreviewEllipse, point.X);
             Canvas.SetTop(ShapePreviewEllipse, point.Y);
@@ -58,18 +58,18 @@ public partial class InkCanvasNext
         }
 
         var end = point;
-        if (!Tool.IsCircle && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        if (!Snapshot.IsCircle && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
             end = ConstrainLine(shapeStart, point);
         }
 
         shapeEnd = end;
 
-        var attrs = DefaultDrawingAttributes;
+        var attrs = InnerCanvas.DefaultDrawingAttributes;
         var brush = ShapeBrush(attrs.Color);
         var width = Math.Max(attrs.Width, ShapeMinStrokeWidth);
 
-        if (Tool.IsCircle)
+        if (Snapshot.IsCircle)
         {
             var r = Distance(shapeStart, end);
             Canvas.SetLeft(ShapePreviewEllipse, shapeStart.X - r);
@@ -144,11 +144,11 @@ public partial class InkCanvasNext
 
     private Stroke? BuildShapeStroke( )
     {
-        var attrs = DefaultDrawingAttributes.Clone( );
+        var attrs = InnerCanvas.DefaultDrawingAttributes.Clone( );
         attrs.FitToCurve = false;
         attrs.IsHighlighter = false;
 
-        if (Tool.IsCircle)
+        if (Snapshot.IsCircle)
         {
             var cx = shapeStart.X;
             var cy = shapeStart.Y;

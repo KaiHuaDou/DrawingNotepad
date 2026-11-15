@@ -122,7 +122,7 @@ public partial class InkCanvasNext
             Focus( );
         }
 
-        if (e.StylusDevice != null || !Tool.IsCustomTool)
+        if (e.StylusDevice != null || !Snapshot.IsCustomTool)
         {
             return;
         }
@@ -137,7 +137,7 @@ public partial class InkCanvasNext
         e.Handled = true;
 
         // 选区沿用拖出窗口继续的既定行为
-        if (Tool.IsSelect)
+        if (Snapshot.IsSelect)
         {
             InnerCanvas.CaptureMouse( );
         }
@@ -241,16 +241,16 @@ public partial class InkCanvasNext
     /// 触摸与合流后的鼠标均由未升级为手势的单指序列在抬手位置落章（CanvasPreviewTouchUp）</summary>
     private bool TryStamp(Point point)
     {
-        if (!Tool.IsStamp)
+        if (!Snapshot.IsStamp)
         {
             return false;
         }
 
-        if (Tool.Stamp == StampAction.Clone)
+        if (Snapshot.Stamp == StampAction.Clone)
         {
             StampCloneAt(point);
         }
-        else if (Tool.Stamp == StampAction.Paste)
+        else if (Snapshot.Stamp == StampAction.Paste)
         {
             StampPasteAt(point);
         }

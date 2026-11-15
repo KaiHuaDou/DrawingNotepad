@@ -5,7 +5,7 @@ using System.Windows.Media;
 namespace InkCanvasNext.Tests;
 
 /// <summary>
-/// 高亮是笔属性：设置 IsHighlighter 不改变编辑模式，也不改变颜色、宽度与笔尖
+/// 高亮是笔触属性：写入高亮外观不改变编辑模式，颜色、宽度与笔尖原样保留
 /// </summary>
 public class HighlighterAttributesTests
 {
@@ -15,19 +15,21 @@ public class HighlighterAttributesTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            var attrs = host.Canvas.DefaultDrawingAttributes;
-            attrs.Color = Colors.Red;
-            attrs.Width = attrs.Height = 24;
-            attrs.StylusTip = StylusTip.Rectangle;
+            var attributes = host.Canvas.DrawingAttributes.DrawingAttributes;
+            attributes.Color = Colors.Red;
+            attributes.Width = attributes.Height = 24;
+            attributes.StylusTip = StylusTip.Rectangle;
+            attributes.IsHighlighter = true;
 
-            attrs.IsHighlighter = true;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { DrawingAttributes = attributes };
 
-            Assert.True(attrs.IsHighlighter);
-            Assert.Equal(Colors.Red, attrs.Color);
-            Assert.Equal(24, attrs.Width);
-            Assert.Equal(StylusTip.Rectangle, attrs.StylusTip);
+            var tool = host.Canvas.DrawingAttributes;
+            Assert.True(tool.DrawingAttributes.IsHighlighter);
+            Assert.Equal(Colors.Red, tool.DrawingAttributes.Color);
+            Assert.Equal(24, tool.DrawingAttributes.Width);
+            Assert.Equal(StylusTip.Rectangle, tool.DrawingAttributes.StylusTip);
             Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, tool.Mode);
         });
     }
 }

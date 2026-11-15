@@ -1,6 +1,5 @@
 using System;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -58,6 +57,7 @@ public partial class MainWindow : Window
         CanvasNext.SelectionChanged += CanvasNextSelectionChanged;
         CanvasNext.StrokesChanged += CanvasNextStrokesChanged;
         CanvasNext.OperationCompleted += CanvasOperationCompleted;
+        CanvasNext.DrawingAttributesChanged += CanvasNextDrawingAttributesChanged;
         MainGrid.Children.Insert(0, CanvasNext);
         InitializeCommands( );
 
@@ -73,6 +73,7 @@ public partial class MainWindow : Window
 
         colorRadio ??= DefaultColorRadio;
         thicknessRadio ??= DefaultThicknessRadio;
+        pen = CanvasNext.DrawingAttributes.DrawingAttributes;
         App.InitializePages( );
         App.PageChanged += OnPageChanged;
 
@@ -84,7 +85,9 @@ public partial class MainWindow : Window
 
         OnPageChanged(this, EventArgs.Empty);
 
-        SyncToolState( );
+        RefreshToolChecks( );
+        TrackToolIdentity( );
+        UpdateRevertLabel( );
 
         CanvasNext.ViewOrSelectionChanged += (_, _) => UpdateSelectionBorderPosition( );
         DebugLayer.Children.Add(new DebugVisual(CanvasNext));
@@ -120,7 +123,7 @@ public partial class MainWindow : Window
     {
         TrackSelectionSession( );
 
-        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
+        if (CanvasNext.DrawingAttributes.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
         {
             SelectionBorder.Visibility = Visibility.Collapsed;
             return;
@@ -136,7 +139,7 @@ public partial class MainWindow : Window
         App.BoardRevision++;
         App.CurrentPage.InvalidatePreview( );
 
-        if (CanvasNext.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
+        if (CanvasNext.DrawingAttributes.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
         {
             SelectionBorder.Visibility = Visibility.Collapsed;
             return;
@@ -148,14 +151,6 @@ public partial class MainWindow : Window
     private void CloseWindowClick(object o, RoutedEventArgs e)
     {
         Close( );
-    }
-
-    private void MainWindowKeyUp(object o, KeyEventArgs e)
-    {
-        if (e.Key == Key.Escape)
-        {
-            ExitStamp( );
-        }
     }
 
     private void MinimizeWindowClick(object o, RoutedEventArgs e)

@@ -48,10 +48,11 @@ public partial class InkCanvasNext : UserControl
         selectionVisual = new SelectionVisual(SelectionLayer, canvasSize);
         selection = new SelectionController(this, selectionVisual);
 
+        DrawingAttributes = new DrawingAttributesNext { DrawingAttributes = InnerCanvas.DefaultDrawingAttributes };
+
         InnerCanvas.Strokes.StrokesChanged += OnStrokesChanged;
 
         Strokes = InnerCanvas.Strokes;
-        DefaultDrawingAttributes = InnerCanvas.DefaultDrawingAttributes;
 
         CurrentView = new View(1.0, initialOffset.X, initialOffset.Y);
 
@@ -168,28 +169,15 @@ public partial class InkCanvasNext : UserControl
         }
     }
 
-    private static object CoerceDefaultDrawingAttributes(DependencyObject d, object value)
+    private static object CoerceStrokes(DependencyObject d, object value)
     {
-        return value is DrawingAttributes ? value : d.GetValue(DefaultDrawingAttributesProperty);
-    }
-
-    private static void OnDefaultDrawingAttributesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        if (e.NewValue is DrawingAttributes attributes)
-        {
-            (d as InkCanvasNext)?.InnerCanvas.DefaultDrawingAttributes = attributes;
-        }
-    }
-
-    partial void OnModeChanged(InkCanvasNextMode oldValue, InkCanvasNextMode newValue)
-    {
-        ApplyEditingMode(newValue);
+        return value ?? new StrokeCollection( );
     }
 
     partial void OnIsReadOnlyChanged(bool oldValue, bool newValue)
     {
         ResetTouchState( );
-        ApplyEditingMode(Mode);
+        ApplyEditingMode(DrawingAttributes.Mode);
     }
 
     partial void OnUseDefaultCommandsChanged(bool oldValue, bool newValue)
@@ -197,23 +185,9 @@ public partial class InkCanvasNext : UserControl
         Focusable = newValue;
     }
 
-    private static object CoerceStrokes(DependencyObject d, object value)
-    {
-        return value ?? new StrokeCollection( );
-    }
-
     private static void OnStrokesPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         (d as InkCanvasNext)?.ApplyStrokes((StrokeCollection) e.NewValue);
-    }
-
-    partial void OnStampActionChanged(StampAction oldValue, StampAction newValue)
-    {
-        // 手势进行中不立即应用，由手势结束时的状态机迁出路径统一重应用；这里只处理静止期的切换
-        if (State == TouchState.Idle)
-        {
-            ApplyModeToEditing(Mode);
-        }
     }
 
     private void ApplyEditingMode(InkCanvasNextMode mode)
@@ -243,7 +217,7 @@ public partial class InkCanvasNext : UserControl
         }
 
         // 盖章期间单指只落章：原生收笔一律关闭（触屏上仅 Handled 掉触摸事件压不住手写笔管线）
-        if (Tool.IsStamp)
+        if (Snapshot.IsStamp)
         {
             InnerCanvas.EditingMode = InkCanvasEditingMode.None;
             return;
@@ -295,7 +269,7 @@ public partial class InkCanvasNext : UserControl
 
         selection.SyncCanvasStrokes(strokes);
         selection.Clear( );
-        StampAction = StampAction.None;
+        DrawingAttributes = DrawingAttributes with { Stamp = StampAction.None };
 
         ClearHistory( );
         EnsureStrokesFit( );

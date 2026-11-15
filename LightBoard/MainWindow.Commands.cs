@@ -52,7 +52,7 @@ public partial class MainWindow
     {
         if (e.Command == InkCanvasNextCommands.Delete || e.Command == InkCanvasNextCommands.Cut)
         {
-            ExitStamp( );
+            CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with { Stamp = StampAction.None };
         }
     }
 }

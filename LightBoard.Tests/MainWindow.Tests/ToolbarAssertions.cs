@@ -7,7 +7,7 @@ using InkCanvasNext;
 namespace LightBoard.Tests.Toolbar;
 
 /// <summary>
-/// 状态机一致性不变量：高亮开关、mode、画布模式、DrawingAttributes、全部控件勾选与 StampAction 必须同构
+/// 工具状态不变量：工具值、画布属性与全部控件勾选必须一致
 /// </summary>
 internal static class ToolbarAssertions
 {
@@ -15,14 +15,14 @@ internal static class ToolbarAssertions
     public static void AssertConsistent(MainWindowHost host, StampAction? stamp = null)
     {
         var window = host.Window;
-        var canvas = window.CanvasNext;
-        var mode = window.Mode;
-        var attrs = canvas.DefaultDrawingAttributes;
+        var canvas = host.Canvas;
+        var tool = canvas.DrawingAttributes;
+        var attrs = tool.DrawingAttributes;
 
-        if (window.HighlighterActive)
+        if (attrs.IsHighlighter)
         {
             Assert.True(window.HighlighterToggle.IsChecked);
-            Assert.Equal(InkCanvasNextMode.Ink, canvas.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, tool.Mode);
             Assert.Equal(Colors.Yellow, attrs.Color);
             Assert.Equal(36, attrs.Width);
             Assert.Equal(36, attrs.Height);
@@ -34,13 +34,12 @@ internal static class ToolbarAssertions
         else
         {
             Assert.False(window.HighlighterToggle.IsChecked);
-            Assert.Equal(mode, canvas.Mode);
             Assert.False(attrs.IsHighlighter);
             Assert.Equal(StylusTip.Ellipse, attrs.StylusTip);
             Assert.False(attrs.IgnorePressure);
 
             // 印章激活期间画笔单选与工具模式同样不勾选
-            if (IsToolMode(mode) || stamp is not null and not StampAction.None)
+            if (IsToolMode(tool.Mode) || stamp is not null and not StampAction.None)
             {
                 Assert.True(host.ColorRadios.All(r => r.IsChecked == false));
                 Assert.True(host.ThicknessRadios.All(r => r.IsChecked == false));
@@ -56,16 +55,16 @@ internal static class ToolbarAssertions
                 Assert.Equal(thicknessRadio.MinWidth, attrs.Height);
             }
 
-            Assert.Equal(mode == InkCanvasNextMode.Line, window.LineRadio.IsChecked == true);
-            Assert.Equal(mode == InkCanvasNextMode.Circle, window.CircleRadio.IsChecked == true);
-            Assert.Equal(mode == InkCanvasNextMode.EraseStroke, window.EraseStrokeRadio.IsChecked == true);
-            Assert.Equal(mode == InkCanvasNextMode.EraseArea, window.EraseAreaRadio.IsChecked == true);
-            Assert.Equal(mode == InkCanvasNextMode.Select, window.SelectRadio.IsChecked == true);
+            Assert.Equal(tool.Mode == InkCanvasNextMode.Line, window.LineRadio.IsChecked == true);
+            Assert.Equal(tool.Mode == InkCanvasNextMode.Circle, window.CircleRadio.IsChecked == true);
+            Assert.Equal(tool.Mode == InkCanvasNextMode.EraseStroke, window.EraseStrokeRadio.IsChecked == true);
+            Assert.Equal(tool.Mode == InkCanvasNextMode.EraseArea, window.EraseAreaRadio.IsChecked == true);
+            Assert.Equal(tool.Mode == InkCanvasNextMode.Select, window.SelectRadio.IsChecked == true);
         }
 
         if (stamp is null)
         {
-            Assert.Equal(StampAction.None, canvas.StampAction);
+            Assert.Equal(StampAction.None, tool.Stamp);
             Assert.False(window.CloneButton.IsChecked);
             Assert.False(window.PasteButton.IsChecked);
         }

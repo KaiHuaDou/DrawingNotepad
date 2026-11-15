@@ -18,9 +18,9 @@ public class ToolbarThicknessTests
 
             ToolDriver.ClickRadio(host, host.FindThickness(width));
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(width, host.Canvas.DefaultDrawingAttributes.Width);
-            Assert.Equal(width, host.Canvas.DefaultDrawingAttributes.Height);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(width, host.Canvas.DrawingAttributes.DrawingAttributes.Width);
+            Assert.Equal(width, host.Canvas.DrawingAttributes.DrawingAttributes.Height);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -36,8 +36,8 @@ public class ToolbarThicknessTests
             ToolDriver.ClickRadio(host, radio);
             ToolDriver.ClickRadio(host, radio);
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(5, host.Canvas.DefaultDrawingAttributes.Width);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(5, host.Canvas.DrawingAttributes.DrawingAttributes.Width);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -55,8 +55,8 @@ public class ToolbarThicknessTests
 
             ToolDriver.ClickRadio(host, host.FindThickness(5));
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(5, host.Canvas.DefaultDrawingAttributes.Width);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(5, host.Canvas.DrawingAttributes.DrawingAttributes.Width);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -73,8 +73,8 @@ public class ToolbarThicknessTests
 
             ToolDriver.ClickRadio(host, host.FindThickness(10));
 
-            Assert.Equal(shape, host.Window.Mode);
-            Assert.Equal(10, host.Canvas.DefaultDrawingAttributes.Width);
+            Assert.Equal(shape, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(10, host.Canvas.DrawingAttributes.DrawingAttributes.Width);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -89,8 +89,8 @@ public class ToolbarThicknessTests
 
             ToolDriver.ClickRadio(host, host.FindThickness(5));
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(5, host.Canvas.DefaultDrawingAttributes.Width);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(5, host.Canvas.DrawingAttributes.DrawingAttributes.Width);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -106,12 +106,12 @@ public class ToolbarThicknessTests
             canvas.Strokes.Add(TestStrokes.MakeStroke( ));
             TestSelection.ForceSelection(canvas, canvas.Strokes);
             ToolDriver.Toggle(host.Window.CloneButton, true);
-            Assert.Equal(StampAction.Clone, canvas.StampAction);
+            Assert.Equal(StampAction.Clone, canvas.DrawingAttributes.Stamp);
 
             ToolDriver.ClickRadio(host, host.FindThickness(10));
 
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(StampAction.None, canvas.StampAction);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(StampAction.None, canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.CloneButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });

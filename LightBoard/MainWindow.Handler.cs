@@ -48,15 +48,21 @@ public partial class MainWindow
             // 无选区时不改动印章：已有粘贴保持激活
             if (CanvasNext.HasSelection)
             {
-                stamp = StampAction.Clone;
+                CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with { Stamp = StampAction.Clone };
+            }
+            else
+            {
+                RefreshToolChecks( );
             }
         }
-        else if (stamp == StampAction.Clone)
+        else if (CanvasNext.DrawingAttributes.Stamp == StampAction.Clone)
         {
-            stamp = StampAction.None;
+            CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with { Stamp = StampAction.None };
         }
-
-        SyncToolState( );
+        else
+        {
+            RefreshToolChecks( );
+        }
     }
 
     private void CollapseExpandClick(object o, RoutedEventArgs e)
@@ -123,26 +129,34 @@ public partial class MainWindow
             return;
         }
 
-        stamp = StampAction.None;
+        var tool = CanvasNext.DrawingAttributes;
 
         // 形状模式下点当前已选中的颜色即取消形状回画笔；点其他颜色仅换笔保持形状
-        if (IsShapeMode(Mode) && ReferenceEquals(radio, colorRadio))
+        if (IsShapeMode(tool.Mode) && ReferenceEquals(radio, colorRadio))
         {
-            Mode = InkCanvasNextMode.Ink;
-            SyncToolState( );
+            CanvasNext.DrawingAttributes = tool with
+            {
+                Mode = InkCanvasNextMode.Ink,
+                Stamp = StampAction.None,
+                DrawingAttributes = pen
+            };
             return;
         }
 
-        HighlighterActive = false;
-
-        if (IsToolMode(Mode))
-        {
-            Mode = InkCanvasNextMode.Ink;
-        }
+        // 退出荧光笔时从普通笔预设起改，避免带上高亮的 36 DIP 与黄色
+        var attributes = tool.DrawingAttributes.IsHighlighter ? pen.Clone( ) : tool.DrawingAttributes;
+        attributes.Color = brush.Color;
+        attributes.IsHighlighter = false;
+        attributes.IgnorePressure = false;
+        pen = attributes;
 
         colorRadio = radio;
-        pen = pen with { Color = brush.Color };
-        SyncToolState( );
+        CanvasNext.DrawingAttributes = tool with
+        {
+            DrawingAttributes = attributes,
+            Stamp = StampAction.None,
+            Mode = IsToolMode(tool.Mode) ? InkCanvasNextMode.Ink : tool.Mode
+        };
     }
 
     private void DebugLayerClick(object o, RoutedEventArgs e)
@@ -153,7 +167,7 @@ public partial class MainWindow
 
     private void EraseAll(object o, RoutedEventArgs e)
     {
-        ExitStamp( );
+        CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with { Stamp = StampAction.None };
 
         CanvasNext.ClearMultiTouchVisuals( );
         CanvasNext.Strokes.Clear( );
@@ -168,11 +182,8 @@ public partial class MainWindow
             return;
         }
 
-        stamp = StampAction.None;
-
         // 再点当前已激活的模式即回画笔；荧光笔期间模式停在绘制，点任何模式都算新激活
-        var wasMode = Mode;
-        HighlighterActive = false;
+        var wasMode = CanvasNext.DrawingAttributes.Mode;
 
         var mode = radio.Tag switch
         {
@@ -184,8 +195,12 @@ public partial class MainWindow
             _ => InkCanvasNextMode.Ink
         };
 
-        Mode = wasMode == mode ? InkCanvasNextMode.Ink : mode;
-        SyncToolState( );
+        CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with
+        {
+            Mode = wasMode == mode ? InkCanvasNextMode.Ink : mode,
+            Stamp = StampAction.None,
+            DrawingAttributes = pen
+        };
     }
 
     private void MoreToggleClick(object o, RoutedEventArgs e)
@@ -216,17 +231,26 @@ public partial class MainWindow
             if (Clipboard.ContainsData(StrokeCollection.InkSerializedFormat))
             {
                 // 激活粘贴印章时退出其他模式回画笔
-                HighlighterActive = false;
-                Mode = InkCanvasNextMode.Ink;
-                stamp = StampAction.Paste;
+                CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with
+                {
+                    DrawingAttributes = pen,
+                    Stamp = StampAction.Paste,
+                    Mode = InkCanvasNextMode.Ink
+                };
+            }
+            else
+            {
+                RefreshToolChecks( );
             }
         }
-        else if (stamp == StampAction.Paste)
+        else if (CanvasNext.DrawingAttributes.Stamp == StampAction.Paste)
         {
-            stamp = StampAction.None;
+            CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with { Stamp = StampAction.None };
         }
-
-        SyncToolState( );
+        else
+        {
+            RefreshToolChecks( );
+        }
     }
 
     private void SettingsClick(object o, RoutedEventArgs e)
@@ -242,26 +266,34 @@ public partial class MainWindow
             return;
         }
 
-        stamp = StampAction.None;
+        var tool = CanvasNext.DrawingAttributes;
 
         // 形状模式下点当前已选中的粗细即取消形状回画笔；点其他粗细仅换笔保持形状
-        if (IsShapeMode(Mode) && ReferenceEquals(radio, thicknessRadio))
+        if (IsShapeMode(tool.Mode) && ReferenceEquals(radio, thicknessRadio))
         {
-            Mode = InkCanvasNextMode.Ink;
-            SyncToolState( );
+            CanvasNext.DrawingAttributes = tool with
+            {
+                Mode = InkCanvasNextMode.Ink,
+                Stamp = StampAction.None,
+                DrawingAttributes = pen
+            };
             return;
         }
 
-        HighlighterActive = false;
-
-        if (IsToolMode(Mode))
-        {
-            Mode = InkCanvasNextMode.Ink;
-        }
+        // 退出荧光笔时从普通笔预设起改，避免带上高亮的 36 DIP 与黄色
+        var attributes = tool.DrawingAttributes.IsHighlighter ? pen.Clone( ) : tool.DrawingAttributes;
+        attributes.Width = attributes.Height = thickness;
+        attributes.IsHighlighter = false;
+        attributes.IgnorePressure = false;
+        pen = attributes;
 
         thicknessRadio = radio;
-        pen = pen with { Width = thickness };
-        SyncToolState( );
+        CanvasNext.DrawingAttributes = tool with
+        {
+            DrawingAttributes = attributes,
+            Stamp = StampAction.None,
+            Mode = IsToolMode(tool.Mode) ? InkCanvasNextMode.Ink : tool.Mode
+        };
     }
 
     private void TimerMenuClick(object o, RoutedEventArgs e)

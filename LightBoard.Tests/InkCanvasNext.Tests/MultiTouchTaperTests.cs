@@ -45,8 +45,10 @@ public class MultiTouchTaperTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.DefaultDrawingAttributes.IsHighlighter = true;
-            host.Canvas.DefaultDrawingAttributes.IgnorePressure = true;
+            var attributes = host.Canvas.DrawingAttributes.DrawingAttributes;
+            attributes.IsHighlighter = true;
+            attributes.IgnorePressure = true;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { DrawingAttributes = attributes };
             var finger1 = host.Device( );
             var finger2 = host.Device( );
 

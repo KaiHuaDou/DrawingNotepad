@@ -1,5 +1,6 @@
 using System.Windows.Ink;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace InkCanvasNext.Tests;
 
@@ -7,16 +8,21 @@ namespace InkCanvasNext.Tests;
 public class PropertyTests
 {
     [Fact]
-    public void DefaultDrawingAttributes_NullAssignment_KeepsPreviousValue( )
+    public void DrawingAttributes_NullAssignment_ResetsToDefault( )
     {
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            var attributes = host.Canvas.DefaultDrawingAttributes;
+            var canvas = host.Canvas;
+            var attributes = canvas.DrawingAttributes.DrawingAttributes;
+            attributes.Color = Colors.Red;
+            canvas.DrawingAttributes = canvas.DrawingAttributes with { DrawingAttributes = attributes };
 
-            host.Canvas.DefaultDrawingAttributes = null!;
+            canvas.DrawingAttributes = null!;
 
-            Assert.Same(attributes, host.Canvas.DefaultDrawingAttributes);
+            Assert.Equal(InkCanvasNextMode.Ink, canvas.DrawingAttributes.Mode);
+            Assert.Equal(StampAction.None, canvas.DrawingAttributes.Stamp);
+            Assert.Equal(InkCanvasNext.DefaultPenColor, canvas.DrawingAttributes.DrawingAttributes.Color);
         });
     }
 

@@ -16,7 +16,7 @@ public class ToolbarShapeTests
 
             ToolDriver.ClickRadio(host, host.Window.LineRadio);
 
-            Assert.Equal(InkCanvasNextMode.Line, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Line, host.Canvas.DrawingAttributes.Mode);
             Assert.True(host.Window.LineRadio.IsChecked);
             Assert.False(host.Window.CircleRadio.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
@@ -32,7 +32,7 @@ public class ToolbarShapeTests
 
             ToolDriver.ClickRadio(host, host.Window.CircleRadio);
 
-            Assert.Equal(InkCanvasNextMode.Circle, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Circle, host.Canvas.DrawingAttributes.Mode);
             Assert.True(host.Window.CircleRadio.IsChecked);
             Assert.False(host.Window.LineRadio.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
@@ -49,7 +49,7 @@ public class ToolbarShapeTests
 
             ToolDriver.ClickRadio(host, host.Window.CircleRadio);
 
-            Assert.Equal(InkCanvasNextMode.Circle, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Circle, host.Canvas.DrawingAttributes.Mode);
             Assert.False(host.Window.LineRadio.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
@@ -65,7 +65,7 @@ public class ToolbarShapeTests
 
             ToolDriver.ClickRadio(host, host.Window.LineRadio);
 
-            Assert.Equal(InkCanvasNextMode.Line, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Line, host.Canvas.DrawingAttributes.Mode);
             Assert.False(host.Window.CircleRadio.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
@@ -80,17 +80,15 @@ public class ToolbarShapeTests
         {
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, shape);
-            Assert.Equal(shape, host.Window.Mode);
+            Assert.Equal(shape, host.Canvas.DrawingAttributes.Mode);
 
             var radio = shape == InkCanvasNextMode.Line ? host.Window.LineRadio : host.Window.CircleRadio;
             ToolDriver.ClickRadio(host, radio);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
             ToolbarAssertions.AssertConsistent(host);
 
             ToolDriver.ClickRadio(host, radio);
-            Assert.Equal(shape, host.Window.Mode);
-            Assert.Equal(shape, host.Canvas.Mode);
+            Assert.Equal(shape, host.Canvas.DrawingAttributes.Mode);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -110,12 +108,11 @@ public class ToolbarShapeTests
             // 先点紫色建立"当前颜色"，再进形状模式
             ToolDriver.ClickRadio(host, host.FindColor(purple));
             ToolEntry.Enter(host, shape);
-            Assert.Equal(shape, host.Window.Mode);
+            Assert.Equal(shape, host.Canvas.DrawingAttributes.Mode);
 
             ToolDriver.ClickRadio(host, host.FindColor(purple));
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
-            Assert.Equal(purple, host.Canvas.DefaultDrawingAttributes.Color);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(purple, host.Canvas.DrawingAttributes.DrawingAttributes.Color);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -131,12 +128,11 @@ public class ToolbarShapeTests
 
             ToolDriver.ClickRadio(host, host.FindThickness(5));
             ToolEntry.Enter(host, shape);
-            Assert.Equal(shape, host.Window.Mode);
+            Assert.Equal(shape, host.Canvas.DrawingAttributes.Mode);
 
             ToolDriver.ClickRadio(host, host.FindThickness(5));
-            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
-            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
-            Assert.Equal(5, host.Canvas.DefaultDrawingAttributes.Width);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(5, host.Canvas.DrawingAttributes.DrawingAttributes.Width);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -151,12 +147,11 @@ public class ToolbarShapeTests
         {
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, tool);
-            Assert.Equal(tool, host.Window.Mode);
+            Assert.Equal(tool, host.Canvas.DrawingAttributes.Mode);
 
             ToolDriver.ClickRadio(host, host.Window.LineRadio);
 
-            Assert.Equal(InkCanvasNextMode.Line, host.Window.Mode);
-            Assert.Equal(InkCanvasNextMode.Line, host.Canvas.Mode);
+            Assert.Equal(InkCanvasNextMode.Line, host.Canvas.DrawingAttributes.Mode);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -168,7 +163,7 @@ public class ToolbarShapeTests
         {
             using var host = new MainWindowHost( );
             ToolEntry.Enter(host, InkCanvasNextMode.Line);
-            Assert.Equal(InkCanvasNextMode.Line, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Line, host.Canvas.DrawingAttributes.Mode);
 
             foreach (var tool in new[]
             {
@@ -178,8 +173,7 @@ public class ToolbarShapeTests
             })
             {
                 ToolEntry.Enter(host, tool);
-                Assert.Equal(tool, host.Window.Mode);
-                Assert.Equal(tool, host.Canvas.Mode);
+                Assert.Equal(tool, host.Canvas.DrawingAttributes.Mode);
                 ToolbarAssertions.AssertConsistent(host);
             }
         });
@@ -192,11 +186,11 @@ public class ToolbarShapeTests
         {
             using var host = new MainWindowHost( );
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            Assert.True(host.Window.HighlighterActive);
+            Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.IsHighlighter);
 
             ToolDriver.ClickRadio(host, host.Window.LineRadio);
 
-            Assert.Equal(InkCanvasNextMode.Line, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Line, host.Canvas.DrawingAttributes.Mode);
             Assert.False(host.Window.HighlighterToggle.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
@@ -213,12 +207,12 @@ public class ToolbarShapeTests
             canvas.Strokes.Add(TestStrokes.MakeStroke( ));
             TestSelection.ForceSelection(canvas, canvas.Strokes);
             ToolDriver.Toggle(host.Window.CloneButton, true);
-            Assert.Equal(StampAction.Clone, canvas.StampAction);
+            Assert.Equal(StampAction.Clone, canvas.DrawingAttributes.Stamp);
 
             ToolDriver.ClickRadio(host, host.Window.LineRadio);
 
-            Assert.Equal(InkCanvasNextMode.Line, host.Window.Mode);
-            Assert.Equal(StampAction.None, canvas.StampAction);
+            Assert.Equal(InkCanvasNextMode.Line, host.Canvas.DrawingAttributes.Mode);
+            Assert.Equal(StampAction.None, canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.CloneButton.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });

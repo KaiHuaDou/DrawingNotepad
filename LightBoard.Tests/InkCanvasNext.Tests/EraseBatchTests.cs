@@ -18,7 +18,7 @@ public class EraseBatchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var target = TestPoints.BeyondDisplacement(host, Start);
             host.Canvas.Strokes.Add(HorizontalLine(300, target.X));
@@ -47,7 +47,7 @@ public class EraseBatchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var target = TestPoints.BeyondDisplacement(host, Start);
             var original = HorizontalLine(300, target.X);
@@ -76,7 +76,7 @@ public class EraseBatchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var target = TestPoints.BeyondDisplacement(host, Start);
             host.Canvas.Strokes.Add(HorizontalLine(300, target.X));
@@ -100,7 +100,7 @@ public class EraseBatchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var target = TestPoints.BeyondDisplacement(host, Start);
             var original = HorizontalLine(300, target.X);
@@ -130,7 +130,7 @@ public class EraseBatchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var target = TestPoints.BeyondDisplacement(host, Start);
             host.Canvas.Strokes.Add(HorizontalLine(280, target.X));
@@ -156,7 +156,7 @@ public class EraseBatchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var target = TestPoints.BeyondDisplacement(host, Start);
             var finger = BeginErase(host, target);
@@ -173,7 +173,7 @@ public class EraseBatchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var target = TestPoints.BeyondDisplacement(host, Start);
             host.Canvas.Strokes.Add(HorizontalLine(300, target.X));
@@ -202,7 +202,7 @@ public class EraseBatchTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var target = TestPoints.BeyondDisplacement(host, Start);
             host.Canvas.Strokes.Add(HorizontalLine(300, target.X));

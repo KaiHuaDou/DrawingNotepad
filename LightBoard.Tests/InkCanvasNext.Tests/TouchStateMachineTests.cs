@@ -343,7 +343,7 @@ public class TouchStateMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
 
             var finger = host.Device( );
             finger.Down(host.Target, P1);
@@ -718,7 +718,7 @@ public class TouchStateMachineTests
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
             Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
 
-            host.Canvas.Mode = InkCanvasNextMode.EraseStroke;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseStroke };
             Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
 
             a.Up(host.Target, P1);
@@ -741,7 +741,7 @@ public class TouchStateMachineTests
             Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
             Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
 
-            host.Canvas.Mode = InkCanvasNextMode.EraseStroke;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseStroke };
             Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
 
             finger.Up(host.Target, P1);
@@ -806,7 +806,7 @@ public class TouchStateMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
 
             var finger = host.Device( );
             finger.Down(host.Target, P1);

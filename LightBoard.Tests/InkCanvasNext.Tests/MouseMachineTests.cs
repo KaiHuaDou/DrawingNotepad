@@ -23,7 +23,7 @@ public class MouseMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Line;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Line };
 
             host.Target.RaiseEvent(LeftButton(Mouse.PreviewMouseDownEvent));
             Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
@@ -39,7 +39,7 @@ public class MouseMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Ink;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Ink };
 
             host.Target.RaiseEvent(LeftButton(Mouse.PreviewMouseDownEvent));
             Assert.Equal(TouchState.Idle, host.Canvas.State);
@@ -54,7 +54,7 @@ public class MouseMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Line;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Line };
             var pointer = host.Canvas.MousePointer;
             var moved = TestPoints.BeyondDisplacement(host, P1);
 
@@ -75,7 +75,7 @@ public class MouseMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
             host.Canvas.Strokes.Add(MakeStroke(new Point(170, 100), new Point(190, 100)));
             var pointer = host.Canvas.MousePointer;
             var downAt = RootOf(host, new Point(155, 100));
@@ -96,7 +96,7 @@ public class MouseMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
             host.Canvas.Strokes.Add(MakeStroke(new Point(200, 150), new Point(250, 350)));
             var pointer = host.Canvas.MousePointer;
 
@@ -119,12 +119,12 @@ public class MouseMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
             host.Canvas.Strokes.Add(MakeStroke(new Point(200, 150), new Point(250, 350)));
 
             var pointer = host.Canvas.MousePointer;
             LassoSelectStroke(host, pointer);
-            host.Canvas.StampAction = StampAction.Clone;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Stamp = StampAction.Clone };
 
             var downAt = RootOf(host, P1);
             pointer.Down(downAt);
@@ -144,7 +144,7 @@ public class MouseMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Line;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Line };
             var start = new Point(100, 100);
 
             host.Canvas.MousePointer.Down(start);
@@ -165,7 +165,7 @@ public class MouseMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Line;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Line };
             var pointer = host.Canvas.MousePointer;
             var start = new Point(100, 100);
 

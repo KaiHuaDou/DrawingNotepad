@@ -5,7 +5,7 @@
 ## 集成
 
 - 把 [`InkCanvasNext` 文件夹](../LightBoard/InkCanvasNext) 复制到目标项目，启用 WPF。
-- 引用 NuGet 包 `DependencyPropertyGenerator`：`InkCanvasNext.Properties.cs` 里的依赖属性由它生成。
+- 引用 NuGet 包 `DependencyPropertyGenerator`：`InkCanvasNext.Properties.cs` 与 `DrawingAttributesNext.cs` 里的依赖属性由它生成。
 - 控件不引用宿主资源，配色与按钮样式都写在 `InkCanvasNext.xaml`。
 - 控件是 WPF 元素，公开 API 只在 UI 线程调用；放进可视树并完成布局后，`ViewportSize` 与热区按钮才有有效值。
 
@@ -25,6 +25,7 @@
 - `InkCanvasNext`：主控件
 - `InkCanvasNextOptions`、`EraserParameters`、`TaperParameters`：构造期选项
 - `InkCanvasNextMode`：编辑模式
+- `DrawingAttributesNext`：当前工具设置（模式、印章与完整笔触属性）
 - `StampAction`：盖章开关（克隆 / 粘贴）
 - `MouseWheelAction`：滚轮交互方式
 - `View`：视口值（缩放与两个偏移）
@@ -32,7 +33,7 @@
 - `InkCanvasNextCommands`：默认命令（撤销、重做、删除、复制、剪切、粘贴、取消、放大、缩小、实际大小）
 - `StrokeCollectionExtension`：墨迹导出与缩略图渲染
 - `InkCanvasStrokesChangedEventArgs`：`StrokesChanged` 的载荷（只读的 Added / Removed 列表；选区整体变换时 `TransformOnly` 为 true）
-- `InkCanvasOperation`、`InkCanvasOperationEventArgs`：`OperationCompleted` 的载荷（落笔或擦除）
+- `InkCanvasOperation`、`InkCanvasOperationEventArgs`：`OperationCompleted` 的载荷（操作种类与完成时的工具设置）
 - `HistorySnapshot`：撤销 / 重做历史栈快照，`Position` 为当前指针（`SwapHistory` 使用）
 
 ```csharp
@@ -45,9 +46,18 @@ public enum InkCanvasNextMode
     Line,         // 绘制直线
     Circle        // 绘制圆形
 }
+
+public sealed record DrawingAttributesNext
+{
+    public InkCanvasNextMode Mode { get; init; }
+    public StampAction Stamp { get; init; }
+
+    // 读写都是副本
+    public DrawingAttributes DrawingAttributes { get; init; }
+}
 ```
 
-荧光笔不是编辑模式：高亮外观由 `DefaultDrawingAttributes` 的 `IsHighlighter`、`StylusTip`、`FitToCurve`、`IgnorePressure` 与颜色、宽度共同表达，落笔走 `Ink`。
+荧光笔是笔触属性，不是编辑模式：`DrawingAttributes.IsHighlighter` 为 true 时高亮外观完全由调用方提供的 `DrawingAttributes` 决定，控件不内置高亮颜色与宽度。`DrawingAttributes` 依赖属性的 Coerce 会归一化非法组合：非 `Ink` / `Select` 模式清掉印章。`Width`、`Height` 由 `DrawingAttributes` 自身校验，控件不改写。写入直接赋值 `DrawingAttributes = DrawingAttributes with { ... }`；子项在写入与读取时都克隆，外部持有或修改实例不影响画布。
 
 ## 构造函数
 
@@ -88,14 +98,12 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | -------------------------- | ------------------- | ------------------------------------------------- |
 | `CanRedo`                  | `bool`              | 只读，是否可以重做                                |
 | `CanUndo`                  | `bool`              | 只读，是否可以撤销                                |
-| `DefaultDrawingAttributes` | `DrawingAttributes` | 默认笔触属性（颜色 / 粗细 / 荧光笔均在此表达）    |
-| `Mode`                     | `InkCanvasNextMode` | 当前编辑模式，默认 `Ink`                          |
 | `EraserDiameter`           | `double`            | 面积擦直径，初值取自构造期选项（默认 75）         |
 | `EraserLabel`              | `string?`           | 橡皮反馈圆上显示的文本，null 或空串时不显示       |
 | `IsReadOnly`               | `bool`              | 只读模式：输入不改墨迹与选区，平移缩放仍可用      |
 | `UseDefaultCommands`       | `bool`              | 让控件可聚焦并接管按键，默认 `false`；不影响命令可用性 |
-| `StampAction`              | `StampAction`       | 当前盖章模式（克隆 / 粘贴），默认 `None`          |
 | `Strokes`                  | `StrokeCollection`  | 墨迹集合，赋值会替换墨迹、清空选区与盖章状态并清空历史 |
+| `DrawingAttributes`        | `DrawingAttributesNext` | 当前工具设置，默认 `new DrawingAttributesNext( )`；默认双向绑定，写入时归一化并应用笔触属性，静止且非只读时同步编辑模式 |
 
 ## 事件
 
@@ -104,7 +112,8 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `CanRedoChanged`         | `EventHandler<DependencyPropertyChangedEventArgs>` | `CanRedo` 变化时触发                             |
 | `CanUndoChanged`         | `EventHandler<DependencyPropertyChangedEventArgs>` | `CanUndo` 变化时触发                             |
 | `StrokesChanged`         | `EventHandler<InkCanvasStrokesChangedEventArgs>`   | 墨迹增删或选区整体变换时触发，载荷为只读的 Added / Removed 列表 |
-| `OperationCompleted`     | `EventHandler<InkCanvasOperationEventArgs>`        | 一笔书写完成或一次擦除手势结束时触发，擦除是否改动墨迹不影响；撤销与重做的重放不触发 |
+| `OperationCompleted`     | `EventHandler<InkCanvasOperationEventArgs>`        | 一笔书写完成或一次擦除手势结束时触发，载荷带操作种类与完成时的工具设置；撤销与重做的重放不触发 |
+| `DrawingAttributesChanged` | `EventHandler`                                     | `DrawingAttributes` 变化时触发；同值写入不触发 |
 | `SelectionChanged`       | `EventHandler`                                     | 选中内容变化时触发                               |
 | `ViewOrSelectionChanged` | `EventHandler`                                     | 视口（滚动 / 缩放）或选区包围盒变化，供工具栏跟随 |
 | `EdgeHintsChanged`       | `EventHandler`                                     | 边缘提示的显示状态变化，供宿主刷新自绘的提示 |
@@ -116,7 +125,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `SelectedStrokes`        | `IReadOnlyList<Stroke>` | 当前选中墨迹的快照，笔画实例与画布共享 |
 | `SelectedCount`          | `int`              | 当前选中笔触数                            |
 | `HasSelection`           | `bool`             | 是否有选中的墨迹                          |
-| `CurrentView`            | `View`             | 当前视口；赋值时校验、夹取并写入缩放与偏移 |
+| `CurrentView`            | `View`             | 当前视口；赋值时校验、限制并写入缩放与偏移 |
 | `CurrentScale`           | `double`           | 当前缩放比例，范围 0.1~10                 |
 | `OffsetX` / `OffsetY`    | `double`           | 画布滚动偏移（视口单位）                  |
 | `CanvasSize`             | `Size`             | 当前画布尺寸（内容 DIP），随内容扩展       |
@@ -134,7 +143,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 
 细节：
 
-- 四侧阈值都为 0 时整个功能关闭，四侧恒为 false。
+- 四侧阈值都为 0 时整个功能关闭，四侧都返回 false。
 - 触摸按下、鼠标按下、滚轮与替换 `Strokes` 都会中断过渡。
 - 下 / 右方向余量不足时先扩展画布；上 / 左没有负方向余量，位移超出当前偏移时不显示。
 - 判定与平移量都按笔画包围盒计算，边界相接不算命中；目标会多走 1 视口 DIP，避免相切时的浮点误差把提示留在原地。
@@ -194,6 +203,8 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `WheelZoomFactor` | 1.1 | 滚轮每格缩放倍数 |
 | `ScrollStep` | 25 | 滚轮横滚一步的内容 DIP，乘缩放后为视口位移 |
 
+`DefaultPenColor` 是普通画笔默认颜色 `#E6E6E6`，也是默认 `DrawingAttributes` 的颜色。
+
 `InkCanvasNextOptions` / `EraserParameters` 上的常量，供选项与设置窗口取默认值与范围：
 
 | 常量 | 值 | 说明 |
@@ -220,7 +231,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 - `Strokes` 赋值是替换集合：清空选区、盖章状态与撤销历史，结束进行中的手势，并把画布扩展到容纳全部笔画；赋 null 会变成空集合。
 - `OffsetX` / `OffsetY` 的写入是延迟命令（`ScrollViewer.ScrollTo*Offset`），布局完成后才反映到读取值；一次设置整幅视图用 `CurrentView = new View(...)`。
 - 普通滚轮交给内层 `ScrollViewer`；Ctrl+滚轮缩放，Alt+滚轮横滚。`WheelAction` 为 `Zoom` 时普通滚轮缩放，`None` 下不接管。
-- `Mode` 在触摸手势进行中切换时，进行中的形状被放弃、橡皮反馈按新工具刷新；离开选择模式时选区清空。
+- `DrawingAttributes` 在触摸手势进行中切换时，进行中的形状被放弃、橡皮反馈按新工具刷新；离开选择模式时选区清空。切模式并清印章要显式写这两个字段。
 - `IsReadOnly` 只挡输入：单指不落笔、不选框、不盖章，五指按平移处理；`Undo` 等公共方法仍可调用。
 - `UseDefaultCommands` 只决定控件是否接管键盘：为 true 时控件可聚焦，画布拿到焦点后自身快捷键生效。命令的可用性由画布状态决定，与它无关。
 - 宿主在窗口上注册 `InputBindings` 并把 `CommandTarget` 指向画布时，键盘不依赖画布焦点。

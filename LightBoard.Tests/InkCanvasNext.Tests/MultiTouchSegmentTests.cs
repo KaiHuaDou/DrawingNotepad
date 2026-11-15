@@ -48,7 +48,9 @@ public class MultiTouchSegmentTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.DefaultDrawingAttributes.IsHighlighter = true;
+            var attributes = host.Canvas.DrawingAttributes.DrawingAttributes;
+            attributes.IsHighlighter = true;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { DrawingAttributes = attributes };
             var finger1 = host.Device( );
             var finger2 = host.Device( );
 

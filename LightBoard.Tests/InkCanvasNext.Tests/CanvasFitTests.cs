@@ -62,7 +62,7 @@ public class CanvasFitTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
             host.Canvas.Strokes.Add(StrokeAt(200, 150, 250, 350));
 
             var lasso = host.Device( );

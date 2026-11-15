@@ -15,7 +15,7 @@ public class EraserLabelTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
             host.Canvas.EraserLabel = "3";
 
             var finger = host.Device( );
@@ -38,7 +38,7 @@ public class EraserLabelTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var finger = host.Device( );
             finger.Down(host.Target, Start);
@@ -56,7 +56,7 @@ public class EraserLabelTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
             host.Canvas.EraserLabel = "2";
 
             var finger = host.Device( );

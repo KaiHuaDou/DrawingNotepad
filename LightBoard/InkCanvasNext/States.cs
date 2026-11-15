@@ -78,7 +78,7 @@ public partial class InkCanvasNext
     /// <summary>
     /// 当前工具快照，工具差异判定的唯一读取入口
     /// </summary>
-    internal ToolSnapshot Tool => new(Mode, StampAction, IsReadOnly);
+    internal ToolSnapshot Snapshot => new(DrawingAttributes.Mode, DrawingAttributes.Stamp, IsReadOnly);
 
     private static StateTraits Traits(TouchState state)
     {
@@ -95,7 +95,7 @@ public partial class InkCanvasNext
 
     private bool HandlesEvent(TouchState state)
     {
-        return Traits(state).BlocksNativeInput || IsAreaEraserActive(state) || Tool.IsStampSingleFinger(state);
+        return Traits(state).BlocksNativeInput || IsAreaEraserActive(state) || Snapshot.IsStampSingleFinger(state);
     }
 
     /// <summary>
@@ -113,7 +113,7 @@ public partial class InkCanvasNext
         var l2 = options.TouchSpacingThreshold2;
         var c2 = options.TouchDisplacementThreshold2;
         var x2 = Get1stFingerDispl2( );
-        var tool = Tool;
+        var tool = Snapshot;
         var palm = !tool.IsReadOnly && count >= options.PalmEraseFingers;
         var (selectionAllInside, selectionMixed) = tool.IsSelectionEntry && count >= 2
             ? ClassifyTouchesAgainstSelection( )
@@ -259,11 +259,11 @@ public partial class InkCanvasNext
         if (to == TouchState.Idle)
         {
             ReleaseAll( );
-            ApplyModeToEditing(Mode);
+            ApplyModeToEditing(DrawingAttributes.Mode);
         }
         else if (Traits(from).OverridesEditing && !Traits(to).OverridesEditing)
         {
-            ApplyModeToEditing(Mode);
+            ApplyModeToEditing(DrawingAttributes.Mode);
         }
 
         // 形状只允许在单指绘制上下文（EvalDraw/Draw）存活：迁入 MultiDraw 时按当前预览提交，
@@ -291,7 +291,7 @@ public partial class InkCanvasNext
     private void EnterState(TouchState to, TouchState from)
     {
         // 盖章只由未升级为手势的单指序列触发：Idle 进入 EvalDraw 时武装
-        if (from == TouchState.Idle && to == TouchState.EvalDraw && Tool.IsStamp)
+        if (from == TouchState.Idle && to == TouchState.EvalDraw && Snapshot.IsStamp)
         {
             stampArmed = true;
         }
@@ -299,7 +299,7 @@ public partial class InkCanvasNext
         switch (to)
         {
             case TouchState.EvalDraw:
-                if (Tool.WantsPreemptiveCapture)
+                if (Snapshot.WantsPreemptiveCapture)
                 {
                     CaptureAll( );
                 }
@@ -308,7 +308,7 @@ public partial class InkCanvasNext
 
             case TouchState.Draw:
                 // (MultiDraw, Draw) 无需捕获：多指手势期间触点已捕获
-                if (from == TouchState.EvalDraw && Tool.WantsPreemptiveCapture)
+                if (from == TouchState.EvalDraw && Snapshot.WantsPreemptiveCapture)
                 {
                     CaptureAll( );
                 }

@@ -43,7 +43,7 @@ public class OptionsTests
         {
             using var host = new TouchHost(options: new InkCanvasNextOptions { FitToCurve = false });
 
-            Assert.False(host.Canvas.DefaultDrawingAttributes.FitToCurve);
+            Assert.False(host.Canvas.DrawingAttributes.DrawingAttributes.FitToCurve);
         });
     }
 

@@ -24,7 +24,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
 
             var a = host.Device( );
             a.Down(host.Target, P1);
@@ -44,7 +44,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
             var cluster = TestPoints.CloseCluster(host, P1, 3);
 
             host.Device( ).Down(host.Target, cluster[0]);
@@ -60,7 +60,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
             var cluster = TestPoints.CloseCluster(host, P1, 5);
 
             foreach (var point in cluster)
@@ -78,7 +78,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
 
             var finger = host.Device( );
             finger.Down(host.Target, P1);
@@ -96,7 +96,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
             var stroke = MakeStroke(new Point(80, 100), new Point(140, 100));
             host.Canvas.Strokes.Add(stroke);
 
@@ -119,7 +119,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
             host.Canvas.Strokes.Add(MakeStroke(new Point(80, 100), new Point(140, 100)));
 
             var first = host.Device( );
@@ -143,8 +143,8 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
-            host.Canvas.StampAction = StampAction.Clone;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Stamp = StampAction.Clone };
 
             var finger = host.Device( );
             finger.Down(host.Target, P1);
@@ -164,8 +164,8 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
-            host.Canvas.StampAction = StampAction.Clone;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Stamp = StampAction.Clone };
 
             var secondPoint = TestPoints.CloseTo(host, P1);
             var a = host.Device( );
@@ -190,7 +190,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
             host.Canvas.Strokes.Add(MakeStroke(new Point(200, 150), new Point(250, 350)));
 
             // 单指绕圈套索选中笔画
@@ -229,7 +229,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Select;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
             host.Canvas.Strokes.Add(MakeStroke(new Point(200, 150), new Point(250, 350)));
 
             var lassoPoint = new Point(150, 100);
@@ -521,7 +521,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var radius = host.Canvas.EraserDiameter / 2;
             var original = MakeStroke(new Point(P1.X - radius * 0.6, P1.Y), new Point(P1.X + radius * 0.6, P1.Y));
@@ -548,7 +548,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var radius = host.Canvas.EraserDiameter / 2;
             var drawPoint = new Point(P1.X + host.Canvas.EraserDiameter, P1.Y);
@@ -576,7 +576,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = mode;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = mode };
 
             host.Device( ).Down(host.Target, P1);
             host.Device( ).Down(host.Target, TestPoints.CloseTo(host, P1));
@@ -591,7 +591,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var farPoint = TestPoints.FarFrom(host, P1);
             host.Device( ).Down(host.Target, P1);
@@ -611,7 +611,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var cluster = TestPoints.CloseCluster(host, P1, 5);
             foreach (var point in cluster)
@@ -634,7 +634,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost(options: new( ) { Eraser = new( ) { Diameter = 80, PalmExtra = 20 } });
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             Assert.Equal(80, host.Canvas.EraserDiameter);
             Assert.Equal(20, host.Canvas.options.Eraser.PalmExtra);
@@ -657,7 +657,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var step = TestPoints.Spacing(host) + 1; // 相邻间距超过 l，两两最大距离必大于 l
             for (var i = 0; i < 5; i++)
@@ -676,7 +676,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost(options: new( ) { PalmEraseFingers = 4 });
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             var step = TestPoints.Spacing(host) + 1;
             for (var i = 0; i < 4; i++)
@@ -695,7 +695,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseStroke;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseStroke };
 
             var step = TestPoints.Spacing(host) + 1;
             for (var i = 0; i < 5; i++)
@@ -717,7 +717,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = mode;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = mode };
 
             var startPoint = new Point(165, 100);
             var drawPoint = TestPoints.BeyondDisplacement(host, startPoint);
@@ -749,7 +749,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = mode;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = mode };
 
             var startPoint = new Point(165, 100);
             var drawPoint = TestPoints.BeyondDisplacement(host, startPoint);
@@ -799,13 +799,13 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
 
             host.Device( ).Down(host.Target, P1);
             Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
             Assert.Equal(Visibility.Visible, host.Canvas.EraserFeedback.Visibility);
 
-            host.Canvas.Mode = InkCanvasNextMode.Ink;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Ink };
 
             Assert.Equal(Visibility.Collapsed, host.Canvas.EraserFeedback.Visibility);
         });
@@ -818,7 +818,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.EraseArea;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseArea };
             var radius = host.Canvas.EraserDiameter / 2;
             var startPoint = new Point(165, 100);
             var drawPoint = TestPoints.BeyondDisplacement(host, startPoint);
@@ -832,7 +832,7 @@ public class SpecialModeGestureTests
             Assert.Equal(TouchState.Draw, host.Canvas.State);
             Assert.Empty(host.Canvas.Strokes);
 
-            host.Canvas.Mode = InkCanvasNextMode.Ink;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Ink };
 
             Assert.Equal(Visibility.Collapsed, host.Canvas.EraserFeedback.Visibility);
         });
@@ -856,7 +856,7 @@ public class SpecialModeGestureTests
 
             Assert.Equal(TouchState.Eraser, host.Canvas.State);
 
-            host.Canvas.Mode = InkCanvasNextMode.Ink;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Ink };
             Assert.Equal(Visibility.Visible, host.Canvas.EraserFeedback.Visibility);
 
             for (var i = 0; i < cluster.Length; i++)
@@ -878,7 +878,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.StampAction = StampAction.Clone;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Stamp = StampAction.Clone };
 
             var a = host.Device( );
             var b = host.Device( );
@@ -902,7 +902,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Line;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Line };
 
             var finger = host.Device( );
             finger.Down(host.Target, P1);
@@ -920,7 +920,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Circle;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Circle };
 
             var finger = host.Device( );
             finger.Down(host.Target, P1);
@@ -938,7 +938,7 @@ public class SpecialModeGestureTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            host.Canvas.Mode = InkCanvasNextMode.Line;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Line };
 
             var a = host.Device( );
             a.Down(host.Target, P1);
@@ -1106,7 +1106,7 @@ public class SpecialModeGestureTests
     private static TouchHost CreateSelectHost(params Point[] strokePoints)
     {
         var host = new TouchHost( );
-        host.Canvas.Mode = InkCanvasNextMode.Select;
+        host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
         host.Canvas.Strokes.Add(MakeStroke(strokePoints));
 
         var lasso = host.Device( );

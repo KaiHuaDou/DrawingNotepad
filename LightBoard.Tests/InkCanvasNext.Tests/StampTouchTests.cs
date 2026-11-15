@@ -109,7 +109,7 @@ public class StampTouchTests
             var finger = host.Device( );
 
             finger.Down(host.Target, P1);
-            host.Canvas.StampAction = StampAction.None;
+            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Stamp = StampAction.None };
             finger.Up(host.Target, End1);
 
             // 序列中途退出盖章：抬手不落章
@@ -151,7 +151,7 @@ public class StampTouchTests
         var host = new TouchHost( );
         host.Canvas.Strokes.Add(TestStrokes.MakeStroke( ));
         TestSelection.ForceSelection(host.Canvas, host.Canvas.Strokes);
-        host.Canvas.StampAction = StampAction.Clone;
+        host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Stamp = StampAction.Clone };
         return host;
     }
 

@@ -31,8 +31,8 @@
     <SolidColorBrush x:Key="HoverBrush" Color="#26FFFFFF" />
     <SolidColorBrush x:Key="PressedBrush" Color="#3AFFFFFF" />
 
-    <SolidColorBrush x:Key="ContainerBrush" Color="#99132032" />
-    <SolidColorBrush x:Key="ContainerBrushSolid" Color="#AA132032" />
+    <SolidColorBrush x:Key="ContainerBrush" Color="#99132020" />
+    <SolidColorBrush x:Key="ContainerBrushSolid" Color="#AA132020" />
 
     <SolidColorBrush x:Key="IconBrush" Color="#E3E3E3" />
 

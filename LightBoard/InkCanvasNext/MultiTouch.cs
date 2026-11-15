@@ -20,7 +20,7 @@ public partial class InkCanvasNext
     private void StartMultiTouchStroke(int touchId, Point canvasPoint)
     {
         // 盖章不落多指笔画；擦除工具与只读模式不进入多指书写
-        if (Tool.IsStamp || !Tool.AllowsMultiDraw)
+        if (Snapshot.IsStamp || !Snapshot.AllowsMultiDraw)
         {
             return;
         }
