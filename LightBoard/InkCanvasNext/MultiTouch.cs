@@ -13,10 +13,8 @@ public partial class InkCanvasNext
     private readonly Dictionary<int, StrokeVisual> multiTouchStrokes = [];
     private readonly VisualCanvas multiTouchCanvas = new( );
 
-    /// <summary>测试接缝：多指笔画是否在等下一帧重绘（等价于帧回调已订阅）</summary>
     internal bool AwaitsMultiTouchFrame { get; private set; }
 
-    /// <summary>测试接缝：多指笔画挂载的绘制视觉数量（冻结段 + 活动段）</summary>
     internal int MultiTouchVisualCount => multiTouchCanvas.VisualCount;
 
     private void StartMultiTouchStroke(int touchId, Point canvasPoint)

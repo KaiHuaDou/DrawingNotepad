@@ -57,9 +57,6 @@ internal sealed class TaperInkCanvas : InkCanvas
 
     internal WetInk? Wet { get; private set; }
 
-    /// <summary>
-    /// 测试接缝：在绘笔画是否由原生渲染器显示
-    /// </summary>
     internal bool UsesNativeRenderer => DynamicRenderer is not null;
 
     // 荧光笔等忽略压力的笔由原生渲染器显示在绘笔画

@@ -13,7 +13,6 @@ public partial class InkCanvasNext
     private readonly Dictionary<int, Point> touchStarts = [];
     private bool releasingCaptures;
 
-    /// <summary>测试接缝：暴露内部墨迹画布（触摸事件处理目标，供 InkCanvasNext.Tests 上报触摸）</summary>
     internal InkCanvas InnerCanvasElement => InnerCanvas;
 
     internal int ActiveTouchCount => touches.Count;

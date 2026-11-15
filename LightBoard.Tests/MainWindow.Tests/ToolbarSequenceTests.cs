@@ -44,7 +44,7 @@ public class ToolbarSequenceTests
             ToolDriver.Toggle(window.HighlighterToggle, false);
             ToolbarAssertions.AssertConsistent(host);
 
-            // 高亮退出后仍在 EraseArea（快照还原），再点一次当前模式回退到画笔
+            // 高亮退出后落在画笔，点面积擦除再进入
             ToolDriver.ClickRadio(host, window.EraseAreaRadio);
             ToolbarAssertions.AssertConsistent(host);
         });

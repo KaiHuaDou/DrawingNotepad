@@ -56,7 +56,9 @@ public class ToolbarHighlighterTests
     [InlineData(InkCanvasNextMode.EraseStroke)]
     [InlineData(InkCanvasNextMode.EraseArea)]
     [InlineData(InkCanvasNextMode.Select)]
-    public void Tool_EnterExitHighlighter_RestoresTool(InkCanvasNextMode tool)
+    [InlineData(InkCanvasNextMode.Line)]
+    [InlineData(InkCanvasNextMode.Circle)]
+    public void Tool_EnterExitHighlighter_FallsBackToInk(InkCanvasNextMode tool)
     {
         UiThread.Run(( ) =>
         {
@@ -67,48 +69,14 @@ public class ToolbarHighlighterTests
             Assert.True(host.Window.HighlighterActive);
             ToolDriver.Toggle(host.Window.HighlighterToggle, false);
 
-            Assert.Equal(tool, host.Window.Mode);
-            Assert.Equal(tool, host.Canvas.Mode);
-            Assert.False(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
-            ToolbarAssertions.AssertConsistent(host);
-        });
-    }
-
-    [Theory]
-    [InlineData(InkCanvasNextMode.Line)]
-    [InlineData(InkCanvasNextMode.Circle)]
-    public void Shape_EnterExitHighlighter_FallsBackToInk(InkCanvasNextMode shape)
-    {
-        UiThread.Run(( ) =>
-        {
-            using var host = new MainWindowHost( );
-            ToolEntry.Enter(host, shape);
-
-            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            ToolDriver.Toggle(host.Window.HighlighterToggle, false);
-
             Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Canvas.Mode);
+            Assert.False(host.Canvas.DefaultDrawingAttributes.IsHighlighter);
             Assert.False(host.Window.LineRadio.IsChecked);
             Assert.False(host.Window.CircleRadio.IsChecked);
-            ToolbarAssertions.AssertConsistent(host);
-        });
-    }
-
-    [Fact]
-    public void ReenterHighlighter_ThenExit_RestoresPreviousTool( )
-    {
-        UiThread.Run(( ) =>
-        {
-            using var host = new MainWindowHost( );
-            ToolEntry.Enter(host, InkCanvasNextMode.Select);
-
-            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            ToolDriver.Toggle(host.Window.HighlighterToggle, true);
-            ToolDriver.Toggle(host.Window.HighlighterToggle, false);
-
-            Assert.Equal(InkCanvasNextMode.Select, host.Window.Mode);
-            Assert.Equal(InkCanvasNextMode.Select, host.Canvas.Mode);
-            Assert.False(host.Window.HighlighterToggle.IsChecked);
+            Assert.False(host.Window.EraseStrokeRadio.IsChecked);
+            Assert.False(host.Window.EraseAreaRadio.IsChecked);
+            Assert.False(host.Window.SelectRadio.IsChecked);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
@@ -119,11 +87,18 @@ public class ToolbarHighlighterTests
         UiThread.Run(( ) =>
         {
             using var host = new MainWindowHost( );
+            ToolEntry.Enter(host, InkCanvasNextMode.Select);
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
             ToolDriver.Toggle(host.Window.HighlighterToggle, true);
 
             Assert.True(host.Window.HighlighterActive);
+            ToolbarAssertions.AssertConsistent(host);
+
+            ToolDriver.Toggle(host.Window.HighlighterToggle, false);
+
+            Assert.False(host.Window.HighlighterActive);
+            Assert.Equal(InkCanvasNextMode.Ink, host.Window.Mode);
             ToolbarAssertions.AssertConsistent(host);
         });
     }
