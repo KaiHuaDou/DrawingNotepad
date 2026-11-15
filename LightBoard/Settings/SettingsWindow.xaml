@@ -13,7 +13,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
         <ControlTemplate x:Key="FieldErrorTemplate">
-            <Border BorderBrush="#FF6B6B" BorderThickness="1" CornerRadius="4" />
+            <Border BorderBrush="#FF6B6B" BorderThickness="1" CornerRadius="5" />
         </ControlTemplate>
 
         <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
@@ -52,7 +52,7 @@
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="PART_Border"
                                 Background="#1F1F1F" BorderBrush="#3A3A3A" BorderThickness="1"
-                                CornerRadius="4">
+                                CornerRadius="5">
                             <ScrollViewer x:Name="PART_ContentHost"
                                           Margin="{TemplateBinding Padding}"
                                           VerticalAlignment="Center"
@@ -83,7 +83,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="PART_Border"
                                 Background="#1F1F1F" BorderBrush="#3A3A3A" BorderThickness="1"
-                                CornerRadius="4">
+                                CornerRadius="5">
                             <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -140,7 +140,7 @@
             <Setter Property="Height" Value="28" />
             <Setter Property="Margin" Value="8,0,0,0" />
             <Setter Property="Focusable" Value="False" />
-            <Setter Property="FontFamily" Value="Segoe Fluent Icons" />
+            <Setter Property="FontFamily" Value="pack://application:,,,/LightBoard;component/#Segoe Fluent Icons" />
             <Setter Property="FontSize" Value="15" />
             <Setter Property="Foreground" Value="#7A7A7A" />
             <Setter Property="Visibility" Value="Hidden" />
@@ -148,7 +148,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="PART_Border" Background="Transparent" CornerRadius="4">
+                        <Border x:Name="PART_Border" Background="Transparent" CornerRadius="5">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>

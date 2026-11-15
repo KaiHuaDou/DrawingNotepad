@@ -41,6 +41,7 @@ public partial class MainWindow
     // 覆盖层按钮不经 XAML 接线：nocv 构建里这些处理器不存在
     private void WireCameraOverlay( )
     {
+        VideoMenuItem.Click += VideoMenuItemClick;
         CameraSwitchButton.Click += CameraSwitchClick;
         CameraRotateButton.Click += CameraRotateClick;
         CameraMirrorButton.Click += CameraMirrorClick;

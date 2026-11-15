@@ -25,7 +25,7 @@
               Panel.ZIndex="4"
               IsHitTestVisible="False" Visibility="Collapsed">
             <TextBlock Margin="0,50,0,0" HorizontalAlignment="Center" VerticalAlignment="Top"
-                       Foreground="#AAEEEEEE"
+                       Foreground="{DynamicResource ChromeForegroundBrush}"
                        FontSize="32"
                        Text="调试模式" />
         </Grid>
@@ -65,8 +65,7 @@
         <Border x:Name="LeftBorder"
                 Margin="5,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Bottom"
                 Panel.ZIndex="64"
-                Style="{StaticResource ContainerStyle}"
-                CornerRadius="5">
+                Style="{StaticResource ContainerStyle}">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="LeftTransform" />
             </Border.RenderTransform>
@@ -91,13 +90,11 @@
                PlacementTarget="{Binding ElementName=MoreButton}"
                PopupAnimation="Slide" StaysOpen="False">
             <Border Margin="0,0,0,8" Padding="6"
-                    Background="#FB2B2C31" BorderBrush="#33FFFFFF" BorderThickness="1"
-                    CornerRadius="5">
-                <Border.Effect>
-                    <DropShadowEffect Opacity="0.5"
-                                      BlurRadius="16" Direction="270" ShadowDepth="5"
-                                      Color="#000000" />
-                </Border.Effect>
+                    Background="{DynamicResource PopupSurfaceBrush}"
+                    BorderBrush="{DynamicResource PopupBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Effect="{DynamicResource PopupShadow}">
                 <Menu Background="Transparent">
                     <Menu.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -120,6 +117,17 @@
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                    <MenuItem Header="设为背景" Style="{StaticResource MenuItemStyle}" Click="SetBackgroundClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE91B;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="清除背景" Style="{StaticResource MenuItemStyle}" Click="ClearBackgroundClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE74D;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
                     <MenuItem Header="保存" Style="{StaticResource MenuItemStyle}" Click="SaveFileClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE74E;" />
@@ -139,32 +147,6 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEA90;" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                    <MenuItem Header="设为背景" Style="{StaticResource MenuItemStyle}" Click="SetBackgroundClick">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE91B;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="清除本页背景" Style="{StaticResource MenuItemStyle}" Click="ClearBackgroundClick">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE74D;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                    <MenuItem x:Name="TransparentMenuItem" Header="透明演示"
-                              Style="{StaticResource MenuItemStyle}"
-                              Click="TransparentMenuItemClick" IsCheckable="True">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE7A1;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem x:Name="VideoMenuItem" Header="视频展台"
-                              Style="{StaticResource MenuItemStyle}"
-                              Click="VideoMenuItemClick" IsCheckable="True">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE714;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
                 </Menu>
             </Border>
         </Popup>
@@ -175,13 +157,11 @@
                PlacementTarget="{Binding ElementName=BackgroundButton}"
                PopupAnimation="Slide" StaysOpen="False">
             <Border Margin="0,0,0,8" Padding="6"
-                    Background="#FB2B2C31" BorderBrush="#33FFFFFF" BorderThickness="1"
-                    CornerRadius="5">
-                <Border.Effect>
-                    <DropShadowEffect Opacity="0.5"
-                                      BlurRadius="16" Direction="270" ShadowDepth="5"
-                                      Color="#000000" />
-                </Border.Effect>
+                    Background="{DynamicResource PopupSurfaceBrush}"
+                    BorderBrush="{DynamicResource PopupBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Effect="{DynamicResource PopupShadow}">
                 <StackPanel Orientation="Vertical">
                     <RadioButton x:Name="DefaultUnderlayRadio"
                                  IsChecked="True"
@@ -200,11 +180,10 @@
             </Border>
         </Popup>
         <Border x:Name="CenterBorder"
-                Height="54"
+                Height="58"
                 Margin="0,0,0,5" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Panel.ZIndex="64"
-                Style="{StaticResource ContainerStyle}"
-                CornerRadius="5">
+                Style="{StaticResource ContainerStyle}">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="CenterTransform" />
             </Border.RenderTransform>
@@ -300,7 +279,7 @@
                     <Border Width="8" Visibility="Hidden" />
                     <Button x:Name="EraseAllButton"
                             Style="{StaticResource ButtonStyle}"
-                            Foreground="#F25767"
+                            Foreground="{DynamicResource ChromeDangerBrush}"
                             Click="EraseAll" Tag="&#xE894;" />
                 </StackPanel>
             </Grid>
@@ -308,8 +287,7 @@
         <Border x:Name="RightBorder"
                 Margin="0,0,5,5" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Panel.ZIndex="64"
-                Style="{StaticResource ContainerStyle}"
-                CornerRadius="5">
+                Style="{StaticResource ContainerStyle}">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="RightTransform" />
             </Border.RenderTransform>
@@ -327,11 +305,11 @@
                             Style="{StaticResource ButtonStyle}"
                             Click="PrevPage" Tag="&#xE72B;" />
                     <ToggleButton x:Name="AllPageToggle"
-                                  Height="36"
-                                  Margin="3,0,3,0" Padding="5,1,5,1"
+                                  Height="40"
+                                  Margin="3,0,3,0"
                                   Style="{StaticResource PageTabStyle}"
                                   Click="AllPageToggleClick">
-                        <TextBlock FontSize="19" Text="1/1" />
+                        <TextBlock FontSize="22" Text="1/1" />
                     </ToggleButton>
                     <Button x:Name="NewNextPageButton"
                             Style="{StaticResource ButtonStyle}"
@@ -360,7 +338,7 @@
                             <Style.Triggers>
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter Property="FontWeight" Value="Bold" />
-                                    <Setter Property="BorderBrush" Value="#4CC2FF" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ChromeSelectedBorderBrush}" />
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
@@ -377,11 +355,11 @@
                                     <DataTemplate DataType="local:Page">
                                         <Grid Margin="0,5">
                                             <Image Source="{Binding Preview}" />
-                                            <TextBlock Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                                       Foreground="#E6E6E6"
-                                                       FontSize="19"
+                                            <TextBlock Margin="7,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                       Foreground="{DynamicResource ChromeForegroundBrush}"
+                                                       FontSize="22"
                                                        Text="{Binding Number}" />
-                                            <Button Margin="0,5,5,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                            <Button HorizontalAlignment="Right" VerticalAlignment="Top"
                                                     FontSize="25"
                                                     Click="DeletePageClick" Tag="&#xE894;">
                                                 <Button.Style>
@@ -410,13 +388,11 @@
                PlacementTarget="{Binding ElementName=MenuButton}"
                PopupAnimation="Slide" StaysOpen="False">
             <Border Margin="0,0,0,8" Padding="6"
-                    Background="#FB2B2C31" BorderBrush="#33FFFFFF" BorderThickness="1"
-                    CornerRadius="5">
-                <Border.Effect>
-                    <DropShadowEffect Opacity="0.5"
-                                      BlurRadius="16" Direction="270" ShadowDepth="5"
-                                      Color="#000000" />
-                </Border.Effect>
+                    Background="{DynamicResource PopupSurfaceBrush}"
+                    BorderBrush="{DynamicResource PopupBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Effect="{DynamicResource PopupShadow}">
                 <Menu Background="Transparent">
                     <Menu.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -452,6 +428,21 @@
                         </MenuItem.Icon>
                     </MenuItem>
                     <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                    <MenuItem x:Name="TransparentMenuItem" Header="透明演示"
+                              Style="{StaticResource MenuItemStyle}"
+                              Click="TransparentMenuItemClick" IsCheckable="True">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE7A1;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="VideoMenuItem" Header="视频展台"
+                              Style="{StaticResource MenuItemStyle}"
+                              IsCheckable="True">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE714;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
                     <MenuItem x:Name="DebugLayerMenu" Header="调试"
                               Style="{StaticResource MenuItemStyle}"
                               Click="DebugLayerClick" IsCheckable="True">
@@ -465,17 +456,16 @@
         <TextBlock x:Name="TimeText"
                    Margin="0,20,25,0" HorizontalAlignment="Right" VerticalAlignment="Top"
                    Panel.ZIndex="16"
-                   Foreground="#AACCCCCC"
+                   Foreground="{DynamicResource ChromeTextBrush}"
                    FontSize="48" />
         <Border x:Name="LoadingBorder"
                 HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="4"
                 Visibility="Collapsed"
-                Style="{StaticResource ContainerStyle}"
-                CornerRadius="5">
+                Style="{StaticResource ContainerStyle}">
             <StackPanel Margin="24,20">
                 <TextBlock x:Name="LoadingText"
                            HorizontalAlignment="Center"
-                           Foreground="#E6E6E6"
+                           Foreground="{DynamicResource ChromeForegroundBrush}"
                            FontSize="24" />
                 <ProgressBar x:Name="LoadingBar"
                              Width="280" Height="16"
@@ -487,8 +477,7 @@
         <Border x:Name="SelectionBorder"
                 HorizontalAlignment="Left" VerticalAlignment="Top" Panel.ZIndex="4"
                 Visibility="Collapsed"
-                Style="{StaticResource ContainerStyle}"
-                CornerRadius="5">
+                Style="{StaticResource ContainerStyle}">
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="CopyButton" Style="{StaticResource ButtonStyle}" Tag="&#xE8C8;" />
                 <Button x:Name="CutButton" Style="{StaticResource ButtonStyle}" Tag="&#xE8C6;" />
@@ -513,15 +502,14 @@
                 Margin="0,0,0,68" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Panel.ZIndex="64"
                 Visibility="Collapsed"
-                Style="{StaticResource ContainerStyle}"
-                CornerRadius="5">
+                Style="{StaticResource ContainerStyle}">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="CameraBarTransform" />
             </Border.RenderTransform>
             <StackPanel Orientation="Horizontal">
                 <TextBlock x:Name="CameraDeviceText"
                            Margin="12,0,3,0" VerticalAlignment="Center"
-                           Foreground="#AACCCCCC"
+                           Foreground="{DynamicResource ChromeTextBrush}"
                            FontSize="15" />
                 <Button x:Name="CameraSwitchButton" Style="{StaticResource ButtonStyle}" Tag="&#xE895;" />
                 <Button x:Name="CameraRotateButton" Style="{StaticResource ButtonStyle}" Tag="&#xE7AD;" />
@@ -530,7 +518,7 @@
                 <Button x:Name="CameraPhotoButton" Style="{StaticResource ButtonStyle}" Tag="&#xE722;" />
                 <Button x:Name="CameraCloseButton"
                         Style="{StaticResource ButtonStyle}"
-                        Foreground="#F25767"
+                        Foreground="{DynamicResource ChromeDangerBrush}"
                         Tag="&#xE711;" />
             </StackPanel>
         </Border>

@@ -28,6 +28,7 @@ public partial class LotteryWindow : Window
         viewModel = (LotteryViewModel) DataContext;
         viewModel.Restore(LotteryStore.Load( ));
         viewModel.PropertyChanged += ViewModelPropertyChanged;
+        SyncModeRadios( );
     }
 
     protected override void OnClosed(EventArgs e)
@@ -169,6 +170,17 @@ public partial class LotteryWindow : Window
         {
             UpdateRangeVisual( );
         }
+        else if (e.PropertyName == nameof(LotteryViewModel.Mode))
+        {
+            SyncModeRadios( );
+        }
+    }
+
+    // 单选只做输入，模式由视图模型决定；打开窗口装入存档后要把勾选补上
+    private void SyncModeRadios( )
+    {
+        ContinuousRadio.IsChecked = viewModel.IsContinuous;
+        CollectionRadio.IsChecked = viewModel.IsCollection;
     }
 
     private static string JoinStatus(string summary, List<string> notes)

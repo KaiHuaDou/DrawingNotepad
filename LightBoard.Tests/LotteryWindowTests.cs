@@ -388,6 +388,54 @@ public class LotteryWindowTests
         });
     }
 
+    [Fact]
+    public void RestoredState_SyncsModeAndSettings( )
+    {
+        UiThread.Run(( ) =>
+        {
+            LotteryStore.Save(new LotteryState
+            {
+                Mode = LotteryMode.Collection,
+                Max = 20,
+                Lower = 3,
+                Upper = 8,
+                Count = 2,
+                Selected = "名单",
+                Datasets = [new( ) { Name = "名单", Items = ["甲", "乙", "丙"] }],
+            });
+
+            var window = new LotteryWindow( );
+            try
+            {
+                window.Show( );
+                window.UpdateLayout( );
+                window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
+
+                var model = Assert.IsType<LotteryViewModel>(window.DataContext);
+                var continuousRadio = Assert.IsType<RadioButton>(window.FindName("ContinuousRadio"));
+                var collectionRadio = Assert.IsType<RadioButton>(window.FindName("CollectionRadio"));
+                var collection = Assert.IsType<DockPanel>(window.FindName("CollectionPanel"));
+                var range = Assert.IsType<DockPanel>(window.FindName("RangeRow"));
+
+                Assert.True(model.IsCollection);
+                Assert.False(continuousRadio.IsChecked);
+                Assert.True(collectionRadio.IsChecked);
+                Assert.Equal(Visibility.Visible, collection.Visibility);
+                Assert.Equal(Visibility.Collapsed, range.Visibility);
+
+                Assert.Equal(20, model.Max);
+                Assert.Equal(3, model.Lower);
+                Assert.Equal(8, model.Upper);
+                Assert.Equal(2, model.Count);
+                Assert.Equal("名单", model.SelectedDataset?.Name);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
     private static TextBlock? FirstText(DependencyObject root)
     {
         var count = VisualTreeHelper.GetChildrenCount(root);

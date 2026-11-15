@@ -25,16 +25,31 @@
         </DrawingBrush.Drawing>
     </DrawingBrush>
 
-    <SolidColorBrush x:Key="DarkBrush" Color="#441C2BCC" />
-    <SolidColorBrush x:Key="DarkBorderBrush" Color="#6683FC" />
-
+    <!--深色界面（设置窗、计时窗）按钮用的三个色，不随底色变化-->
     <SolidColorBrush x:Key="HoverBrush" Color="#26FFFFFF" />
     <SolidColorBrush x:Key="PressedBrush" Color="#3AFFFFFF" />
-
-    <SolidColorBrush x:Key="ContainerBrush" Color="#99132020" />
-    <SolidColorBrush x:Key="ContainerBrushSolid" Color="#AA132020" />
-
     <SolidColorBrush x:Key="IconBrush" Color="#E3E3E3" />
+
+    <!--窗口 chrome 的整套配色：两种底色各一套，深浅两组的分工与取值互相照应-->
+    <SolidColorBrush x:Key="ContainerBrush" Color="#243B82F6" />
+    <SolidColorBrush x:Key="ContainerBrushSolid" Color="#333B82F6" />
+    <SolidColorBrush x:Key="ChromeSurfaceBorderBrush" Color="#00000000" />
+    <SolidColorBrush x:Key="ChromeForegroundBrush" Color="#E3E3E3" />
+    <SolidColorBrush x:Key="ChromeHoverBrush" Color="#26FFFFFF" />
+    <SolidColorBrush x:Key="ChromePressedBrush" Color="#3AFFFFFF" />
+    <SolidColorBrush x:Key="ChromeSelectedBrush" Color="#441C2BCC" />
+    <SolidColorBrush x:Key="ChromeSelectedBorderBrush" Color="#6683FC" />
+    <SolidColorBrush x:Key="ChromeDisabledBrush" Color="#AAAAAA" />
+    <SolidColorBrush x:Key="ChromeDangerBrush" Color="#F25767" />
+    <SolidColorBrush x:Key="ChromeTextBrush" Color="#AACCCCCC" />
+    <SolidColorBrush x:Key="ChromeEdgeBrush" Color="#EEEEEEEE" />
+    <SolidColorBrush x:Key="PopupSurfaceBrush" Color="#FB2B2C31" />
+    <SolidColorBrush x:Key="PopupBorderBrush" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="PopupSeparatorBrush" Color="#33FFFFFF" />
+    <DropShadowEffect x:Key="PopupShadow"
+                      Opacity="0.5"
+                      BlurRadius="16" Direction="270" ShadowDepth="5"
+                      Color="#000000" />
 
     <LinearGradientBrush x:Key="ButtonFaceBrush" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Offset="0" Color="#3E3E3E" />
@@ -96,22 +111,21 @@
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
         <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-        <Setter Property="UseLayoutRounding" Value="True" />
-        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}" />
     </Style>
 
     <Style x:Key="ColorRadioStyle" TargetType="{x:Type RadioButton}">
         <Setter Property="Width" Value="41" />
         <Setter Property="Height" Value="41" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Margin" Value="0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Grid Width="35" Height="35">
                         <Border x:Name="PART_Border"
                                 Background="{TemplateBinding Background}"
-                                BorderBrush="#EEEEEEEE" BorderThickness="1"
+                                BorderBrush="{DynamicResource ChromeEdgeBrush}"
+                                BorderThickness="1"
                                 CornerRadius="5">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
@@ -119,7 +133,8 @@
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Visibility="Collapsed"
                                    Foreground="#DDEEEEEE"
-                                   FontFamily="Segoe Fluent Icons" FontSize="22" FontWeight="Bold"
+                                   FontFamily="pack://application:,,,/LightBoard;component/#Segoe Fluent Icons"
+                                   FontSize="22" FontWeight="Bold"
                                    Text="&#xE73E;" />
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -152,10 +167,10 @@
 
     <!--控件占满整格以便整格响应悬停与点击；高度吃掉容器去掉边框后的余量-->
     <Style x:Key="ToolButtonBaseStyle" TargetType="Control">
-        <Setter Property="Width" Value="42" />
-        <Setter Property="Height" Value="44" />
-        <Setter Property="Margin" Value="0" />
-        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Margin" Value="3" />
+        <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}" />
         <Setter Property="Background" Value="Transparent" />
     </Style>
 
@@ -178,18 +193,18 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeHoverBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
-                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeSelectedBrush}" />
+                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{DynamicResource ChromeSelectedBorderBrush}" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromePressedBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
@@ -210,7 +225,7 @@
                         <Ellipse x:Name="PART_Ellipse"
                                  Width="{TemplateBinding MinWidth}"
                                  Height="{TemplateBinding MinWidth}"
-                                 Fill="{StaticResource IconBrush}" />
+                                 Fill="{DynamicResource ChromeForegroundBrush}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <MultiTrigger>
@@ -218,18 +233,18 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeHoverBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
-                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeSelectedBrush}" />
+                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{DynamicResource ChromeSelectedBorderBrush}" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromePressedBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
@@ -241,7 +256,7 @@
     </Style>
 
     <Style x:Key="ToggleStyle" BasedOn="{StaticResource ToolButtonBaseStyle}" TargetType="{x:Type ToggleButton}">
-        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
@@ -259,18 +274,18 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeHoverBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
-                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeSelectedBrush}" />
+                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{DynamicResource ChromeSelectedBorderBrush}" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromePressedBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
@@ -283,7 +298,7 @@
 
     <!--展开开关与工具共用选中底色会被当成当前工具；箭头方向由宿主写 Tag 决定-->
     <Style x:Key="ChevronToggleStyle" BasedOn="{StaticResource ToolButtonBaseStyle}" TargetType="{x:Type ToggleButton}">
-        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
@@ -302,14 +317,14 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeHoverBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromePressedBrush}" />
                         </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -318,7 +333,7 @@
     </Style>
 
     <Style x:Key="ButtonStyle" BasedOn="{StaticResource ToolButtonBaseStyle}" TargetType="{x:Type Button}">
-        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}" />
         <Setter Property="FontSize" Value="28" />
         <Setter Property="Template">
             <Setter.Value>
@@ -337,18 +352,18 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeHoverBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromePressedBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.75" />
-                            <Setter TargetName="PART_IconText" Property="Foreground" Value="#AAAAAA" />
+                            <Setter TargetName="PART_IconText" Property="Foreground" Value="{DynamicResource ChromeDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -397,9 +412,9 @@
 
     <!--Content 为空时退化为 Tag 字形-->
     <Style x:Key="ImageButtonStyle" TargetType="{x:Type Button}">
-        <Setter Property="Height" Value="36" />
+        <Setter Property="Height" Value="40" />
         <Setter Property="Margin" Value="3" />
-        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Template">
             <Setter.Value>
@@ -432,18 +447,18 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeHoverBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromePressedBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.75" />
-                            <Setter TargetName="PART_IconText" Property="Foreground" Value="#AAAAAA" />
+                            <Setter TargetName="PART_IconText" Property="Foreground" Value="{DynamicResource ChromeDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -454,17 +469,20 @@
     <Style x:Key="ContainerStyle" TargetType="{x:Type Border}">
         <Setter Property="Padding" Value="5" />
         <Setter Property="Panel.ZIndex" Value="36" />
-        <Setter Property="Background" Value="{StaticResource ContainerBrush}" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Background" Value="{DynamicResource ContainerBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ChromeSurfaceBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
     </Style>
 
     <Style x:Key="PageTabStyle" TargetType="{x:Type ToggleButton}">
-        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
                     <Border x:Name="PART_Border"
-                            MinWidth="36"
+                            MinWidth="40"
                             Padding="8,0"
                             Background="Transparent" BorderThickness="1"
                             CornerRadius="5">
@@ -476,18 +494,18 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeHoverBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
-                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeSelectedBrush}" />
+                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{DynamicResource ChromeSelectedBorderBrush}" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromePressedBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
@@ -499,7 +517,7 @@
     </Style>
 
     <Style x:Key="MenuItemStyle" TargetType="{x:Type MenuItem}">
-        <Setter Property="Foreground" Value="{StaticResource IconBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}" />
         <Setter Property="HeaderTemplate">
             <Setter.Value>
                 <DataTemplate>
@@ -523,15 +541,15 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeHoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Background" Value="Transparent" />
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.35" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
-                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeSelectedBrush}" />
+                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{DynamicResource ChromeSelectedBorderBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -544,7 +562,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Separator">
-                    <Border Height="1" Background="#33FFFFFF" CornerRadius="1" />
+                    <Border Height="1" Background="{DynamicResource PopupSeparatorBrush}" CornerRadius="1" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -552,7 +570,7 @@
 
     <Style x:Key="LabelledToggleStyle" BasedOn="{StaticResource ToggleStyle}" TargetType="{x:Type ToggleButton}">
         <Setter Property="Width" Value="Auto" />
-        <Setter Property="Height" Value="38" />
+        <Setter Property="Height" Value="40" />
         <Setter Property="Margin" Value="3" />
         <Setter Property="Padding" Value="10,0,10,0" />
         <Setter Property="Template">
@@ -576,18 +594,18 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource HoverBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeHoverBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource DarkBrush}" />
-                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromeSelectedBrush}" />
+                            <Setter TargetName="PART_Border" Property="BorderBrush" Value="{DynamicResource ChromeSelectedBorderBrush}" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Border" Property="Background" Value="{StaticResource PressedBrush}" />
+                            <Setter TargetName="PART_Border" Property="Background" Value="{DynamicResource ChromePressedBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PART_Border" Property="Opacity" Value="0.5" />
@@ -668,7 +686,7 @@
                     <Border x:Name="PART_Outer"
                             BorderBrush="{StaticResource ButtonOuterBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="3" SnapsToDevicePixels="True">
+                            CornerRadius="3">
                         <Border x:Name="PART_Inner"
                                 Background="{StaticResource ButtonFaceBrush}"
                                 BorderBrush="{StaticResource ButtonInnerBorderBrush}"

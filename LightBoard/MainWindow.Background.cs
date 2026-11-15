@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -19,6 +20,8 @@ public partial class App
 
 public partial class MainWindow
 {
+    private ResourceDictionary? chromeLight;
+
     /// <summary>
     /// 底色单选的唯一解码点：画布底衬按这里的结果分派
     /// </summary>
@@ -30,13 +33,16 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// 外观应用：画布底色与透明演示的窗口行为
+    /// 外观应用：画布底色、工具栏配色与透明演示的窗口行为
     /// </summary>
     private void ApplyAppearance( )
     {
         var transparent = TransparentMenuItem.IsChecked == true;
         var underlay = CurrentUnderlay( );
         App.Underlay = underlay;
+
+        // 透明演示时工具栏压在任意桌面上，图标保持浅色
+        ApplyChromePalette(underlay == Underlay.White && !transparent);
 
         CanvasNext.Background = transparent ? Brushes.Transparent : UnderlayBrush(underlay);
         Topmost = transparent;
@@ -48,6 +54,28 @@ public partial class MainWindow
         BlackUnderlayRadio.IsEnabled = !transparent;
 
         SyncChrome( );
+    }
+
+    /// <summary>
+    /// 工具栏配色：纯白底色下换上浅色字典，其余情况移除它，取 Theme.xaml 的深色值
+    /// </summary>
+    private void ApplyChromePalette(bool light)
+    {
+        if (light)
+        {
+            chromeLight ??= new ResourceDictionary
+            {
+                Source = new Uri("pack://application:,,,/LightBoard;component/ChromeLight.xaml")
+            };
+            if (!Resources.MergedDictionaries.Contains(chromeLight))
+            {
+                Resources.MergedDictionaries.Add(chromeLight);
+            }
+        }
+        else if (chromeLight is not null)
+        {
+            Resources.MergedDictionaries.Remove(chromeLight);
+        }
     }
 
     /// <summary>
@@ -73,9 +101,12 @@ public partial class MainWindow
 
         TimeText.Visibility = transparent || panel ? Visibility.Collapsed : Visibility.Visible;
         SwitchOutButton.Visibility = transparent ? Visibility.Collapsed : Visibility.Visible;
-        LeftBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
-        CenterBorder.Background = transparent ? ContainerBrushSolid : ContainerBrush;
-        RightBorder.Background = transparent || panel ? ContainerBrushSolid : ContainerBrush;
+
+        // 底色取资源引用而不是画刷实例，配色字典换下来时三块边框跟着变
+        var surface = transparent ? "ContainerBrushSolid" : "ContainerBrush";
+        LeftBorder.SetResourceReference(Border.BackgroundProperty, surface);
+        CenterBorder.SetResourceReference(Border.BackgroundProperty, surface);
+        RightBorder.SetResourceReference(Border.BackgroundProperty, transparent || panel ? "ContainerBrushSolid" : "ContainerBrush");
     }
 
     private static Brush UnderlayBrush(Underlay underlay)

@@ -3,9 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:LightBoard"
         Title="抽选"
-        Width="1040" Height="720"
-        MinWidth="760" MinHeight="520"
-        Background="#141414" Foreground="#E6E6E6"
+        Width="1040"
+        Height="720"
+        MinWidth="760"
+        MinHeight="520"
+        Background="#141414"
+        Foreground="#E6E6E6"
         PreviewKeyDown="WindowPreviewKeyDown"
         ShowInTaskbar="False"
         Topmost="True"
@@ -32,7 +35,6 @@
             <Setter Property="FontFamily" Value="pack://application:,,,/LightBoard;component/#Segoe Fluent Icons" />
             <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
             <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-            <Setter Property="UseLayoutRounding" Value="True" />
         </Style>
 
         <!--数字步进：无底无框，只有悬停与按下的底色-->
@@ -47,9 +49,9 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Border x:Name="PART_Border" Background="Transparent" CornerRadius="5">
-                            <TextBlock FontSize="{TemplateBinding FontSize}"
+                            <TextBlock Style="{StaticResource GlyphTextStyle}"
                                        Foreground="{TemplateBinding Foreground}"
-                                       Style="{StaticResource GlyphTextStyle}"
+                                       FontSize="{TemplateBinding FontSize}"
                                        Text="{TemplateBinding Tag}" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -80,7 +82,7 @@
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Border x:Name="PART_Border"
                                 Background="#1F1F1F" BorderBrush="#3A3A3A" BorderThickness="1"
-                                CornerRadius="4">
+                                CornerRadius="5">
                             <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -115,7 +117,7 @@
                     <ControlTemplate TargetType="{x:Type TextBox}">
                         <Border x:Name="PART_Border"
                                 Background="#1F1F1F" BorderBrush="#3A3A3A" BorderThickness="1"
-                                CornerRadius="4">
+                                CornerRadius="5">
                             <ScrollViewer x:Name="PART_ContentHost"
                                           Margin="{TemplateBinding Padding}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -150,18 +152,18 @@
                     <ControlTemplate TargetType="{x:Type ListBoxItem}">
                         <Grid>
                             <Border x:Name="PART_Mark"
-                                    Width="3" Margin="0,6"
-                                    HorizontalAlignment="Left"
+                                    Width="3"
+                                    Margin="0,6" HorizontalAlignment="Left"
                                     Background="Transparent"
                                     CornerRadius="2" />
                             <Border x:Name="PART_Border"
                                     Padding="{TemplateBinding Padding}"
                                     Background="Transparent"
-                                    CornerRadius="4">
+                                    CornerRadius="5">
                                 <ContentPresenter VerticalAlignment="Center"
                                                   Content="{TemplateBinding Content}"
-                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                  ContentStringFormat="{TemplateBinding ContentStringFormat}" />
+                                                  ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}" />
                             </Border>
                         </Grid>
                         <ControlTemplate.Triggers>
@@ -191,7 +193,8 @@
                                 Background="#4C8BF5" BorderBrush="#C7DCFF" BorderThickness="1"
                                 CornerRadius="15">
                             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       FontSize="14" Foreground="#FFFFFF"
+                                       Foreground="#FFFFFF"
+                                       FontSize="14"
                                        Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -226,42 +229,52 @@
                          Style="{StaticResource ModeRadioStyle}"
                          Click="ModeClick" Content="集合模式" GroupName="LotteryModeRadio" />
         </StackPanel>
-        <DockPanel x:Name="RangeRow" Grid.Row="1" Margin="0,18,0,0"
+        <DockPanel x:Name="RangeRow"
+                   Grid.Row="1"
+                   Margin="0,18,0,0"
                    Visibility="{Binding IsContinuous, Converter={StaticResource BoolToVisibility}}">
-            <TextBlock DockPanel.Dock="Left" Margin="0,0,16,0"
+            <TextBlock DockPanel.Dock="Left"
+                       Margin="0,0,16,0"
                        Style="{StaticResource SectionTitleStyle}"
                        Text="范围" />
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Orientation="Horizontal">
                 <Button x:Name="MaxDownButton"
+                        IsEnabled="{Binding CanDecreaseMax}"
                         Style="{StaticResource StepButtonStyle}"
-                        Click="MaxStepClick" Tag="&#xE738;" ToolTip="减一"
-                        IsEnabled="{Binding CanDecreaseMax}" />
-                <TextBox x:Name="MaxBox" Width="88" Height="40"
-                         VerticalContentAlignment="Center" TextAlignment="Center"
+                        Click="MaxStepClick" Tag="&#xE738;" ToolTip="减一" />
+                <TextBox x:Name="MaxBox"
+                         Width="88" Height="40"
+                         VerticalContentAlignment="Center"
                          Style="{StaticResource InputBoxStyle}"
-                         Text="{Binding MaxText, UpdateSourceTrigger=Explicit}" FontSize="20"
-                         KeyDown="NumberBoxKeyDown"
-                         LostFocus="NumberBoxLostFocus" />
+                         FontSize="20"
+                         KeyDown="NumberBoxKeyDown" LostFocus="NumberBoxLostFocus"
+                         Text="{Binding MaxText, UpdateSourceTrigger=Explicit}"
+                         TextAlignment="Center" />
                 <Button x:Name="MaxUpButton"
+                        IsEnabled="{Binding CanIncreaseMax}"
                         Style="{StaticResource StepButtonStyle}"
-                        Click="MaxStepClick" Tag="&#xE710;" ToolTip="加一"
-                        IsEnabled="{Binding CanIncreaseMax}" />
+                        Click="MaxStepClick" Tag="&#xE710;" ToolTip="加一" />
             </StackPanel>
-            <TextBlock DockPanel.Dock="Right" Margin="16,0,10,0"
+            <TextBlock DockPanel.Dock="Right"
+                       Margin="16,0,10,0"
                        Style="{StaticResource SectionTitleStyle}"
                        Text="最大值" />
-            <Canvas x:Name="RangeCanvas" Height="34" VerticalAlignment="Center"
+            <Canvas x:Name="RangeCanvas"
+                    Height="34"
+                    VerticalAlignment="Center"
                     SizeChanged="RangeCanvasSizeChanged">
-                <Border x:Name="RangeTrackBorder" Background="#3A3A3A" CornerRadius="4" />
-                <Border x:Name="RangeFillBorder" Background="#4C8BF5" CornerRadius="4" />
+                <Border x:Name="RangeTrackBorder" Background="#3A3A3A" CornerRadius="5" />
+                <Border x:Name="RangeFillBorder" Background="#4C8BF5" CornerRadius="5" />
                 <Thumb x:Name="RangeUpperThumb"
                        Style="{StaticResource RangeThumbStyle}"
-                       DragDelta="RangeThumbDragDelta" SizeChanged="RangeCanvasSizeChanged" ToolTip="拖动调整上限"
-                       Tag="{Binding Upper}" />
+                       DragDelta="RangeThumbDragDelta" SizeChanged="RangeCanvasSizeChanged"
+                       Tag="{Binding Upper}"
+                       ToolTip="拖动调整上限" />
                 <Thumb x:Name="RangeLowerThumb"
                        Style="{StaticResource RangeThumbStyle}"
-                       DragDelta="RangeThumbDragDelta" SizeChanged="RangeCanvasSizeChanged" ToolTip="拖动调整下限"
-                       Tag="{Binding Lower}" />
+                       DragDelta="RangeThumbDragDelta" SizeChanged="RangeCanvasSizeChanged"
+                       Tag="{Binding Lower}"
+                       ToolTip="拖动调整下限" />
             </Canvas>
         </DockPanel>
         <Grid x:Name="BodyGrid" Grid.Row="2" Margin="0,22,0,0">
@@ -281,24 +294,26 @@
                 </ColumnDefinition>
                 <ColumnDefinition Width="5*" />
             </Grid.ColumnDefinitions>
-            <DockPanel x:Name="CollectionPanel" Grid.Column="0"
-                       Visibility="{Binding IsCollection, Converter={StaticResource BoolToVisibility}}">
+            <DockPanel x:Name="CollectionPanel" Grid.Column="0" Visibility="{Binding IsCollection, Converter={StaticResource BoolToVisibility}}">
                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8" LastChildFill="False">
-                    <TextBlock DockPanel.Dock="Left"
-                               Style="{StaticResource SectionTitleStyle}"
-                               Text="数据集" />
-                    <Button x:Name="RemoveDatasetButton" DockPanel.Dock="Right"
+                    <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="数据集" />
+                    <Button x:Name="RemoveDatasetButton"
+                            DockPanel.Dock="Right"
                             Style="{StaticResource ActionButtonStyle}"
                             Click="RemoveDatasetClick" Content="移除" />
-                    <Button x:Name="ImportDatasetButton" DockPanel.Dock="Right" Margin="0,0,8,0"
+                    <Button x:Name="ImportDatasetButton"
+                            DockPanel.Dock="Right"
+                            Margin="0,0,8,0"
                             Style="{StaticResource ActionButtonStyle}"
                             Click="ImportDatasetClick" Content="导入" />
                 </DockPanel>
-                <TextBlock x:Name="StatusText" DockPanel.Dock="Bottom"
+                <TextBlock x:Name="StatusText"
+                           DockPanel.Dock="Bottom"
                            Margin="0,8,0,0"
-                           FontSize="15" Foreground="#B8B8B8"
-                           TextWrapping="Wrap"
-                           Text="{Binding Status}">
+                           Foreground="#B8B8B8"
+                           FontSize="15"
+                           Text="{Binding Status}"
+                           TextWrapping="Wrap">
                     <TextBlock.Style>
                         <Style TargetType="{x:Type TextBlock}">
                             <Style.Triggers>
@@ -309,30 +324,32 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-                <TextBox x:Name="DatasetTextBox" DockPanel.Dock="Bottom"
-                         Margin="0,10,0,0" MinHeight="110" MaxHeight="180"
-                         VerticalContentAlignment="Top"
-                         Style="{StaticResource InputBoxStyle}"
-                         TextWrapping="Wrap" AcceptsReturn="False"
-                         VerticalScrollBarVisibility="Auto"
+                <TextBox x:Name="DatasetTextBox"
+                         DockPanel.Dock="Bottom"
+                         MinHeight="110" MaxHeight="180"
+                         Margin="0,10,0,0" VerticalContentAlignment="Top"
                          IsEnabled="{Binding HasDataset}"
-                         Text="{Binding SelectedDatasetText}" />
+                         Style="{StaticResource InputBoxStyle}"
+                         AcceptsReturn="False"
+                         Text="{Binding SelectedDatasetText}"
+                         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
                 <ListBox x:Name="DatasetList"
-                         Background="Transparent" BorderThickness="0" Padding="0"
-                         ItemsSource="{Binding Datasets}"
-                         SelectedItem="{Binding SelectedDataset, Mode=TwoWay}"
+                         Padding="0"
+                         Background="Transparent" BorderThickness="0"
                          ItemContainerStyle="{StaticResource DatasetItemStyle}"
-                         VirtualizingPanel.IsVirtualizing="True"
-                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         ItemsSource="{Binding Datasets}"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         SelectedItem="{Binding SelectedDataset, Mode=TwoWay}"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock VerticalAlignment="Center"
-                                       FontSize="18"
                                        Foreground="#E6E6E6"
-                                       TextTrimming="CharacterEllipsis"
-                                       Text="{Binding Name}" />
+                                       FontSize="18"
+                                       Text="{Binding Name}"
+                                       TextTrimming="CharacterEllipsis" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
@@ -353,44 +370,54 @@
                            Style="{StaticResource SectionTitleStyle}"
                            Text="抽选结果" />
                 <DockPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Orientation="Horizontal">
                         <Button x:Name="CountDownButton"
+                                IsEnabled="{Binding CanDecreaseCount}"
                                 Style="{StaticResource StepButtonStyle}"
-                                Click="CountStepClick" Tag="&#xE738;" ToolTip="减一"
-                                IsEnabled="{Binding CanDecreaseCount}" />
-                        <TextBox x:Name="CountBox" Width="88" Height="40"
-                                 VerticalContentAlignment="Center" TextAlignment="Center"
-                                 Style="{StaticResource InputBoxStyle}"
-                                 Text="{Binding CountText, UpdateSourceTrigger=Explicit}" FontSize="24"
+                                Click="CountStepClick" Tag="&#xE738;" ToolTip="减一" />
+                        <TextBox x:Name="CountBox"
+                                 Width="88" Height="40"
+                                 VerticalContentAlignment="Center"
                                  IsEnabled="{Binding CanDraw}"
-                                 KeyDown="NumberBoxKeyDown"
-                                 LostFocus="NumberBoxLostFocus" />
+                                 Style="{StaticResource InputBoxStyle}"
+                                 FontSize="24"
+                                 KeyDown="NumberBoxKeyDown" LostFocus="NumberBoxLostFocus"
+                                 Text="{Binding CountText, UpdateSourceTrigger=Explicit}"
+                                 TextAlignment="Center" />
                         <Button x:Name="CountUpButton"
+                                IsEnabled="{Binding CanIncreaseCount}"
                                 Style="{StaticResource StepButtonStyle}"
-                                Click="CountStepClick" Tag="&#xE710;" ToolTip="加一"
-                                IsEnabled="{Binding CanIncreaseCount}" />
+                                Click="CountStepClick" Tag="&#xE710;" ToolTip="加一" />
                     </StackPanel>
                     <Grid Margin="0,0,16,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <Button x:Name="DrawOneButton" Grid.Column="0" Margin="0,0,6,0" MinHeight="52"
-                                Style="{StaticResource ActionButtonStyle}" FontSize="22"
-                                Click="DrawOneClick" Content="抽选一个"
-                                IsEnabled="{Binding CanDraw}" />
-                        <Button x:Name="DrawManyButton" Grid.Column="1" Margin="6,0,0,0" MinHeight="52"
-                                Style="{StaticResource ActionButtonStyle}" FontSize="22"
-                                Click="DrawManyClick" Content="抽选多个"
-                                IsEnabled="{Binding CanDraw}" />
+                        <Button x:Name="DrawOneButton"
+                                Grid.Column="0"
+                                MinHeight="52"
+                                Margin="0,0,6,0"
+                                IsEnabled="{Binding CanDraw}"
+                                Style="{StaticResource ActionButtonStyle}"
+                                FontSize="22"
+                                Click="DrawOneClick" Content="抽选一个" />
+                        <Button x:Name="DrawManyButton"
+                                Grid.Column="1"
+                                MinHeight="52"
+                                Margin="6,0,0,0"
+                                IsEnabled="{Binding CanDraw}"
+                                Style="{StaticResource ActionButtonStyle}"
+                                FontSize="22"
+                                Click="DrawManyClick" Content="抽选多个" />
                     </Grid>
                 </DockPanel>
                 <Grid x:Name="ResultHost">
                     <ScrollViewer HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  VerticalScrollBarVisibility="Auto">
-                        <ItemsControl x:Name="ResultList" ItemsSource="{Binding Results}"
-                                      HorizontalAlignment="Center" VerticalAlignment="Center">
+                                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="ResultList"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      ItemsSource="{Binding Results}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel HorizontalAlignment="Center" />
@@ -401,9 +428,7 @@
                                     <Border Margin="0,0,8,8" Padding="12,4"
                                             Background="#262626"
                                             CornerRadius="6">
-                                        <TextBlock FontSize="34"
-                                                   Foreground="#E6E6E6"
-                                                   Text="{Binding}" />
+                                        <TextBlock Foreground="#E6E6E6" FontSize="34" Text="{Binding}" />
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -411,7 +436,8 @@
                     </ScrollViewer>
                     <TextBlock x:Name="ResultPlaceholderText"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                               FontSize="20" Foreground="#6E6E6E"
+                               Foreground="#6E6E6E"
+                               FontSize="20"
                                Text="尚未抽选">
                         <TextBlock.Style>
                             <Style TargetType="{x:Type TextBlock}">

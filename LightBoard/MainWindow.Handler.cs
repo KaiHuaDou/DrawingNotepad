@@ -14,8 +14,6 @@ namespace LightBoard;
 
 public partial class MainWindow
 {
-    private static readonly Brush ContainerBrush = (Application.Current.FindResource("ContainerBrush") as Brush)!;
-    private static readonly Brush ContainerBrushSolid = (Application.Current.FindResource("ContainerBrushSolid") as Brush)!;
     private static readonly Brush MajorGridBrush = (Application.Current.FindResource("MajorGridBrush") as Brush)!;
 
     private void AboutClick(object o, RoutedEventArgs e)
