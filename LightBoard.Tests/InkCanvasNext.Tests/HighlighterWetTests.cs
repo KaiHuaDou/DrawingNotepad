@@ -9,6 +9,20 @@ namespace InkCanvasNext.Tests;
 public class HighlighterWetTests
 {
     [Fact]
+    public void Pen_UsesTaperRendererWithTailLayer( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var inner = host.Canvas.InnerCanvas;
+
+            Assert.False(inner.UsesNativeRenderer);
+            Assert.NotNull(inner.TaperRenderer);
+            Assert.True(inner.TaperRenderer!.HasTailLayer);
+        });
+    }
+
+    [Fact]
     public void Pen_TakesOverLiveInkWithWetLayer( )
     {
         StaTest.Run(( ) =>

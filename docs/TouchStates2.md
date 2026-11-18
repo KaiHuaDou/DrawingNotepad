@@ -31,7 +31,7 @@
 - `EvalPan` 是多指平移的评估态（3 指及以上并拢进入，与 `EvalDraw` 对单指的角色相同）：平移随 Move 实时生效；位移超过 `c` 提交为 `Pan`；提交前可迁 `Eraser`（掌擦判定与 `EvalDraw` 同款：`count >= p and (d <= l or IsErase)`）与 `MultiDraw`（张开且非擦除工具）；无回 `PanZoom` 的迁移，减为单指/双指仍停留并继续平移。
 - `Pan` 是已提交的平移态：无论触点如何增减、间距如何变化，仅 `count == 0` 回 `Idle`（掌擦与多指书写都只在评估期可达）。
 - `PanZoom` 的手势执行只用前两指（`GetMajorTouches`）：并拢的附加指迁 `EvalPan`；张开的附加指不参与迁移（不迁 `MultiDraw`）；减为单指迁 `EvalPan`，此后落下第二指不回 `PanZoom`，需全部抬起重新开始双指手势。
-- `Selection` 内部按触点与选区包围盒的位置关系分派；`count == 0` 回 `Idle`。全部在选区内 → 保持选区手势，`RefreshSelectionGesture` 把 3+ 指的双指变换降为只平移（两指全在选区内才升级为双指相似变换）；横跨边界 → 保持选区手势，由在内的第一根手指驱动，驱动指抬起后由剩余手指中仍在选区内的第一根接手（段基线归零，选区不跳变）；全部在选区外 → 按一般手势处理（套索在途且双指并拢 → `PanZoom`；`count >= p` 且 `d <= l` → `Eraser`；其余 `count >= 3` 且 `d <= l` → `EvalPan`；`d > l` 且非擦除工具 → `MultiDraw`）。套索或框选被多指手势接管时放弃本次路径，不结算成选型；起手套索不清原有选型，路径真正拉开时才清。
+- `Selection` 内部按触点与选区包围盒的位置关系分派；`count == 0` 回 `Idle`。全部在选区内 → 保持选区手势，`RefreshSelectionGesture` 把 3+ 指的双指变换降为只平移（两指全在选区内才升级为双指相似变换）；横跨边界 → 保持选区手势，由在内的第一根手指驱动，驱动指抬起后由剩余手指中仍在选区内的第一根接手（段基线归零，选区不跳变）；全部在选区外 → 按一般手势处理（套索在途且双指并拢 → `PanZoom`；`count >= p` 且 `d <= l` → `Eraser`；其余 `count >= 3` 且 `d <= l` → `EvalPan`；`d > l` 且非擦除工具 → `MultiDraw`）。套索或框选被多指手势接管时放弃本次路径、清空套索图层，不结算成选型；起手套索不清原有选型，路径真正拉开时才清。
 - 擦除工具（`Mode in {EraseArea, EraseStroke}`，`Snapshot.IsErase`）的多指手势与普通模式同款（并拢判定：2 指 → `PanZoom`、3 指及以上（不足 `p`）→ `EvalPan`），差异：`count >= p` 无论间距均迁 `Eraser`（手掌压屏常呈张开）；多指张开（`d > l`）不迁 `MultiDraw` 起笔画，保持当前擦除上下文。
 - `Draw` 不迁 `Eraser`：绘制一旦提交，掌擦不可达，擦除工具下多指保持原地擦除上下文（`Draw --> MultiDraw` 由 `AllowsMultiDraw` 把关，擦除工具不满足）。
 - `Eraser` 中 `count > p` 且 `d > l` 迁 `MultiDraw`（仅非擦除工具）：手掌张开超过掌擦触点数即视为多指书写。
@@ -39,7 +39,7 @@
 
 ## 要求（副作用）
 
-- 进入 `Idle`：`ReleaseAll` + `ApplyModeToEditing(Mode)`。
+- 进入 `Idle`：`ReleaseAll` + `ApplyModeToEditing(Mode)` + `EnsureCanvasFill(CurrentView)` + `UpdateEdgeHints`（手势期间跳过的补余量与提示刷新在这里补做）。
 - 离开 `MultiDraw`：`EndMultiTouch`。
 - 离开 `Selection`：`EndSelectionTouch`。
 - 离开 `EvalDraw`/`Draw` 进入手势接管态（`EvalPan`/`PanZoom`/`MultiDraw`/`Eraser`/`Selection`，或异常回 `Idle`）：若形状在途（`shapeActive`），迁入 `MultiDraw` 时按当前预览 `CommitShape`，迁入其余状态则 `CancelShape`。形状只允许在单指绘制上下文（`EvalDraw`/`Draw`）存活；`EvalDraw` 中落第二指按距离迁入 `PanZoom`（捏合优先）或 `MultiDraw`；`Draw` 中落第二指迁入 `MultiDraw`（擦除工具被 `AllowsMultiDraw` 拒绝，保持原地擦除上下文，见假设）。
@@ -47,12 +47,12 @@
 - 进入 `EvalDraw`，或 `EvalDraw --> Draw`：若 `WantsPreemptiveCapture` → `CaptureAll`。
 - 进入 `Selection`：`CaptureAll` + `BeginSelectionTouch`。
 - 进入 `EvalPan`/`PanZoom`/`Pan`（平移手势族）：
-    - `from` 不在同族时：`ReleaseAll` + `InnerCanvas.EditingMode = None` + `CaptureAll`（族内迁移只做基准校准，不重做释放/捕获）；
+    - `from` 不在同族时：`ReleaseAll` + `InnerCanvas.EditingMode = None` + `CaptureAll` + `EnsureCanvasFill(CurrentView)`（手势开始补一屏余量，族内迁移只做基准校准，不重做释放/捕获）；
     - 随后 `InitGesture`。
 - 进入 `Eraser`：`ReleaseAll` + `InnerCanvas.EditingMode = None` + `CaptureAll`。
 - 进入 `MultiDraw`：若来自 `EvalDraw`/`Draw` 且原生在绘笔画存在（Ink 模式且已捕获触笔），先 `ReleaseStylusCapture` 触发原生整笔提交（InkCanvas 对中途切换编辑模式的在绘笔画只做丢弃，对捕获丢失才整笔提交）；随后 `ReleaseAll` + `InnerCanvas.EditingMode = None` + `CaptureAll` + `StartMultiTouch`（原绘制指以多指笔画从当前触点续接）。
 - 离开面积擦叠加态（`IsAreaEraserActive(from) && !IsAreaEraserActive(newState)`）：`EndEraserCycle`。
-- 离开 `EvalPan`/`Pan`/`PanZoom` 手势族（迁入 `Idle` 或任一其他状态）：状态机不处理画布余量，视图变化（`CurrentView` 的 setter 与滚动通知）由 `View.EnsureCanvasFill` 补足右/下余量。
+- 画布余量：`ScrollChanged` 只在 `Idle` 时补一屏；手势中 `CurrentView` 的 setter 只保视口覆盖、不留余量，进入平移手势族与回到 `Idle` 时各补一屏。
 - `BlocksNativeInput`（全程接管 Down/Move/Up，`Handled`，InkCanvas 不接管收笔）：`EvalPan`、`PanZoom`、`Pan`、`MultiDraw`、`Selection`。
 - `OverridesEditingMode`（进入时需把 `EditingMode` 置 `None` 的手势接管状态）：`EvalPan`、`PanZoom`、`Pan`、`MultiDraw`、`Eraser`。
 
@@ -79,7 +79,8 @@ stateDiagram-v2
     [*] --> Idle
 
     Idle --> Selection: count == 1 and SelectionCandidate
-    Idle --> Selection: count >= 2 and SelectionCandidate and not all touches outside
+    Idle --> Selection: count >= 2 and SelectionCandidate and touches cross boundary
+    Idle --> Selection: count == 2 and SelectionCandidate and all touches inside
     Idle --> EvalDraw: count == 1
     Idle --> PanZoom: count == 2 and d <= l
     Idle --> Eraser: count >= p and d <= l

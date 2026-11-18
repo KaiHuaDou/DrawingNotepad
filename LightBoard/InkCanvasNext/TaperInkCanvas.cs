@@ -6,12 +6,8 @@ using System.Windows.Input.StylusPlugIns;
 
 namespace InkCanvasNext;
 
-// InkCanvas 子类：笔锋开启时接管湿墨显示，笔画收集完成后改写末端压力
-// 关闭时什么都不装，保持原生绘制路径
-// 湿墨通道与 InkCanvas 的收笔类处理器对齐：
-// 笔走冒泡虚方法（收笔的笔分支不改 Handled，虚方法必然执行），
-// 鼠标走预览虚方法（收笔的鼠标分支会把冒泡 MouseDown 标记 Handled，冒泡虚方法会被跳过），
-// 预览先于冒泡类处理器执行，湿墨恰好落在收集开始之前与提交之后
+// InkCanvas 子类：笔锋开启时用 TaperDynamicRenderer 走实时插件通道，笔画收集完成后改写末端压力
+// 关闭笔锋或荧光笔时保留原生 DynamicRenderer；鼠标笔画没有插件通道，仍由 WetInk 自绘
 internal sealed class TaperInkCanvas : InkCanvas
 {
     // 无笔服务机器的鼠标笔画没有设备号，用不会与笔设备冲突的占位值
@@ -19,7 +15,9 @@ internal sealed class TaperInkCanvas : InkCanvas
 
     private TaperParameters taper = new( );
     private DynamicRenderer? nativeRenderer;
+    private TaperDynamicRenderer? taperRenderer;
     private bool wetAttached;
+    private bool configured;
 
     /// <summary>
     /// 配置笔锋；在画布构造时调用一次
@@ -28,6 +26,7 @@ internal sealed class TaperInkCanvas : InkCanvas
     {
         taper = options;
         nativeRenderer = DynamicRenderer;
+        configured = true;
 
         if (!options.Enabled)
         {
@@ -36,11 +35,11 @@ internal sealed class TaperInkCanvas : InkCanvas
 
         if (options.Wet)
         {
+            // 笔/触摸的湿墨由 TaperDynamicRenderer 负责；WetInk 只服务鼠标笔画
             Wet = new WetInk(options);
             AttachWet( );
             Loaded += (_, _) => AttachWet( );
             Unloaded += (_, _) => DetachWet( );
-            LostStylusCapture += (_, _) => Wet.Abort( );
             LostMouseCapture += (_, _) => Wet.Clear(MouseWetId);
         }
 
@@ -52,7 +51,7 @@ internal sealed class TaperInkCanvas : InkCanvas
     /// </summary>
     internal void ObserveDefaultDrawingAttributes( )
     {
-        if (!taper.Enabled)
+        if (!configured || !taper.Enabled)
         {
             return;
         }
@@ -73,13 +72,25 @@ internal sealed class TaperInkCanvas : InkCanvas
     internal void AbortWetInk( )
     {
         Wet?.Abort( );
+
+        // 重新挂一次自定义渲染器，触发它清掉在途笔画与尾部视觉
+        if (taperRenderer is not null && ReferenceEquals(DynamicRenderer, taperRenderer))
+        {
+            DynamicRenderer = null;
+            DynamicRenderer = taperRenderer;
+        }
     }
 
     internal WetInk? Wet { get; private set; }
 
-    internal bool UsesNativeRenderer => DynamicRenderer is not null;
+    /// <summary>
+    /// 当前安装的自绘实时渲染器；测试与调试用
+    /// </summary>
+    internal TaperDynamicRenderer? TaperRenderer => taperRenderer;
 
-    // 荧光笔等忽略压力的笔由原生渲染器显示在绘笔画
+    internal bool UsesNativeRenderer => ReferenceEquals(DynamicRenderer, nativeRenderer);
+
+    // 荧光笔等忽略压力的笔由原生渲染器显示在绘笔画；鼠标湿墨同样遵守这一条件
     private WetInk? DrawingWet => DefaultDrawingAttributes.IgnorePressure ? null : Wet;
 
     protected override void OnStrokeCollected(InkCanvasStrokeCollectedEventArgs e)
@@ -89,42 +100,22 @@ internal sealed class TaperInkCanvas : InkCanvas
         base.OnStrokeCollected(e);
     }
 
-    protected override void OnStylusDown(StylusDownEventArgs e)
+    /// <summary>
+    /// 笔触属性实例被整体替换时重新订阅，并按新属性重选渲染器
+    /// </summary>
+    protected override void OnDefaultDrawingAttributesReplaced(DrawingAttributesReplacedEventArgs e)
     {
-        base.OnStylusDown(e);
+        base.OnDefaultDrawingAttributesReplaced(e);
 
-        if (DrawingWet is not { } wet || !IsWetStylus(e.StylusDevice))
+        e.PreviousDrawingAttributes.AttributeChanged -= DefaultDrawingAttributesChanged;
+
+        if (configured && taper.Enabled)
         {
-            return;
+            DefaultDrawingAttributes.AttributeChanged -= DefaultDrawingAttributesChanged;
+            DefaultDrawingAttributes.AttributeChanged += DefaultDrawingAttributesChanged;
         }
 
-        wet.Begin(e.StylusDevice.Id, DefaultDrawingAttributes, e.GetStylusPoints(this));
-    }
-
-    protected override void OnStylusMove(StylusEventArgs e)
-    {
-        base.OnStylusMove(e);
-
-        if (Wet?.Active != true)
-        {
-            return;
-        }
-
-        if (EditingMode != InkCanvasEditingMode.Ink)
-        {
-            // 手势接管把编辑模式压成 None，收笔已被丢弃，湿墨同步放弃
-            Wet.Abort( );
-            return;
-        }
-
-        Wet.Add(e.StylusDevice.Id, e.GetStylusPoints(this));
-    }
-
-    protected override void OnStylusUp(StylusEventArgs e)
-    {
-        base.OnStylusUp(e);
-
-        Wet?.Clear(e.StylusDevice.Id);
+        SyncRenderer( );
     }
 
     protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
@@ -163,15 +154,8 @@ internal sealed class TaperInkCanvas : InkCanvas
     {
         base.OnPreviewMouseUp(e);
 
-        Wet?.Clear(MouseWetId);
-    }
-
-    // 反手持笔走 EditingModeInverted（默认按笔擦除），不收笔也不显示湿墨
-    private bool IsWetStylus(StylusDevice device)
-    {
-        var mode = device.Inverted ? EditingModeInverted : EditingMode;
-
-        return mode == InkCanvasEditingMode.Ink;
+        // 鼠标收笔在冒泡阶段；预览阶段立即清湿墨会留下最多一帧空白，延后到输入队列末尾
+        Dispatcher.InvokeAsync(( ) => Wet?.Clear(MouseWetId), System.Windows.Threading.DispatcherPriority.Input);
     }
 
     // InkCanvas 的鼠标收集按 0.5 压力建点，湿墨保持同一份数据
@@ -185,17 +169,29 @@ internal sealed class TaperInkCanvas : InkCanvas
 
     private void SyncRenderer( )
     {
-        var takeOver = DrawingWet is not null;
-        var target = takeOver ? null : nativeRenderer;
+        if (!configured)
+        {
+            return;
+        }
+
+        // 笔/触摸有实时插件通道；鼠标没有，走 WetInk
+        var useTaper = taper.Enabled
+            && taper.Wet
+            && !DefaultDrawingAttributes.IgnorePressure
+            && !DefaultDrawingAttributes.IsHighlighter
+            && DefaultDrawingAttributes.Color.A == byte.MaxValue
+            && DefaultDrawingAttributes.StylusTip == StylusTip.Ellipse;
+
+        var target = useTaper
+            ? taperRenderer ??= new TaperDynamicRenderer(taper)
+            : nativeRenderer;
+
+        // 替换渲染器时 ActiveEditingMode 不会重新触发 InkCollectionBehavior 的启停，这里对齐一次
+        target?.Enabled = ActiveEditingMode == InkCanvasEditingMode.Ink;
 
         if (DynamicRenderer != target)
         {
             DynamicRenderer = target;
-        }
-
-        if (!takeOver)
-        {
-            Wet?.Abort( );
         }
     }
 
