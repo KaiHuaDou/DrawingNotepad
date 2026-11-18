@@ -48,7 +48,6 @@ public record LightBoardSettings(
             PanZoomDisplaceThreshold = EffectivePanZoomDisplaceThreshold,
             PinchLockDistance = EffectivePinchLockDistance,
             SmoothZoom = EffectiveSmoothZoom,
-            FitToCurve = EffectiveFitToCurve,
             Taper = new( ) { Enabled = EffectiveTaper, Points = EffectiveTaperPoints },
             EdgeScrollTopThreshold = EffectiveEdgeScrollHint ? EffectiveEdgeScrollTopThreshold : 0,
             EdgeScrollBottomThreshold = EffectiveEdgeScrollHint ? EffectiveEdgeScrollBottomThreshold : 0,
@@ -84,7 +83,7 @@ public record LightBoardSettings(
 
     internal bool EffectiveSmoothZoom => SmoothZoom ?? InkCanvasNextOptions.SmoothZoomDefault;
 
-    internal bool EffectiveFitToCurve => FitToCurve ?? InkCanvasNextOptions.FitToCurveDefault;
+    internal bool EffectiveFitToCurve => FitToCurve ?? SettingsLimits.FitToCurveDefault;
 
     internal bool EffectiveTaper => Taper ?? TaperParameters.EnabledDefault;
 
@@ -126,6 +125,7 @@ public record LightBoardSettings(
 internal static class SettingsLimits
 {
     public const bool EdgeScrollHintDefault = true;
+    public const bool FitToCurveDefault = true;
     public const double ToolbarScaleDefault = 1;
     public const double ToolbarScaleMin = 0.75;
     public const double ToolbarScaleMax = 1.5;

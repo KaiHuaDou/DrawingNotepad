@@ -1,0 +1,22 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="ContainerBrush" Color="#E6242424" />
+    <SolidColorBrush x:Key="ContainerBrushSolid" Color="#F21E1E1E" />
+    <SolidColorBrush x:Key="ChromeSurfaceBorderBrush" Color="#00000000" />
+    <SolidColorBrush x:Key="ChromeForegroundBrush" Color="#E3E3E3" />
+    <SolidColorBrush x:Key="ChromeHoverBrush" Color="#26FFFFFF" />
+    <SolidColorBrush x:Key="ChromePressedBrush" Color="#3AFFFFFF" />
+    <SolidColorBrush x:Key="ChromeSelectedBrush" Color="#441C2BCC" />
+    <SolidColorBrush x:Key="ChromeSelectedBorderBrush" Color="#6683FC" />
+    <SolidColorBrush x:Key="ChromeDisabledBrush" Color="#AAAAAA" />
+    <SolidColorBrush x:Key="ChromeDangerBrush" Color="#F25767" />
+    <SolidColorBrush x:Key="ChromeTextBrush" Color="#AACCCCCC" />
+    <SolidColorBrush x:Key="ChromeEdgeBrush" Color="#EEEEEEEE" />
+    <SolidColorBrush x:Key="PopupSurfaceBrush" Color="#FB2B2B2B" />
+    <SolidColorBrush x:Key="PopupBorderBrush" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="PopupSeparatorBrush" Color="#33FFFFFF" />
+    <DropShadowEffect x:Key="PopupShadow"
+                      Opacity="0.5"
+                      BlurRadius="16" Direction="270" ShadowDepth="5"
+                      Color="#000000" />
+</ResourceDictionary>

@@ -8,7 +8,6 @@
         MouseLeftButtonDown="WindowMouseLeftButtonDown"
         PreviewKeyDown="WindowKeyDown"
         ResizeMode="NoResize"
-        ShowInTaskbar="False"
         SizeToContent="WidthAndHeight"
         Topmost="True"
         WindowStartupLocation="CenterScreen">

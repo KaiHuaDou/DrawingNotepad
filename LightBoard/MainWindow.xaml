@@ -211,14 +211,14 @@
                     <RadioButton MinWidth="10"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <Border Width="35" Visibility="Hidden" />
+                    <Border Width="46" Visibility="Hidden" />
                     <RadioButton x:Name="LineRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xE73C;" />
                     <RadioButton x:Name="CircleRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEA3A;" />
-                    <Border Width="69" Visibility="Hidden" />
+                    <Border Width="75" Visibility="Hidden" />
                     <RadioButton x:Name="SelectRadio"
                                  Style="{StaticResource LabelledRadioStyle}"
                                  Click="ModeRadioChecked" Content=" 选择" GroupName="EditGroup"

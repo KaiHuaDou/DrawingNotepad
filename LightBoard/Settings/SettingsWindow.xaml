@@ -378,9 +378,10 @@
                             Margin="0,0,8,0"
                             Style="{StaticResource TextButtonStyle}"
                             Click="OkClick" Content="确定" IsDefault="True" />
-                    <Button MinWidth="96"
+                    <Button x:Name="CancelButton"
+                            MinWidth="96"
                             Style="{StaticResource TextButtonStyle}"
-                            Content="取消" IsCancel="True" />
+                            Click="CancelClick" Content="取消" IsCancel="True" />
                 </StackPanel>
                 <TextBlock Margin="14,0,0,0" VerticalAlignment="Center"
                            Visibility="{Binding HasErrors, Converter={StaticResource BoolToVisibility}}"

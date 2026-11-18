@@ -253,8 +253,15 @@ public partial class MainWindow
 
     private void SettingsClick(object o, RoutedEventArgs e)
     {
-        var dialog = new SettingsWindow { Owner = this };
-        dialog.ShowDialog( );
+        if (settingsWindow?.IsLoaded == true)
+        {
+            settingsWindow.Activate( );
+            return;
+        }
+
+        settingsWindow = new SettingsWindow { Owner = this };
+        settingsWindow.Closed += (_, _) => ApplyFitToCurve(SettingsStore.Current.EffectiveFitToCurve);
+        settingsWindow.Show( );
     }
 
     private void ThicknessRadioClick(object o, RoutedEventArgs e)

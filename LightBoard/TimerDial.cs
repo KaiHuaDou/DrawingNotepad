@@ -9,7 +9,7 @@ namespace LightBoard;
 /// </summary>
 public sealed class TimerDial : FrameworkElement
 {
-    internal const double RingThickness = 8;
+    internal const double RingThickness = 16;
 
     // 首尾重合时用整圆画，避免两个端点叠在一起加深颜色
     private const double FullCircleDegrees = 359.9;
@@ -68,6 +68,15 @@ public sealed class TimerDial : FrameworkElement
     internal static double SweepDegrees(double progress)
     {
         return Math.Clamp(progress, 0, 1) * 360;
+    }
+
+    /// <summary>
+    /// 点是否落在进度环的环带上：以环中心线为基准，内外各容半个环宽
+    /// </summary>
+    internal static bool IsOnRing(Vector offset, double side)
+    {
+        var radius = (side - RingThickness) / 2;
+        return Math.Abs(offset.Length - radius) <= RingThickness / 2;
     }
 
     protected override void OnRender(DrawingContext drawingContext)

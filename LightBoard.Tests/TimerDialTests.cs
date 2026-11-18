@@ -37,4 +37,21 @@ public class TimerDialTests
     {
         Assert.Equal(expected, TimerDial.SweepDegrees(progress), 6);
     }
+
+    [Fact]
+    public void IsOnRing_AcceptsOnlyRingBand( )
+    {
+        const double side = 200;
+        var radius = (side - TimerDial.RingThickness) / 2;
+        var half = TimerDial.RingThickness / 2;
+
+        Assert.True(TimerDial.IsOnRing(new Vector(radius, 0), side));
+        Assert.True(TimerDial.IsOnRing(new Vector(radius - half, 0), side));
+        Assert.True(TimerDial.IsOnRing(new Vector(radius + half, 0), side));
+
+        // 中间与环外都不响应
+        Assert.False(TimerDial.IsOnRing(new Vector(0, 0), side));
+        Assert.False(TimerDial.IsOnRing(new Vector(radius - half - 1, 0), side));
+        Assert.False(TimerDial.IsOnRing(new Vector(radius + half + 1, 0), side));
+    }
 }

@@ -115,29 +115,41 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 触点包络圆：视口坐标下的触点质心与最远距离
+    /// 触点包络圆：视口坐标下的触点质心与最远距离，只统计前 limit 个触点
     /// </summary>
-    private static (Point Center, double Radius) GetEnvelopeCircle(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches)
+    private static (Point Center, double Radius) GetEnvelopeCircle(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches, int limit)
     {
-        if (touches.Count == 0)
+        var count = Math.Min(touches.Count, limit);
+        if (count == 0)
         {
             return (default, 1);
         }
 
-        double sumX = 0, sumY = 0;
+        Span<Point> positions = stackalloc Point[count];
+        var index = 0;
         foreach (var kv in touches)
         {
-            var pos = kv.Value.Position;
+            if (index == count)
+            {
+                break;
+            }
+
+            positions[index++] = kv.Value.Position;
+        }
+
+        double sumX = 0, sumY = 0;
+        foreach (var pos in positions)
+        {
             sumX += pos.X;
             sumY += pos.Y;
         }
 
-        var center = new Point(sumX / touches.Count, sumY / touches.Count);
+        var center = new Point(sumX / count, sumY / count);
 
         double max = 0;
-        foreach (var kv in touches)
+        foreach (var pos in positions)
         {
-            var distance2 = Geometry.Distance2(kv.Value.Position, center);
+            var distance2 = Geometry.Distance2(pos, center);
             if (distance2 > max)
             {
                 max = distance2;
@@ -148,23 +160,31 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 触点质心，内容坐标
+    /// 触点质心，内容坐标，只统计前 limit 个触点
     /// </summary>
-    private Point GetCanvasCenter(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches)
+    private Point GetCanvasCenter(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches, int limit)
     {
-        if (touches.Count == 0)
+        var count = Math.Min(touches.Count, limit);
+        if (count == 0)
         {
             return default;
         }
 
         double sumX = 0, sumY = 0;
+        var index = 0;
         foreach (var kv in touches)
         {
+            if (index == count)
+            {
+                break;
+            }
+
+            index++;
             var pos = kv.Value.Device.GetTouchPoint(InnerCanvas).Position;
             sumX += pos.X;
             sumY += pos.Y;
         }
 
-        return new Point(sumX / touches.Count, sumY / touches.Count);
+        return new Point(sumX / count, sumY / count);
     }
 }

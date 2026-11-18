@@ -48,6 +48,10 @@ internal static class UiThread
                 {
                     Source = new Uri("pack://application:,,,/LightBoard;component/Theme.xaml", UriKind.Absolute)
                 });
+                resources.MergedDictionaries.Add(new ResourceDictionary
+                {
+                    Source = new Uri("pack://application:,,,/LightBoard;component/ChromeDark.xaml", UriKind.Absolute)
+                });
                 Dispatcher = Dispatcher.CurrentDispatcher;
             }
             catch (Exception ex)

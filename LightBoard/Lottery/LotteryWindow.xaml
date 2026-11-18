@@ -10,7 +10,6 @@
         Background="#141414"
         Foreground="#E6E6E6"
         PreviewKeyDown="WindowPreviewKeyDown"
-        ShowInTaskbar="False"
         Topmost="True"
         WindowStartupLocation="CenterOwner">
     <Window.Resources>
@@ -68,6 +67,12 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!--图标按钮：沿用步进按钮的外观，但可聚焦-->
+        <Style x:Key="IconButtonStyle" BasedOn="{StaticResource StepButtonStyle}" TargetType="{x:Type Button}">
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource DotFocusVisualStyle}" />
         </Style>
 
         <!--文字按钮取自设置窗口：深色底、细描边、悬停提亮-->
@@ -131,6 +136,45 @@
                             </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                 <Setter TargetName="PART_Border" Property="BorderBrush" Value="#4C8BF5" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CompactCheckBoxStyle" TargetType="{x:Type CheckBox}">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Foreground" Value="#E6E6E6" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource DotFocusVisualStyle}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <StackPanel Background="Transparent" Orientation="Horizontal">
+                            <Border x:Name="PART_Box"
+                                    Width="22" Height="22"
+                                    VerticalAlignment="Center"
+                                    Background="#1F1F1F" BorderBrush="#4A4A4A" BorderThickness="1"
+                                    CornerRadius="5">
+                                <Path x:Name="PART_Mark"
+                                      Width="10" Height="8"
+                                      Visibility="Collapsed"
+                                      Stroke="#4C8BF5" StrokeThickness="1.8"
+                                      Data="M 0,3.5 L 3.2,6.6 L 9,0.6" Stretch="Fill" StrokeEndLineCap="Round"
+                                      StrokeStartLineCap="Round" />
+                            </Border>
+                            <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="PART_Box" Property="BorderBrush" Value="#6A6A6A" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="PART_Mark" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="PART_Box" Property="BorderBrush" Value="#4C8BF5" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.4" />
@@ -297,15 +341,37 @@
             <DockPanel x:Name="CollectionPanel" Grid.Column="0" Visibility="{Binding IsCollection, Converter={StaticResource BoolToVisibility}}">
                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8" LastChildFill="False">
                     <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="数据集" />
+                    <CheckBox x:Name="NoRepeatCheck"
+                              DockPanel.Dock="Left"
+                              Margin="20,0,0,0" VerticalAlignment="Center"
+                              IsChecked="{Binding NoRepeat}"
+                              Style="{StaticResource CompactCheckBoxStyle}"
+                              Content="不重复" />
+                    <Button x:Name="ResetNoRepeatButton"
+                            DockPanel.Dock="Left"
+                            Margin="8,0,0,0" VerticalAlignment="Center"
+                            Click="ResetNoRepeatClick" Tag="&#xE72C;" ToolTip="重置不重复记录">
+                        <Button.Style>
+                            <Style BasedOn="{StaticResource IconButtonStyle}" TargetType="{x:Type Button}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NoRepeat}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                     <Button x:Name="RemoveDatasetButton"
                             DockPanel.Dock="Right"
-                            Style="{StaticResource ActionButtonStyle}"
-                            Click="RemoveDatasetClick" Content="移除" />
+                            VerticalAlignment="Center"
+                            Style="{StaticResource IconButtonStyle}"
+                            Click="RemoveDatasetClick" Tag="&#xE74D;" ToolTip="移除数据集" />
                     <Button x:Name="ImportDatasetButton"
                             DockPanel.Dock="Right"
-                            Margin="0,0,8,0"
-                            Style="{StaticResource ActionButtonStyle}"
-                            Click="ImportDatasetClick" Content="导入" />
+                            Margin="0,0,4,0" VerticalAlignment="Center"
+                            Style="{StaticResource IconButtonStyle}"
+                            Click="ImportDatasetClick" Tag="&#xE8B5;" ToolTip="导入数据集" />
                 </DockPanel>
                 <TextBlock x:Name="StatusText"
                            DockPanel.Dock="Bottom"
@@ -324,15 +390,6 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-                <TextBox x:Name="DatasetTextBox"
-                         DockPanel.Dock="Bottom"
-                         MinHeight="110" MaxHeight="180"
-                         Margin="0,10,0,0" VerticalContentAlignment="Top"
-                         IsEnabled="{Binding HasDataset}"
-                         Style="{StaticResource InputBoxStyle}"
-                         AcceptsReturn="False"
-                         Text="{Binding SelectedDatasetText}"
-                         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
                 <ListBox x:Name="DatasetList"
                          Padding="0"
                          Background="Transparent" BorderThickness="0"
@@ -354,9 +411,9 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
             </DockPanel>
-            <DockPanel x:Name="ResultPanel" Grid.Column="1">
-                <DockPanel.Style>
-                    <Style TargetType="{x:Type DockPanel}">
+            <Grid x:Name="ResultPanel" Grid.Column="1">
+                <Grid.Style>
+                    <Style TargetType="{x:Type Grid}">
                         <Setter Property="Margin" Value="24,0,0,0" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsContinuous}" Value="True">
@@ -364,12 +421,34 @@
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </DockPanel.Style>
-                <TextBlock DockPanel.Dock="Top"
+                </Grid.Style>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <!--不重复模式下与结果区平分剩余高度-->
+                    <RowDefinition>
+                        <RowDefinition.Style>
+                            <Style TargetType="{x:Type RowDefinition}">
+                                <Setter Property="Height" Value="Auto" />
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsCollection}" Value="True" />
+                                            <Condition Binding="{Binding NoRepeat}" Value="True" />
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Height" Value="*" />
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </RowDefinition.Style>
+                    </RowDefinition>
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0"
                            Margin="0,0,0,12"
                            Style="{StaticResource SectionTitleStyle}"
                            Text="抽选结果" />
-                <DockPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
+                <DockPanel Grid.Row="3" Margin="0,16,0,0">
                     <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Orientation="Horizontal">
                         <Button x:Name="CountDownButton"
                                 IsEnabled="{Binding CanDecreaseCount}"
@@ -412,7 +491,62 @@
                                 Click="DrawManyClick" Content="抽选多个" />
                     </Grid>
                 </DockPanel>
-                <Grid x:Name="ResultHost">
+                <!--不重复模式下显示全部选项，已抽中的变灰；与结果区等高-->
+                <ScrollViewer x:Name="OptionScroll"
+                              Grid.Row="2"
+                              Padding="0,12,0,0"
+                              HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer.Style>
+                        <Style TargetType="{x:Type ScrollViewer}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsCollection}" Value="True" />
+                                        <Condition Binding="{Binding NoRepeat}" Value="True" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ScrollViewer.Style>
+                    <ItemsControl x:Name="OptionList" ItemsSource="{Binding Options}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,8,8" Padding="10,3" CornerRadius="5">
+                                    <Border.Style>
+                                        <Style TargetType="{x:Type Border}">
+                                            <Setter Property="Background" Value="#262626" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDrawn}" Value="True">
+                                                    <Setter Property="Background" Value="#1B1B1B" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock FontSize="18" Text="{Binding Text}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="{x:Type TextBlock}">
+                                                <Setter Property="Foreground" Value="#E6E6E6" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsDrawn}" Value="True">
+                                                        <Setter Property="Foreground" Value="#5F5F5F" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <Grid x:Name="ResultHost" Grid.Row="1">
                     <ScrollViewer HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                   HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                         <ItemsControl x:Name="ResultList"
@@ -451,7 +585,7 @@
                         </TextBlock.Style>
                     </TextBlock>
                 </Grid>
-            </DockPanel>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

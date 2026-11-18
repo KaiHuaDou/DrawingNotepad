@@ -60,7 +60,11 @@ internal sealed class LotteryState
 
     public int Upper { get; set; } = 51;
 
-    public int Count { get; set; } = 10;
+    public int Count { get; set; } = 5;
+
+    public bool NoRepeat { get; set; }
+
+    public List<int> DrawnIndices { get; set; } = [];
 
     public List<LotteryStateDataset> Datasets { get; set; } = [];
 }

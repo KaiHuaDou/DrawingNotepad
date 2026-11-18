@@ -44,7 +44,10 @@ public class LotteryWindowTests
                 Assert.Equal("51", maxBox.Text);
 
                 var countBox = Assert.IsType<TextBox>(window.FindName("CountBox"));
-                Assert.Equal("10", countBox.Text);
+                Assert.Equal("5", countBox.Text);
+
+                var noRepeat = Assert.IsType<CheckBox>(window.FindName("NoRepeatCheck"));
+                Assert.False(noRepeat.IsChecked);
 
                 var status = Assert.IsType<TextBlock>(window.FindName("StatusText"));
                 Assert.Equal(Visibility.Collapsed, status.Visibility);
@@ -53,6 +56,23 @@ public class LotteryWindowTests
             {
                 window.Close( );
             }
+        });
+    }
+
+    [Fact]
+    public void Close_CommitsTypedCount( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new LotteryWindow( );
+            window.Show( );
+            window.UpdateLayout( );
+
+            var box = Assert.IsType<TextBox>(window.FindName("CountBox"));
+            box.SetCurrentValue(TextBox.TextProperty, "7");
+            window.Close( );
+
+            Assert.Equal(7, LotteryStore.Load( ).Count);
         });
     }
 
@@ -216,7 +236,7 @@ public class LotteryWindowTests
     }
 
     [Fact]
-    public void DatasetTextBox_ShowsAndEditsItems( )
+    public void NoRepeat_ShowsOptionsAndGraysDrawn( )
     {
         UiThread.Run(( ) =>
         {
@@ -227,23 +247,40 @@ public class LotteryWindowTests
                 window.UpdateLayout( );
 
                 var model = Assert.IsType<LotteryViewModel>(window.DataContext);
-                var box = Assert.IsType<TextBox>(window.FindName("DatasetTextBox"));
-
-                Assert.False(box.IsEnabled);
+                var scroll = Assert.IsType<ScrollViewer>(window.FindName("OptionScroll"));
+                var list = Assert.IsType<ItemsControl>(window.FindName("OptionList"));
+                var reset = Assert.IsType<Button>(window.FindName("ResetNoRepeatButton"));
 
                 model.SetMode(LotteryMode.Collection);
-                model.AddDataset("名单", ["甲", "乙"]);
+                model.AddDataset("名单", ["甲", "乙", "丙"]);
+                model.NoRepeat = true;
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
 
-                Assert.True(box.IsEnabled);
-                Assert.Equal("甲，乙", box.Text);
+                Assert.Equal(Visibility.Visible, scroll.Visibility);
+                Assert.Equal(Visibility.Visible, reset.Visibility);
+                Assert.Equal(3, list.Items.Count);
 
-                box.Text = "甲，丙，丁";
-                box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource( );
+                model.DrawOne( );
+                window.UpdateLayout( );
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
 
-                Assert.Equal(3, model.PoolSize);
-                Assert.Equal("甲，丙，丁", box.Text);
+                // 被抽中的选项仍在列表里，只是标记为已抽
+                Assert.Single(model.Options, option => option.IsDrawn);
+
+                // 结果区与选项区平分剩余高度
+                var host = Assert.IsType<Grid>(window.FindName("ResultHost"));
+                Assert.Equal(host.ActualHeight, scroll.ActualHeight, 1);
+
+                reset.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
+
+                Assert.All(model.Options, option => Assert.False(option.IsDrawn));
+                Assert.Empty(model.Results);
+
+                model.SetMode(LotteryMode.Continuous);
+                window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
+
+                Assert.Equal(Visibility.Collapsed, scroll.Visibility);
             }
             finally
             {
@@ -316,7 +353,7 @@ public class LotteryWindowTests
 
                 Assert.Equal("甲", model.SelectedDataset?.Name);
                 Assert.Equal(1, model.PoolSize);
-                Assert.Equal("1", model.SelectedDatasetText);
+                Assert.Equal("1", Assert.Single(model.Options).Text);
             }
             finally
             {
@@ -338,7 +375,7 @@ public class LotteryWindowTests
 
                 var model = Assert.IsType<LotteryViewModel>(window.DataContext);
                 var body = Assert.IsType<Grid>(window.FindName("BodyGrid"));
-                var panel = Assert.IsType<DockPanel>(window.FindName("ResultPanel"));
+                var panel = Assert.IsType<Grid>(window.FindName("ResultPanel"));
 
                 Assert.True(model.IsContinuous);
                 Assert.Equal(body.ActualWidth, panel.ActualWidth, 1);
@@ -400,6 +437,8 @@ public class LotteryWindowTests
                 Lower = 3,
                 Upper = 8,
                 Count = 2,
+                NoRepeat = true,
+                DrawnIndices = [1],
                 Selected = "名单",
                 Datasets = [new( ) { Name = "名单", Items = ["甲", "乙", "丙"] }],
             });
@@ -428,6 +467,12 @@ public class LotteryWindowTests
                 Assert.Equal(8, model.Upper);
                 Assert.Equal(2, model.Count);
                 Assert.Equal("名单", model.SelectedDataset?.Name);
+
+                var noRepeat = Assert.IsType<CheckBox>(window.FindName("NoRepeatCheck"));
+                Assert.True(model.NoRepeat);
+                Assert.True(noRepeat.IsChecked);
+                Assert.True(model.Options[1].IsDrawn);
+                Assert.Equal(2, model.PoolSize);
             }
             finally
             {

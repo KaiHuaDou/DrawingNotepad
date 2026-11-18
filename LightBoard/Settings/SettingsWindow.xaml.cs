@@ -57,6 +57,11 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void CancelClick(object o, RoutedEventArgs e)
+    {
+        Close( );
+    }
+
     private void OkClick(object o, RoutedEventArgs e)
     {
         if (editor.HasErrors)

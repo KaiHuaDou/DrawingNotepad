@@ -93,14 +93,7 @@ public partial class InkCanvasNext : UserControl
 
         Stylus.SetIsPressAndHoldEnabled(InnerCanvas, false);
         Panel.SetZIndex(InnerCanvas, 36); // 与 XAML 的 SelectionLayer(37)、ShapePreviewLayer(38) 衔接
-        InnerCanvas.DefaultDrawingAttributes = new DrawingAttributes
-        {
-            Width = 3,
-            Height = 3,
-            FitToCurve = options.FitToCurve,
-            StylusTip = StylusTip.Ellipse,
-            Color = Color.FromRgb(0xE6, 0xE6, 0xE6)
-        };
+        InnerCanvas.DefaultDrawingAttributes = DrawingAttributesNext.CreateDefault( );
         InnerCanvas.LostTouchCapture += CanvasLostTouchCapture;
         InnerCanvas.PreviewMouseDown += CanvasPreviewMouseDown;
         InnerCanvas.PreviewMouseMove += CanvasPreviewMouseMove;

@@ -30,6 +30,29 @@ public class SettingsWindowTests
     }
 
     [Fact]
+    public void CancelButton_ClosesWindow( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new SettingsWindow( );
+            try
+            {
+                window.Show( );
+                window.UpdateLayout( );
+
+                // 非模态窗口不会再由 IsCancel 自动关闭
+                window.CancelButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+                Assert.False(window.IsVisible);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
     public void Window_BuildsOneRowPerField( )
     {
         UiThread.Run(( ) =>

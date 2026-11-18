@@ -33,6 +33,8 @@ public partial class LotteryWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        // 关闭时输入框可能还没失焦，先把抽选数量写回视图模型再存档
+        CountBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource( );
         LotteryStore.Save(viewModel.CreateState( ));
 
         viewModel.PropertyChanged -= ViewModelPropertyChanged;
@@ -141,6 +143,11 @@ public partial class LotteryWindow : Window
     private void RemoveDatasetClick(object o, RoutedEventArgs e)
     {
         viewModel.RemoveSelectedDataset( );
+    }
+
+    private void ResetNoRepeatClick(object o, RoutedEventArgs e)
+    {
+        viewModel.ResetNoRepeat( );
     }
 
     private void DrawOneClick(object o, RoutedEventArgs e)

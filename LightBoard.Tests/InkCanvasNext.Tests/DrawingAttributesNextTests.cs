@@ -176,7 +176,7 @@ public class DrawingAttributesNextTests
     {
         StaTest.Run(( ) =>
         {
-            using var host = new TouchHost(options: new( ) { FitToCurve = true });
+            using var host = new TouchHost( );
             var canvas = host.Canvas;
             Assert.True(canvas.DrawingAttributes.DrawingAttributes.FitToCurve);
 

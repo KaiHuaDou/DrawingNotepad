@@ -25,31 +25,9 @@
         </DrawingBrush.Drawing>
     </DrawingBrush>
 
-    <!--深色界面（设置窗、计时窗）按钮用的三个色，不随底色变化-->
     <SolidColorBrush x:Key="HoverBrush" Color="#26FFFFFF" />
     <SolidColorBrush x:Key="PressedBrush" Color="#3AFFFFFF" />
     <SolidColorBrush x:Key="IconBrush" Color="#E3E3E3" />
-
-    <!--窗口 chrome 的整套配色：两种底色各一套，深浅两组的分工与取值互相照应-->
-    <SolidColorBrush x:Key="ContainerBrush" Color="#243B82F6" />
-    <SolidColorBrush x:Key="ContainerBrushSolid" Color="#333B82F6" />
-    <SolidColorBrush x:Key="ChromeSurfaceBorderBrush" Color="#00000000" />
-    <SolidColorBrush x:Key="ChromeForegroundBrush" Color="#E3E3E3" />
-    <SolidColorBrush x:Key="ChromeHoverBrush" Color="#26FFFFFF" />
-    <SolidColorBrush x:Key="ChromePressedBrush" Color="#3AFFFFFF" />
-    <SolidColorBrush x:Key="ChromeSelectedBrush" Color="#441C2BCC" />
-    <SolidColorBrush x:Key="ChromeSelectedBorderBrush" Color="#6683FC" />
-    <SolidColorBrush x:Key="ChromeDisabledBrush" Color="#AAAAAA" />
-    <SolidColorBrush x:Key="ChromeDangerBrush" Color="#F25767" />
-    <SolidColorBrush x:Key="ChromeTextBrush" Color="#AACCCCCC" />
-    <SolidColorBrush x:Key="ChromeEdgeBrush" Color="#EEEEEEEE" />
-    <SolidColorBrush x:Key="PopupSurfaceBrush" Color="#FB2B2C31" />
-    <SolidColorBrush x:Key="PopupBorderBrush" Color="#33FFFFFF" />
-    <SolidColorBrush x:Key="PopupSeparatorBrush" Color="#33FFFFFF" />
-    <DropShadowEffect x:Key="PopupShadow"
-                      Opacity="0.5"
-                      BlurRadius="16" Direction="270" ShadowDepth="5"
-                      Color="#000000" />
 
     <LinearGradientBrush x:Key="ButtonFaceBrush" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Offset="0" Color="#3E3E3E" />
@@ -115,7 +93,7 @@
     </Style>
 
     <Style x:Key="ColorRadioStyle" TargetType="{x:Type RadioButton}">
-        <Setter Property="Width" Value="41" />
+        <Setter Property="Width" Value="46" />
         <Setter Property="Height" Value="41" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Template">

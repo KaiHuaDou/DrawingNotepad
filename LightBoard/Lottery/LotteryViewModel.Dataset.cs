@@ -45,14 +45,13 @@ public sealed partial class LotteryViewModel
     }
 
     /// <summary>
-    /// 装入存档：先恢复连续模式的数值，再装数据集与选中项，最后切模式
+    /// 装入存档：先恢复连续模式的数值与数据集，再切模式，最后恢复抽选数量
     /// </summary>
     internal void Restore(LotteryState state)
     {
         SetMax(state.Max);
         SetLower(state.Lower);
         SetUpper(state.Upper);
-        SetCount(state.Count);
 
         foreach (var item in state.Datasets)
         {
@@ -64,6 +63,15 @@ public sealed partial class LotteryViewModel
 
         SelectedDataset = Datasets.FirstOrDefault(dataset => dataset.Name == state.Selected) ?? Datasets.LastOrDefault( );
         SetMode(state.Mode);
+
+        // 数量最后恢复：候选集合由模式与数据集决定，先恢复会被连续模式的范围夹小
+        SetCount(state.Count);
+
+        NoRepeat = state.NoRepeat;
+        if (state.NoRepeat && state.Selected is not null && SelectedDataset?.Name == state.Selected)
+        {
+            RestoreDrawRecord(state.DrawnIndices);
+        }
     }
 
     /// <summary>
@@ -79,6 +87,10 @@ public sealed partial class LotteryViewModel
             Lower = Lower,
             Upper = Upper,
             Count = Count,
+            NoRepeat = NoRepeat,
+            DrawnIndices = [.. Options.Select((option, index) => (option, index))
+                .Where(pair => pair.option.IsDrawn)
+                .Select(pair => pair.index)],
             Datasets = [.. Datasets.Select(dataset => new LotteryStateDataset
             {
                 Name = dataset.Name,

@@ -315,9 +315,9 @@ public class TouchStateMachineTests
         });
     }
 
-    /// <summary>掌擦触点数为四：掌擦中张开并超出触点数，非擦除工具转多指书写</summary>
+    /// <summary>掌擦触点数为四：掌擦中又落远距手指仍保持掌擦，橡皮大小只取前四指</summary>
     [Fact]
-    public void Eraser_SpreadBeyondPalmFingers_EntersMultiDraw( )
+    public void Eraser_ExtraFarFinger_StaysEraserAndKeepsSize( )
     {
         StaTest.Run(( ) =>
         {
@@ -333,7 +333,8 @@ public class TouchStateMachineTests
 
             host.Device( ).Down(host.Target, TestPoints.FarFrom(host, P1));
 
-            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
+            Assert.Equal(TouchState.Eraser, host.Canvas.State);
+            Assert.Equal(TestPoints.Spacing(host) * 3 / 8 + host.Canvas.options.Eraser.PalmExtra, host.Canvas.EraserFeedback.Width, 9);
         });
     }
 

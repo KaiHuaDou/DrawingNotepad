@@ -1,8 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!--纯白底色下的窗口 chrome 配色：实心浅灰面板配细描边，只挂在 MainWindow 上-->
-    <SolidColorBrush x:Key="ContainerBrush" Color="#FFF2F2F2" />
-    <SolidColorBrush x:Key="ContainerBrushSolid" Color="#FFEDEDED" />
+    <SolidColorBrush x:Key="ContainerBrush" Color="#E6F2F2F2" />
+    <SolidColorBrush x:Key="ContainerBrushSolid" Color="#F2EDEDED" />
     <SolidColorBrush x:Key="ChromeSurfaceBorderBrush" Color="#1F000000" />
     <SolidColorBrush x:Key="ChromeForegroundBrush" Color="#FF1F1F1F" />
     <SolidColorBrush x:Key="ChromeHoverBrush" Color="#12000000" />

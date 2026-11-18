@@ -191,11 +191,10 @@ public partial class InkCanvasNext
                 _ => State,
             },
 
+            // 掌擦一旦开始就保持到触点清空：附加触点不改变擦除上下文，橡皮几何只取前 PalmEraseFingers 个触点
             TouchState.Eraser => count switch
             {
                 0 => TouchState.Idle,
-                // 擦除工具多指全程掌擦，不迁多指画笔
-                _ when count > options.PalmEraseFingers && d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => State,
             },
 

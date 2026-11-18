@@ -53,10 +53,11 @@ public partial class InkCanvasNext
 
         if (State == TouchState.Eraser)
         {
-            (var screenCenter, var radius) = GetEnvelopeCircle(touches);
+            var palmFingers = options.PalmEraseFingers;
+            (var screenCenter, var radius) = GetEnvelopeCircle(touches, palmFingers);
             eraser.Diameter = radius * 2 + options.Eraser.PalmExtra;
 
-            var canvasCenter = GetCanvasCenter(touches);
+            var canvasCenter = GetCanvasCenter(touches, palmFingers);
             eraser.Show(screenCenter);
             eraser.Update(canvasCenter);
         }

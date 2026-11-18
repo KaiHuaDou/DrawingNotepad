@@ -58,6 +58,23 @@ public partial class MainWindow
         return attributes;
     }
 
+    /// <summary>
+    /// 曲线拟合直接写在笔触属性上：例行笔与当前工具同步，下一笔生效
+    /// </summary>
+    internal void ApplyFitToCurve(bool fitToCurve)
+    {
+        pen.FitToCurve = fitToCurve;
+
+        var attributes = CanvasNext.DrawingAttributes.DrawingAttributes;
+        if (attributes.FitToCurve == fitToCurve)
+        {
+            return;
+        }
+
+        attributes.FitToCurve = fitToCurve;
+        CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with { DrawingAttributes = attributes };
+    }
+
     private void CanvasNextDrawingAttributesChanged(object? o, EventArgs e)
     {
         RefreshToolChecks( );

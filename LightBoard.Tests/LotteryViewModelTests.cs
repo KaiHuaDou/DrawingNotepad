@@ -14,7 +14,7 @@ public class LotteryViewModelTests
         Assert.Equal(51, model.Max);
         Assert.Equal(1, model.Lower);
         Assert.Equal(51, model.Upper);
-        Assert.Equal(10, model.Count);
+        Assert.Equal(5, model.Count);
         Assert.Equal(51, model.PoolSize);
         Assert.True(model.CanDraw);
     }
@@ -224,44 +224,90 @@ public class LotteryViewModelTests
     }
 
     [Fact]
-    public void SelectedDatasetText_FollowsSelection( )
+    public void Options_FollowDataset( )
     {
         var model = new LotteryViewModel( );
         model.SetMode(LotteryMode.Collection);
+        model.AddDataset("名单", ["甲", "乙", "丙"]);
 
-        model.AddDataset("甲", ["1"]);
-        model.AddDataset("乙", ["2", "3"]);
-        Assert.Equal("2，3", model.SelectedDatasetText);
-
-        model.SelectedDataset = model.Datasets[0];
-
-        Assert.Equal("1", model.SelectedDatasetText);
+        Assert.Equal(new[] { "甲", "乙", "丙" }, model.Options.Select(option => option.Text));
     }
 
     [Fact]
-    public void SelectedDatasetText_EditsItems( )
+    public void NoRepeat_DrawsEachOptionOnce( )
     {
         var model = new LotteryViewModel( );
         model.SetMode(LotteryMode.Collection);
-        model.AddDataset("名单", ["甲", "乙"]);
+        model.AddDataset("名单", ["甲", "乙", "丙"]);
+        model.NoRepeat = true;
+        model.SetCount(2);
 
-        model.SelectedDatasetText = "甲，丙,丁";
+        model.DrawMany( );
 
+        Assert.Equal(2, model.Results.Count);
+        Assert.Equal(2, model.Options.Count(option => option.IsDrawn));
+        Assert.Equal(1, model.PoolSize);
+
+        model.DrawMany( );
+
+        Assert.Single(model.Results);
+        Assert.Equal(3, model.Options.Count(option => option.IsDrawn));
+        Assert.Equal(0, model.PoolSize);
+        Assert.False(model.CanDraw);
+    }
+
+    [Fact]
+    public void ResetNoRepeat_ClearsMarksAndResults( )
+    {
+        var model = new LotteryViewModel( );
+        model.SetMode(LotteryMode.Collection);
+        model.AddDataset("名单", ["甲", "乙", "丙"]);
+        model.NoRepeat = true;
+        model.SetCount(2);
+
+        model.DrawMany( );
+        model.ResetNoRepeat( );
+
+        Assert.All(model.Options, option => Assert.False(option.IsDrawn));
+        Assert.Empty(model.Results);
         Assert.Equal(3, model.PoolSize);
-        Assert.Equal("甲，丙，丁", model.SelectedDatasetText);
+        Assert.Equal(2, model.Count);
+        Assert.True(model.CanDraw);
     }
 
     [Fact]
-    public void SelectedDatasetText_BlankKeepsItems( )
+    public void NoRepeat_ToggleResetsProgress( )
     {
         var model = new LotteryViewModel( );
         model.SetMode(LotteryMode.Collection);
         model.AddDataset("名单", ["甲", "乙"]);
+        model.NoRepeat = true;
 
-        model.SelectedDatasetText = "  ";
+        model.DrawOne( );
+        Assert.Single(model.Options, option => option.IsDrawn);
 
+        model.NoRepeat = false;
+        model.NoRepeat = true;
+
+        Assert.All(model.Options, option => Assert.False(option.IsDrawn));
         Assert.Equal(2, model.PoolSize);
-        Assert.Equal("甲，乙", model.SelectedDatasetText);
+        Assert.True(model.CanDraw);
+    }
+
+    [Fact]
+    public void NoRepeat_DatasetChangeClearsMarks( )
+    {
+        var model = new LotteryViewModel( );
+        model.SetMode(LotteryMode.Collection);
+        model.AddDataset("甲", ["1", "2"]);
+        model.NoRepeat = true;
+
+        model.DrawOne( );
+        model.AddDataset("乙", ["3"]);
+
+        Assert.Equal("3", Assert.Single(model.Options).Text);
+        Assert.False(model.Options[0].IsDrawn);
+        Assert.Equal(1, model.PoolSize);
     }
 
     [Fact]
@@ -335,7 +381,42 @@ public class LotteryViewModelTests
 
         Assert.Equal(2, restored.Datasets.Count);
         Assert.Equal("甲", restored.SelectedDataset?.Name);
-        Assert.Equal("1，2", restored.SelectedDatasetText);
+        Assert.Equal(new[] { "1", "2" }, restored.Options.Select(option => option.Text));
+        Assert.Equal(2, restored.PoolSize);
+    }
+
+    [Fact]
+    public void Restore_CountKeepsCollectionValue( )
+    {
+        var model = new LotteryViewModel( );
+        model.SetMax(3);
+        model.SetMode(LotteryMode.Collection);
+        model.AddDataset("名单", ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
+        model.SetCount(8);
+
+        var restored = new LotteryViewModel( );
+        restored.Restore(model.CreateState( ));
+
+        Assert.Equal(LotteryMode.Collection, restored.Mode);
+        Assert.Equal(8, restored.Count);
+    }
+
+    [Fact]
+    public void CreateState_RestoresNoRepeatRecord( )
+    {
+        var model = new LotteryViewModel( );
+        model.SetMode(LotteryMode.Collection);
+        model.AddDataset("名单", ["甲", "乙", "丙"]);
+        model.NoRepeat = true;
+        model.DrawOne( );
+
+        var restored = new LotteryViewModel( );
+        restored.Restore(model.CreateState( ));
+
+        Assert.True(restored.NoRepeat);
+        Assert.Equal(
+            Assert.Single(model.Options, option => option.IsDrawn).Text,
+            Assert.Single(restored.Options, option => option.IsDrawn).Text);
         Assert.Equal(2, restored.PoolSize);
     }
 

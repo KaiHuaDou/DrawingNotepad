@@ -57,7 +57,7 @@ public class SettingsTests
         Assert.False(data.EffectiveEdgeScrollHint);
         Assert.Null(data.SmoothZoom);
         Assert.True(data.EffectiveSmoothZoom);
-        Assert.True(data.EffectiveFitToCurve);
+        Assert.Equal(SettingsLimits.FitToCurveDefault, data.EffectiveFitToCurve);
         Assert.True(data.EffectiveTaper);
         Assert.Equal(InkCanvasNext.TaperParameters.PointsDefault, data.EffectiveTaperPoints);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.EdgeScrollTopDefault, data.EffectiveEdgeScrollTopThreshold);
@@ -89,7 +89,6 @@ public class SettingsTests
             PanZoomDisplaceThreshold = 31,
             PinchLockDistance = 25,
             SmoothZoom = false,
-            FitToCurve = false,
             Taper = false,
             TaperPoints = 9,
             MaxHistoryCount = 201,
@@ -107,7 +106,6 @@ public class SettingsTests
         Assert.Equal(31, options.PanZoomDisplaceThreshold);
         Assert.Equal(25, options.PinchLockDistance);
         Assert.False(options.SmoothZoom);
-        Assert.False(options.FitToCurve);
         Assert.False(options.Taper.Enabled);
         Assert.Equal(9, options.Taper.Points);
         Assert.Equal(0, options.EdgeScrollTopThreshold);

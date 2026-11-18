@@ -15,7 +15,7 @@ public class ChromePaletteTests
     private static readonly Color LightForeground = ColorOf("#1F1F1F");
     private static readonly Color LightText = ColorOf("#CC595959");
     private static readonly Color LightHover = ColorOf("#12000000");
-    private static readonly Color LightSurface = ColorOf("#F2F2F2");
+    private static readonly Color LightSurface = ColorOf("#E6F2F2F2");
     private static readonly Color LightPopupSurface = ColorOf("#FFFFFF");
 
     [Fact]

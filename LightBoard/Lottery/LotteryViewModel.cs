@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 
 namespace LightBoard;
 
@@ -30,12 +31,14 @@ public sealed partial class LotteryViewModel : INotifyPropertyChanged
 
     public int Upper { get; private set; } = 51;
 
-    public int Count { get; private set; } = 10;
+    public int Count { get; private set; } = 5;
 
     /// <summary>
-    /// 当前模式下一次抽选允许抽到的值的个数
+    /// 当前模式下一次抽选允许抽到的值的个数；集合模式的不重复开关打开后只算未抽中的选项
     /// </summary>
-    public int PoolSize => Mode == LotteryMode.Continuous ? Upper - Lower + 1 : SelectedDataset?.Count ?? 0;
+    public int PoolSize => Mode == LotteryMode.Continuous ? Upper - Lower + 1
+        : NoRepeat ? Options.Count(option => !option.IsDrawn)
+        : SelectedDataset?.Count ?? 0;
 
     public bool IsContinuous => Mode == LotteryMode.Continuous;
 
@@ -68,39 +71,14 @@ public sealed partial class LotteryViewModel : INotifyPropertyChanged
             }
 
             field = value;
+            RefreshOptions( );
             ClampCount( );
             Results.Clear( );
 
             Raise(nameof(SelectedDataset));
-            Raise(nameof(SelectedDatasetText));
             Raise(nameof(HasDataset));
             RaisePool( );
             RaiseCount( );
-        }
-    }
-
-    /// <summary>
-    /// 选中数据集的原始文本，逗号与换行都算分隔符；写入空内容时保留原有元素
-    /// </summary>
-    public string SelectedDatasetText
-    {
-        get => SelectedDataset is { } dataset ? string.Join('，', dataset.Items) : string.Empty;
-        set
-        {
-            if (SelectedDataset is { } dataset)
-            {
-                var items = SplitItems(value);
-                if (items.Length > 0)
-                {
-                    dataset.Replace(items);
-                    Results.Clear( );
-                    ClampCount( );
-                    RaisePool( );
-                    RaiseCount( );
-                }
-            }
-
-            Raise(nameof(SelectedDatasetText));
         }
     }
 
@@ -156,6 +134,7 @@ public sealed partial class LotteryViewModel : INotifyPropertyChanged
 
         Mode = value;
         Status = string.Empty;
+        ResetDrawMarks( );
         ClampCount( );
         Results.Clear( );
 

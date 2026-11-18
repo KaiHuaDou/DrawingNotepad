@@ -22,6 +22,7 @@ public partial class MainWindow : Window
 
     private TimerWindow? timerWindow;
     private LotteryWindow? lotteryWindow;
+    private SettingsWindow? settingsWindow;
     private string? switchOutIconPath;
 
     public MainWindow( )
@@ -76,6 +77,7 @@ public partial class MainWindow : Window
         colorRadio ??= DefaultColorRadio;
         thicknessRadio ??= DefaultThicknessRadio;
         pen = CanvasNext.DrawingAttributes.DrawingAttributes;
+        ApplyFitToCurve(SettingsStore.Current.EffectiveFitToCurve);
         App.InitializePages( );
         App.PageChanged += OnPageChanged;
 

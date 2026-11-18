@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Input;
 
@@ -14,8 +15,17 @@ public partial class TimerWindow
             return;
         }
 
+        // 只有按在环带上才开始调整；拖拽过程中按角度继续，不再要求留在环带内
+        var position = e.GetPosition(Dial);
+        var side = Math.Min(Dial.ActualWidth, Dial.ActualHeight);
+        var offset = position - new Point(Dial.ActualWidth / 2, Dial.ActualHeight / 2);
+        if (side <= 0 || !TimerDial.IsOnRing(offset, side))
+        {
+            return;
+        }
+
         ClockGrid.CaptureMouse( );
-        SetMinutesAt(e.GetPosition(Dial));
+        SetMinutesAt(position);
     }
 
     private void ClockMouseMove(object o, MouseEventArgs e)
@@ -31,16 +41,16 @@ public partial class TimerWindow
         ClockGrid.ReleaseMouseCapture( );
     }
 
-    // 圆外不响应，点角落不改分钟
+    // 圆外不响应，拖出圆外时分钟停在当前档
     private void SetMinutesAt(Point point)
     {
-        var side = Dial.ActualWidth;
+        var side = Math.Min(Dial.ActualWidth, Dial.ActualHeight);
         if (side <= 0)
         {
             return;
         }
 
-        var offset = point - new Point(side / 2, Dial.ActualHeight / 2);
+        var offset = point - new Point(Dial.ActualWidth / 2, Dial.ActualHeight / 2);
         if (offset.Length > side / 2)
         {
             return;

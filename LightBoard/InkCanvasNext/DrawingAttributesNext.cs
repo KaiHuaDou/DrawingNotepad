@@ -43,7 +43,8 @@ public sealed record DrawingAttributesNext
             Color = InkCanvasNext.DefaultPenColor,
             Width = 3,
             Height = 3,
-            StylusTip = StylusTip.Ellipse
+            StylusTip = StylusTip.Ellipse,
+            FitToCurve = true
         };
     }
 
