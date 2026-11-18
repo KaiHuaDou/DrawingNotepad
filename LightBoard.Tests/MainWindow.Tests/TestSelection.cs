@@ -14,6 +14,6 @@ internal static class TestSelection
         var setStrokes = controller
             .GetType( )
             .GetMethod("SetStrokes", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        setStrokes.Invoke(controller, [strokes]);
+        setStrokes.Invoke(controller, [strokes, true]);
     }
 }

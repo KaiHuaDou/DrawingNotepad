@@ -37,7 +37,7 @@ public partial class MainWindow
     /// </summary>
     private void ApplyAppearance( )
     {
-        var transparent = TransparentMenuItem.IsChecked == true;
+        var transparent = TransparentMenuItem.IsChecked;
         var underlay = CurrentUnderlay( );
         App.Underlay = underlay;
 
@@ -96,7 +96,7 @@ public partial class MainWindow
     // 窗口 chrome 的唯一写入口：计时、切换按钮与三块边框的显隐与底色
     private void SyncChrome( )
     {
-        var transparent = TransparentMenuItem.IsChecked == true;
+        var transparent = TransparentMenuItem.IsChecked;
         var panel = AllPageToggle.IsChecked == true;
 
         TimeText.Visibility = transparent || panel ? Visibility.Collapsed : Visibility.Visible;

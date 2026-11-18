@@ -117,7 +117,6 @@ public partial class InkCanvasNext
     /// </summary>
     public event EventHandler? DrawingAttributesChanged;
 
-    [SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "依赖属性生成器要求实例分部方法")]
     private partial DrawingAttributesNext CoerceDrawingAttributes(DrawingAttributesNext? value)
     {
         var current = DrawingAttributes;

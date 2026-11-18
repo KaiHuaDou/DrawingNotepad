@@ -103,15 +103,18 @@ public partial class InkCanvasNext
             CurrentScale = value.Scale;
             CanvasScroll.ScrollToHorizontalOffset(value.OffsetX);
             CanvasScroll.ScrollToVerticalOffset(value.OffsetY);
-            EnsureCanvasFill(value);
+
+            // 手势中只保视口覆盖：余量补足留到手势结束，改画布尺寸会让排列与缓存失效
+            EnsureCanvasFill(value, margin: State == TouchState.Idle);
         }
     }
 
     /// <summary>
     /// 画布在视口右/下方向不足一屏时按一屏步进补足：缩放、拖动与翻页恢复视图都经过这里，
     /// 保证视口落在画布内并能继续拖动；每个方向最多补四屏，嵌套调用直接返回
+    /// margin 为 false 时只在画布盖不住视口时补，不做"留一屏余量"的预取
     /// </summary>
-    private void EnsureCanvasFill(View view)
+    private void EnsureCanvasFill(View view, bool margin = true)
     {
         if (fillingCanvas)
         {
@@ -126,16 +129,18 @@ public partial class InkCanvasNext
 
         var screenWidth = viewport.Width / view.Scale;
         var screenHeight = viewport.Height / view.Scale;
+        var widthThreshold = margin ? screenWidth : 0;
+        var heightThreshold = margin ? screenHeight : 0;
 
         fillingCanvas = true;
         try
         {
             for (var i = 0; i < 4; i++)
             {
-                var extendWidth = InnerCanvas.Width - (view.OffsetX + viewport.Width) / view.Scale < screenWidth
+                var extendWidth = InnerCanvas.Width - (view.OffsetX + viewport.Width) / view.Scale < widthThreshold
                     ? screenWidth
                     : 0;
-                var extendHeight = InnerCanvas.Height - (view.OffsetY + viewport.Height) / view.Scale < screenHeight
+                var extendHeight = InnerCanvas.Height - (view.OffsetY + viewport.Height) / view.Scale < heightThreshold
                     ? screenHeight
                     : 0;
 

@@ -18,8 +18,9 @@ public class SpecialModeGestureTests
 
     // Select 模式
 
+    /// <summary>无选区时双指并拢按一般手势迁入双指缩放：本次套索放弃，不产生选区</summary>
     [Fact]
-    public void SelectMode_TwoFingers_StaysSelection( )
+    public void SelectMode_TwoFingersWithoutSelection_EntersPanZoom( )
     {
         StaTest.Run(( ) =>
         {
@@ -31,10 +32,11 @@ public class SpecialModeGestureTests
             Assert.Equal(TouchState.Selection, host.Canvas.State);
 
             host.Device( ).Down(host.Target, TestPoints.CloseTo(host, P1));
-            Assert.Equal(TouchState.Selection, host.Canvas.State);
+            Assert.Equal(TouchState.PanZoom, host.Canvas.State);
 
             a.Move(host.Target, new Point(200, 200));
-            Assert.Equal(TouchState.Selection, host.Canvas.State);
+            Assert.Equal(TouchState.PanZoom, host.Canvas.State);
+            Assert.False(host.Canvas.HasSelection);
         });
     }
 
@@ -222,9 +224,9 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>套索在途时落第三指：迁入平移评估前结算套索（选区保留），随后多指平移画布</summary>
+    /// <summary>套索在途时落第三指：迁入平移评估，本次套索放弃，不产生选区</summary>
     [Fact]
-    public void SelectMode_LassoThenThirdFinger_EntersEvalPan_KeepsLassoSelection( )
+    public void SelectMode_LassoThenThirdFinger_EntersEvalPan_AbandonsLasso( )
     {
         StaTest.Run(( ) =>
         {
@@ -254,7 +256,7 @@ public class SpecialModeGestureTests
             second.Up(host.Target, secondPoint);
             third.Up(host.Target, thirdPoint);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
-            Assert.NotNull(host.Canvas.GetSelectionScreenBounds(host.Canvas));
+            Assert.Null(host.Canvas.GetSelectionScreenBounds(host.Canvas));
         });
     }
 
@@ -480,6 +482,109 @@ public class SpecialModeGestureTests
             // 移动手势未被接管：选区只平移 (+50, 0)，点间距不变
             AssertPoints(host.Canvas.Strokes[0].StylusPoints,
                 new Point(230, 96), new Point(250, 100), new Point(350, 100), new Point(370, 104));
+        });
+    }
+
+    /// <summary>选区外的手先落、选区内的手后落：由在内的第一根手指拖动，套索不生效、选型保留</summary>
+    [Fact]
+    public void SelectMode_OutsideFingerFirst_InsideFingerDragsSelection( )
+    {
+        StaTest.Run(( ) =>
+        {
+            // 笔画在竖向留出余量，使选区内存在离所有手柄都超过命中半径的落指点
+            using var host = CreateSelectHost(new Point(180, 60), new Point(320, 150));
+
+            var outside = host.Device( );
+            var inside = host.Device( );
+
+            outside.Down(host.Target, new Point(600, 600));
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+            Assert.NotNull(host.Canvas.GetSelectionScreenBounds(host.Canvas));
+
+            inside.Down(host.Target, new Point(250, 105));
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+
+            inside.Move(host.Target, new Point(290, 105));
+            inside.Up(host.Target, new Point(290, 105));
+            outside.Up(host.Target, new Point(600, 600));
+
+            // 只平移 (+40, 0)
+            AssertPoints(host.Canvas.Strokes[0].StylusPoints,
+                new Point(220, 60), new Point(360, 150));
+        });
+    }
+
+    /// <summary>全部触点都在选区外：双指并拢按一般手势迁入双指缩放，选型保留</summary>
+    [Fact]
+    public void SelectMode_AllFingersOutside_TwoFingersEnterPanZoom( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateSelectHost(PinchStrokePoints);
+
+            var a = host.Device( );
+            var b = host.Device( );
+            var outside = new Point(600, 600);
+
+            a.Down(host.Target, outside);
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+
+            b.Down(host.Target, TestPoints.CloseTo(host, outside));
+            Assert.Equal(TouchState.PanZoom, host.Canvas.State);
+
+            a.Up(host.Target, outside);
+            b.Up(host.Target, TestPoints.CloseTo(host, outside));
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.NotNull(host.Canvas.GetSelectionScreenBounds(host.Canvas));
+        });
+    }
+
+    /// <summary>拖动中重置输入（换页、窗口失活）：位移结算为一步撤销，撤销能回到原位</summary>
+    [Fact]
+    public void SelectMode_DragThenReset_CommitsAsUndoStep( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateSelectHost(PinchStrokePoints);
+
+            var finger = host.Device( );
+            finger.Down(host.Target, new Point(200, 100));
+            finger.Move(host.Target, new Point(240, 100));
+
+            host.Canvas.ResetTouchState( );
+
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
+            Assert.True(host.Canvas.CanUndo);
+
+            host.Canvas.Undo( );
+            AssertPoints(host.Canvas.Strokes[0].StylusPoints, PinchStrokePoints);
+        });
+    }
+
+    /// <summary>驱动指抬起后由仍在选区内的手指接手：按插入序的下一根在选区外时不被选中，接手瞬间不跳变</summary>
+    [Fact]
+    public void SelectMode_DriverLift_RebasesToInsideFinger( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateSelectHost(PinchStrokePoints);
+
+            var a = host.Device( );
+            var outside = host.Device( );
+            var c = host.Device( );
+
+            a.Down(host.Target, new Point(200, 100));
+            outside.Down(host.Target, new Point(600, 600));
+            c.Down(host.Target, new Point(300, 100));
+            Assert.Equal(TouchState.Selection, host.Canvas.State);
+
+            a.Up(host.Target, new Point(200, 100));
+            c.Move(host.Target, new Point(340, 100));
+            c.Up(host.Target, new Point(340, 100));
+            outside.Up(host.Target, new Point(600, 600));
+
+            AssertPoints(host.Canvas.Strokes[0].StylusPoints,
+                new Point(220, 96), new Point(240, 100), new Point(340, 100), new Point(360, 104));
         });
     }
 

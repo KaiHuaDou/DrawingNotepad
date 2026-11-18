@@ -48,10 +48,7 @@ public class BackgroundsTests
         try
         {
             // 导出在 UI 线程取页快照，需要 App 存在
-            UiThread.Run(( ) =>
-            {
-                PdfWriter.Export(path, pages, new DpiScale(1, 1), 100);
-            });
+            UiThread.Run(( ) => PdfWriter.Export(path, pages, new DpiScale(1, 1), 100));
 
             var first = await App.OpenDocumentSourceAsync(path);
             var second = await App.OpenDocumentSourceAsync(path);
@@ -96,8 +93,11 @@ public class BackgroundsTests
     [Fact]
     public void ClearPageBackground_LeavesOtherPages( )
     {
-        var page = new Page( ) { Number = 1 };
-        page.Background = new DocumentBackground(@"C:\a.png", 1, new Rect(0, 0, 10, 10));
+        var page = new Page
+        {
+            Number = 1,
+            Background = new DocumentBackground(@"C:\a.png", 1, new Rect(0, 0, 10, 10))
+        };
 
         App.ClearPageBackground(page);
 
@@ -115,8 +115,11 @@ public class BackgroundsTests
     [Fact]
     public void PhotoPlacementFor_HasBackground_GoesToNewPage( )
     {
-        var page = new Page( ) { Number = 1 };
-        page.Background = new DocumentBackground(@"C:\a.png", 1, new Rect(0, 0, 10, 10));
+        var page = new Page
+        {
+            Number = 1,
+            Background = new DocumentBackground(@"C:\a.png", 1, new Rect(0, 0, 10, 10))
+        };
 
         Assert.Equal(App.PhotoPlacement.NewPage, App.PhotoPlacementFor(page));
     }

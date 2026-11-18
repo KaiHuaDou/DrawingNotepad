@@ -8,9 +8,20 @@ using System.Windows.Media;
 
 namespace InkCanvasNext;
 
+/// <summary>
+/// 选区覆盖层：边框、手柄、套索与 halo 各占独立 visual
+/// 单独成 visual 是为了让每帧的脏区落在细窄的边条与小方块上，而不是整块选区
+/// </summary>
 internal sealed partial class SelectionVisual
 {
-    private readonly SelectionVisualHost host;
+    private readonly VisualCanvas host;
+    private readonly DrawingVisual haloVisual = new( );
+    private readonly DrawingVisual topVisual = new( );
+    private readonly DrawingVisual bottomVisual = new( );
+    private readonly DrawingVisual leftVisual = new( );
+    private readonly DrawingVisual rightVisual = new( );
+    private readonly DrawingVisual rotateVisual = new( );
+    private readonly DrawingVisual lassoVisual = new( );
 
     private Rect bounds = Rect.Empty;
     private IReadOnlyCollection<Stroke> selected = [];
@@ -21,15 +32,27 @@ internal sealed partial class SelectionVisual
     private Pen? borderPen;
     private Pen? lassoPen;
     private double penZoom = double.NaN;
+    private bool haloDrawn;
+    private bool frameDrawn;
+    private bool lassoDrawn;
 
     internal SelectionVisual(Canvas layer, Size canvasSize)
     {
-        // 覆盖层必须盖住整个墨迹画布，否则画布边缘的选区会被裁掉。
-        host = new SelectionVisualHost(Draw)
+        // 覆盖层与画布同尺寸；Canvas 不裁剪子元素，尺寸只为与画布扩展保持一致
+        host = new VisualCanvas
         {
             Width = canvasSize.Width,
             Height = canvasSize.Height
         };
+
+        host.AddVisual(haloVisual);
+        host.AddVisual(topVisual);
+        host.AddVisual(bottomVisual);
+        host.AddVisual(leftVisual);
+        host.AddVisual(rightVisual);
+        host.AddVisual(rotateVisual);
+        host.AddVisual(lassoVisual);
+
         layer.Children.Add(host);
     }
 
@@ -42,7 +65,7 @@ internal sealed partial class SelectionVisual
         host.Height = canvasSize.Height;
     }
 
-    internal void Invalidate(Rect bounds, IReadOnlyCollection<Stroke> selected, IReadOnlyList<Point>? lasso, bool halo, double zoom, Point? rotateHandlePosition)
+    internal void Render(Rect bounds, IReadOnlyCollection<Stroke> selected, IReadOnlyList<Point>? lasso, bool halo, double zoom, Point? rotateHandlePosition)
     {
         this.bounds = bounds;
         this.selected = selected;
@@ -50,7 +73,20 @@ internal sealed partial class SelectionVisual
         drawHalo = halo;
         this.zoom = Math.Max(zoom, 1e-6);
         this.rotateHandlePosition = rotateHandlePosition;
-        host.InvalidateVisual( );
+
+        Redraw( );
+    }
+
+    /// <summary>只清空套索图层，边框与 halo 保持不变</summary>
+    internal void ClearLasso( )
+    {
+        if (!lassoDrawn)
+        {
+            return;
+        }
+
+        using var dc = lassoVisual.RenderOpen( );
+        lassoDrawn = false;
     }
 
     /// <summary>旋转手柄中心（内容坐标）：浮于选区正上方（顶部居中），拖拽绕选区中心旋转</summary>
@@ -62,39 +98,132 @@ internal sealed partial class SelectionVisual
             b.Top - (RotateGapAboveSelection + RotateScreenRadius) / z);
     }
 
-    private void Draw(DrawingContext dc)
+    private void Redraw( )
     {
-        if (drawHalo)
+        DrawHalo( );
+        DrawFrame( );
+        DrawLasso( );
+    }
+
+    private void DrawHalo( )
+    {
+        if (!drawHalo)
         {
-            foreach (var s in selected)
+            if (haloDrawn)
             {
-                var halo = s.Clone( );
-                var attrs = halo.DrawingAttributes.Clone( );
-                attrs.Color = HaloBrush.Color;
-                attrs.Width *= HaloWidthFactor;
-                attrs.Height *= HaloWidthFactor;
-                halo.DrawingAttributes = attrs;
-                halo.Draw(dc);
+                using var empty = haloVisual.RenderOpen( );
+                haloDrawn = false;
             }
+
+            return;
         }
 
-        // 覆盖层位于内容坐标系：视口 DIP 的线宽、手柄与虚线尺寸一律除以缩放，保持屏幕绝对大小
+        using var dc = haloVisual.RenderOpen( );
+        foreach (var s in selected)
+        {
+            var halo = s.Clone( );
+            var attrs = halo.DrawingAttributes.Clone( );
+            attrs.Color = HaloBrush.Color;
+            attrs.Width *= HaloWidthFactor;
+            attrs.Height *= HaloWidthFactor;
+            halo.DrawingAttributes = attrs;
+            halo.Draw(dc);
+        }
+
+        haloDrawn = true;
+    }
+
+    private void DrawFrame( )
+    {
+        if (bounds.IsEmpty)
+        {
+            if (frameDrawn)
+            {
+                ClearFrame( );
+                frameDrawn = false;
+            }
+
+            return;
+        }
+
         EnsurePens( );
-        if (!bounds.IsEmpty)
+
+        var radius = HandleRadius / zoom;
+        var centerX = bounds.Left + bounds.Width / 2;
+        var centerY = bounds.Top + bounds.Height / 2;
+
+        using (var dc = topVisual.RenderOpen( ))
         {
-            dc.DrawRectangle(null, borderPen!, bounds);
-            DrawHandles(dc, bounds, borderPen!, zoom, rotateHandlePosition);
+            dc.DrawLine(borderPen!, new Point(bounds.Left, bounds.Top), new Point(bounds.Right, bounds.Top));
+            DrawHandle(dc, new Point(bounds.Left, bounds.Top), radius, borderPen!);
+            DrawHandle(dc, new Point(bounds.Right, bounds.Top), radius, borderPen!);
+            DrawHandle(dc, new Point(centerX, bounds.Top), radius, borderPen!);
         }
 
-        if (lasso is { Count: >= 2 })
+        using (var dc = bottomVisual.RenderOpen( ))
         {
-            var figure = new PathFigure { StartPoint = lasso[0], IsClosed = true, IsFilled = false };
-            figure.Segments.Add(new PolyLineSegment(lasso, true));
-
-            var geometry = new PathGeometry( );
-            geometry.Figures.Add(figure);
-            dc.DrawGeometry(null, lassoPen!, geometry);
+            dc.DrawLine(borderPen!, new Point(bounds.Left, bounds.Bottom), new Point(bounds.Right, bounds.Bottom));
+            DrawHandle(dc, new Point(bounds.Left, bounds.Bottom), radius, borderPen!);
+            DrawHandle(dc, new Point(bounds.Right, bounds.Bottom), radius, borderPen!);
+            DrawHandle(dc, new Point(centerX, bounds.Bottom), radius, borderPen!);
         }
+
+        using (var dc = leftVisual.RenderOpen( ))
+        {
+            dc.DrawLine(borderPen!, new Point(bounds.Left, bounds.Top), new Point(bounds.Left, bounds.Bottom));
+            DrawHandle(dc, new Point(bounds.Left, centerY), radius, borderPen!);
+        }
+
+        using (var dc = rightVisual.RenderOpen( ))
+        {
+            dc.DrawLine(borderPen!, new Point(bounds.Right, bounds.Top), new Point(bounds.Right, bounds.Bottom));
+            DrawHandle(dc, new Point(bounds.Right, centerY), radius, borderPen!);
+        }
+
+        // 旋转手柄单占一个 visual：手势中它绕选区中心移动，与边框同层会把脏区拉成整块
+        using (var dc = rotateVisual.RenderOpen( ))
+        {
+            var rotateCenter = rotateHandlePosition ?? RotateHandleCenter(bounds, zoom);
+            var rr = RotateScreenRadius / zoom;
+            dc.DrawEllipse(Brushes.White, borderPen!, rotateCenter, rr, rr);
+        }
+
+        frameDrawn = true;
+    }
+
+    private void ClearFrame( )
+    {
+        using var top = topVisual.RenderOpen( );
+        using var bottom = bottomVisual.RenderOpen( );
+        using var left = leftVisual.RenderOpen( );
+        using var right = rightVisual.RenderOpen( );
+        using var rotate = rotateVisual.RenderOpen( );
+    }
+
+    private void DrawLasso( )
+    {
+        if (lasso is not { Count: >= 2 })
+        {
+            if (lassoDrawn)
+            {
+                using var empty = lassoVisual.RenderOpen( );
+                lassoDrawn = false;
+            }
+
+            return;
+        }
+
+        EnsurePens( );
+
+        var figure = new PathFigure { StartPoint = lasso[0], IsClosed = true, IsFilled = false };
+        figure.Segments.Add(new PolyLineSegment(lasso, true));
+
+        var geometry = new PathGeometry( );
+        geometry.Figures.Add(figure);
+
+        using var dc = lassoVisual.RenderOpen( );
+        dc.DrawGeometry(null, lassoPen!, geometry);
+        lassoDrawn = true;
     }
 
     private void EnsurePens( )
@@ -104,7 +233,13 @@ internal sealed partial class SelectionVisual
             return;
         }
 
-        borderPen = new Pen(BorderBrush, BorderWidth / zoom);
+        // 方头线帽让四条边在角上互相盖住，避免高缩放下出现缝隙
+        borderPen = new Pen(BorderBrush, BorderWidth / zoom)
+        {
+            StartLineCap = PenLineCap.Square,
+            EndLineCap = PenLineCap.Square
+        };
+
         borderPen.Freeze( );
 
         lassoPen = new Pen(LassoBrush, LassoWidth / zoom)
@@ -116,38 +251,11 @@ internal sealed partial class SelectionVisual
         penZoom = zoom;
     }
 
-    private static void DrawHandles(DrawingContext dc, Rect b, Pen pen, double zoom, Point? rotateHandlePosition)
-    {
-        var handleRadius = HandleRadius / zoom;
-
-        DrawHandle(dc, b.TopLeft, handleRadius, pen);
-        DrawHandle(dc, b.TopRight, handleRadius, pen);
-        DrawHandle(dc, b.BottomLeft, handleRadius, pen);
-        DrawHandle(dc, b.BottomRight, handleRadius, pen);
-        DrawHandle(dc, new Point(b.Left + b.Width / 2, b.Top), handleRadius, pen);
-        DrawHandle(dc, new Point(b.Left + b.Width / 2, b.Bottom), handleRadius, pen);
-        DrawHandle(dc, new Point(b.Left, b.Top + b.Height / 2), handleRadius, pen);
-        DrawHandle(dc, new Point(b.Right, b.Top + b.Height / 2), handleRadius, pen);
-
-        // 旋转手柄：默认浮于选区正上方；旋转手势中沿鼠标角度绕选区中心等半径跟随（rotateHandlePosition）
-        var rotateCenter = rotateHandlePosition ?? RotateHandleCenter(b, zoom);
-        var rr = RotateScreenRadius / zoom;
-        dc.DrawEllipse(Brushes.White, pen, rotateCenter, rr, rr);
-    }
-
     private static void DrawHandle(DrawingContext dc, Point point, double radius, Pen pen)
     {
         dc.DrawRectangle(
             Brushes.White,
             pen,
             new Rect(point.X - radius, point.Y - radius, radius * 2, radius * 2));
-    }
-}
-
-internal sealed class SelectionVisualHost(Action<DrawingContext> render) : FrameworkElement
-{
-    protected override void OnRender(DrawingContext drawingContext)
-    {
-        render(drawingContext);
     }
 }

@@ -197,6 +197,48 @@ public class EdgeHintTests
         });
     }
 
+    /// <summary>平移手势中不刷新边缘提示：滚回顶部后提示留到抬手统一刷新</summary>
+    [Fact]
+    public void Pan_ToTop_RefreshesHintsOnRelease( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var canvas = host.Canvas;
+            canvas.OffsetY = 400;
+            canvas.UpdateLayout( );
+
+            AddStroke(host, BandCenter(host, EdgeScrollSide.Top));
+            Assert.True(canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
+
+            var raised = 0;
+            canvas.EdgeHintsChanged += (_, _) => raised++;
+
+            var a = host.Device( );
+            var b = host.Device( );
+            var c = host.Device( );
+            var cluster = TestPoints.CloseCluster(host, new Point(100, 100), 3);
+            a.Down(host.Target, cluster[0]);
+            b.Down(host.Target, cluster[1]);
+            c.Down(host.Target, cluster[2]);
+
+            // 下滑让偏移回到 0：手势中提示保持原样
+            a.Move(host.Target, new Point(100, 600));
+            canvas.UpdateLayout( );
+            Assert.Equal(0, canvas.OffsetY, 5);
+            Assert.True(canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
+            Assert.Equal(0, raised);
+
+            a.Up(host.Target, new Point(100, 600));
+            b.Up(host.Target, cluster[1]);
+            c.Up(host.Target, cluster[2]);
+            Assert.Equal(TouchState.Idle, canvas.State);
+
+            Assert.False(canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
+            Assert.Equal(1, raised);
+        });
+    }
+
     private static bool[] VisibleSides(TouchHost host)
     {
         return

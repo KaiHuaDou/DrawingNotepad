@@ -85,7 +85,7 @@ public class BackgroundSwitchTests
         UiThread.Run(( ) =>
         {
             using var host = new MainWindowHost( );
-            var radios = host.RadiosInGroup("UnderlayGroup").ToArray();
+            var radios = host.RadiosInGroup("UnderlayGroup").ToArray( );
 
             ClickMenuItem(host, host.Window.TransparentMenuItem, true);
 

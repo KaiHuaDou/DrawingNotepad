@@ -123,7 +123,8 @@ internal sealed class WetInk(TaperParameters taper)
 }
 
 /// <summary>
-/// 笔画预览层
+/// 自绘图层容器：按添加顺序承载 DrawingVisual，不做布局、裁剪与命中测试
+/// 湿墨预览与选区覆盖层共用
 /// </summary>
 internal sealed class VisualCanvas : FrameworkElement
 {

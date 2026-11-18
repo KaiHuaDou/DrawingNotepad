@@ -18,6 +18,10 @@ public partial class MainWindow
     private Size? selectionBorderSize;
     private bool selectionBorderUpdating;
 
+    private readonly TranslateTransform selectionBorderOffset = new( );
+    private double selectionBorderX = double.NaN;
+    private double selectionBorderY;
+
     private static bool IsToolMode(InkCanvasNextMode m)
     {
         return m switch
@@ -151,7 +155,16 @@ public partial class MainWindow
             x = Math.Clamp(x, vp.Left, Math.Max(vp.Left, vp.Right - w));
             y = Math.Clamp(y, vp.Top, Math.Max(vp.Top, vp.Bottom - h));
 
-            SelectionBorder.Margin = new Thickness(x, y, 0, 0);
+            // 渲染变换只影响合成，不触发测量与排列；不足半个 DIP 的抖动不写
+            if (Math.Abs(x - selectionBorderX) < 0.5 && Math.Abs(y - selectionBorderY) < 0.5)
+            {
+                return;
+            }
+
+            selectionBorderX = x;
+            selectionBorderY = y;
+            selectionBorderOffset.X = x;
+            selectionBorderOffset.Y = y;
         }
         finally
         {

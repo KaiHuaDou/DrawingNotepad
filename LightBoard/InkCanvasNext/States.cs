@@ -125,12 +125,11 @@ public partial class InkCanvasNext
             TouchState.Idle => count switch
             {
                 0 => TouchState.Idle,
-                // 选区入口是高优先级候选：仅 count in {1,2} 时评估（3+ 指不误入）；
-                // 双指须全部落在选区内才进入选区（无选区时直接进入套索）
+                // 选区入口：无选区时只有单指进入，其余按一般手势；
+                // 有选区时单指、双指全在内、以及横跨边界的组合进入，横跨时由在内的第一根手指拖动
                 1 when tool.IsSelectionEntry => TouchState.Selection,
-                2 when tool.IsSelectionEntry && (!selection.HasSelection || selectionAllInside) => TouchState.Selection,
-                // 触点横跨选区内外：不进入任何手势
-                2 when tool.IsSelectionEntry && selectionMixed => State,
+                >= 2 when tool.IsSelectionEntry && selectionMixed => TouchState.Selection,
+                2 when tool.IsSelectionEntry && selectionAllInside => TouchState.Selection,
                 1 => TouchState.EvalDraw,
                 2 when d2 <= l2 => TouchState.PanZoom,
                 >= 3 when palm && d2 <= l2 => TouchState.Eraser,
@@ -204,12 +203,12 @@ public partial class InkCanvasNext
             {
                 0 => TouchState.Idle,
                 // 选区手势中附加手指：全在选区内保持选区手势（RefreshSelectionGesture 把 3+ 指降为只平移），
-                // 横跨选区内外不改变手势，全在选区外按一般手势处理；
-                // 无选区（套索在途）视为全在外，保持原并拢迁移规则
+                // 横跨边界时由在内的第一根手指继续拖动，全在选区外按一般手势处理
                 >= 3 when selectionMixed => TouchState.Selection,
                 >= 3 when selectionAllOutside && palm && d2 <= l2 => TouchState.Eraser,
                 >= 3 when selectionAllOutside && d2 <= l2 => TouchState.EvalPan,
-                >= 2 when selection.HasSelection && selectionAllOutside && d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
+                2 when selectionAllOutside && d2 <= l2 && IsPathGesture => TouchState.PanZoom,
+                >= 2 when selectionAllOutside && d2 > l2 && tool.AllowsMultiDraw => TouchState.MultiDraw,
                 _ => TouchState.Selection,
             },
 
@@ -246,6 +245,13 @@ public partial class InkCanvasNext
 
         if (from == TouchState.Selection)
         {
+            // 半途的套索被多指手势接管：放弃本次路径，保留进入前的选区
+            if (to != TouchState.Idle && IsPathGesture)
+            {
+                ResetSelectionGesture( );
+                selectionVisual.ClearLasso( );
+            }
+
             EndSelectionTouch( );
         }
 
@@ -260,6 +266,10 @@ public partial class InkCanvasNext
         {
             ReleaseAll( );
             ApplyModeToEditing(DrawingAttributes.Mode);
+
+            // 手势期间不补余量也不刷新提示：结束时统一补一屏余量并刷新一次
+            EnsureCanvasFill(CurrentView);
+            UpdateEdgeHints( );
         }
         else if (Traits(from).OverridesEditing && !Traits(to).OverridesEditing)
         {
@@ -328,6 +338,9 @@ public partial class InkCanvasNext
                     ReleaseAll( );
                     InnerCanvas.EditingMode = InkCanvasEditingMode.None;
                     CaptureAll( );
+
+                    // 手势开始补一屏余量，手势中不扩展，靠这次余量吸收拖动
+                    EnsureCanvasFill(CurrentView);
                 }
 
                 InitGesture( );

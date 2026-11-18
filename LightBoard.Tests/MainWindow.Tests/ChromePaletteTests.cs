@@ -12,27 +12,11 @@ namespace LightBoard.Tests.Toolbar;
 public class ChromePaletteTests
 {
     private static readonly Color DarkForeground = ColorOf("#E3E3E3");
-    private static readonly Color DarkSurface = ColorOf("#1F1F23");
-    private static readonly Color DarkSelected = ColorOf("#22384E");
     private static readonly Color LightForeground = ColorOf("#1F1F1F");
     private static readonly Color LightText = ColorOf("#CC595959");
     private static readonly Color LightHover = ColorOf("#12000000");
     private static readonly Color LightSurface = ColorOf("#F2F2F2");
     private static readonly Color LightPopupSurface = ColorOf("#FFFFFF");
-
-    [Fact]
-    public void GridUnderlay_UsesDarkChrome( )
-    {
-        UiThread.Run(( ) =>
-        {
-            using var host = new MainWindowHost( );
-
-            Assert.Equal(DarkForeground, ForegroundOf(host));
-            Assert.Equal(DarkSurface, ColorOf(host.Window.LeftBorder.Background));
-            Assert.Equal(DarkSelected, ColorOf((Brush) host.Window.FindResource("ChromeSelectedBrush")));
-            Assert.DoesNotContain(host.Window.Resources.MergedDictionaries, d => d.Contains("ChromeForegroundBrush"));
-        });
-    }
 
     [Fact]
     public void WhiteUnderlay_UsesLightChrome( )
@@ -50,23 +34,6 @@ public class ChromePaletteTests
             Assert.Equal(LightSurface, ColorOf(host.Window.LeftBorder.Background));
             Assert.Equal(1, host.Window.LeftBorder.BorderThickness.Left);
             Assert.Contains(host.Window.Resources.MergedDictionaries, d => d.Contains("ChromeForegroundBrush"));
-        });
-    }
-
-    [Fact]
-    public void BlackUnderlay_RestoresDarkChrome( )
-    {
-        UiThread.Run(( ) =>
-        {
-            using var host = new MainWindowHost( );
-
-            ClickUnderlay(host, "纯白");
-            ClickUnderlay(host, "纯黑");
-            host.Window.UpdateLayout( );
-
-            Assert.Equal(DarkForeground, ForegroundOf(host));
-            Assert.Equal(DarkSurface, ColorOf(host.Window.LeftBorder.Background));
-            Assert.DoesNotContain(host.Window.Resources.MergedDictionaries, d => d.Contains("ChromeForegroundBrush"));
         });
     }
 

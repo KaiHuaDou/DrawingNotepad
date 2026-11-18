@@ -22,6 +22,9 @@ public partial class InkCanvasNext
     /// </summary>
     public void ResetTouchState( )
     {
+        // 合并中的位移按当前触点结清，否则重置会吞掉最后一帧
+        FlushSelectionFrame( );
+
         releasingCaptures = true;
         try
         {
@@ -268,6 +271,9 @@ public partial class InkCanvasNext
 
     private void TrackTouchDown(int id, TouchDevice device, Point position)
     {
+        // 触点集合变化会换掉手势基线：先把合并中的位移按旧触点结清
+        FlushSelectionFrame( );
+
         touches[id] = (device, position);
         touchStarts[id] = position;
 
@@ -283,6 +289,10 @@ public partial class InkCanvasNext
 
     private void TrackTouchUp(int id)
     {
+        FlushSelectionFrame( );
+
+        var wasDriver = SelectionDriverId == id;
+
         touches.Remove(id);
         touchStarts.Remove(id);
 
@@ -293,6 +303,11 @@ public partial class InkCanvasNext
         else if (State == TouchState.Selection)
         {
             RefreshSelectionGesture( );
+
+            if (wasDriver)
+            {
+                RebaseSelectionDriver( );
+            }
         }
     }
 

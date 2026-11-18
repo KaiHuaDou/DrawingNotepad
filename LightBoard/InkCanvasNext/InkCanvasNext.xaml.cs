@@ -58,7 +58,12 @@ public partial class InkCanvasNext : UserControl
 
         CanvasScroll.ScrollChanged += (_, _) =>
         {
-            EnsureCanvasFill(CurrentView);
+            // 手势中改画布尺寸会让排列与位图缓存失效：余量补足留到手势结束，手势中只由 setter 保视口覆盖
+            if (State == TouchState.Idle)
+            {
+                EnsureCanvasFill(CurrentView);
+            }
+
             RaiseViewOrSelectionChanged( );
         };
         canvasScaleTransform.Changed += (_, _) => RaiseViewOrSelectionChanged( );
@@ -122,7 +127,12 @@ public partial class InkCanvasNext : UserControl
 
     internal void RaiseViewOrSelectionChanged( )
     {
-        UpdateEdgeHints( );
+        // 手势中每帧都会走到这里：边缘提示要遍历全画布笔画，留到手势结束补一次
+        if (State == TouchState.Idle)
+        {
+            UpdateEdgeHints( );
+        }
+
         ViewOrSelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 

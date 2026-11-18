@@ -11,11 +11,10 @@ public partial class InkCanvasNext
     private bool rectangleDragged;
 
     /// <summary>
-    /// 空白处按下（鼠标/触摸共用）：清空当前选型，以按下点为对角起点开始矩形框选
+    /// 空白处按下（鼠标/触摸共用）：以按下点为对角起点开始矩形框选，原选型留到矩形真正拉开时再清
     /// </summary>
     private void BeginRectangle(Point p)
     {
-        selection.Clear( );
         selectionGesture = SelectionGesture.Rectangle;
         rectangleCorner = p;
         rectangleDragged = false;
@@ -33,6 +32,8 @@ public partial class InkCanvasNext
             return;
         }
 
+        // 起手不清选型，第二根手指落在选区内时可以切回拖动；矩形已经拉开才算新的一次选择
+        selection.Clear( );
         rectangleCorner = p;
         rectangleDragged = true;
         selection.InvalidateLasso(RectangleCorners(selectionStartPoint, p));
@@ -47,12 +48,12 @@ public partial class InkCanvasNext
         if (dragged)
         {
             var rect = new Rect(selectionStartPoint, rectangleCorner);
-            selection.SetStrokes(InnerCanvas.Strokes.HitTest(rect, LassoHitPercentage));
+            selection.SetStrokes(InnerCanvas.Strokes.HitTest(rect, LassoHitPercentage), halo: false);
         }
         else
         {
             // 无拖拽视为点选：命中单笔则选中，否则清除
-            HandlePointSelect(selectionStartPoint);
+            HandlePointSelect(selectionStartPoint, halo: false);
         }
     }
 

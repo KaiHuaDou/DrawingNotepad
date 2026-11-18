@@ -1,5 +1,7 @@
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 using static System.Math;
 using static InkCanvasNext.Geometry;
@@ -35,6 +37,18 @@ public partial class InkCanvasNext
 {
     private SelectionGesture selectionGesture = SelectionGesture.None;
     private SelectionHandle selectionHandle = SelectionHandle.None;
+
+    /// <summary>
+    /// 驱动指的触点 id：拖动时取位于选区内（或压在手柄上）的第一根手指，全部在外时退回第一根
+    /// </summary>
+    private int? SelectionDriverId { get; set; }
+
+    /// <summary>
+    /// 路径手势：在途时只累积套索或矩形，不产生变换
+    /// </summary>
+    private bool IsPathGesture => selectionGesture is SelectionGesture.Lasso or SelectionGesture.Rectangle;
+
+    private bool selectionHaloPending;
 
     /// <summary>
     /// 旋转手势中手柄的轨道位置（内容坐标，绕选区中心等半径跟随鼠标角度）；空闲为 null
@@ -77,23 +91,25 @@ public partial class InkCanvasNext
             return;
         }
 
-        // touches 保插入序：手势起始指在存活期间始终为 First()，抬起后由剩余手指自然接替
-        var canvasPos = GetFirstCanvasPoint( );
-        selectionStartPoint = canvasPos;
-
         if (!selection.HasSelection)
         {
+            var canvasPos = GetFirstCanvasPoint( );
+            selectionStartPoint = canvasPos;
             BeginSelectionDrag(canvasPos);
             return;
         }
 
-        if (touches.Count >= 2)
+        // 两指全部落在选区内才是相似变换；横跨边界时由在内的第一根手指拖动
+        if (touches.Count >= 2 && ClassifyTouchesAgainstSelection( ).AllInside)
         {
             BeginPinch( );
             return;
         }
 
-        BeginHandleOrMove(canvasPos);
+        var (driverId, driver) = FindSelectionDriver( );
+        SelectionDriverId = driverId;
+        selectionStartPoint = driver;
+        BeginHandleOrMove(driver);
     }
 
     private void UpdateSelectionTouch( )
@@ -108,21 +124,25 @@ public partial class InkCanvasNext
                 UpdateRectangleTrack(GetFirstCanvasPoint( ));
                 break;
 
+            // 变换类手势按帧合并：位移在下一帧统一施加，事件率不参与每帧的重建次数
             case SelectionGesture.Pinch:
-                UpdatePinch( );
-                break;
-
             case SelectionGesture.Move:
             case SelectionGesture.Scale:
             case SelectionGesture.Rotate:
-                UpdateSelectionTransform(GetFirstCanvasPoint( ));
+                RequestSelectionFrame( );
                 break;
         }
     }
 
     private void EndSelectionTouch( )
     {
-        if (selectionGesture is SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate or SelectionGesture.Pinch)
+        // 迁出可能发生在合并中的位移之后：按当前触点结清，不能只摘钩
+        FlushSelectionFrame( );
+
+        var transformed = selectionGesture is SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate or SelectionGesture.Pinch;
+        var path = IsPathGesture;
+
+        if (transformed)
         {
             CommitTransform( );
         }
@@ -137,8 +157,71 @@ public partial class InkCanvasNext
 
         selectionGesture = SelectionGesture.None;
         selectionTarget = null;
+        SelectionDriverId = null;
         RotateHandleLive = null;
-        selection.Invalidate( );
+
+        if (transformed)
+        {
+            selection.Invalidate(halo: false);
+        }
+
+        // 逐笔克隆的 halo 留到空闲时补，变换与路径手势同理
+        if (transformed || path)
+        {
+            ScheduleSelectionHalo( );
+        }
+    }
+
+    /// <summary>
+    /// 手势结束后补画 halo：逐笔克隆的代价在 100 笔以上是 10 ms 级，放到空闲优先级，避开抬手这一帧
+    /// </summary>
+    private void ScheduleSelectionHalo( )
+    {
+        if (selectionHaloPending)
+        {
+            return;
+        }
+
+        selectionHaloPending = true;
+        Dispatcher.InvokeAsync(( ) =>
+        {
+            selectionHaloPending = false;
+            if (selection.HasSelection && selectionGesture == SelectionGesture.None && State != TouchState.Selection)
+            {
+                selection.Invalidate( );
+            }
+        }, DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// 驱动指：选区内或压在手柄上的第一根手指；都不在时退回第一根触点
+    /// </summary>
+    private (int Id, Point Point) FindSelectionDriver( )
+    {
+        if (selection.HasSelection)
+        {
+            foreach (var (id, (device, _)) in touches)
+            {
+                var point = device.GetTouchPoint(InnerCanvas).Position;
+                if (selection.Bounds.Contains(point) || HitTestHandle(point) != SelectionHandle.None)
+                {
+                    return (id, point);
+                }
+            }
+        }
+
+        var first = touches.First( );
+        return (first.Key, first.Value.Device.GetTouchPoint(InnerCanvas).Position);
+    }
+
+    private Point GetDriverCanvasPoint( )
+    {
+        if (SelectionDriverId is { } id && touches.TryGetValue(id, out var touch))
+        {
+            return touch.Device.GetTouchPoint(InnerCanvas).Position;
+        }
+
+        return GetFirstCanvasPoint( );
     }
 
     /// <summary>
@@ -249,10 +332,13 @@ public partial class InkCanvasNext
         selectionGesture = SelectionGesture.None;
         selectionHandle = SelectionHandle.None;
         selectionTarget = null;
+        SelectionDriverId = null;
         selectionAbs = Matrix.Identity;
         selectionTotal = Matrix.Identity;
         selectionStartPoint = default;
         RotateHandleLive = null;
+
+        UnhookSelectionFrame( );
 
         lassoPath.Clear( );
         lassoSelected.Clear( );

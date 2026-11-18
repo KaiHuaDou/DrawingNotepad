@@ -43,7 +43,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         }
     }
 
-    internal void SetStrokes(IEnumerable<Stroke> strokes)
+    internal void SetStrokes(IEnumerable<Stroke> strokes, bool halo = true)
     {
         selectedStrokes.Clear( );
         foreach (var s in strokes)
@@ -55,7 +55,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         }
 
         RecomputeBounds( );
-        Invalidate( );
+        Invalidate(halo);
         owner.RaiseSelectionChanged( );
     }
 
@@ -107,12 +107,12 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
 
     internal void Invalidate(bool halo = true)
     {
-        visual.Invalidate(Bounds, selectedStrokes, null, halo, owner.CurrentScale, owner.RotateHandleLive);
+        visual.Render(Bounds, selectedStrokes, null, halo, owner.CurrentScale, owner.RotateHandleLive);
     }
 
     internal void InvalidateLasso(IReadOnlyList<Point>? lasso)
     {
         // 套索进行中：选择尚未确定，不绘制 halo
-        visual.Invalidate(Bounds, selectedStrokes, lasso, halo: false, owner.CurrentScale, owner.RotateHandleLive);
+        visual.Render(Bounds, selectedStrokes, lasso, halo: false, owner.CurrentScale, owner.RotateHandleLive);
     }
 }

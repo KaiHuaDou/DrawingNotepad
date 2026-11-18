@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Media;
@@ -24,6 +25,9 @@ public partial class InkCanvasNext
     private Point pinchStartCenter;
     private double pinchStartDist;
     private double pinchStartAngle;
+
+    private bool selectionFrameHooked;
+    private bool selectionFramePending;
 
     // 变换
 
@@ -79,6 +83,86 @@ public partial class InkCanvasNext
         ApplyTransformDelta(newAbs);
     }
 
+    // 帧节拍：位移按渲染帧合并
+
+    /// <summary>
+    /// 请求本帧施加一次变换：首个事件立即生效，同一帧内随后的位移合并到下一帧
+    /// 立即生效保证抬手前的最后一次位移不丢，也保证不依赖渲染节拍也能跟上指针
+    /// </summary>
+    private void RequestSelectionFrame( )
+    {
+        if (!selectionFrameHooked)
+        {
+            ApplySelectionFrame( );
+            HookSelectionFrame( );
+            return;
+        }
+
+        selectionFramePending = true;
+    }
+
+    private void HookSelectionFrame( )
+    {
+        if (selectionFrameHooked)
+        {
+            return;
+        }
+
+        selectionFrameHooked = true;
+        CompositionTarget.Rendering += SelectionFrame;
+    }
+
+    private void SelectionFrame(object? o, EventArgs e)
+    {
+        var apply = selectionFramePending;
+        UnhookSelectionFrame( );
+
+        if (apply)
+        {
+            ApplySelectionFrame( );
+        }
+    }
+
+    /// <summary>手势状态即将变化（落指、抬指、结束）前把合并中的位移补上</summary>
+    private void FlushSelectionFrame( )
+    {
+        if (!selectionFrameHooked)
+        {
+            return;
+        }
+
+        UnhookSelectionFrame( );
+        ApplySelectionFrame( );
+    }
+
+    private void UnhookSelectionFrame( )
+    {
+        if (!selectionFrameHooked)
+        {
+            return;
+        }
+
+        selectionFrameHooked = false;
+        selectionFramePending = false;
+        CompositionTarget.Rendering -= SelectionFrame;
+    }
+
+    private void ApplySelectionFrame( )
+    {
+        switch (selectionGesture)
+        {
+            case SelectionGesture.Move:
+            case SelectionGesture.Scale:
+            case SelectionGesture.Rotate:
+                UpdateSelectionTransform(GetDriverCanvasPoint( ));
+                break;
+
+            case SelectionGesture.Pinch:
+                UpdatePinch( );
+                break;
+        }
+    }
+
     /// <summary>
     /// 以绝对矩阵为基准施加相对上一帧的增量变换
     /// 增量必须左乘旧基线：作用于笔画的是"先撤销上一帧、再施加本帧"，
@@ -99,14 +183,15 @@ public partial class InkCanvasNext
         var delta = inverse * newAbs;
         selectionAbs = newAbs;
 
-        if (!IsNearIdentity(delta))
+        if (IsNearIdentity(delta))
         {
-            selectionTarget.Transform(delta, false);
-            selectionTotal *= delta;
-            selection.RecomputeBounds( );
-            selection.Invalidate(halo: false);
+            return;
         }
 
+        selectionTarget.Transform(delta, false);
+        selectionTotal *= delta;
+        selection.RecomputeBounds( );
+        selection.Invalidate(halo: false);
         RaiseViewOrSelectionChanged( );
     }
 
@@ -137,6 +222,7 @@ public partial class InkCanvasNext
     {
         selectionTarget = [with(selection.SelectedStrokes)];
         selectionGesture = SelectionGesture.Pinch;
+        SelectionDriverId = null;
         selectionAbs = Matrix.Identity;
         RefreshPinchBaseline( );
     }
@@ -149,6 +235,21 @@ public partial class InkCanvasNext
     /// </summary>
     private void RefreshSelectionGesture( )
     {
+        // 套索在途时又落在选区内的手指改为拖动选区：放弃本次套索，保留原有选型
+        if (IsPathGesture
+            && touches.Count >= 2
+            && selection.HasSelection
+            && ClassifyTouchesAgainstSelection( ).Mixed)
+        {
+            var (driverId, driver) = FindSelectionDriver( );
+            ResetSelectionGesture( );
+            selectionVisual.ClearLasso( );
+            SelectionDriverId = driverId;
+            selectionStartPoint = driver;
+            BeginHandleOrMove(driver);
+            return;
+        }
+
         if (touches.Count == 1 && selectionGesture == SelectionGesture.Pinch)
         {
             RebaseToMove( );
@@ -204,7 +305,22 @@ public partial class InkCanvasNext
     private void RebaseToMove( )
     {
         selectionGesture = SelectionGesture.Move;
-        selectionStartPoint = GetFirstCanvasPoint( );
+        (SelectionDriverId, selectionStartPoint) = FindSelectionDriver( );
+        selectionAbs = Matrix.Identity;
+    }
+
+    /// <summary>
+    /// 驱动指抬起后由仍在选区内（或全部在外时的第一根）手指接手：
+    /// 起点取接手指当前位置、段基线归零，位移从接手瞬间续算，选区不跳变
+    /// </summary>
+    private void RebaseSelectionDriver( )
+    {
+        if (selectionGesture is not (SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate) || touches.Count == 0)
+        {
+            return;
+        }
+
+        (SelectionDriverId, selectionStartPoint) = FindSelectionDriver( );
         selectionAbs = Matrix.Identity;
     }
 }

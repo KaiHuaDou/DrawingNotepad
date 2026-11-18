@@ -62,9 +62,10 @@ public class LotteryViewModelTests
     [Fact]
     public void TextProperties_RejectInvalid( )
     {
-        var model = new LotteryViewModel( );
-
-        model.MaxText = "abc";
+        var model = new LotteryViewModel
+        {
+            MaxText = "abc"
+        };
         Assert.Equal(51, model.Max);
         Assert.Equal("51", model.MaxText);
 
@@ -76,9 +77,10 @@ public class LotteryViewModelTests
     [Fact]
     public void MaxText_ClampsToLimit( )
     {
-        var model = new LotteryViewModel( );
-
-        model.MaxText = "99999";
+        var model = new LotteryViewModel
+        {
+            MaxText = "99999"
+        };
 
         Assert.Equal(LotteryViewModel.MaxLimit, model.Max);
         Assert.Equal("9999", model.MaxText);

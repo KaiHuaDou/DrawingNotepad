@@ -55,6 +55,7 @@ public partial class MainWindow : Window
         {
             Background = MajorGridBrush
         };
+        SelectionBorder.RenderTransform = selectionBorderOffset;
         CanvasNext.SelectionChanged += CanvasNextSelectionChanged;
         CanvasNext.StrokesChanged += CanvasNextStrokesChanged;
         CanvasNext.OperationCompleted += CanvasOperationCompleted;
