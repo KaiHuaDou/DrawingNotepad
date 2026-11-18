@@ -198,7 +198,7 @@ public class MouseMachineTests
     /// <summary>合成触点按布局换算坐标：把画布坐标反推为控件根坐标，供设备输入使用</summary>
     private static Point RootOf(TouchHost host, Point canvasPoint)
     {
-        return host.Canvas.InnerCanvasElement.TranslatePoint(canvasPoint, host.Canvas);
+        return host.Canvas.InnerCanvas.TranslatePoint(canvasPoint, host.Canvas);
     }
 
     private static MouseButtonEventArgs LeftButton(RoutedEvent routedEvent)

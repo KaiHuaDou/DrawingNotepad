@@ -21,6 +21,9 @@ public class SettingsWindowTests
 
                 var root = Assert.IsType<DockPanel>(window.Content);
                 Assert.Contains(root.Children.OfType<ScrollViewer>( ), scroll => scroll.VerticalScrollBarVisibility == ScrollBarVisibility.Auto);
+
+                var notice = Assert.IsType<TextBlock>(window.FindName("RestartNoticeText"));
+                Assert.Equal("部分设置需重启后生效", notice.Text);
             }
             finally
             {

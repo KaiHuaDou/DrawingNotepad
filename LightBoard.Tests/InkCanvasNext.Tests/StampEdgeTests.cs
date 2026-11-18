@@ -11,7 +11,7 @@ public class StampEdgeTests
     [Fact]
     public void StampCloneNearRightEdge_ExtendsCanvas( )
     {
-        StaTest.Run(( ) =>
+        StaTest.Run((Action) (( ) =>
         {
             using var host = new TouchHost( );
             host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
@@ -21,11 +21,11 @@ public class StampEdgeTests
             LassoSelectAll(host);
             Assert.True(host.Canvas.HasSelection);
 
-            var width = host.Canvas.InnerCanvasElement.Width;
-            host.Canvas.StampCloneAt(new Point(width - 1, 100));
+            var width = host.Canvas.InnerCanvas.Width;
+            host.Canvas.StampCloneAt(new Point(width - 1, (double) 100));
 
-            Assert.True(host.Canvas.InnerCanvasElement.Width > width);
-        });
+            Assert.True(host.Canvas.InnerCanvas.Width > width);
+        }));
     }
 
     private static void LassoSelectAll(TouchHost host)

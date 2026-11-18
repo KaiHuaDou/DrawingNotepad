@@ -58,10 +58,10 @@
         <PackageReference Include="NetOfficeFw.PowerPoint" Version="1.9.12" />
         <PackageReference Include="NetOfficeFw.Word" Version="1.9.12" />
         <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
-        <PackageReference Include="OpenCvSharp5" Version="5.0.0.20261109" Condition="'$(WithOpenCv)' == 'true'" />
-        <PackageReference Include="OpenCvSharp5.runtime.win" Version="5.0.0.20261109" Condition="'$(WithOpenCv)' == 'true'" />
-        <PackageReference Include="OpenCvSharp5.runtime.win-arm64" Version="5.0.0.20261109" Condition="'$(WithOpenCv)' == 'true'" />
-        <PackageReference Include="OpenCvSharp5.WpfExtensions" Version="5.0.0.20261109" Condition="'$(WithOpenCv)' == 'true'" />
+        <PackageReference Include="OpenCvSharp5" Version="5.1.0.20261115" Condition="'$(WithOpenCv)' == 'true'" />
+        <PackageReference Include="OpenCvSharp5.runtime.win" Version="5.1.0.20261115" Condition="'$(WithOpenCv)' == 'true'" />
+        <PackageReference Include="OpenCvSharp5.runtime.win-arm64" Version="5.1.0.20261115" Condition="'$(WithOpenCv)' == 'true'" />
+        <PackageReference Include="OpenCvSharp5.WpfExtensions" Version="5.1.0.20261115" Condition="'$(WithOpenCv)' == 'true'" />
         <PackageReference Include="PDFiumCore" Version="157.0.8100" />
         <PackageReference Include="SingleInstanceCore" Version="2.2.2" />
     </ItemGroup>

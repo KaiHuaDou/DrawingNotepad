@@ -58,7 +58,7 @@ internal sealed class MouseTouchDevice : TouchDevice
 
         Position = rootPosition;
         IsDown = true;
-        Capture(owner.InnerCanvasElement);
+        Capture(owner.InnerCanvas);
         ReportDown( );
     }
 

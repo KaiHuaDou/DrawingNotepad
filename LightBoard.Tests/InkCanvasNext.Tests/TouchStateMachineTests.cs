@@ -681,7 +681,7 @@ public class TouchStateMachineTests
     [Fact]
     public void MultiDraw_ReleaseToOneFinger_KeepsEditingModeNone( )
     {
-        StaTest.Run(( ) =>
+        StaTest.Run((Action) (( ) =>
         {
             using var host = new TouchHost( );
             var farPoint = TestPoints.FarFrom(host, P1);
@@ -691,23 +691,23 @@ public class TouchStateMachineTests
             a.Down(host.Target, P1);
             b.Down(host.Target, farPoint);
             Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(InkCanvasEditingMode.None, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
 
             b.Up(host.Target, farPoint);
             Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(InkCanvasEditingMode.None, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
 
             a.Up(host.Target, P1);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
-        });
+            Assert.Equal(InkCanvasEditingMode.Ink, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
+        }));
     }
 
     /// <summary>双指手势中切换工具：EditingMode 延迟到迁出路径统一应用为当前模式（取代 prevMode/RestoreMode）</summary>
     [Fact]
     public void PanZoom_ModeSwitchDuringGesture_AppliesNewModeOnExit( )
     {
-        StaTest.Run(( ) =>
+        StaTest.Run((Action) (( ) =>
         {
             using var host = new TouchHost( );
             var closePoint = TestPoints.CloseTo(host, P1);
@@ -717,39 +717,39 @@ public class TouchStateMachineTests
             a.Down(host.Target, P1);
             b.Down(host.Target, closePoint);
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(InkCanvasEditingMode.None, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
 
             host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseStroke };
-            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(InkCanvasEditingMode.None, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
 
             a.Up(host.Target, P1);
             b.Up(host.Target, closePoint);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.EraseByStroke, host.Canvas.InnerCanvasElement.EditingMode);
-        });
+            Assert.Equal(InkCanvasEditingMode.EraseByStroke, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
+        }));
     }
 
     /// <summary>单指按住未起笔时切换工具：迁出 EvalDraw 回 Idle 时应用新模式</summary>
     [Fact]
     public void EvalDraw_ModeSwitchDuringStroke_AppliesNewModeOnRelease( )
     {
-        StaTest.Run(( ) =>
+        StaTest.Run((Action) (( ) =>
         {
             using var host = new TouchHost( );
 
             var finger = host.Device( );
             finger.Down(host.Target, P1);
             Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(InkCanvasEditingMode.Ink, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
 
             host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.EraseStroke };
-            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(InkCanvasEditingMode.Ink, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
 
             finger.Up(host.Target, P1);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.EraseByStroke, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(InkCanvasEditingMode.EraseByStroke, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
             Assert.Empty(host.Canvas.Strokes);
-        });
+        }));
     }
 
     // ResetTouchState（换页/窗口失活路径）
@@ -757,7 +757,7 @@ public class TouchStateMachineTests
     [Fact]
     public void PanZoom_ResetTouchState_RestoresEditingMode( )
     {
-        StaTest.Run(( ) =>
+        StaTest.Run((Action) (( ) =>
         {
             using var host = new TouchHost( );
             var closePoint = TestPoints.CloseTo(host, P1);
@@ -767,19 +767,19 @@ public class TouchStateMachineTests
             a.Down(host.Target, P1);
             b.Down(host.Target, closePoint);
             Assert.Equal(TouchState.PanZoom, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(InkCanvasEditingMode.None, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
 
             host.Canvas.ResetTouchState( );
 
             Assert.Equal(TouchState.Idle, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
-        });
+            Assert.Equal(InkCanvasEditingMode.Ink, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
+        }));
     }
 
     [Fact]
     public void Eraser_ResetTouchState_RestoresEditingMode( )
     {
-        StaTest.Run(( ) =>
+        StaTest.Run((Action) (( ) =>
         {
             using var host = new TouchHost( );
             var spacing = TestPoints.Spacing(host);
@@ -790,13 +790,13 @@ public class TouchStateMachineTests
             }
 
             Assert.Equal(TouchState.Eraser, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvasElement.EditingMode);
+            Assert.Equal(InkCanvasEditingMode.None, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
 
             host.Canvas.ResetTouchState( );
 
             Assert.Equal(TouchState.Idle, host.Canvas.State);
-            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvasElement.EditingMode);
-        });
+            Assert.Equal(InkCanvasEditingMode.Ink, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
+        }));
     }
 
     // Selection

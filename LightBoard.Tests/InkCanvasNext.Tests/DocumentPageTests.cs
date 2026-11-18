@@ -10,39 +10,39 @@ public class DocumentPageTests
     [Fact]
     public void SetDocumentPage_LargerThanCanvas_ExtendsCanvasAndKeepsOrigin( )
     {
-        StaTest.Run(( ) =>
+        StaTest.Run((Action) (( ) =>
         {
             using var host = new TouchHost( );
             var canvas = host.Canvas;
-            var width = canvas.InnerCanvasElement.Width;
-            var height = canvas.InnerCanvasElement.Height;
+            var width = canvas.InnerCanvas.Width;
+            var height = canvas.InnerCanvas.Height;
             var page = new WriteableBitmap(10, 10, 96, 96, PixelFormats.Pbgra32, null);
-            var box = new Rect(0, 0, width + 200, height + 200);
+            var box = new Rect((double) 0, (double) 0, width + 200, height + 200);
 
             canvas.SetDocumentPage(page, box);
             canvas.UpdateLayout( );
 
-            Assert.True(canvas.InnerCanvasElement.Width >= box.Right);
-            Assert.True(canvas.InnerCanvasElement.Height >= box.Bottom);
+            Assert.True(canvas.InnerCanvas.Width >= box.Right);
+            Assert.True(canvas.InnerCanvas.Height >= box.Bottom);
 
-            var origin = canvas.InnerCanvasElement.TransformToVisual(canvas.CanvasGrid).Transform(new Point(0, 0));
-            Assert.Equal(0, origin.X, 6);
-            Assert.Equal(0, origin.Y, 6);
-        });
+            var origin = canvas.InnerCanvas.TransformToVisual((Visual) canvas.CanvasGrid).Transform(new Point(0, 0));
+            Assert.Equal((double) 0, origin.X, 6);
+            Assert.Equal((double) 0, origin.Y, 6);
+        }));
     }
 
     [Fact]
     public void SetDocumentPage_Null_RemovesPageWithoutResizing( )
     {
-        StaTest.Run(( ) =>
+        StaTest.Run((Action) (( ) =>
         {
             using var host = new TouchHost( );
             var canvas = host.Canvas;
-            var width = canvas.InnerCanvasElement.Width;
+            var width = canvas.InnerCanvas.Width;
 
             canvas.SetDocumentPage(null, null);
 
-            Assert.Equal(width, canvas.InnerCanvasElement.Width);
-        });
+            Assert.Equal<double>(width, canvas.InnerCanvas.Width);
+        }));
     }
 }

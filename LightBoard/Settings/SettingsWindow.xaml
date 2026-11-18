@@ -383,11 +383,17 @@
                             Style="{StaticResource TextButtonStyle}"
                             Click="CancelClick" Content="取消" IsCancel="True" />
                 </StackPanel>
-                <TextBlock Margin="14,0,0,0" VerticalAlignment="Center"
-                           Visibility="{Binding HasErrors, Converter={StaticResource BoolToVisibility}}"
-                           Foreground="#FF6B6B"
-                           FontSize="15"
-                           Text="有输入不合范围" />
+                <StackPanel Margin="14,0,0,0" VerticalAlignment="Center" Orientation="Horizontal">
+                    <TextBlock Visibility="{Binding HasErrors, Converter={StaticResource BoolToVisibility}}"
+                               Foreground="#FF6B6B"
+                               FontSize="15"
+                               Text="有输入不合范围" />
+                    <TextBlock x:Name="RestartNoticeText"
+                               Margin="14,0,0,0"
+                               Foreground="#9A9A9A"
+                               FontSize="15"
+                               Text="部分设置需重启后生效" />
+                </StackPanel>
             </DockPanel>
         </Border>
         <Border DockPanel.Dock="Left" Padding="6" Background="#171717">

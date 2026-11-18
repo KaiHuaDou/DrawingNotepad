@@ -4,8 +4,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-using Ookii.Dialogs.Wpf;
-
 namespace LightBoard;
 
 public partial class SettingsWindow : Window
@@ -83,8 +81,6 @@ public partial class SettingsWindow : Window
                 App.ShowException(ex, "无法写入设置");
                 return;
             }
-
-            ShowRestartNotice( );
         }
 
         Close( );
@@ -126,18 +122,5 @@ public partial class SettingsWindow : Window
                 yield return descendant;
             }
         }
-    }
-
-    private static void ShowRestartNotice( )
-    {
-        using TaskDialog dialog = new( )
-        {
-            WindowTitle = "轻白板",
-            MainInstruction = "设置已保存",
-            MainIcon = TaskDialogIcon.Information,
-            Content = "重启轻白板后按新设置运行。",
-        };
-        dialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
-        dialog.ShowDialog( );
     }
 }

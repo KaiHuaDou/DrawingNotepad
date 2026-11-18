@@ -13,8 +13,6 @@ public partial class InkCanvasNext
     private readonly Dictionary<int, Point> touchStarts = [];
     private bool releasingCaptures;
 
-    internal InkCanvas InnerCanvasElement => InnerCanvas;
-
     internal int ActiveTouchCount => touches.Count;
 
     /// <summary>

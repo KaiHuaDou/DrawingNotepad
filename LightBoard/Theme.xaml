@@ -143,11 +143,10 @@
         </Setter>
     </Style>
 
-    <!--控件占满整格以便整格响应悬停与点击；高度吃掉容器去掉边框后的余量-->
     <Style x:Key="ToolButtonBaseStyle" TargetType="Control">
         <Setter Property="Width" Value="40" />
         <Setter Property="Height" Value="40" />
-        <Setter Property="Margin" Value="3" />
+        <Setter Property="Margin" Value="3,0,3,0" />
         <Setter Property="Foreground" Value="{DynamicResource ChromeForegroundBrush}" />
         <Setter Property="Background" Value="Transparent" />
     </Style>
