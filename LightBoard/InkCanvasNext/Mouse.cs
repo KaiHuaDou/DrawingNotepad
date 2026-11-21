@@ -1,5 +1,5 @@
 using System;
-using System.Threading;
+
 using System.Windows;
 using System.Windows.Input;
 
@@ -12,117 +12,47 @@ internal enum WheelCommand
     Horizontal
 }
 
-/// <summary>
-/// 真实鼠标的合成触点设备：自定义工具下，把鼠标操作上报为触摸序列。原生工具不激活。
-/// 位置以控件坐标系存储，GetTouchPoint 按布局变换与滚动平移换算到目标元素
-/// </summary>
-internal sealed class MouseTouchDevice : TouchDevice
-{
-    private static int NextId;
-    private readonly InkCanvasNext owner;
-    private bool active;
-
-    internal MouseTouchDevice(InkCanvasNext owner) : base(Interlocked.Increment(ref NextId))
-    {
-        this.owner = owner;
-    }
-
-    internal Point Position { get; private set; }
-
-    internal bool IsDown { get; private set; }
-
-    public override TouchPoint GetTouchPoint(IInputElement? relativeTo)
-    {
-        var position = relativeTo is UIElement element ? owner.TranslatePoint(Position, element) : Position;
-        return new TouchPoint(this, position, new Rect(position, new Size(1, 1)), IsDown ? TouchAction.Move : TouchAction.Up);
-    }
-
-    public override TouchPointCollection GetIntermediateTouchPoints(IInputElement? relativeTo)
-    {
-        return [];
-    }
-
-    internal void Down(Point rootPosition)
-    {
-        if (IsDown)
-        {
-            Reset( );
-        }
-
-        if (!active)
-        {
-            SetActiveSource(PresentationSource.FromVisual(owner));
-            Activate( );
-            active = true;
-        }
-
-        Position = rootPosition;
-        IsDown = true;
-        Capture(owner.InnerCanvas);
-        ReportDown( );
-    }
-
-    internal void Move(Point rootPosition)
-    {
-        if (!IsDown)
-        {
-            return;
-        }
-
-        Position = rootPosition;
-        ReportMove( );
-    }
-
-    internal void Up(Point rootPosition)
-    {
-        if (!IsDown)
-        {
-            return;
-        }
-
-        Position = rootPosition;
-        IsDown = false;
-        ReportUp( );
-        Release( );
-    }
-
-    /// <summary>
-    /// 清掉没有收到抬起事件的序列（窗口失活、捕获被抢走），下次按下才能重新开始
-    /// </summary>
-    internal void Reset( )
-    {
-        IsDown = false;
-        Release( );
-    }
-
-    private void Release( )
-    {
-        if (!active)
-        {
-            return;
-        }
-
-        active = false;
-        Deactivate( );
-    }
-}
-
-// 鼠标输入路径：自定义工具下经 MouseTouchDevice 进入触摸状态机，原生工具下放行给 InkCanvas，
+// 鼠标输入路径：自定义工具下经 SyntheticTouchDevice 进入触摸状态机，原生工具下放行给 InkCanvas，
 // 另有滚轮缩放与横滚；落章统一在抬手位置发生（与触摸一致）
 public partial class InkCanvasNext
 {
-    internal MouseTouchDevice MousePointer { get; }
+    internal SyntheticTouchDevice MousePointer { get; }
 
     private void CanvasPreviewMouseDown(object o, MouseButtonEventArgs e)
     {
         CancelEdgeScroll( );
+        HidePenCursor( );
 
         if (UseDefaultCommands)
         {
             Focus( );
         }
 
-        if (e.StylusDevice != null || !Snapshot.IsCustomTool)
+        // 提升为笔事件的鼠标由 CanvasPreviewStylusDown 处理
+        if (e.StylusDevice != null)
+        {
+            return;
+        }
+
+        BeginMouseContact(e.GetPosition(this), e);
+    }
+
+    /// <summary>
+    /// 鼠标按下入口：真实鼠标与设备号为 0 的笔事件共用，自定义工具下转成合成触点
+    /// </summary>
+    private void BeginMouseContact(Point position, InputEventArgs e)
+    {
+        if (!arbiter.Accepts(InputKind.Mouse))
+        {
+            arbiter.Begin(InputKind.Mouse);
+            e.Handled = true;
+            return;
+        }
+
+        CancelLower(InputKind.Mouse);
+        arbiter.Begin(InputKind.Mouse);
+
+        if (!Snapshot.IsCustomTool)
         {
             return;
         }
@@ -130,10 +60,11 @@ public partial class InkCanvasNext
         // 触摸手势进行中不接受鼠标序列；单指针会话由合成触点进入状态机
         if (State != TouchState.Idle || touches.Count > 0)
         {
+            e.Handled = true;
             return;
         }
 
-        MousePointer.Down(e.GetPosition(this));
+        MousePointer.Down(position);
         e.Handled = true;
 
         // 选区沿用拖出窗口继续的既定行为
@@ -145,7 +76,7 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseMove(object o, MouseEventArgs e)
     {
-        if (e.StylusDevice != null || !MousePointer.IsDown)
+        if (e.StylusDevice != null || !arbiter.MouseAccepted || !MousePointer.IsDown)
         {
             return;
         }
@@ -156,12 +87,19 @@ public partial class InkCanvasNext
 
     private void CanvasPreviewMouseUp(object o, MouseButtonEventArgs e)
     {
-        if (e.StylusDevice != null || !MousePointer.IsDown)
+        if (e.StylusDevice != null)
         {
             return;
         }
 
+        if (!MousePointer.IsDown)
+        {
+            arbiter.End(InputKind.Mouse);
+            return;
+        }
+
         MousePointer.Up(e.GetPosition(this));
+        arbiter.End(InputKind.Mouse);
 
         if (InnerCanvas.IsMouseCaptured)
         {
@@ -169,6 +107,22 @@ public partial class InkCanvasNext
         }
 
         e.Handled = true;
+    }
+
+    private void CanvasLostMouseCapture(object o, MouseEventArgs e)
+    {
+        if (!arbiter.MouseDown)
+        {
+            return;
+        }
+
+        arbiter.End(InputKind.Mouse);
+
+        if (MousePointer.IsDown)
+        {
+            MousePointer.Reset( );
+            ResetTouchState( );
+        }
     }
 
     private void CanvasPreviewMouseWheel(object o, MouseWheelEventArgs e)

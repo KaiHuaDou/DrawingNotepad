@@ -225,6 +225,61 @@ public class EraseBatchTests
         });
     }
 
+    [Fact]
+    public void NativeBatch_TwoRemovals_OneUndoEntry( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var first = HorizontalLine(300, 160);
+            var second = HorizontalLine(500, 160);
+            host.Canvas.Strokes.Add(first);
+            host.Canvas.Strokes.Add(second);
+
+            var token = host.Canvas.BeginNativeErase( );
+            host.Canvas.Strokes.Remove(first);
+            host.Canvas.Strokes.Remove(second);
+            Assert.True(host.Canvas.EndNativeErase(token));
+
+            host.Canvas.Undo( );
+            Assert.Equal(2, host.Canvas.Strokes.Count);
+        });
+    }
+
+    [Fact]
+    public void NativeBatch_NoChange_NoHistoryEntry( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.Strokes.Add(HorizontalLine(300, 160));
+            var position = host.Canvas.Position;
+
+            var token = host.Canvas.BeginNativeErase( );
+            Assert.False(host.Canvas.EndNativeErase(token));
+            Assert.Equal(position, host.Canvas.Position);
+        });
+    }
+
+    [Fact]
+    public void NativeBatch_RaisesEraseOnce( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.Strokes.Add(HorizontalLine(300, 160));
+
+            var operations = new List<InkCanvasOperation>( );
+            host.Canvas.OperationCompleted += (_, e) => operations.Add(e.Operation);
+
+            var token = host.Canvas.BeginNativeErase( );
+            host.Canvas.Strokes.Remove(host.Canvas.Strokes[0]);
+            host.Canvas.CompleteNativeErase(token);
+
+            Assert.Equal<InkCanvasOperation>([InkCanvasOperation.Erase], operations);
+        });
+    }
+
     /// <summary>落指停在 EvalDraw，移到 target 进入 Draw 并按橡皮半径擦除</summary>
     private static MockTouchDevice BeginErase(TouchHost host, Point target)
     {

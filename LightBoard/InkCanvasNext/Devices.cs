@@ -35,6 +35,10 @@ public partial class InkCanvasNext
             touches.Clear( );
             touchStarts.Clear( );
             MousePointer.Reset( );
+            PenPointer.Reset( );
+            HidePenCursor( );
+            arbiter.Reset( );
+            ReleasePenCapture( );
             SetState(TouchState.Idle);
             InnerCanvas.AbortWetInk( );
             CancelSelectionGesture( );
@@ -63,9 +67,9 @@ public partial class InkCanvasNext
 
         RemoveDevice(e.TouchDevice);
 
-        if (e.TouchDevice == MousePointer)
+        if (e.TouchDevice is SyntheticTouchDevice pointer)
         {
-            MousePointer.Reset( );
+            pointer.Reset( );
         }
 
         TouchEpilogue( );
@@ -74,6 +78,18 @@ public partial class InkCanvasNext
     private void CanvasPreviewTouchDown(object? o, TouchEventArgs e)
     {
         CancelEdgeScroll( );
+        HidePenCursor( );
+
+        if (e.TouchDevice is not SyntheticTouchDevice)
+        {
+            if (arbiter.TouchCount == 0)
+            {
+                CancelLower(InputKind.Touch);
+            }
+
+            arbiter.Begin(InputKind.Touch, e.TouchDevice.Id);
+        }
+
         var position = e.GetTouchPoint(this).Position;
         TrackTouchDown(e.TouchDevice.Id, e.TouchDevice, position);
         SubscribeDeactivated(e.TouchDevice);
@@ -243,6 +259,15 @@ public partial class InkCanvasNext
 
     private void RemoveDevice(TouchDevice device)
     {
+        if (device is SyntheticTouchDevice pointer)
+        {
+            EndPointerContact(pointer);
+        }
+        else
+        {
+            arbiter.End(InputKind.Touch, device.Id);
+        }
+
         if (touches.ContainsKey(device.Id))
         {
             TrackTouchUp(device.Id);

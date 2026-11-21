@@ -63,6 +63,22 @@ internal static class SettingsSchema
                     (s, v) => s with { TaperPoints = v is null ? null : (int) v.Value }),
             ]),
 
+            new("手写笔",
+            [
+                new SettingsToggle("手写笔按压力改变粗细", nameof(LightBoardSettings.PenUseDevicePressure),
+                    s => s.EffectivePenUseDevicePressure,
+                    s => s.PenUseDevicePressure,
+                    (s, v) => s with { PenUseDevicePressure = v }),
+                new SettingsToggle("手写笔悬停时显示笔尖", nameof(LightBoardSettings.PenHoverCursor),
+                    s => s.EffectivePenHoverCursor,
+                    s => s.PenHoverCursor,
+                    (s, v) => s with { PenHoverCursor = v }),
+                new SettingsToggle("笔杆按钮临时擦除", nameof(LightBoardSettings.PenBarrelErase),
+                    s => s.EffectivePenBarrelErase,
+                    s => s.PenBarrelErase,
+                    (s, v) => s with { PenBarrelErase = v }),
+            ]),
+
             new("边缘滚动提示",
             [
                 new SettingsToggle("热区内有墨迹时显示滚动按钮", nameof(LightBoardSettings.EdgeScrollHint),

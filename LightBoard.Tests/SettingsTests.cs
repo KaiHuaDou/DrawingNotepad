@@ -73,6 +73,9 @@ public class SettingsTests
         Assert.False(data.EffectiveToolAutoRevert);
         Assert.Equal(SettingsLimits.ToolAutoRevertCountDefault, data.EffectiveToolAutoRevertCount);
         Assert.True(data.EffectiveShowRevertCount);
+        Assert.True(data.EffectivePenUseDevicePressure);
+        Assert.True(data.EffectivePenHoverCursor);
+        Assert.True(data.EffectivePenBarrelErase);
     }
 
     [Fact]
@@ -96,7 +99,10 @@ public class SettingsTests
             EraserDiameter = 80,
             EraserPalmExtra = 12,
             EraserMinLogicalDiameter = 2,
-            EraserRebuildThreshold = 0.25
+            EraserRebuildThreshold = 0.25,
+            PenUseDevicePressure = false,
+            PenHoverCursor = false,
+            PenBarrelErase = false
         };
 
         var options = data.CreateCanvasOptions( );
@@ -117,6 +123,9 @@ public class SettingsTests
         Assert.Equal(12, options.Eraser.PalmExtra);
         Assert.Equal(2, options.Eraser.MinLogicalDiameter);
         Assert.Equal(0.25, options.Eraser.RebuildThreshold);
+        Assert.False(options.Pen.UseDevicePressure);
+        Assert.False(options.Pen.HoverCursor);
+        Assert.False(options.Pen.BarrelErase);
     }
 
     [Fact]

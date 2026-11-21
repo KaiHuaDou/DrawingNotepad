@@ -198,6 +198,15 @@ public sealed record InkCanvasNextOptions
     } = new( );
 
     /// <summary>
+    /// 手写笔参数
+    /// </summary>
+    public PenParameters Pen
+    {
+        get;
+        init => field = value ?? new( );
+    } = new( );
+
+    /// <summary>
     /// 掌擦触点数下限
     /// </summary>
     public const int PalmEraseFingersMin = 4;

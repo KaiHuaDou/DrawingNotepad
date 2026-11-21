@@ -39,5 +39,15 @@
                            FontSize="22" FontWeight="Bold" />
             </Grid>
         </Canvas>
+
+        <Canvas x:Name="PenCursorLayer" Panel.ZIndex="64" IsHitTestVisible="False">
+            <Grid x:Name="PenCursorMark" Width="0" Height="0" Visibility="Collapsed">
+                <Grid.RenderTransform>
+                    <TranslateTransform x:Name="PenCursorOffset" />
+                </Grid.RenderTransform>
+                <Ellipse Fill="Transparent" Stroke="#1E1E1E" StrokeThickness="3" />
+                <Ellipse Fill="Transparent" Stroke="#E6E6E6" StrokeThickness="1" />
+            </Grid>
+        </Canvas>
     </Grid>
 </UserControl>

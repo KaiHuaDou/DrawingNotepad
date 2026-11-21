@@ -182,7 +182,7 @@ public class MouseMachineTests
     }
 
     /// <summary>用单指套索选中一条经过 (150,100)-(360,400) 区域的笔画</summary>
-    private static void LassoSelectStroke(TouchHost host, MouseTouchDevice pointer)
+    private static void LassoSelectStroke(TouchHost host, SyntheticTouchDevice pointer)
     {
         pointer.Down(RootOf(host, new Point(150, 100)));
         pointer.Move(RootOf(host, new Point(300, 100)));

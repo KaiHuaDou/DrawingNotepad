@@ -31,7 +31,10 @@ public record LightBoardSettings(
     SelectionDragMode? SelectionDragMode = null,
     bool? ToolAutoRevert = null,
     int? ToolAutoRevertCount = null,
-    bool? ShowRevertCount = null
+    bool? ShowRevertCount = null,
+    bool? PenUseDevicePressure = null,
+    bool? PenHoverCursor = null,
+    bool? PenBarrelErase = null
 )
 {
     public const double ToolbarScaleDefault = SettingsLimits.ToolbarScaleDefault;
@@ -55,6 +58,12 @@ public record LightBoardSettings(
             EdgeScrollRightThreshold = EffectiveEdgeScrollHint ? EffectiveEdgeScrollRightThreshold : 0,
             MaxHistoryCount = EffectiveMaxHistoryCount,
             SelectionDragMode = EffectiveSelectionDragMode,
+            Pen = new( )
+            {
+                UseDevicePressure = EffectivePenUseDevicePressure,
+                HoverCursor = EffectivePenHoverCursor,
+                BarrelErase = EffectivePenBarrelErase
+            },
             Eraser = new( )
             {
                 Diameter = EffectiveEraserDiameter,
@@ -116,6 +125,12 @@ public record LightBoardSettings(
         => Math.Clamp(ToolAutoRevertCount ?? SettingsLimits.ToolAutoRevertCountDefault, SettingsLimits.ToolAutoRevertCountMin, SettingsLimits.ToolAutoRevertCountMax);
 
     internal bool EffectiveShowRevertCount => ShowRevertCount ?? SettingsLimits.ShowRevertCountDefault;
+
+    internal bool EffectivePenUseDevicePressure => PenUseDevicePressure ?? PenParameters.UseDevicePressureDefault;
+
+    internal bool EffectivePenHoverCursor => PenHoverCursor ?? PenParameters.HoverCursorDefault;
+
+    internal bool EffectivePenBarrelErase => PenBarrelErase ?? PenParameters.BarrelEraseDefault;
 }
 
 /// <summary>

@@ -11,32 +11,43 @@ namespace InkCanvasNext;
 internal sealed class TaperInkCanvas : InkCanvas
 {
     private TaperParameters taper = new( );
+    private InputArbiter arbiter = null!;
     private DynamicRenderer? nativeRenderer;
     private bool configured;
 
     /// <summary>
     /// 配置笔锋；在画布构造时调用一次
     /// </summary>
-    internal void Configure(TaperParameters options)
+    internal void Configure(TaperParameters options, InputArbiter inputArbiter)
     {
         taper = options;
-        nativeRenderer = DynamicRenderer;
+        arbiter = inputArbiter;
+        nativeRenderer = new FilteredDynamicRenderer(inputArbiter);
+        DynamicRenderer = nativeRenderer;
         configured = true;
-
-        if (!options.Enabled)
-        {
-            return;
-        }
 
         ObserveDefaultDrawingAttributes( );
     }
+
+    internal void InstallPressurePlugin(PenParameters pen)
+    {
+        StylusPlugIns.Insert(0, new DevicePressureStylusPlugIn(arbiter, pen));
+    }
+
+    /// <summary>
+    /// 压力插件是否位于实时渲染器之前；干墨与湿墨都要看到改写后的压力
+    /// </summary>
+    internal bool PressurePluginFirst => StylusPlugIns.Count > 0
+                && StylusPlugIns[0] is DevicePressureStylusPlugIn
+                && DynamicRenderer is { } renderer
+                && StylusPlugIns.IndexOf(renderer) > 0;
 
     /// <summary>
     /// 订阅当前笔触属性的变化；替换实例后再次调用
     /// </summary>
     internal void ObserveDefaultDrawingAttributes( )
     {
-        if (!configured || !taper.Enabled)
+        if (!configured)
         {
             return;
         }
@@ -58,11 +69,11 @@ internal sealed class TaperInkCanvas : InkCanvas
     {
         ClearWet( );
 
-        // 重新挂一次自定义渲染器，触发它清掉在途笔画与尾部视觉
-        if (TaperRenderer is not null && ReferenceEquals(DynamicRenderer, TaperRenderer))
+        // 重挂当前渲染器触发 OnRemoved/OnAdded：任何渲染器都会销毁在途湿墨与尾部视觉
+        if (DynamicRenderer is { } renderer)
         {
             DynamicRenderer = null;
-            DynamicRenderer = TaperRenderer;
+            DynamicRenderer = renderer;
         }
     }
 
@@ -83,7 +94,10 @@ internal sealed class TaperInkCanvas : InkCanvas
 
     protected override void OnStrokeCollected(InkCanvasStrokeCollectedEventArgs e)
     {
-        Taper.Apply(e.Stroke, Taper.Effective(taper, e.Stroke.DrawingAttributes));
+        if (arbiter.StrokeKind != InputKind.Stylus)
+        {
+            Taper.Apply(e.Stroke, Taper.Effective(taper, e.Stroke.DrawingAttributes));
+        }
 
         base.OnStrokeCollected(e);
 
@@ -103,7 +117,7 @@ internal sealed class TaperInkCanvas : InkCanvas
 
         e.PreviousDrawingAttributes.AttributeChanged -= DefaultDrawingAttributesChanged;
 
-        if (configured && taper.Enabled)
+        if (configured)
         {
             DefaultDrawingAttributes.AttributeChanged -= DefaultDrawingAttributesChanged;
             DefaultDrawingAttributes.AttributeChanged += DefaultDrawingAttributesChanged;
@@ -128,7 +142,7 @@ internal sealed class TaperInkCanvas : InkCanvas
             && DefaultDrawingAttributes.StylusTip == StylusTip.Ellipse;
 
         var target = useTaper
-            ? TaperRenderer ??= new TaperDynamicRenderer(taper)
+            ? TaperRenderer ??= new TaperDynamicRenderer(taper, arbiter)
             : nativeRenderer;
 
         // 替换渲染器时 ActiveEditingMode 不会重新触发 InkCollectionBehavior 的启停，这里对齐一次

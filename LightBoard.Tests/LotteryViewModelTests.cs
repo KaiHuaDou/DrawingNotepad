@@ -230,7 +230,7 @@ public class LotteryViewModelTests
         model.SetMode(LotteryMode.Collection);
         model.AddDataset("名单", ["甲", "乙", "丙"]);
 
-        Assert.Equal(new[] { "甲", "乙", "丙" }, model.Options.Select(option => option.Text));
+        Assert.Equal(["甲", "乙", "丙"], model.Options.Select(option => option.Text));
     }
 
     [Fact]
@@ -381,7 +381,7 @@ public class LotteryViewModelTests
 
         Assert.Equal(2, restored.Datasets.Count);
         Assert.Equal("甲", restored.SelectedDataset?.Name);
-        Assert.Equal(new[] { "1", "2" }, restored.Options.Select(option => option.Text));
+        Assert.Equal(["1", "2"], restored.Options.Select(option => option.Text));
         Assert.Equal(2, restored.PoolSize);
     }
 

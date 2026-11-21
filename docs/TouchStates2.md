@@ -18,6 +18,8 @@
 
 `Idle`、`EvalDraw`、`Draw`、`EvalPan`（新增）、`PanZoom`、`Pan`、`Eraser`、`MultiDraw`、`Selection`。
 
+手写笔与鼠标在自定义工具下经 `SyntheticTouchDevice`（`PenPointer` / `MousePointer`）以单点触摸进入本状态机；`Ink` 与 `EraseStroke` 仍走原生收笔，不经过状态机。三类输入谁可以进入由 `InputArbiter` 决定（触摸 > 鼠标 > 手写笔）。
+
 ## 假设
 
 - 条件变化但未命中当前状态的任何迁移 → 停留（stay）。

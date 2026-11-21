@@ -158,11 +158,6 @@ public partial class InkCanvasNext
     private readonly RingBuffer<IHistoryChange> history;
     private bool applyingUndoRedo;
 
-    /// <summary>
-    /// 擦除周期内持续追加的历史项；非空表示批次还开着
-    /// </summary>
-    private StrokeChanges? eraseBatch;
-
     internal int Position { get; private set; }
 
     internal int RedoDepth => history.Count - Position;
@@ -195,9 +190,14 @@ public partial class InkCanvasNext
         }
 
         var historyEnabled = history.Capacity > 0;
-        var erasing = eraser.Recording && historyEnabled;
+        var erasing = (eraser.Recording || nativeEraseActive) && historyEnabled;
         var shouldPush = !erasing && historyEnabled && !applyingUndoRedo
             && (e.Added.Count > 0 || e.Removed.Count > 0);
+
+        if (nativeEraseActive && (e.Added.Count > 0 || e.Removed.Count > 0))
+        {
+            nativeEraseChanged = true;
+        }
 
         // 入栈先于通知：宿主在回调里改画布时，嵌套变更排在后面
         if (erasing)
@@ -213,40 +213,10 @@ public partial class InkCanvasNext
 
         UpdateEdgeHints( );
 
-        if (!eraser.Recording && !applyingUndoRedo && e.Added.Count > 0)
+        if (!eraser.Recording && !nativeEraseActive && !applyingUndoRedo && e.Added.Count > 0)
         {
             RaiseOperationCompleted(InkCanvasOperation.Stroke);
         }
-    }
-
-    /// <summary>
-    /// 给开口批次封口：批次留在历史里，之后的擦除开新项
-    /// </summary>
-    private void SealEraseBatch( )
-    {
-        eraseBatch = null;
-    }
-
-    private void TrackEraseChange(IReadOnlyList<Stroke> added, IReadOnlyList<Stroke> removed)
-    {
-        var batch = eraseBatch ??= OpenEraseBatch( );
-
-        foreach (var stroke in removed)
-        {
-            batch.TrackRemoved(stroke);
-        }
-
-        foreach (var stroke in added)
-        {
-            batch.TrackAdded(stroke);
-        }
-    }
-
-    private StrokeChanges OpenEraseBatch( )
-    {
-        var batch = new StrokeChanges([], []);
-        PushChange(batch);
-        return batch;
     }
 
     /// <summary>
@@ -313,6 +283,7 @@ public partial class InkCanvasNext
 
     private void ClearHistory( )
     {
+        ResetNativeErase( );
         history.Clear( );
         Position = 0;
         UpdateCanUndoRedo( );
@@ -350,6 +321,7 @@ public partial class InkCanvasNext
     public void SwapHistory(out HistorySnapshot? old, HistorySnapshot? @new)
     {
         SealEraseBatch( );
+        ResetNativeErase( );
 
         old = history.Count > 0 ? new HistorySnapshot(history.ToArray( ), Position) : null;
         history.Clear( );

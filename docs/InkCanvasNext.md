@@ -1,6 +1,6 @@
 # `InkCanvasNext`
 
-封装 WPF `InkCanvas`，提供触摸手势、选区、形状、撤销、多指书写与边缘滚动提示。
+封装 WPF `InkCanvas`，提供触摸手势、手写笔、选区、形状、撤销、多指书写与边缘滚动提示。
 
 ## 集成
 
@@ -23,7 +23,7 @@
 ## 公开类型
 
 - `InkCanvasNext`：主控件
-- `InkCanvasNextOptions`、`EraserParameters`、`TaperParameters`：构造期选项
+- `InkCanvasNextOptions`、`EraserParameters`、`TaperParameters`、`PenParameters`：构造期选项
 - `InkCanvasNextMode`：编辑模式
 - `DrawingAttributesNext`：当前工具设置（模式、印章与完整笔触属性）
 - `StampAction`：盖章开关（克隆 / 粘贴）
@@ -91,6 +91,20 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `Eraser.RebuildThreshold`   | 0.5 | 逻辑直径变化超过此值才重建命中测试器，内容 DIP |
 | `Taper.Enabled` | `true` | 笔锋开关：笔画末端按采样点渐细 |
 | `Taper.Points` | 8 | 末端渐细的采样点数，取值 2~40 |
+| `Pen.UseDevicePressure` | `true` | 手写笔按设备压力改变粗细；关闭后宽度固定为笔宽 |
+| `Pen.HoverCursor` | `true` | 手写笔悬停时显示笔尖圆环 |
+| `Pen.BarrelErase` | `true` | 笔杆按钮在落笔前按住时临时按笔擦除 |
+
+## 手写笔
+
+触摸、鼠标、手写笔按“触摸 > 鼠标 > 手写笔”仲裁：高优先级按下时低优先级不落墨，在途笔迹被放弃；高优先级抬起后，低优先级需要重新按下。
+
+- `Ink` 与 `EraseStroke` 走原生收笔；`Line`、`Circle`、`Select`、`EraseArea` 与 `Stamp` 经合成触点进入触摸状态机。
+- 手写笔宽度等于 `笔宽 × 设备压力`（压力低于 0.25 时停在 25% 宽度）；触摸与鼠标宽度固定为笔宽。
+- 手写笔不应用末端笔锋；触摸与鼠标仍按 `TaperParameters` 渐细。
+- 反转笔：`EraseArea` 下按面积擦，其余工具按笔擦；只读时正锋与反转都不修改墨迹。
+- 笔悬停圆环直径跟随当前笔宽与缩放，按下、离开范围、触摸或鼠标驱动、窗口失活时隐藏。
+- 设备压力只对确认属于手写笔的平板设备改写；设备表未枚举完时宁可不改写，避免把触摸压力 0.5 反解成 0.1667 导致宽度减半。
 
 ## 依赖属性
 

@@ -41,7 +41,9 @@ public partial class InkCanvasNext : UserControl
         eraser = new Eraser(InnerCanvas, EraserFeedback, EraserFeedbackLabel, this.options.Eraser);
         EraserDiameter = this.options.Eraser.Diameter;
 
-        MousePointer = new MouseTouchDevice(this);
+        MousePointer = new SyntheticTouchDevice(this, SyntheticTouchDevice.MouseId);
+        PenPointer = new SyntheticTouchDevice(this, SyntheticTouchDevice.PenId);
+        penCursor = new PenCursor(PenCursorMark, PenCursorOffset);
 
         selectionVisual = new SelectionVisual(SelectionLayer, canvasSize);
         selection = new SelectionController(this, selectionVisual);
@@ -72,10 +74,16 @@ public partial class InkCanvasNext : UserControl
         InnerCanvas.Children.Add(multiTouchCanvas);
 
         Unloaded += InkCanvasNextUnloaded;
+        Loaded += (_, _) =>
+        {
+            arbiter.RefreshTabletDevices( );
+            HookPenCursorWindow( );
+        };
     }
 
     private void InkCanvasNextUnloaded(object o, RoutedEventArgs e)
     {
+        UnhookPenCursorWindow( );
         ResetTouchState( );
         UnhookMultiTouchFrame( );
     }
@@ -90,6 +98,7 @@ public partial class InkCanvasNext : UserControl
         };
 
         Stylus.SetIsPressAndHoldEnabled(InnerCanvas, false);
+        Stylus.SetIsFlicksEnabled(InnerCanvas, false);
         Panel.SetZIndex(InnerCanvas, 36); // 与 XAML 的 SelectionLayer(37)、ShapePreviewLayer(38) 衔接
         InnerCanvas.DefaultDrawingAttributes = DrawingAttributesNext.CreateDefault( );
         InnerCanvas.LostTouchCapture += CanvasLostTouchCapture;
@@ -100,9 +109,21 @@ public partial class InkCanvasNext : UserControl
         InnerCanvas.PreviewTouchMove += CanvasPreviewTouchMove;
         InnerCanvas.PreviewTouchUp += CanvasPreviewTouchUp;
         InnerCanvas.TouchLeave += CanvasTouchLeave;
+        InnerCanvas.PreviewStylusDown += CanvasPreviewStylusDown;
+        InnerCanvas.PreviewStylusMove += CanvasPreviewStylusMove;
+        InnerCanvas.PreviewStylusUp += CanvasPreviewStylusUp;
+        InnerCanvas.PreviewStylusInRange += CanvasPreviewStylusInRange;
+        InnerCanvas.PreviewStylusOutOfRange += CanvasPreviewStylusOutOfRange;
+        InnerCanvas.PreviewStylusInAirMove += CanvasPreviewStylusInAirMove;
+        InnerCanvas.PreviewStylusButtonDown += CanvasPreviewStylusButtonDown;
+        InnerCanvas.PreviewStylusButtonUp += CanvasPreviewStylusButtonUp;
+        InnerCanvas.LostStylusCapture += CanvasLostStylusCapture;
+        InnerCanvas.LostMouseCapture += CanvasLostMouseCapture;
         CanvasGrid.Children.Insert(1, InnerCanvas);
 
-        InnerCanvas.Configure(options.Taper);
+        InnerCanvas.Configure(options.Taper, arbiter);
+        arbiter.RefreshTabletDevices( );
+        InnerCanvas.InstallPressurePlugin(options.Pen);
     }
 
     /// <summary>
@@ -209,6 +230,7 @@ public partial class InkCanvasNext : UserControl
     {
         // 切换工具即中断形状绘制（鼠标路径同样经过状态机，形状取消依赖此处）
         CancelShape( );
+        InnerCanvas.EditingModeInverted = ResolveInvertedEditingMode(mode);
 
         if (IsReadOnly)
         {
@@ -244,6 +266,13 @@ public partial class InkCanvasNext : UserControl
                 ConfigureSelectMode(mode == InkCanvasNextMode.Select);
                 break;
         }
+    }
+
+    private InkCanvasEditingMode ResolveInvertedEditingMode(InkCanvasNextMode mode)
+    {
+        return IsReadOnly || mode == InkCanvasNextMode.EraseArea
+            ? InkCanvasEditingMode.None
+            : InkCanvasEditingMode.EraseByStroke;
     }
 
     private void ConfigureSelectMode(bool inSelect)

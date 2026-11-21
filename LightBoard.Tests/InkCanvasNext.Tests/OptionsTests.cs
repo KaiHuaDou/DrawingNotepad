@@ -37,6 +37,16 @@ public class OptionsTests
     }
 
     [Fact]
+    public void Pen_Defaults( )
+    {
+        var pen = new InkCanvasNextOptions( ).Pen;
+
+        Assert.True(pen.UseDevicePressure);
+        Assert.True(pen.HoverCursor);
+        Assert.True(pen.BarrelErase);
+    }
+
+    [Fact]
     public void SquaredThresholds_FollowInitValues( )
     {
         var options = new InkCanvasNextOptions
