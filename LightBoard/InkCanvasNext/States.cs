@@ -80,7 +80,12 @@ public partial class InkCanvasNext
     /// </summary>
     internal ToolSnapshot Snapshot => new(DrawingAttributes.Mode, DrawingAttributes.Stamp, IsReadOnly);
 
-    private static StateTraits Traits(TouchState state)
+    /// <summary>
+    /// 当前状态的状态级元数据
+    /// </summary>
+    internal StateTraits Traits => TraitsOf(State);
+
+    private static StateTraits TraitsOf(TouchState state)
     {
         return state switch
         {
@@ -95,7 +100,7 @@ public partial class InkCanvasNext
 
     private bool HandlesEvent(TouchState state)
     {
-        return Traits(state).BlocksNativeInput || IsAreaEraserActive(state) || Snapshot.IsStampSingleFinger(state);
+        return TraitsOf(state).BlocksNativeInput || IsAreaEraserActive(state) || Snapshot.IsStampSingleFinger(state);
     }
 
     /// <summary>
@@ -277,7 +282,7 @@ public partial class InkCanvasNext
             EnsureCanvasFill(CurrentView);
             UpdateEdgeHints( );
         }
-        else if (Traits(from).OverridesEditing && !Traits(to).OverridesEditing)
+        else if (TraitsOf(from).OverridesEditing && !TraitsOf(to).OverridesEditing)
         {
             ApplyModeToEditing(DrawingAttributes.Mode);
         }
@@ -352,6 +357,9 @@ public partial class InkCanvasNext
                     InnerCanvas.EditingMode = InkCanvasEditingMode.None;
                     InnerCanvas.ClearWet( );
                     CaptureAll( );
+
+                    // 只有从组外进入才算新的一次平移：累计位移从零起算，组内迁移与基线重立都不清空
+                    PanDisplacement = default;
 
                     // 手势开始补一屏余量，手势中不扩展，靠这次余量吸收拖动
                     EnsureCanvasFill(CurrentView);

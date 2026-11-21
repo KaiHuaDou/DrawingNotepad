@@ -9,12 +9,37 @@ namespace InkCanvasNext;
 public partial class InkCanvasNext
 {
     private Point panPoint0;
-    private double distance0;
 
     private Point panZoomAnchor;
-    private bool zoomLocked;
 
     private double initialScale = 1.0;
+
+    /// <summary>
+    /// 本次手势是否已锁定缩放：两指位移或指距越过阈值后只平移不缩放
+    /// </summary>
+    internal bool ZoomLocked { get; private set; }
+
+    /// <summary>
+    /// 当前两指距离，视口 DIP；不足两指时为 0
+    /// </summary>
+    internal double PinchDistance
+    {
+        get
+        {
+            var (first, second) = GetMajorTouches( );
+            return first is { } a && second is { } b ? Distance(a, b) : 0;
+        }
+    }
+
+    /// <summary>
+    /// 手势基线的两指距离，视口 DIP；建立基线时不足两指为 0
+    /// </summary>
+    internal double PinchDistance0 { get; private set; }
+
+    /// <summary>
+    /// 本次平移的累计手指位移，视口 DIP；从进入平移组起算，方向与手指移动一致
+    /// </summary>
+    internal Vector PanDisplacement { get; private set; }
 
     private void InitGesture( )
     {
@@ -25,10 +50,10 @@ public partial class InkCanvasNext
         }
 
         panPoint0 = first.Value;
-        distance0 = second is null ? 0 : Distance(first.Value, second.Value);
+        PinchDistance0 = second is null ? 0 : Distance(first.Value, second.Value);
         initialScale = CurrentView.Scale;
         panZoomAnchor = second is null ? first.Value : MidPoint(first.Value, second.Value);
-        zoomLocked = false;
+        ZoomLocked = false;
     }
 
     private void PanZoom( )
@@ -42,23 +67,23 @@ public partial class InkCanvasNext
         var span2 = second is null ? 0.0 : Distance2(firstPoint, second.Value);
         var displ2 = second is null ? 0.0 : Distance2(MidPoint(firstPoint, second.Value), panZoomAnchor);
 
-        if (!zoomLocked && (displ2 > options.PanZoomDisplaceThreshold2 || span2 < options.PinchLockDistance2))
+        if (!ZoomLocked && (displ2 > options.PanZoomDisplaceThreshold2 || span2 < options.PinchLockDistance2))
         {
-            zoomLocked = true;
+            ZoomLocked = true;
         }
 
         var view = CurrentView;
 
         double targetScale;
-        if (zoomLocked)
+        if (ZoomLocked)
         {
             targetScale = view.Scale;
         }
         else
         {
             var distance = Math.Sqrt(span2);
-            var k = distance0 > 0 && distance > 0
-                ? (options.SmoothZoom ? Smooth(distance / distance0) : distance / distance0)
+            var k = PinchDistance0 > 0 && distance > 0
+                ? (options.SmoothZoom ? Smooth(distance / PinchDistance0) : distance / PinchDistance0)
                 : 1.0;
 
             targetScale = Math.Clamp(initialScale * k, MinScale, MaxScale);
@@ -82,6 +107,8 @@ public partial class InkCanvasNext
             return;
         }
 
+        // 位移按手指移动方向累计（与 PanBy 的视口增量互为相反数）
+        PanDisplacement += first.Value - panPoint0;
         PanBy(panPoint0 - first.Value);
         panPoint0 = first.Value;
     }

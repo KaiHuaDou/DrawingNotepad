@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Ink;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -23,6 +24,14 @@ internal sealed class DebugVisual : FrameworkElement
     private const double CountColumnGap = 110;
 
     private const double SampleIntervalMs = 100;
+
+    // 状态侧栏：单列贴左、无背景，只靠标题下的细线分组，避免大面积遮挡画布
+    private const double StatusFontSize = 13;
+    private const double StatusGroupGap = 8;
+    private const double StatusLabelGap = 10;
+    private const double StatusRowHeight = 18;
+    private const double StatusTitleHeight = 22;
+    private const string Dash = "—";
 
     private static readonly Typeface Font = new("Segoe UI");
 
@@ -52,11 +61,13 @@ internal sealed class DebugVisual : FrameworkElement
     private double lastScale;
     private (int Touch, int Undo, int Redo, int Stroke) lastCounts = (-1, -1, -1, -1);
     private (double Rate, double Longest) lastFrames = (-1, -1);
+    private CanvasStatus lastStatus;
 
     internal DebugVisual(InkCanvasNext.InkCanvasNext canvas)
     {
         this.canvas = canvas;
         lastScale = canvas.CurrentScale;
+        lastStatus = ReadStatus( );
         canvas.ViewOrSelectionChanged += (_, _) =>
         {
             if (Math.Abs(canvas.CurrentScale - lastScale) > 1e-9)
@@ -108,6 +119,7 @@ internal sealed class DebugVisual : FrameworkElement
         DrawEdgeScrollZones(dc);
 
         DrawCounts(dc, dip);
+        DrawStatus(dc, dip);
     }
 
     private void Refresh( )
@@ -115,13 +127,15 @@ internal sealed class DebugVisual : FrameworkElement
         var counts = (canvas.ActiveTouchCount, canvas.Position, canvas.RedoDepth, canvas.Strokes.Count);
         frameMeter.Sample(SampleIntervalMs);
         var frames = (frameMeter.Rate, frameMeter.LongestFrame);
-        if (counts == lastCounts && frames == lastFrames)
+        var status = ReadStatus( );
+        if (counts == lastCounts && frames == lastFrames && status == lastStatus)
         {
             return;
         }
 
         lastCounts = counts;
         lastFrames = frames;
+        lastStatus = status;
         InvalidateVisual( );
     }
 
@@ -129,10 +143,6 @@ internal sealed class DebugVisual : FrameworkElement
     {
         var mid = RenderSize.Height / 2;
         var right = RenderSize.Width - SideMargin;
-
-        Count(dc, "触点", $"{canvas.ActiveTouchCount}", SideMargin, mid - CountRowHeight, dip);
-        Count(dc, "笔画", $"{canvas.Strokes.Count}", SideMargin, mid, dip);
-        Count(dc, "缩放", $"{canvas.CurrentScale:0.##}×", SideMargin, mid + CountRowHeight, dip);
 
         CountRight(dc, "帧率", $"{frameMeter.Rate:0.0}", right, mid - 3.5 * CountRowHeight, dip);
         CountRight(dc, "最长帧", $"{frameMeter.LongestFrame:0.0} ms", right, mid - 2.5 * CountRowHeight, dip);
@@ -143,6 +153,110 @@ internal sealed class DebugVisual : FrameworkElement
         CountRight(dc, "渲染", $"Tier {RenderCapability.Tier >> 16}", right, mid + 2.5 * CountRowHeight, dip);
         CountRight(dc, "", $"{RenderOptions.ProcessRenderMode}", right, mid + 3.5 * CountRowHeight, dip);
     }
+
+    // 状态侧栏贴在左侧：无背景只留文字与标题细线，避免大面积遮挡画布；标签列宽取全栏最宽
+    private void DrawStatus(DrawingContext dc, double dip)
+    {
+        var groups = BuildStatus(lastStatus);
+        var labelWidth = groups.SelectMany(group => group.Rows).Max(row => TextWidth(row.Label, StatusFontSize, dip));
+        var valueWidth = groups.SelectMany(group => group.Rows).Max(row => TextWidth(row.Value, StatusFontSize, dip));
+        var x = SideMargin;
+        var y = SideMargin;
+
+        foreach (var group in groups)
+        {
+            Text(dc, group.Title, StatusFontSize + 1, TextBrush, x, y + 3, dip);
+            dc.DrawLine(ThinPen, new Point(x, y + StatusTitleHeight - 4), new Point(x + labelWidth + StatusLabelGap + valueWidth, y + StatusTitleHeight - 4));
+            y += StatusTitleHeight;
+
+            foreach (var row in group.Rows)
+            {
+                Text(dc, row.Label, StatusFontSize, DimBrush, x, y, dip);
+                Text(dc, row.Value, StatusFontSize, TextBrush, x + labelWidth + StatusLabelGap, y, dip);
+                y += StatusRowHeight;
+            }
+
+            y += StatusGroupGap;
+        }
+    }
+
+    private static StatusGroup[] BuildStatus(CanvasStatus status)
+    {
+        // 指距与位移只在平移组内有意义；其余状态用占位符，避免误读上一次手势的残留值
+        var panGroup = status.State is TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan;
+        var panning = status.State is TouchState.EvalPan or TouchState.Pan;
+        var tool = status.Tool;
+        var pen = status.Pen;
+
+        return
+        [
+            new("画布", [
+                new("触点", $"{status.Touches}"),
+                new("笔画", $"{status.Strokes}"),
+                new("缩放", $"{status.Scale:0.##}×"),
+            ]),
+            new("手势", [
+                new("State", status.State.ToString( )),
+                new("IsGestureActive", YesNo(status.IsGestureActive)),
+                new("zoomLocked", panGroup ? YesNo(status.ZoomLocked) : Dash),
+                new("distance", panGroup ? $"{status.Distance:0.0} DIP" : Dash),
+                new("distance0", panGroup ? $"{status.Distance0:0.0} DIP" : Dash),
+                new("PanDisplacement", panning ? $"({status.Pan.X:0.0}, {status.Pan.Y:0.0})" : Dash),
+            ]),
+            new("状态特征", [
+                new("BlocksNativeInput", YesNo(status.Traits.BlocksNativeInput)),
+                new("OverridesEditing", YesNo(status.Traits.OverridesEditing)),
+                new("PalmErase", YesNo(status.Traits.PalmErase)),
+                new("AreaEraseHost", YesNo(status.Traits.AreaEraseHost)),
+            ]),
+            new("工具快照", [
+                new("Mode", tool.Mode.ToString( )),
+                new("Stamp", tool.Stamp.ToString( )),
+                new("IsReadOnly", YesNo(tool.IsReadOnly)),
+                new("IsStamp", YesNo(tool.IsStamp)),
+                new("IsSelectionEntry", YesNo(tool.IsSelectionEntry)),
+                new("IsSelect", YesNo(tool.IsSelect)),
+                new("IsAreaErase", YesNo(tool.IsAreaErase)),
+                new("IsShape", YesNo(tool.IsShape)),
+                new("IsCircle", YesNo(tool.IsCircle)),
+                new("IsErase", YesNo(tool.IsErase)),
+                new("AllowsMultiDraw", YesNo(tool.AllowsMultiDraw)),
+                new("IsCustomTool", YesNo(tool.IsCustomTool)),
+                new("WantsPreemptiveCapture", YesNo(tool.WantsPreemptiveCapture)),
+            ]),
+            new("笔触", [
+                new("Color", pen.Color.ToString( )),
+                new("Width", pen.Width.ToString("0.##", CultureInfo.CurrentCulture)),
+                new("Height", pen.Height.ToString("0.##", CultureInfo.CurrentCulture)),
+                new("StylusTip", pen.StylusTip.ToString( )),
+                new("StylusTipTransform", $"{pen.Transform.M11:0.##}, {pen.Transform.M12:0.##}, {pen.Transform.M21:0.##}, {pen.Transform.M22:0.##}, {pen.Transform.OffsetX:0.##}, {pen.Transform.OffsetY:0.##}"),
+                new("FitToCurve", YesNo(pen.FitToCurve)),
+                new("IgnorePressure", YesNo(pen.IgnorePressure)),
+                new("IsHighlighter", YesNo(pen.IsHighlighter)),
+            ]),
+        ];
+    }
+
+    private CanvasStatus ReadStatus( )
+    {
+        var a = canvas.DrawingAttributes.DrawingAttributes;
+        return new(
+            canvas.ActiveTouchCount, canvas.Strokes.Count, canvas.CurrentScale,
+            canvas.State, canvas.IsGestureActive, canvas.ZoomLocked, canvas.PinchDistance, canvas.PinchDistance0, canvas.PanDisplacement, canvas.Snapshot, canvas.Traits,
+            new PenStatus(a.Color, a.Width, a.Height, a.StylusTip, a.StylusTipTransform, a.FitToCurve, a.IgnorePressure, a.IsHighlighter));
+    }
+
+    private static double TextWidth(string s, double size, double dip) => new FormattedText(s, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Font, size, Brushes.Transparent, dip).Width;
+
+    private static string YesNo(bool value) => value ? "是" : "否";
+
+    private readonly record struct StatusRow(string Label, string Value);
+
+    private sealed record StatusGroup(string Title, StatusRow[] Rows);
+
+    private readonly record struct PenStatus(Color Color, double Width, double Height, StylusTip StylusTip, Matrix Transform, bool FitToCurve, bool IgnorePressure, bool IsHighlighter);
+
+    private readonly record struct CanvasStatus(int Touches, int Strokes, double Scale, TouchState State, bool IsGestureActive, bool ZoomLocked, double Distance, double Distance0, Vector Pan, ToolSnapshot Tool, StateTraits Traits, PenStatus Pen);
 
     private void DrawRadii(DrawingContext dc, double dip)
     {
@@ -211,12 +325,6 @@ internal sealed class DebugVisual : FrameworkElement
         dc.DrawLine(pen, new Point(470, y + 4), new Point(470, y + 16));
         dc.DrawLine(pen, new Point(470 + length, y + 4), new Point(470 + length, y + 16));
         Text(dc, $"{name} = {value}", 13, TextBrush, 590, y, dip);
-    }
-
-    private static void Count(DrawingContext dc, string label, string value, double x, double y, double dip)
-    {
-        Text(dc, label, 14, DimBrush, x, y + 5, dip);
-        Text(dc, value, 20, TextBrush, x + CountColumnGap, y, dip);
     }
 
     private static void CountRight(DrawingContext dc, string label, string value, double x, double y, double dip)
