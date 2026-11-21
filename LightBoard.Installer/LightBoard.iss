@@ -4,11 +4,11 @@
 ; 编译命令（AppVersion 默认为 0.0.0，CI 从 csproj 的 Version 提取后传入）：
 ;   ISCC -DAppVersion=1.2.3 LightBoard.iss                        框架依赖版，含 .NET 运行时检测
 ;   ISCC -DAppVersion=1.2.3 -DSelfContained LightBoard.iss        自包含版，无运行时检测
-;   上述命令均可加 -DArm64 构建 Windows Arm64 版本，或加 -DNoOpenCv 构建不含 OpenCV 的变体
+;   上述命令均可加 -DArm64 构建 Windows Arm64 版本，或加 -DOpenCv 构建带 OpenCV 的变体
 ;
 ; 产物来源（各变体读取各自的发布目录，与发布、构建的先后顺序无关）：
-;   框架依赖版 ← LightBoard/bin/publish[-nocv]-<架构>
-;   自包含版 ← LightBoard/bin/publish[-nocv][-runtime]-<架构>
+;   框架依赖版 ← LightBoard/bin/publish[-cv]-<架构>
+;   自包含版 ← LightBoard/bin/publish[-cv][-runtime]-<架构>
 ;   架构取 x64 或 arm64，发布命令见 README 的「构建」。
 ;
 ; 框架依赖版在运行时缺失时，在 PrepareToInstall 阶段从 aka.ms 下载最新 .NET 11 Desktop Runtime
@@ -28,8 +28,8 @@
     #define RuntimeSuffix ""
 #endif
 
-#ifdef NoOpenCv
-    #define OpenCvSuffix "-nocv"
+#ifdef OpenCv
+    #define OpenCvSuffix "-cv"
 #else
     #define OpenCvSuffix ""
 #endif
@@ -42,7 +42,7 @@
     #define ArchitecturesValue "x64compatible"
 #endif
 
-; 目录名与产物名共用同一后缀顺序：publish[-nocv][-runtime]-<架构>，LightBoard-installer[-nocv][-runtime]-<架构>
+; 目录名与产物名共用同一后缀顺序：publish[-cv][-runtime]-<架构>，LightBoard-installer[-cv][-runtime]-<架构>
 #define VariantSuffix OpenCvSuffix + RuntimeSuffix + ArchSuffix
 #define PublishDir "..\LightBoard\bin\publish" + VariantSuffix
 

@@ -123,14 +123,14 @@
 
 - `LightBoard-x64-<版本>.zip`：免安装（框架依赖），需要 .NET 11 桌面运行时
 - `LightBoard-runtime-x64-<版本>.zip`：免安装（自包含）
-- `LightBoard-nocv-x64-<版本>.zip`、`LightBoard-nocv-runtime-x64-<版本>.zip`：同上，不含 OpenCV（无视频展台）
+- `LightBoard-cv-x64-<版本>.zip`、`LightBoard-cv-runtime-x64-<版本>.zip`：同上，含 OpenCV（带视频展台）
 - `LightBoard-arm64-<版本>.zip`、`LightBoard-runtime-arm64-<版本>.zip`：Windows Arm64，其余同上
-- `LightBoard-nocv-arm64-<版本>.zip`、`LightBoard-nocv-runtime-arm64-<版本>.zip`：Windows Arm64，不含 OpenCV
+- `LightBoard-cv-arm64-<版本>.zip`、`LightBoard-cv-runtime-arm64-<版本>.zip`：Windows Arm64，含 OpenCV
 - `LightBoard-installer-x64-<版本>.exe`：安装包（框架依赖），需要 .NET 11 桌面运行时
 - `LightBoard-installer-runtime-x64-<版本>.exe`：安装包（自包含）
-- `LightBoard-installer-nocv-x64-<版本>.exe`、`LightBoard-installer-nocv-runtime-x64-<版本>.exe`：同上，不含 OpenCV（无视频展台）
+- `LightBoard-installer-cv-x64-<版本>.exe`、`LightBoard-installer-cv-runtime-x64-<版本>.exe`：同上，含 OpenCV（带视频展台）
 - `LightBoard-installer-arm64-<版本>.exe`、`LightBoard-installer-runtime-arm64-<版本>.exe`：Windows Arm64 安装包
-- `LightBoard-installer-nocv-arm64-<版本>.exe`、`LightBoard-installer-nocv-runtime-arm64-<版本>.exe`：同上，不含 OpenCV
+- `LightBoard-installer-cv-arm64-<版本>.exe`、`LightBoard-installer-cv-runtime-arm64-<版本>.exe`：同上，含 OpenCV
 
 免安装包解压后运行 `LightBoard.exe`。
 
@@ -161,9 +161,9 @@ dotnet publish LightBoard -p:PublishProfile=SelfContained -c Release    # 自包
 dotnet test
 ```
 
-产物在 `LightBoard/bin/publish-x64/`（框架依赖）与 `LightBoard/bin/publish-runtime-x64/`（自包含）。加 `-p:WithOpenCv=false` 构建不含 OpenCV 的变体，两者分别为 `LightBoard/bin/publish-nocv-x64/` 与 `LightBoard/bin/publish-nocv-runtime-x64/`。
+产物在 `LightBoard/bin/publish-cv-x64/`（框架依赖）与 `LightBoard/bin/publish-cv-runtime-x64/`（自包含）。加 `-p:WithOpenCv=false` 构建不含 OpenCV 的变体，两者分别为 `LightBoard/bin/publish-x64/` 与 `LightBoard/bin/publish-runtime-x64/`。
 
-Arm64 使用 `FolderProfileArm64` 与 `SelfContainedArm64`，产物在 `LightBoard/bin/publish-arm64/` 与 `LightBoard/bin/publish-runtime-arm64/`，nocv 变体为 `publish-nocv-arm64/` 与 `publish-nocv-runtime-arm64/`。
+Arm64 使用 `FolderProfileArm64` 与 `SelfContainedArm64`，产物在 `LightBoard/bin/publish-cv-arm64/` 与 `LightBoard/bin/publish-cv-runtime-arm64/`，不含 OpenCV 的变体为 `publish-arm64/` 与 `publish-runtime-arm64/`。
 
 测试使用 xunit.v3 与 Microsoft Testing Platform。
 

@@ -10,7 +10,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <WithOpenCv Condition="'$(WithOpenCv)' == ''">true</WithOpenCv>
-        <OpenCvDirSuffix Condition="'$(WithOpenCv)' != 'true'">-nocv</OpenCvDirSuffix>
+        <OpenCvDirSuffix Condition="'$(WithOpenCv)' == 'true'">-cv</OpenCvDirSuffix>
         <DefineConstants Condition="'$(WithOpenCv)' == 'true'">$(DefineConstants);OPENCV</DefineConstants>
     </PropertyGroup>
     <PropertyGroup>

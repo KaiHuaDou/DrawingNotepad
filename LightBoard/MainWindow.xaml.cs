@@ -30,8 +30,9 @@ public partial class MainWindow : Window
         InitializeComponent( );
 
 #if !OPENCV
-        // 不含 OpenCV 的构建没有视频展台
-        VideoMenuItem.Visibility = Visibility.Collapsed;
+        // 不含 OpenCV 的构建没有视频展台，菜单项保留并说明原因
+        VideoMenuItem.IsCheckable = false;
+        VideoMenuItem.Click += VideoMenuItemClick;
 #else
         WireCameraOverlay( );
 #endif
@@ -116,6 +117,12 @@ public partial class MainWindow : Window
         );
         iconTimer.Start( );
     }
+#if !OPENCV
+    private void VideoMenuItemClick(object o, RoutedEventArgs e)
+    {
+        App.ShowInfo("当前版本不含视频展台", "视频展台依赖 OpenCV，可改用文件名带 -cv 后缀的版本。");
+    }
+#endif
 
     /// <summary>
     /// 底侧提示按钮让开主工具栏：收起与展开的高度都取 Border 本地高度乘倍率，另加外边距与 9 DIP 间隙
