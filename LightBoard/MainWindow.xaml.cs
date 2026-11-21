@@ -77,7 +77,7 @@ public partial class MainWindow : Window
         colorRadio ??= DefaultColorRadio;
         thicknessRadio ??= DefaultThicknessRadio;
         pen = CanvasNext.DrawingAttributes.DrawingAttributes;
-        ApplyFitToCurve(SettingsStore.Current.EffectiveFitToCurve);
+        FitToCurve = SettingsStore.Current.EffectiveFitToCurve;
         App.InitializePages( );
         App.PageChanged += OnPageChanged;
 

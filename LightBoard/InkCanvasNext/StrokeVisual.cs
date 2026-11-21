@@ -50,7 +50,6 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
 
     private readonly List<DrawingVisual> segments = [];
 
-    private VisualCanvas? visualCanvas;
     private DrawingVisual? activeVisual;
     private SolidColorBrush? brush;
 
@@ -70,10 +69,10 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
     /// </summary>
     internal bool NeedsRedraw { get; private set; }
 
-    internal void SetVisualCanvas(VisualCanvas visualCanvas)
-    {
-        this.visualCanvas = visualCanvas;
-    }
+    /// <summary>
+    /// 活动段的承载层
+    /// </summary>
+    internal VisualCanvas? VisualCanvas { get; set; }
 
     internal void Add(StylusPoint point)
     {
@@ -91,7 +90,7 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
     {
         NeedsRedraw = false;
 
-        if (visualCanvas == null || Stroke.StylusPoints.Count == 0)
+        if (VisualCanvas == null || Stroke.StylusPoints.Count == 0)
         {
             return;
         }
@@ -122,17 +121,17 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
     {
         foreach (var segment in segments)
         {
-            visualCanvas?.RemoveVisual(segment);
+            VisualCanvas?.RemoveVisual(segment);
         }
 
         segments.Clear( );
 
-        if (activeVisual is null || visualCanvas is null)
+        if (activeVisual is null || VisualCanvas is null)
         {
             return;
         }
 
-        visualCanvas.RemoveVisual(activeVisual);
+        VisualCanvas.RemoveVisual(activeVisual);
         activeVisual = null;
     }
 
@@ -140,7 +139,7 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
     {
         var count = Stroke.StylusPoints.Count;
         var end = count - Taper.Tail(count, taper);
-        if (visualCanvas is null || end <= frozenCount || SegmentGeometry(frozenCount, end) is not { } geometry)
+        if (VisualCanvas is null || end <= frozenCount || SegmentGeometry(frozenCount, end) is not { } geometry)
         {
             return;
         }
@@ -151,7 +150,7 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
             context.DrawGeometry(brush ??= CreateBrush( ), null, geometry);
         }
 
-        visualCanvas.AddVisual(visual);
+        VisualCanvas.AddVisual(visual);
         segments.Add(visual);
 
         // 同一点留在下一段起点，避免接头处出现缺口；两段的端帽重合，不透明笔刷下看不出接缝
@@ -171,7 +170,7 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
     private DrawingVisual CreateAndAttachVisual( )
     {
         var visual = new DrawingVisual( );
-        visualCanvas!.AddVisual(visual);
+        VisualCanvas!.AddVisual(visual);
         return visual;
     }
 

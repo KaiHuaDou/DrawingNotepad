@@ -72,7 +72,7 @@ public class LotteryWindowTests
             box.SetCurrentValue(TextBox.TextProperty, "7");
             window.Close( );
 
-            Assert.Equal(7, LotteryStore.Load( ).Count);
+            Assert.Equal(7, LotteryStore.Load( ).ContinuousCount);
         });
     }
 
@@ -92,8 +92,8 @@ public class LotteryWindowTests
                 var upperThumb = Assert.IsType<Thumb>(window.FindName("RangeUpperThumb"));
                 var fill = Assert.IsType<Border>(window.FindName("RangeFillBorder"));
 
-                model.SetLower(10);
-                model.SetUpper(30);
+                model.Lower = 10;
+                model.Upper = 30;
 
                 var lower = Canvas.GetLeft(lowerThumb);
                 var upper = Canvas.GetLeft(upperThumb);
@@ -161,7 +161,7 @@ public class LotteryWindowTests
                 var drawOne = Assert.IsType<Button>(window.FindName("DrawOneButton"));
                 var drawMany = Assert.IsType<Button>(window.FindName("DrawManyButton"));
 
-                model.SetMode(LotteryMode.Collection);
+                model.Mode = LotteryMode.Collection;
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
 
                 Assert.False(drawOne.IsEnabled);
@@ -189,7 +189,7 @@ public class LotteryWindowTests
                 var drawOne = Assert.IsType<Button>(window.FindName("DrawOneButton"));
                 var drawMany = Assert.IsType<Button>(window.FindName("DrawManyButton"));
 
-                model.SetMode(LotteryMode.Collection);
+                model.Mode = LotteryMode.Collection;
                 model.AddDataset("名单", ["甲", "乙"]);
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
 
@@ -251,7 +251,7 @@ public class LotteryWindowTests
                 var list = Assert.IsType<ItemsControl>(window.FindName("OptionList"));
                 var reset = Assert.IsType<Button>(window.FindName("ResetNoRepeatButton"));
 
-                model.SetMode(LotteryMode.Collection);
+                model.Mode = LotteryMode.Collection;
                 model.AddDataset("名单", ["甲", "乙", "丙"]);
                 model.NoRepeat = true;
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
@@ -277,7 +277,7 @@ public class LotteryWindowTests
                 Assert.All(model.Options, option => Assert.False(option.IsDrawn));
                 Assert.Empty(model.Results);
 
-                model.SetMode(LotteryMode.Continuous);
+                model.Mode = LotteryMode.Continuous;
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
 
                 Assert.Equal(Visibility.Collapsed, scroll.Visibility);
@@ -303,7 +303,7 @@ public class LotteryWindowTests
                 var model = Assert.IsType<LotteryViewModel>(window.DataContext);
                 var list = Assert.IsType<ListBox>(window.FindName("DatasetList"));
 
-                model.SetMode(LotteryMode.Collection);
+                model.Mode = LotteryMode.Collection;
                 model.AddDataset("名单", ["甲"]);
                 window.UpdateLayout( );
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
@@ -335,7 +335,7 @@ public class LotteryWindowTests
                 var model = Assert.IsType<LotteryViewModel>(window.DataContext);
                 var list = Assert.IsType<ListBox>(window.FindName("DatasetList"));
 
-                model.SetMode(LotteryMode.Collection);
+                model.Mode = LotteryMode.Collection;
                 model.AddDataset("甲", ["1"]);
                 model.AddDataset("乙", ["2", "3"]);
                 window.UpdateLayout( );
@@ -380,7 +380,7 @@ public class LotteryWindowTests
                 Assert.True(model.IsContinuous);
                 Assert.Equal(body.ActualWidth, panel.ActualWidth, 1);
 
-                model.SetMode(LotteryMode.Collection);
+                model.Mode = LotteryMode.Collection;
                 window.UpdateLayout( );
 
                 Assert.True(panel.ActualWidth < body.ActualWidth);
@@ -436,7 +436,7 @@ public class LotteryWindowTests
                 Max = 20,
                 Lower = 3,
                 Upper = 8,
-                Count = 2,
+                CollectionCount = 2,
                 NoRepeat = true,
                 DrawnIndices = [1],
                 Selected = "名单",

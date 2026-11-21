@@ -30,11 +30,11 @@ public partial class LotteryWindow
 
         if (ReferenceEquals(thumb, RangeLowerThumb))
         {
-            viewModel.SetLower(value);
+            viewModel.Lower = value;
         }
         else
         {
-            viewModel.SetUpper(value);
+            viewModel.Upper = value;
         }
     }
 

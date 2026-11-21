@@ -14,7 +14,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
 
                 timer.Reset( );
 
@@ -37,7 +37,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
                 timer.Toggle( );
 
                 Assert.True(timer.IsActive);
@@ -69,7 +69,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMinutes(1);
+                timer.Minutes = 1;
 
                 timer.Adjust(TimeSpan.FromMinutes(-2));
 
@@ -84,16 +84,16 @@ public class TimerViewModelTests
     }
 
     [Fact]
-    public void SetMinutes_KeepsHours( )
+    public void Minutes_KeepsHours( )
     {
         UiThread.Run(( ) =>
         {
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMinutes(75);
+                timer.Minutes = 75;
 
-                timer.SetMinutes(40);
+                timer.Minutes = 40;
 
                 Assert.Equal(1, timer.Hours);
                 Assert.Equal(40, timer.Minutes);
@@ -107,16 +107,16 @@ public class TimerViewModelTests
     }
 
     [Fact]
-    public void SetMinutes_NotAdjustable_Ignored( )
+    public void Minutes_NotAdjustable_Ignored( )
     {
         UiThread.Run(( ) =>
         {
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMode(TimerMode.Countup);
+                timer.Mode = TimerMode.Countup;
 
-                timer.SetMinutes(40);
+                timer.Minutes = 40;
 
                 Assert.Equal(0, timer.Minutes);
             }
@@ -135,7 +135,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
                 Assert.False(timer.ShowsProgress);
 
                 timer.Toggle( );
@@ -162,7 +162,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMinutes(60);
+                timer.Minutes = 60;
 
                 Assert.Equal(0, timer.Minutes);
                 Assert.True(timer.CanDecreaseMinute);
@@ -172,7 +172,7 @@ public class TimerViewModelTests
                 Assert.Equal(0, timer.Hours);
                 Assert.Equal(59, timer.Minutes);
 
-                timer.SetMinutes(0);
+                timer.Minutes = 0;
 
                 Assert.False(timer.CanDecreaseMinute);
             }
@@ -184,16 +184,16 @@ public class TimerViewModelTests
     }
 
     [Fact]
-    public void SetMode_SwitchesTitleAndValue( )
+    public void Mode_SwitchesTitleAndValue( )
     {
         UiThread.Run(( ) =>
         {
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
 
-                timer.SetMode(TimerMode.Countup);
+                timer.Mode = TimerMode.Countup;
 
                 Assert.Equal("计时器", timer.Title);
                 Assert.Equal(0, timer.Minutes);
@@ -207,18 +207,18 @@ public class TimerViewModelTests
     }
 
     [Fact]
-    public void SetMode_WhenPaused_Ignored( )
+    public void Mode_WhenPaused_Ignored( )
     {
         UiThread.Run(( ) =>
         {
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
                 timer.Toggle( );
                 timer.Toggle( );
 
-                timer.SetMode(TimerMode.Countup);
+                timer.Mode = TimerMode.Countup;
 
                 Assert.True(timer.IsCountdown);
                 Assert.Equal("倒计时", timer.Title);
@@ -238,7 +238,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMode(TimerMode.Countup);
+                timer.Mode = TimerMode.Countup;
 
                 timer.Adjust(TimeSpan.FromMinutes(5));
 
@@ -260,7 +260,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMinutes(1);
+                timer.Minutes = 1;
                 timer.Adjust(TimeSpan.FromSeconds(-55));
 
                 Assert.Equal(5, timer.Seconds);
@@ -286,7 +286,7 @@ public class TimerViewModelTests
             var timer = new TimerViewModel( );
             try
             {
-                timer.SetMinutes(1);
+                timer.Minutes = 1;
                 timer.Adjust(TimeSpan.FromSeconds(-55));
                 timer.Toggle( );
 
@@ -315,7 +315,7 @@ public class TimerViewModelTests
                 var raised = 0;
                 timer.Finished += (_, _) => raised++;
 
-                timer.SetMinutes(1);
+                timer.Minutes = 1;
                 timer.Adjust(TimeSpan.FromSeconds(-59));
                 timer.Toggle( );
 

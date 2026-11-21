@@ -21,17 +21,17 @@ public class PenMachineTests
         {
             using var host = new TouchHost( );
 
-            SetMode(host, InkCanvasNextMode.Ink);
+            host.Mode = InkCanvasNextMode.Ink;
             Assert.False(host.Canvas.UsesPenTouch(false));
 
-            SetMode(host, InkCanvasNextMode.EraseStroke);
+            host.Mode = InkCanvasNextMode.EraseStroke;
             Assert.False(host.Canvas.UsesPenTouch(false));
 
-            SetMode(host, InkCanvasNextMode.Line);
+            host.Mode = InkCanvasNextMode.Line;
             Assert.True(host.Canvas.UsesPenTouch(false));
             Assert.False(host.Canvas.UsesPenTouch(true));
 
-            SetMode(host, InkCanvasNextMode.EraseArea);
+            host.Mode = InkCanvasNextMode.EraseArea;
             Assert.True(host.Canvas.UsesPenTouch(false));
             Assert.True(host.Canvas.UsesPenTouch(true));
         });
@@ -43,7 +43,7 @@ public class PenMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            SetMode(host, InkCanvasNextMode.Line);
+            host.Mode = InkCanvasNextMode.Line;
             var pointer = host.Canvas.PenPointer;
             var start = RootOf(host, P1);
             var moved = TestPoints.BeyondDisplacement(host, start);
@@ -64,7 +64,7 @@ public class PenMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            SetMode(host, InkCanvasNextMode.Circle);
+            host.Mode = InkCanvasNextMode.Circle;
             var pointer = host.Canvas.PenPointer;
             var start = RootOf(host, P1);
             var moved = TestPoints.BeyondDisplacement(host, start);
@@ -85,7 +85,7 @@ public class PenMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            SetMode(host, InkCanvasNextMode.EraseArea);
+            host.Mode = InkCanvasNextMode.EraseArea;
             host.Canvas.Strokes.Add(MakeStroke(new Point(170, 100), new Point(190, 100)));
             var pointer = host.Canvas.PenPointer;
             var downAt = RootOf(host, new Point(155, 100));
@@ -106,7 +106,7 @@ public class PenMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            SetMode(host, InkCanvasNextMode.Select);
+            host.Mode = InkCanvasNextMode.Select;
             host.Canvas.Strokes.Add(MakeStroke(new Point(200, 150), new Point(250, 350)));
             var pointer = host.Canvas.PenPointer;
 
@@ -128,7 +128,7 @@ public class PenMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            SetMode(host, InkCanvasNextMode.Select);
+            host.Mode = InkCanvasNextMode.Select;
             host.Canvas.Strokes.Add(MakeStroke(new Point(200, 150), new Point(250, 350)));
             var pointer = host.Canvas.PenPointer;
 
@@ -152,7 +152,7 @@ public class PenMachineTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            SetMode(host, InkCanvasNextMode.Select);
+            host.Mode = InkCanvasNextMode.Select;
             host.Canvas.Strokes.Add(MakeStroke(new Point(200, 150), new Point(250, 350)));
             var pointer = host.Canvas.PenPointer;
 
@@ -178,17 +178,17 @@ public class PenMachineTests
         {
             using var host = new TouchHost( );
 
-            SetMode(host, InkCanvasNextMode.Ink);
+            host.Mode = InkCanvasNextMode.Ink;
             Assert.Equal(InkCanvasEditingMode.EraseByStroke, host.Canvas.InnerCanvas.EditingModeInverted);
 
-            SetMode(host, InkCanvasNextMode.EraseArea);
+            host.Mode = InkCanvasNextMode.EraseArea;
             Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvas.EditingModeInverted);
 
             host.Canvas.IsReadOnly = true;
             Assert.Equal(InkCanvasEditingMode.None, host.Canvas.InnerCanvas.EditingModeInverted);
 
             host.Canvas.IsReadOnly = false;
-            SetMode(host, InkCanvasNextMode.Ink);
+            host.Mode = InkCanvasNextMode.Ink;
             Assert.Equal(InkCanvasEditingMode.EraseByStroke, host.Canvas.InnerCanvas.EditingModeInverted);
         });
     }
@@ -200,16 +200,11 @@ public class PenMachineTests
         {
             using var host = new TouchHost( );
             host.Canvas.IsReadOnly = true;
-            SetMode(host, InkCanvasNextMode.Line);
+            host.Mode = InkCanvasNextMode.Line;
 
             Assert.False(host.Canvas.UsesPenTouch(false));
             Assert.False(host.Canvas.UsesPenTouch(true));
         });
-    }
-
-    private static void SetMode(TouchHost host, InkCanvasNextMode mode)
-    {
-        host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = mode };
     }
 
     /// <summary>用单指套索选中一条经过 (150,100)-(360,400) 区域的笔画</summary>

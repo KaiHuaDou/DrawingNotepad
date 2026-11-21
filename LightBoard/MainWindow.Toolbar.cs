@@ -61,18 +61,22 @@ public partial class MainWindow
     /// <summary>
     /// 曲线拟合直接写在笔触属性上：例行笔与当前工具同步，下一笔生效
     /// </summary>
-    internal void ApplyFitToCurve(bool fitToCurve)
+    internal bool FitToCurve
     {
-        pen.FitToCurve = fitToCurve;
-
-        var attributes = CanvasNext.DrawingAttributes.DrawingAttributes;
-        if (attributes.FitToCurve == fitToCurve)
+        get => pen.FitToCurve;
+        set
         {
-            return;
-        }
+            pen.FitToCurve = value;
 
-        attributes.FitToCurve = fitToCurve;
-        CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with { DrawingAttributes = attributes };
+            var attributes = CanvasNext.DrawingAttributes.DrawingAttributes;
+            if (attributes.FitToCurve == value)
+            {
+                return;
+            }
+
+            attributes.FitToCurve = value;
+            CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with { DrawingAttributes = attributes };
+        }
     }
 
     private void CanvasNextDrawingAttributesChanged(object? o, EventArgs e)

@@ -49,7 +49,7 @@ public partial class LotteryWindow : Window
             return;
         }
 
-        viewModel.SetMode(ReferenceEquals(radio, CollectionRadio) ? LotteryMode.Collection : LotteryMode.Continuous);
+        viewModel.Mode = ReferenceEquals(radio, CollectionRadio) ? LotteryMode.Collection : LotteryMode.Continuous;
     }
 
     private void MaxStepClick(object o, RoutedEventArgs e)
@@ -82,16 +82,6 @@ public partial class LotteryWindow : Window
         box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource( );
         box.SelectAll( );
         e.Handled = true;
-    }
-
-    private void NumberBoxLostFocus(object o, RoutedEventArgs e)
-    {
-        if (o is not TextBox box)
-        {
-            return;
-        }
-
-        box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource( );
     }
 
     private void ImportDatasetClick(object o, RoutedEventArgs e)

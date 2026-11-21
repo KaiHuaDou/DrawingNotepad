@@ -102,7 +102,7 @@ public sealed partial class LotteryViewModel
 
         // 抽选数量保留为用户设定值，候选不足时少抽；抽完由 CanDraw 关闭按钮
         RaisePool( );
-        RaiseCount( );
+        Raise(nameof(CanIncreaseCount));
     }
 
     /// <summary>
@@ -119,7 +119,7 @@ public sealed partial class LotteryViewModel
         }
 
         RaisePool( );
-        RaiseCount( );
+        Raise(nameof(CanIncreaseCount));
     }
 
     private void ClearDrawRecord( )
@@ -128,7 +128,7 @@ public sealed partial class LotteryViewModel
         Results.Clear( );
 
         RaisePool( );
-        RaiseCount( );
+        Raise(nameof(CanIncreaseCount));
     }
 
     private void RefreshOptions( )

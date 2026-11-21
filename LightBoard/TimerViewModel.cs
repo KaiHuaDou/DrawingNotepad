@@ -29,7 +29,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
 
     private readonly DispatcherTimer timer;
 
-    private TimerMode mode = TimerMode.Countdown;
     private TimerState state = TimerState.Idle;
     private TimeSpan countdownRemaining;
     private TimeSpan countupElapsed;
@@ -70,18 +69,48 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     /// </summary>
     public event EventHandler? Finished;
 
-    public string Title => mode == TimerMode.Countdown ? "倒计时" : "计时器";
+    public TimerMode Mode
+    {
+        get;
+        set
+        {
+            if (field == value || !IsIdle)
+            {
+                return;
+            }
+
+            field = value;
+            Raise(nameof(Title));
+            Raise(nameof(IsCountdown));
+            Refresh( );
+        }
+    } = TimerMode.Countdown;
+
+    public string Title => Mode == TimerMode.Countdown ? "倒计时" : "计时器";
 
     public int Hours => totalSeconds / 3600;
 
-    public int Minutes => totalSeconds % 3600 / 60;
+    public int Minutes
+    {
+        get => totalSeconds % 3600 / 60;
+        set
+        {
+            if (!IsAdjustable || value == Minutes)
+            {
+                return;
+            }
+
+            countdownRemaining = Clamp(TimeSpan.FromHours(Hours) + TimeSpan.FromMinutes(value), TimeSpan.Zero, MaxSpan);
+            Refresh( );
+        }
+    }
 
     public int Seconds => totalSeconds % 60;
 
     /// <summary>
     /// 倒计时模式
     /// </summary>
-    public bool IsCountdown => mode == TimerMode.Countdown;
+    public bool IsCountdown => Mode == TimerMode.Countdown;
 
     /// <summary>
     /// 计时推进中
@@ -103,7 +132,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     /// <summary>
     /// 倒计时在本轮内（推进或暂停）时按进度显示
     /// </summary>
-    public bool ShowsProgress => mode == TimerMode.Countdown && state != TimerState.Idle;
+    public bool ShowsProgress => Mode == TimerMode.Countdown && state != TimerState.Idle;
 
     /// <summary>
     /// 本轮已完成的比例 0~1
@@ -115,7 +144,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     /// <summary>
     /// 倒计时且未开始时才能调整时长
     /// </summary>
-    public bool IsAdjustable => IsIdle && mode == TimerMode.Countdown;
+    public bool IsAdjustable => IsIdle && Mode == TimerMode.Countdown;
 
     /// <summary>
     /// 推进中可暂停，否则需要能启动
@@ -160,7 +189,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
 
         var value = state == TimerState.Paused ? startValue : TimeSpan.Zero;
 
-        if (mode == TimerMode.Countdown)
+        if (Mode == TimerMode.Countdown)
         {
             countdownRemaining = value;
         }
@@ -170,19 +199,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         }
 
         SetState(TimerState.Idle);
-        Refresh( );
-    }
-
-    public void SetMode(TimerMode value)
-    {
-        if (mode == value || !IsIdle)
-        {
-            return;
-        }
-
-        mode = value;
-        Raise(nameof(Title));
-        Raise(nameof(IsCountdown));
         Refresh( );
     }
 
@@ -197,17 +213,6 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         Refresh( );
     }
 
-    public void SetMinutes(int minutes)
-    {
-        if (!IsAdjustable || minutes == Minutes)
-        {
-            return;
-        }
-
-        countdownRemaining = Clamp(TimeSpan.FromHours(Hours) + TimeSpan.FromMinutes(minutes), TimeSpan.Zero, MaxSpan);
-        Refresh( );
-    }
-
     public void Stop( )
     {
         timer.Stop( );
@@ -218,7 +223,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         UpdateState( );
 
         var seconds = (int) DisplayValue( ).TotalSeconds;
-        var signature = (state, mode, seconds);
+        var signature = (state, Mode, seconds);
 
         // 秒数、状态与模式未变时推导出来的属性也没有变化，每拍重复通知只会让绑定重复求值
         if (signature != shown)
@@ -252,7 +257,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
 
         var value = DisplayValue( );
 
-        if (mode == TimerMode.Countdown)
+        if (Mode == TimerMode.Countdown)
         {
             if (value <= TimeSpan.Zero)
             {
@@ -301,7 +306,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
 
     private TimerState StartState( )
     {
-        return mode == TimerMode.Countdown && DisplayValue( ) <= AlertSpan
+        return Mode == TimerMode.Countdown && DisplayValue( ) <= AlertSpan
             ? TimerState.Alerting
             : TimerState.Running;
     }
@@ -310,7 +315,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     {
         var used = Elapsed( );
 
-        return mode == TimerMode.Countdown
+        return Mode == TimerMode.Countdown
             ? Clamp(countdownRemaining - used, TimeSpan.Zero, MaxSpan)
             : Clamp(countupElapsed + used, TimeSpan.Zero, MaxSpan);
     }
@@ -322,14 +327,14 @@ public sealed class TimerViewModel : INotifyPropertyChanged
 
     private bool CanStart( )
     {
-        return mode == TimerMode.Countup ? countupElapsed < MaxSpan : countdownRemaining > TimeSpan.Zero;
+        return Mode == TimerMode.Countup ? countupElapsed < MaxSpan : countdownRemaining > TimeSpan.Zero;
     }
 
     private void Settle( )
     {
         var used = Elapsed( );
 
-        if (mode == TimerMode.Countdown)
+        if (Mode == TimerMode.Countdown)
         {
             countdownRemaining = Clamp(countdownRemaining - used, TimeSpan.Zero, MaxSpan);
         }

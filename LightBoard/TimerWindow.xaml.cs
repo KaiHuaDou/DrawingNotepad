@@ -41,7 +41,7 @@ public partial class TimerWindow : Window
             return;
         }
 
-        viewModel.SetMode(radio == CountdownRadio ? TimerMode.Countdown : TimerMode.Countup);
+        viewModel.Mode = radio == CountdownRadio ? TimerMode.Countdown : TimerMode.Countup;
     }
 
     private void HourClick(object o, RoutedEventArgs e)

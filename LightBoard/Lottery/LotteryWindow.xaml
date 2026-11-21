@@ -27,7 +27,6 @@
             <Setter Property="Margin" Value="0,0,12,0" />
         </Style>
 
-        <!--图标字体不用主题里的 IconTextStyle：那里固定 LineHeight=28，小字号会偏上-->
         <Style x:Key="GlyphTextStyle" TargetType="{x:Type TextBlock}">
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -36,7 +35,6 @@
             <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
         </Style>
 
-        <!--数字步进：无底无框，只有悬停与按下的底色-->
         <Style x:Key="StepButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Width" Value="40" />
             <Setter Property="Height" Value="40" />
@@ -69,13 +67,11 @@
             </Setter>
         </Style>
 
-        <!--图标按钮：沿用步进按钮的外观，但可聚焦-->
         <Style x:Key="IconButtonStyle" BasedOn="{StaticResource StepButtonStyle}" TargetType="{x:Type Button}">
             <Setter Property="Focusable" Value="True" />
             <Setter Property="FocusVisualStyle" Value="{StaticResource DotFocusVisualStyle}" />
         </Style>
 
-        <!--文字按钮取自设置窗口：深色底、细描边、悬停提亮-->
         <Style x:Key="ActionButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="FontSize" Value="16" />
             <Setter Property="Foreground" Value="#F0F0F0" />
@@ -224,7 +220,6 @@
             </Setter>
         </Style>
 
-        <!--手柄压在选择条上，数字取自 Tag；TemplateBinding 不做数值转换，这里用普通绑定-->
         <Style x:Key="RangeThumbStyle" TargetType="{x:Type Thumb}">
             <Setter Property="Height" Value="30" />
             <Setter Property="MinWidth" Value="30" />
@@ -258,7 +253,7 @@
         <local:LotteryViewModel />
     </Window.DataContext>
 
-    <Grid Margin="24">
+    <Grid Margin="25">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -291,8 +286,8 @@
                          VerticalContentAlignment="Center"
                          Style="{StaticResource InputBoxStyle}"
                          FontSize="20"
-                         KeyDown="NumberBoxKeyDown" LostFocus="NumberBoxLostFocus"
-                         Text="{Binding MaxText, UpdateSourceTrigger=Explicit}"
+                         KeyDown="NumberBoxKeyDown"
+                         Text="{Binding MaxText, UpdateSourceTrigger=LostFocus}"
                          TextAlignment="Center" />
                 <Button x:Name="MaxUpButton"
                         IsEnabled="{Binding CanIncreaseMax}"
@@ -327,7 +322,7 @@
                 <ColumnDefinition>
                     <ColumnDefinition.Style>
                         <Style TargetType="{x:Type ColumnDefinition}">
-                            <Setter Property="Width" Value="2*" />
+                            <Setter Property="Width" Value="1*" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsContinuous}" Value="True">
                                     <Setter Property="Width" Value="0" />
@@ -336,19 +331,19 @@
                         </Style>
                     </ColumnDefinition.Style>
                 </ColumnDefinition>
-                <ColumnDefinition Width="5*" />
+                <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
             <DockPanel x:Name="CollectionPanel" Grid.Column="0" Visibility="{Binding IsCollection, Converter={StaticResource BoolToVisibility}}">
                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8" LastChildFill="False">
                     <TextBlock DockPanel.Dock="Left" Style="{StaticResource SectionTitleStyle}" Text="数据集" />
                     <CheckBox x:Name="NoRepeatCheck"
-                              DockPanel.Dock="Left"
+                              DockPanel.Dock="Right"
                               Margin="20,0,0,0" VerticalAlignment="Center"
                               IsChecked="{Binding NoRepeat}"
                               Style="{StaticResource CompactCheckBoxStyle}"
                               Content="不重复" />
                     <Button x:Name="ResetNoRepeatButton"
-                            DockPanel.Dock="Left"
+                            DockPanel.Dock="Right"
                             Margin="8,0,0,0" VerticalAlignment="Center"
                             Click="ResetNoRepeatClick" Tag="&#xE72C;" ToolTip="重置不重复记录">
                         <Button.Style>
@@ -460,8 +455,8 @@
                                  IsEnabled="{Binding CanDraw}"
                                  Style="{StaticResource InputBoxStyle}"
                                  FontSize="24"
-                                 KeyDown="NumberBoxKeyDown" LostFocus="NumberBoxLostFocus"
-                                 Text="{Binding CountText, UpdateSourceTrigger=Explicit}"
+                                 KeyDown="NumberBoxKeyDown"
+                                 Text="{Binding CountText, UpdateSourceTrigger=LostFocus}"
                                  TextAlignment="Center" />
                         <Button x:Name="CountUpButton"
                                 IsEnabled="{Binding CanIncreaseCount}"
@@ -476,7 +471,7 @@
                         <Button x:Name="DrawOneButton"
                                 Grid.Column="0"
                                 MinHeight="52"
-                                Margin="0,0,6,0"
+                                Margin="0,0,10,0"
                                 IsEnabled="{Binding CanDraw}"
                                 Style="{StaticResource ActionButtonStyle}"
                                 FontSize="22"
@@ -484,7 +479,7 @@
                         <Button x:Name="DrawManyButton"
                                 Grid.Column="1"
                                 MinHeight="52"
-                                Margin="6,0,0,0"
+                                Margin="10,0,0,0"
                                 IsEnabled="{Binding CanDraw}"
                                 Style="{StaticResource ActionButtonStyle}"
                                 FontSize="22"

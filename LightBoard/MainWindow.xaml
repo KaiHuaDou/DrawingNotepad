@@ -180,7 +180,7 @@
             </Border>
         </Popup>
         <Border x:Name="CenterBorder"
-                Height="53"
+                Height="55"
                 Margin="0,0,0,5" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Panel.ZIndex="64"
                 Style="{StaticResource ContainerStyle}">
@@ -192,7 +192,7 @@
                     <RowDefinition Height="1*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Margin="0,0,0,10" VerticalAlignment="Bottom" Orientation="Horizontal">
                     <Border Width="50" Visibility="Hidden" />
                     <RadioButton MinWidth="1"
                                  Style="{StaticResource SelectiveRadioStyle}"
@@ -211,14 +211,14 @@
                     <RadioButton MinWidth="10"
                                  Style="{StaticResource SelectiveRadioStyle}"
                                  Click="ThicknessRadioClick" GroupName="ThicknessGroup" />
-                    <Border Width="46" Visibility="Hidden" />
+                    <Border Width="52" Visibility="Hidden" />
                     <RadioButton x:Name="LineRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xE73C;" />
                     <RadioButton x:Name="CircleRadio"
                                  Style="{StaticResource RadioStyle}"
                                  Click="ModeRadioChecked" GroupName="EditGroup" Tag="&#xEA3A;" />
-                    <Border Width="75" Visibility="Hidden" />
+                    <Border Width="30" Visibility="Hidden" />
                     <RadioButton x:Name="SelectRadio"
                                  Style="{StaticResource LabelledRadioStyle}"
                                  Click="ModeRadioChecked" Content=" 选择" GroupName="EditGroup"
@@ -227,7 +227,7 @@
                                   Style="{StaticResource LabelledToggleStyle}"
                                   Click="PasteClick" Content=" 粘贴" Tag="&#xE77F;" />
                 </StackPanel>
-                <StackPanel Grid.Row="1" Orientation="Horizontal">
+                <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Orientation="Horizontal">
                     <ToggleButton x:Name="MoreToggle"
                                   Style="{StaticResource ChevronToggleStyle}"
                                   Click="MoreToggleClick" Tag="&#xE70E;" />

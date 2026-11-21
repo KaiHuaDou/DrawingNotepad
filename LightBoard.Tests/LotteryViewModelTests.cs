@@ -20,16 +20,16 @@ public class LotteryViewModelTests
     }
 
     [Fact]
-    public void SetMax_ClampsRangeAndCount( )
+    public void Max_ClampsRangeAndCount( )
     {
         var model = new LotteryViewModel( );
 
-        model.SetMax(10);
+        model.Max = 10;
         Assert.Equal(10, model.Upper);
 
-        model.SetLower(8);
-        model.SetCount(3);
-        model.SetMax(5);
+        model.Lower = 8;
+        model.Count = 3;
+        model.Max = 5;
 
         Assert.Equal(5, model.Lower);
         Assert.Equal(5, model.Upper);
@@ -38,23 +38,23 @@ public class LotteryViewModelTests
     }
 
     [Fact]
-    public void SetLower_StopsAtUpper( )
+    public void Lower_StopsAtUpper( )
     {
         var model = new LotteryViewModel( );
-        model.SetUpper(20);
+        model.Upper = 20;
 
-        model.SetLower(30);
+        model.Lower = 30;
 
         Assert.Equal(20, model.Lower);
     }
 
     [Fact]
-    public void SetUpper_StopsAtLower( )
+    public void Upper_StopsAtLower( )
     {
         var model = new LotteryViewModel( );
-        model.SetLower(20);
+        model.Lower = 20;
 
-        model.SetUpper(5);
+        model.Upper = 5;
 
         Assert.Equal(20, model.Upper);
     }
@@ -90,8 +90,8 @@ public class LotteryViewModelTests
     public void DrawOne_UsesPool( )
     {
         var model = new LotteryViewModel( );
-        model.SetLower(10);
-        model.SetUpper(20);
+        model.Lower = 10;
+        model.Upper = 20;
 
         model.DrawOne( );
 
@@ -103,7 +103,7 @@ public class LotteryViewModelTests
     public void DrawMany_ReturnsDistinctResults( )
     {
         var model = new LotteryViewModel( );
-        model.SetCount(5);
+        model.Count = 5;
 
         model.DrawMany( );
 
@@ -115,9 +115,9 @@ public class LotteryViewModelTests
     public void DrawMany_ClampsCount( )
     {
         var model = new LotteryViewModel( );
-        model.SetLower(5);
-        model.SetUpper(7);
-        model.SetCount(9);
+        model.Lower = 5;
+        model.Upper = 7;
+        model.Count = 9;
 
         Assert.Equal(3, model.Count);
 
@@ -130,7 +130,7 @@ public class LotteryViewModelTests
     public void Draws_AreIndependent( )
     {
         var model = new LotteryViewModel( );
-        model.SetUpper(2);
+        model.Upper = 2;
 
         var values = new List<string>( );
         for (var index = 0; index < 30; index++)
@@ -200,7 +200,7 @@ public class LotteryViewModelTests
     public void CollectionDraw_UsesDatasetItems( )
     {
         var model = new LotteryViewModel( );
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
         model.AddDataset("名单", ["张三", "李四"]);
 
         Assert.True(model.CanDraw);
@@ -216,7 +216,7 @@ public class LotteryViewModelTests
     public void CollectionDraw_KeepsDuplicates( )
     {
         var model = new LotteryViewModel( );
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
 
         model.AddDataset("名单", ["甲", "甲", "乙"]);
 
@@ -227,7 +227,7 @@ public class LotteryViewModelTests
     public void Options_FollowDataset( )
     {
         var model = new LotteryViewModel( );
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
         model.AddDataset("名单", ["甲", "乙", "丙"]);
 
         Assert.Equal(["甲", "乙", "丙"], model.Options.Select(option => option.Text));
@@ -237,10 +237,10 @@ public class LotteryViewModelTests
     public void NoRepeat_DrawsEachOptionOnce( )
     {
         var model = new LotteryViewModel( );
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
         model.AddDataset("名单", ["甲", "乙", "丙"]);
         model.NoRepeat = true;
-        model.SetCount(2);
+        model.Count = 2;
 
         model.DrawMany( );
 
@@ -260,10 +260,10 @@ public class LotteryViewModelTests
     public void ResetNoRepeat_ClearsMarksAndResults( )
     {
         var model = new LotteryViewModel( );
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
         model.AddDataset("名单", ["甲", "乙", "丙"]);
         model.NoRepeat = true;
-        model.SetCount(2);
+        model.Count = 2;
 
         model.DrawMany( );
         model.ResetNoRepeat( );
@@ -279,7 +279,7 @@ public class LotteryViewModelTests
     public void NoRepeat_ToggleResetsProgress( )
     {
         var model = new LotteryViewModel( );
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
         model.AddDataset("名单", ["甲", "乙"]);
         model.NoRepeat = true;
 
@@ -298,7 +298,7 @@ public class LotteryViewModelTests
     public void NoRepeat_DatasetChangeClearsMarks( )
     {
         var model = new LotteryViewModel( );
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
         model.AddDataset("甲", ["1", "2"]);
         model.NoRepeat = true;
 
@@ -317,13 +317,30 @@ public class LotteryViewModelTests
         model.DrawOne( );
         Assert.Single(model.Results);
 
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
 
         Assert.Equal(LotteryMode.Collection, model.Mode);
         Assert.Empty(model.Results);
-        Assert.Equal(1, model.Count);
+        Assert.Equal(5, model.Count);
         Assert.Equal(0, model.PoolSize);
         Assert.False(model.CanDraw);
+    }
+
+    [Fact]
+    public void ModeSwitch_KeepsCountPerMode( )
+    {
+        var model = new LotteryViewModel( );
+        model.Count = 3;
+
+        model.Mode = LotteryMode.Collection;
+        model.AddDataset("名单", ["1", "2", "3", "4", "5", "6", "7", "8"]);
+        model.Count = 6;
+
+        model.Mode = LotteryMode.Continuous;
+        Assert.Equal(3, model.Count);
+
+        model.Mode = LotteryMode.Collection;
+        Assert.Equal(6, model.Count);
     }
 
     [Fact]
@@ -332,11 +349,11 @@ public class LotteryViewModelTests
         var model = new LotteryViewModel( );
         model.DrawOne( );
 
-        model.SetLower(2);
+        model.Lower = 2;
         Assert.Empty(model.Results);
 
         model.DrawOne( );
-        model.SetUpper(50);
+        model.Upper = 50;
         Assert.Empty(model.Results);
     }
 
@@ -347,7 +364,7 @@ public class LotteryViewModelTests
         model.DrawMany( );
         var count = model.Results.Count;
 
-        model.SetCount(3);
+        model.Count = 3;
 
         Assert.Equal(count, model.Results.Count);
     }
@@ -356,11 +373,11 @@ public class LotteryViewModelTests
     public void ModeSwitch_KeepsSelectedDataset( )
     {
         var model = new LotteryViewModel( );
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
         model.AddDataset("名单", ["甲"]);
 
-        model.SetMode(LotteryMode.Continuous);
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Continuous;
+        model.Mode = LotteryMode.Collection;
 
         Assert.Equal("名单", model.SelectedDataset?.Name);
         Assert.Equal(1, model.PoolSize);
@@ -370,13 +387,13 @@ public class LotteryViewModelTests
     public void CreateState_RestoresDatasets( )
     {
         var model = new LotteryViewModel( );
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
         model.AddDataset("甲", ["1", "2"]);
         model.AddDataset("乙", ["3"]);
         model.SelectedDataset = model.Datasets[0];
 
         var restored = new LotteryViewModel( );
-        restored.SetMode(LotteryMode.Collection);
+        restored.Mode = LotteryMode.Collection;
         restored.Restore(model.CreateState( ));
 
         Assert.Equal(2, restored.Datasets.Count);
@@ -389,10 +406,10 @@ public class LotteryViewModelTests
     public void Restore_CountKeepsCollectionValue( )
     {
         var model = new LotteryViewModel( );
-        model.SetMax(3);
-        model.SetMode(LotteryMode.Collection);
+        model.Max = 3;
+        model.Mode = LotteryMode.Collection;
         model.AddDataset("名单", ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
-        model.SetCount(8);
+        model.Count = 8;
 
         var restored = new LotteryViewModel( );
         restored.Restore(model.CreateState( ));
@@ -405,7 +422,7 @@ public class LotteryViewModelTests
     public void CreateState_RestoresNoRepeatRecord( )
     {
         var model = new LotteryViewModel( );
-        model.SetMode(LotteryMode.Collection);
+        model.Mode = LotteryMode.Collection;
         model.AddDataset("名单", ["甲", "乙", "丙"]);
         model.NoRepeat = true;
         model.DrawOne( );
@@ -424,10 +441,10 @@ public class LotteryViewModelTests
     public void CreateState_KeepsContinuousSettings( )
     {
         var model = new LotteryViewModel( );
-        model.SetMax(30);
-        model.SetLower(5);
-        model.SetUpper(20);
-        model.SetCount(4);
+        model.Max = 30;
+        model.Lower = 5;
+        model.Upper = 20;
+        model.Count = 4;
 
         var restored = new LotteryViewModel( );
         restored.Restore(model.CreateState( ));

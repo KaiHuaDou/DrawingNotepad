@@ -56,7 +56,7 @@ public partial class TimerWindow
             return;
         }
 
-        viewModel.SetMinutes(TimerDial.MinutesAt(offset));
+        viewModel.Minutes = TimerDial.MinutesAt(offset);
     }
 
     private void SyncDial( )

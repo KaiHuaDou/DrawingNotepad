@@ -31,7 +31,7 @@
             <Grid x:Name="EraserFeedback"
                   Width="0" Height="0"
                   Visibility="Collapsed">
-                <Ellipse Fill="#E6E6E6" Stroke="#1E1E1E" StrokeThickness="2" />
+                <Ellipse Fill="#AAFEFEFE" Stroke="#AA333333" StrokeThickness="2" />
                 <TextBlock x:Name="EraserFeedbackLabel"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
                            Visibility="Collapsed"
@@ -41,7 +41,9 @@
         </Canvas>
 
         <Canvas x:Name="PenCursorLayer" Panel.ZIndex="64" IsHitTestVisible="False">
-            <Grid x:Name="PenCursorMark" Width="0" Height="0" Visibility="Collapsed">
+            <Grid x:Name="PenCursorMark"
+                  Width="0" Height="0"
+                  Visibility="Collapsed">
                 <Grid.RenderTransform>
                     <TranslateTransform x:Name="PenCursorOffset" />
                 </Grid.RenderTransform>

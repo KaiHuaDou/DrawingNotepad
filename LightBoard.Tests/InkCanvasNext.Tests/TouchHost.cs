@@ -16,6 +16,12 @@ internal sealed class TouchHost : IDisposable
 
     public InkCanvasNext Canvas { get; }
 
+    public InkCanvasNextMode Mode
+    {
+        get => Canvas.DrawingAttributes.Mode;
+        set => Canvas.DrawingAttributes = Canvas.DrawingAttributes with { Mode = value };
+    }
+
     /// <summary>触摸事件处理目标（内部墨迹画布）</summary>
     public UIElement Target => Canvas.InnerCanvas;
 

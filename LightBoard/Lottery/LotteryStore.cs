@@ -60,7 +60,10 @@ internal sealed class LotteryState
 
     public int Upper { get; set; } = 51;
 
-    public int Count { get; set; } = 5;
+    // 两种模式各自的数量
+    public int ContinuousCount { get; set; } = 5;
+
+    public int CollectionCount { get; set; } = 5;
 
     public bool NoRepeat { get; set; }
 

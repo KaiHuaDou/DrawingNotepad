@@ -48,7 +48,7 @@ public class StrokeVisualTests
         {
             var layer = new VisualCanvas( );
             var visual = Create(Pen( ), new TaperParameters { Points = 8 });
-            visual.SetVisualCanvas(layer);
+            visual.VisualCanvas = layer;
 
             visual.Redraw( );
             Assert.Equal(1, PointCount(visual));
@@ -71,7 +71,7 @@ public class StrokeVisualTests
         {
             var layer = new VisualCanvas( );
             var visual = Create(Pen( ), new TaperParameters { Points = 8 });
-            visual.SetVisualCanvas(layer);
+            visual.VisualCanvas = layer;
 
             visual.Redraw( );
             for (var i = 1; i < 200; i++)
@@ -96,7 +96,7 @@ public class StrokeVisualTests
         {
             var initial = new StylusPoint(Start.X, Start.Y, 0.5f, DeviceDescription, [0]);
             var visual = new StrokeVisual(Pen( ), initial, null);
-            visual.SetVisualCanvas(new VisualCanvas( ));
+            visual.VisualCanvas = new VisualCanvas( );
             visual.Add(new StylusPoint(200, 100, 0.5f, DeviceDescription, [0]));
 
             Assert.Equal(2, PointCount(visual));
@@ -117,7 +117,7 @@ public class StrokeVisualTests
             attributes.Color = Colors.Yellow;
 
             var visual = Create(attributes, new TaperParameters { Points = 8 });
-            visual.SetVisualCanvas(layer);
+            visual.VisualCanvas = layer;
             visual.Redraw( );
 
             for (var i = 1; i < 200; i++)

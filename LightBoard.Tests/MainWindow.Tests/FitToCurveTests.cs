@@ -5,18 +5,18 @@ namespace LightBoard.Tests.Toolbar;
 public class FitToCurveTests
 {
     [Fact]
-    public void Apply_UpdatesCurrentAndDefaultAttributes( )
+    public void FitToCurve_UpdatesCurrentAndDefaultAttributes( )
     {
         UiThread.Run(( ) =>
         {
             using var host = new MainWindowHost( );
 
-            host.Window.ApplyFitToCurve(false);
+            host.Window.FitToCurve = false;
 
             Assert.False(host.Canvas.DrawingAttributes.DrawingAttributes.FitToCurve);
             Assert.False(host.Canvas.InnerCanvas.DefaultDrawingAttributes.FitToCurve);
 
-            host.Window.ApplyFitToCurve(true);
+            host.Window.FitToCurve = true;
 
             Assert.True(host.Canvas.DrawingAttributes.DrawingAttributes.FitToCurve);
             Assert.True(host.Canvas.InnerCanvas.DefaultDrawingAttributes.FitToCurve);

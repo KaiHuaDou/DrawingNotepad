@@ -57,7 +57,7 @@ public class TimerWindowTests
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
                 var dial = Assert.IsType<TimerDial>(window.FindName("Dial"));
 
-                timer.SetMode(TimerMode.Countup);
+                timer.Mode = TimerMode.Countup;
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
 
                 Assert.Equal(Visibility.Collapsed, dial.Visibility);
@@ -111,7 +111,7 @@ public class TimerWindowTests
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
                 var dial = Assert.IsType<TimerDial>(window.FindName("Dial"));
 
-                timer.SetMinutes(15);
+                timer.Minutes = 15;
 
                 Assert.Equal(0.25, dial.Progress, 3);
             }
@@ -136,7 +136,7 @@ public class TimerWindowTests
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
                 var dial = Assert.IsType<TimerDial>(window.FindName("Dial"));
 
-                timer.SetMinutes(55);
+                timer.Minutes = 55;
                 timer.Toggle( );
 
                 // 本轮刚开始时剩余量满圈
@@ -163,7 +163,7 @@ public class TimerWindowTests
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
                 var idle = window.RenderSize;
 
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
                 timer.Toggle( );
                 UiThread.Pump(TimeSpan.FromMilliseconds(400));
 
@@ -209,7 +209,7 @@ public class TimerWindowTests
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
                 var dial = Assert.IsType<TimerDial>(window.FindName("Dial"));
 
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
                 timer.Toggle( );
                 timer.Toggle( );
                 window.Dispatcher.Invoke(( ) => { }, DispatcherPriority.Background);
@@ -274,7 +274,7 @@ public class TimerWindowTests
                 window.UpdateLayout( );
 
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
 
                 Press(window, Key.Space);
                 Assert.True(timer.IsActive);
@@ -301,7 +301,7 @@ public class TimerWindowTests
                 window.UpdateLayout( );
 
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                timer.SetMinutes(10);
+                timer.Minutes = 10;
 
                 Press(window, Key.Right);
                 Assert.Equal(15, timer.Minutes);
@@ -334,7 +334,7 @@ public class TimerWindowTests
                 window.UpdateLayout( );
 
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
 
                 Press(window, Key.Space);
                 Press(window, Key.Space);
@@ -394,7 +394,7 @@ public class TimerWindowTests
                 radio.Focus( );
                 Assert.True(radio.IsKeyboardFocused);
 
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
 
                 var button = Assert.IsType<Button>(window.FindName("FullscreenButton"));
                 button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -423,7 +423,7 @@ public class TimerWindowTests
                 window.Show( );
 
                 var timer = Assert.IsType<TimerViewModel>(window.DataContext);
-                timer.SetMinutes(5);
+                timer.Minutes = 5;
                 timer.Toggle( );
                 UiThread.Pump(TimeSpan.FromMilliseconds(400));
 

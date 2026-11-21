@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace LightBoard;
 
@@ -16,22 +17,138 @@ public sealed partial class LotteryViewModel : INotifyPropertyChanged
     /// </summary>
     public const int MaxLimit = 9999;
 
-    public LotteryViewModel( )
-    {
-        Status = string.Empty;
-    }
+    // 两种模式各自保留数量，切换模式不会互相覆盖
+    private int continuousCount = 5;
+    private int collectionCount = 5;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public LotteryMode Mode { get; private set; } = LotteryMode.Continuous;
+    public LotteryMode Mode
+    {
+        get;
+        set
+        {
+            if (field == value)
+            {
+                return;
+            }
 
-    public int Max { get; private set; } = 51;
+            field = value;
+            Status = string.Empty;
+            ResetDrawMarks( );
+            Results.Clear( );
 
-    public int Lower { get; private set; } = 1;
+            Raise( );
+            Raise(nameof(IsContinuous));
+            Raise(nameof(IsCollection));
+            RaisePool( );
 
-    public int Upper { get; private set; } = 51;
+            // 取新模式自己保留的数量；数量没变时只有上限可用状态会随候选变化
+            var restored = ClampCount(value == LotteryMode.Continuous ? continuousCount : collectionCount);
+            if (restored == Count)
+            {
+                Raise(nameof(CanIncreaseCount));
+            }
+            else
+            {
+                Count = restored;
+            }
+        }
+    } = LotteryMode.Continuous;
 
-    public int Count { get; private set; } = 5;
+    public int Max
+    {
+        get;
+        set
+        {
+            var clamped = Math.Clamp(value, 1, MaxLimit);
+            if (field == clamped)
+            {
+                return;
+            }
+
+            field = clamped;
+            Results.Clear( );
+
+            // 范围越界时由两个范围 setter 夹紧并通知候选与数量
+            Lower = Math.Min(Lower, clamped);
+            Upper = Math.Min(Upper, clamped);
+
+            Raise( );
+            Raise(nameof(MaxText));
+            Raise(nameof(CanDecreaseMax));
+            Raise(nameof(CanIncreaseMax));
+        }
+    } = 51;
+
+    public int Lower
+    {
+        get;
+        set
+        {
+            var clamped = Math.Clamp(value, 1, Upper);
+            if (field == clamped)
+            {
+                return;
+            }
+
+            field = clamped;
+            Results.Clear( );
+
+            Raise( );
+            RaisePool( );
+            RefreshCount( );
+        }
+    } = 1;
+
+    public int Upper
+    {
+        get;
+        set
+        {
+            var clamped = Math.Clamp(value, Lower, Max);
+            if (field == clamped)
+            {
+                return;
+            }
+
+            field = clamped;
+            Results.Clear( );
+
+            Raise( );
+            RaisePool( );
+            RefreshCount( );
+        }
+    } = 51;
+
+    public int Count
+    {
+        get;
+        set
+        {
+            var clamped = ClampCount(value);
+            if (field == clamped)
+            {
+                return;
+            }
+
+            field = clamped;
+
+            if (Mode == LotteryMode.Continuous)
+            {
+                continuousCount = clamped;
+            }
+            else
+            {
+                collectionCount = clamped;
+            }
+
+            Raise( );
+            Raise(nameof(CountText));
+            Raise(nameof(CanDecreaseCount));
+            Raise(nameof(CanIncreaseCount));
+        }
+    } = 5;
 
     /// <summary>
     /// 当前模式下一次抽选允许抽到的值的个数；集合模式的不重复开关打开后只算未抽中的选项
@@ -72,13 +189,12 @@ public sealed partial class LotteryViewModel : INotifyPropertyChanged
 
             field = value;
             RefreshOptions( );
-            ClampCount( );
             Results.Clear( );
 
-            Raise(nameof(SelectedDataset));
+            Raise( );
             Raise(nameof(HasDataset));
             RaisePool( );
-            RaiseCount( );
+            RefreshCount( );
         }
     }
 
@@ -87,12 +203,18 @@ public sealed partial class LotteryViewModel : INotifyPropertyChanged
         get => Max.ToString(CultureInfo.InvariantCulture);
         set
         {
+            var previous = Max;
+
             if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
             {
-                SetMax(parsed);
+                Max = parsed;
             }
 
-            Raise(nameof(MaxText));
+            // 输入非法或被夹回原值时 Max 不会通知，需要把规范文本写回输入框
+            if (previous == Max)
+            {
+                Raise( );
+            }
         }
     }
 
@@ -101,12 +223,17 @@ public sealed partial class LotteryViewModel : INotifyPropertyChanged
         get => Count.ToString(CultureInfo.InvariantCulture);
         set
         {
+            var previous = Count;
+
             if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
             {
-                SetCount(parsed);
+                Count = parsed;
             }
 
-            Raise(nameof(CountText));
+            if (previous == Count)
+            {
+                Raise( );
+            }
         }
     }
 
@@ -121,114 +248,46 @@ public sealed partial class LotteryViewModel : INotifyPropertyChanged
             }
 
             field = value;
-            Raise(nameof(Status));
+            Raise( );
         }
-    }
-
-    public void SetMode(LotteryMode value)
-    {
-        if (Mode == value)
-        {
-            return;
-        }
-
-        Mode = value;
-        Status = string.Empty;
-        ResetDrawMarks( );
-        ClampCount( );
-        Results.Clear( );
-
-        Raise(nameof(Mode));
-        Raise(nameof(IsContinuous));
-        Raise(nameof(IsCollection));
-        RaisePool( );
-        RaiseCount( );
-    }
-
-    public void SetMax(int value)
-    {
-        Max = Math.Clamp(value, 1, MaxLimit);
-
-        Lower = Math.Min(Lower, Max);
-        Upper = Math.Min(Upper, Max);
-        ClampCount( );
-        Results.Clear( );
-
-        Raise(nameof(Max));
-        Raise(nameof(MaxText));
-        RaiseRange( );
-        RaisePool( );
-        RaiseCount( );
-        Raise(nameof(CanDecreaseMax));
-        Raise(nameof(CanIncreaseMax));
-    }
-
-    public void SetLower(int value)
-    {
-        var clamped = Math.Clamp(value, 1, Upper);
-        if (clamped == Lower)
-        {
-            return;
-        }
-
-        Lower = clamped;
-        ClampCount( );
-        Results.Clear( );
-
-        RaiseRange( );
-        RaisePool( );
-        RaiseCount( );
-    }
-
-    public void SetUpper(int value)
-    {
-        var clamped = Math.Clamp(value, Lower, Max);
-        if (clamped == Upper)
-        {
-            return;
-        }
-
-        Upper = clamped;
-        ClampCount( );
-        Results.Clear( );
-
-        RaiseRange( );
-        RaisePool( );
-        RaiseCount( );
-    }
-
-    public void SetCount(int value)
-    {
-        var clamped = Math.Clamp(value, 1, Math.Max(PoolSize, 1));
-        if (clamped == Count)
-        {
-            Raise(nameof(CountText));
-            return;
-        }
-
-        Count = clamped;
-        RaiseCount( );
-    }
+    } = string.Empty;
 
     public void StepMax(int delta)
     {
-        SetMax(Max + delta);
+        Max += delta;
     }
 
     public void StepCount(int delta)
     {
-        SetCount(Count + delta);
+        Count += delta;
     }
 
-    private void ClampCount( )
+    /// <summary>
+    /// 候选集合变化后按当前模式夹紧数量；数量没变时只有上限可用状态会变
+    /// </summary>
+    private void RefreshCount( )
     {
-        Count = Math.Clamp(Count, 1, Math.Max(PoolSize, 1));
+        var clamped = ClampCount(Count);
+        if (clamped != Count)
+        {
+            Count = clamped;
+            return;
+        }
+
+        Raise(nameof(CanIncreaseCount));
     }
 
-    private void RaiseRange( )
+    /// <summary>
+    /// 连续模式按取值范围、集合模式按数据集大小夹紧；集合模式没有数据集时不设上限，保留设定值
+    /// </summary>
+    private int ClampCount(int value)
     {
-        Raise(nameof(Lower));
-        Raise(nameof(Upper));
+        if (Mode == LotteryMode.Continuous)
+        {
+            return Math.Clamp(value, 1, Upper - Lower + 1);
+        }
+
+        return SelectedDataset is { } dataset ? Math.Clamp(value, 1, dataset.Count) : Math.Max(value, 1);
     }
 
     private void RaisePool( )
@@ -237,15 +296,7 @@ public sealed partial class LotteryViewModel : INotifyPropertyChanged
         Raise(nameof(CanDraw));
     }
 
-    private void RaiseCount( )
-    {
-        Raise(nameof(Count));
-        Raise(nameof(CountText));
-        Raise(nameof(CanDecreaseCount));
-        Raise(nameof(CanIncreaseCount));
-    }
-
-    private void Raise(string name)
+    private void Raise([CallerMemberName] string? name = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }

@@ -191,8 +191,9 @@ public partial class InkCanvasNext
         return action == MouseWheelAction.Zoom ? WheelCommand.Zoom : WheelCommand.None;
     }
 
-    /// <summary>在指定位置落章（克隆/粘贴），返回是否处于盖章模式（调用方据此 Handled）
-    /// 触摸与合流后的鼠标均由未升级为手势的单指序列在抬手位置落章（CanvasPreviewTouchUp）</summary>
+    /// <summary>
+    /// 在指定位置落章，返回是否处于盖章模式
+    /// </summary>
     private bool TryStamp(Point point)
     {
         if (!Snapshot.IsStamp)

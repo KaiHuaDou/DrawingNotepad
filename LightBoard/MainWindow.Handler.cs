@@ -214,7 +214,7 @@ public partial class MainWindow
         var heightAnimation = new DoubleAnimation
         {
             From = CenterBorder.ActualHeight,
-            To = expanded ? (CenterBorder.ActualHeight - 10) * 2 + 10 : (CenterBorder.ActualHeight - 10) / 2 + 10,
+            To = expanded ? CenterBorder.ActualHeight * 2 : CenterBorder.ActualHeight / 2,
             Duration = TimeSpan.FromSeconds(0.1),
             EasingFunction = new CubicEase( ) { EasingMode = expanded ? EasingMode.EaseIn : EasingMode.EaseOut }
         };
@@ -260,7 +260,7 @@ public partial class MainWindow
         }
 
         settingsWindow = new SettingsWindow { Owner = this };
-        settingsWindow.Closed += (_, _) => ApplyFitToCurve(SettingsStore.Current.EffectiveFitToCurve);
+        settingsWindow.Closed += (_, _) => FitToCurve = SettingsStore.Current.EffectiveFitToCurve;
         settingsWindow.Show( );
     }
 

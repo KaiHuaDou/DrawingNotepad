@@ -28,7 +28,7 @@ public partial class InkCanvasNext
         var attributes = InnerCanvas.DefaultDrawingAttributes.Clone( );
         var initialPoint = new StylusPoint(canvasPoint.X, canvasPoint.Y, DefaultPressure);
         var strokeVisual = new StrokeVisual(attributes, initialPoint, Taper.Effective(options.Taper, attributes));
-        strokeVisual.SetVisualCanvas(multiTouchCanvas);
+        strokeVisual.VisualCanvas = multiTouchCanvas;
 
         multiTouchStrokes[touchId] = strokeVisual;
         strokeVisual.Redraw( );
