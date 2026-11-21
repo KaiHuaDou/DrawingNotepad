@@ -33,6 +33,9 @@ public partial class InkCanvasNext
 
     private void PanZoom( )
     {
+        // 缩放仍走 LayoutTransform + 滚动偏移：先把 EvalPan 累积的手势平移落回偏移，避免两套平移叠加
+        CommitPan( );
+
         (var first, var second) = GetMajorTouches( );
         var firstPoint = first!.Value;
 
@@ -74,10 +77,34 @@ public partial class InkCanvasNext
     private void Pan( )
     {
         (var first, _) = GetMajorTouches( );
+        if (first is null)
+        {
+            return;
+        }
 
-        CurrentView = CurrentView.Pan(panPoint0 - first!.Value);
+        PanBy(panPoint0 - first.Value);
+        panPoint0 = first.Value;
+    }
 
-        panPoint0 = first!.Value;
+    /// <summary>
+    /// 手势期平移：只写 TranslateHost 的 RenderTransform，不碰 ScrollViewer 偏移，
+    /// </summary>
+    private void PanBy(Vector delta)
+    {
+        var view = CurrentView;
+        var viewport = ViewportSize;
+        var maxX = Math.Max(0, InnerCanvas.Width * view.Scale - viewport.Width);
+        var maxY = Math.Max(0, InnerCanvas.Height * view.Scale - viewport.Height);
+
+        // 已提交偏移 - 手势增量 = 提交后的偏移；夹紧后再反解回增量
+        var left = Math.Clamp(view.OffsetX - CanvasPan.X + delta.X, 0, maxX);
+        var top = Math.Clamp(view.OffsetY - CanvasPan.Y + delta.Y, 0, maxY);
+
+        CanvasPan.X = view.OffsetX - left;
+        CanvasPan.Y = view.OffsetY - top;
+
+        // 手势中不再有 ScrollChanged：选区工具栏等消费方按原来的节奏手动通知一次
+        RaiseViewOrSelectionChanged( );
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

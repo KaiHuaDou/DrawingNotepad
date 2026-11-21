@@ -12,7 +12,7 @@ public class HighlighterAttributesTests
     [Fact]
     public void HighlighterAttribute_KeepsColorWidthAndTip( )
     {
-        StaTest.Run((Action) (( ) =>
+        StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
             var attributes = host.Canvas.DrawingAttributes.DrawingAttributes;
@@ -28,8 +28,8 @@ public class HighlighterAttributesTests
             Assert.Equal(Colors.Red, tool.DrawingAttributes.Color);
             Assert.Equal(24, tool.DrawingAttributes.Width);
             Assert.Equal(StylusTip.Rectangle, tool.DrawingAttributes.StylusTip);
-            Assert.Equal(InkCanvasEditingMode.Ink, (InkCanvasEditingMode) host.Canvas.InnerCanvas.EditingMode);
+            Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvas.EditingMode);
             Assert.Equal(InkCanvasNextMode.Ink, tool.Mode);
-        }));
+        });
     }
 }

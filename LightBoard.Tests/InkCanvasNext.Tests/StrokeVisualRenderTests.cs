@@ -7,11 +7,11 @@ using LightBoard;
 
 namespace InkCanvasNext.Tests;
 
-/// <summary>湿墨自绘层与干墨在同一棵视觉树里的可见性：整树渲染后两种颜色都必须出现</summary>
-public class WetInkRenderTests
+/// <summary>多指/选区共用的自绘层与干墨在同一棵视觉树里的可见性：整树渲染后两种颜色都必须出现</summary>
+public class StrokeVisualRenderTests
 {
     [Fact]
-    public void WetInk_RendersLikeDryInk( )
+    public void StrokeVisual_RendersLikeDryInk( )
     {
         StaTest.Run(( ) =>
         {
@@ -28,24 +28,29 @@ public class WetInkRenderTests
                 Color = Colors.Blue
             }));
 
-            var wet = host.Canvas.InnerCanvas.Wet;
-            Assert.NotNull(wet);
-            wet.Begin(1, new DrawingAttributes
+            var layer = new VisualCanvas( );
+            host.Canvas.CanvasGrid.Children.Add(layer);
+
+            var visual = new StrokeVisual(new DrawingAttributes
             {
                 Width = 12,
                 Height = 12,
                 FitToCurve = false,
                 Color = Colors.Red
-            }, LinePoints(offset.X + 60, offset.Y + 140, offset.X + 260, offset.Y + 140));
+            }, new StylusPoint(offset.X + 60, offset.Y + 140), null);
+            visual.SetVisualCanvas(layer);
+            visual.Add(new StylusPoint(offset.X + 260, offset.Y + 140));
+            visual.Redraw( );
 
             host.Canvas.UpdateLayout( );
             var bitmap = new RenderTargetBitmap(500, 400, 96, 96, PixelFormats.Pbgra32);
             bitmap.Render(host.Canvas);
 
             Assert.True(ContainsColor(bitmap, Colors.Blue), "干墨不可见");
-            Assert.True(ContainsColor(bitmap, Colors.Red), "湿墨不可见");
+            Assert.True(ContainsColor(bitmap, Colors.Red), "自绘笔画不可见");
 
-            wet.Abort( );
+            visual.Cleanup( );
+            host.Canvas.CanvasGrid.Children.Remove(layer);
         });
     }
 

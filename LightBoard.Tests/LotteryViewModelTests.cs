@@ -95,8 +95,8 @@ public class LotteryViewModelTests
 
         model.DrawOne( );
 
-        Assert.Single(model.Results);
-        Assert.InRange(int.Parse(model.Results[0], CultureInfo.InvariantCulture), 10, 20);
+        var item = Assert.Single(model.Results);
+        Assert.InRange(int.Parse(item, CultureInfo.InvariantCulture), 10, 20);
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class LotteryViewModelTests
         model.AddDataset("名单", ["甲"]);
         model.AddDataset("名单", ["乙"]);
 
-        Assert.Equal(new[] { "名单", "名单 2" }, model.Datasets.Select(dataset => dataset.Name));
+        Assert.Equal(["名单", "名单 2"], model.Datasets.Select(dataset => dataset.Name));
     }
 
     [Fact]
@@ -208,8 +208,8 @@ public class LotteryViewModelTests
 
         model.DrawOne( );
 
-        Assert.Single(model.Results);
-        Assert.Contains(model.Results[0], new[] { "张三", "李四" });
+        var item = Assert.Single(model.Results);
+        Assert.Contains(item, new[] { "张三", "李四" });
     }
 
     [Fact]

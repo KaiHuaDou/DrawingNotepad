@@ -1,22 +1,17 @@
 using System;
 using System.Windows.Controls;
 using System.Windows.Ink;
-using System.Windows.Input;
 using System.Windows.Input.StylusPlugIns;
 
 namespace InkCanvasNext;
 
 // InkCanvas 子类：笔锋开启时用 TaperDynamicRenderer 走实时插件通道，笔画收集完成后改写末端压力
-// 关闭笔锋或荧光笔时保留原生 DynamicRenderer；鼠标笔画没有插件通道，仍由 WetInk 自绘
+// 关闭笔锋或荧光笔时保留原生 DynamicRenderer
+// WPF 把鼠标、触摸、笔统一送进 StylusPlugIn 通道（鼠标是设备号 0 的原始笔报文），三者共用同一条湿墨路径
 internal sealed class TaperInkCanvas : InkCanvas
 {
-    // 无笔服务机器的鼠标笔画没有设备号，用不会与笔设备冲突的占位值
-    private const int MouseWetId = -1;
-
     private TaperParameters taper = new( );
     private DynamicRenderer? nativeRenderer;
-    private TaperDynamicRenderer? taperRenderer;
-    private bool wetAttached;
     private bool configured;
 
     /// <summary>
@@ -31,16 +26,6 @@ internal sealed class TaperInkCanvas : InkCanvas
         if (!options.Enabled)
         {
             return;
-        }
-
-        if (options.Wet)
-        {
-            // 笔/触摸的湿墨由 TaperDynamicRenderer 负责；WetInk 只服务鼠标笔画
-            Wet = new WetInk(options);
-            AttachWet( );
-            Loaded += (_, _) => AttachWet( );
-            Unloaded += (_, _) => DetachWet( );
-            LostMouseCapture += (_, _) => Wet.Clear(MouseWetId);
         }
 
         ObserveDefaultDrawingAttributes( );
@@ -71,33 +56,42 @@ internal sealed class TaperInkCanvas : InkCanvas
     /// </summary>
     internal void AbortWetInk( )
     {
-        Wet?.Abort( );
+        ClearWet( );
 
         // 重新挂一次自定义渲染器，触发它清掉在途笔画与尾部视觉
-        if (taperRenderer is not null && ReferenceEquals(DynamicRenderer, taperRenderer))
+        if (TaperRenderer is not null && ReferenceEquals(DynamicRenderer, TaperRenderer))
         {
             DynamicRenderer = null;
-            DynamicRenderer = taperRenderer;
+            DynamicRenderer = TaperRenderer;
         }
     }
 
-    internal WetInk? Wet { get; private set; }
+    /// <summary>
+    /// 只清湿墨/尾部视觉，不动渲染器；进入 Pan/PanZoom/MultiDraw 等手势时调用
+    /// </summary>
+    internal void ClearWet( )
+    {
+        TaperRenderer?.ClearTailAfterStroke( );
+    }
 
     /// <summary>
-    /// 当前安装的自绘实时渲染器；测试与调试用
+    /// 当前安装的自绘实时渲染器
     /// </summary>
-    internal TaperDynamicRenderer? TaperRenderer => taperRenderer;
+    internal TaperDynamicRenderer? TaperRenderer { get; private set; }
 
     internal bool UsesNativeRenderer => ReferenceEquals(DynamicRenderer, nativeRenderer);
-
-    // 荧光笔等忽略压力的笔由原生渲染器显示在绘笔画；鼠标湿墨同样遵守这一条件
-    private WetInk? DrawingWet => DefaultDrawingAttributes.IgnorePressure ? null : Wet;
 
     protected override void OnStrokeCollected(InkCanvasStrokeCollectedEventArgs e)
     {
         Taper.Apply(e.Stroke, Taper.Effective(taper, e.Stroke.DrawingAttributes));
 
         base.OnStrokeCollected(e);
+
+        // 干墨已在集合里，同步清尾；不要等 OnStylusUp 的 Background
+        if (TaperRenderer is not null && ReferenceEquals(DynamicRenderer, TaperRenderer))
+        {
+            TaperRenderer.ClearTailAfterStroke( );
+        }
     }
 
     /// <summary>
@@ -118,55 +112,6 @@ internal sealed class TaperInkCanvas : InkCanvas
         SyncRenderer( );
     }
 
-    protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
-    {
-        base.OnPreviewMouseDown(e);
-
-        // 提升为笔事件的鼠标由笔管线绘制，这里只接无笔服务机器的纯鼠标
-        if (DrawingWet is not { } wet || e.StylusDevice is not null || e.ChangedButton != MouseButton.Left
-            || EditingMode != InkCanvasEditingMode.Ink)
-        {
-            return;
-        }
-
-        wet.Begin(MouseWetId, DefaultDrawingAttributes, MousePoints(e));
-    }
-
-    protected override void OnPreviewMouseMove(MouseEventArgs e)
-    {
-        base.OnPreviewMouseMove(e);
-
-        if (Wet?.Active != true)
-        {
-            return;
-        }
-
-        if (EditingMode != InkCanvasEditingMode.Ink)
-        {
-            Wet.Abort( );
-            return;
-        }
-
-        Wet.Add(MouseWetId, MousePoints(e));
-    }
-
-    protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
-    {
-        base.OnPreviewMouseUp(e);
-
-        // 鼠标收笔在冒泡阶段；预览阶段立即清湿墨会留下最多一帧空白，延后到输入队列末尾
-        Dispatcher.InvokeAsync(( ) => Wet?.Clear(MouseWetId), System.Windows.Threading.DispatcherPriority.Input);
-    }
-
-    // InkCanvas 的鼠标收集按 0.5 压力建点，湿墨保持同一份数据
-    private StylusPointCollection MousePoints(MouseEventArgs e)
-    {
-        var position = e.GetPosition(this);
-        var points = new StylusPointCollection(1) { new StylusPoint(position.X, position.Y) };
-
-        return points;
-    }
-
     private void SyncRenderer( )
     {
         if (!configured)
@@ -174,7 +119,7 @@ internal sealed class TaperInkCanvas : InkCanvas
             return;
         }
 
-        // 笔/触摸有实时插件通道；鼠标没有，走 WetInk
+        // 鼠标/笔/触摸都走插件通道，只有原生渲染器画不了的压力或笔尖形状才回退
         var useTaper = taper.Enabled
             && taper.Wet
             && !DefaultDrawingAttributes.IgnorePressure
@@ -183,7 +128,7 @@ internal sealed class TaperInkCanvas : InkCanvas
             && DefaultDrawingAttributes.StylusTip == StylusTip.Ellipse;
 
         var target = useTaper
-            ? taperRenderer ??= new TaperDynamicRenderer(taper)
+            ? TaperRenderer ??= new TaperDynamicRenderer(taper)
             : nativeRenderer;
 
         // 替换渲染器时 ActiveEditingMode 不会重新触发 InkCollectionBehavior 的启停，这里对齐一次
@@ -193,30 +138,5 @@ internal sealed class TaperInkCanvas : InkCanvas
         {
             DynamicRenderer = target;
         }
-    }
-
-    private void AttachWet( )
-    {
-        if (Wet is null || wetAttached)
-        {
-            return;
-        }
-
-        // 第二个参数只决定荧光笔分组；湿墨只在非荧光笔时绘制
-        InkPresenter.AttachVisuals(Wet.Canvas, new DrawingAttributes( ));
-        wetAttached = true;
-    }
-
-    private void DetachWet( )
-    {
-        Wet?.Abort( );
-
-        if (!wetAttached || Wet is null)
-        {
-            return;
-        }
-
-        InkPresenter.DetachVisuals(Wet.Canvas);
-        wetAttached = false;
     }
 }

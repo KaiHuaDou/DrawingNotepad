@@ -1,6 +1,6 @@
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Ink;
+using System.Windows.Input;
 
 namespace InkCanvasNext.Tests;
 
@@ -78,6 +78,24 @@ public class TaperOutlineTests
             Assert.Null(TaperOutline.Build(points, 2, 2, 10, Taper, 1));
             Assert.Null(TaperOutline.Build(points, 0, 4, 10, Taper, 1));
             Assert.Null(TaperOutline.Build(points, 0, 2, 0, Taper, 1));
+        });
+    }
+
+    [Fact]
+    public void Outline_FillsCapCenters( )
+    {
+        StaTest.Run(( ) =>
+        {
+            var points = Line(4);
+
+            var geometry = TaperOutline.Build(points, 0, 4, 10, Taper, 3);
+
+            Assert.NotNull(geometry);
+
+            // 端帽必须与包络同向填充；反向时重叠区绕数为 0，会挖出圆洞，肉眼看笔迹末端分叉
+            Assert.True(geometry!.FillContains(new Point(points[0].X, points[0].Y)), "起点端帽中心是空的");
+            Assert.True(geometry.FillContains(new Point(points[^1].X, points[^1].Y)), "末端端帽中心是空的");
+            Assert.True(geometry.FillContains(new Point(15, 0.5)), "笔身中心是空的");
         });
     }
 

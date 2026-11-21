@@ -76,8 +76,6 @@ public readonly record struct View(double Scale, double OffsetX, double OffsetY)
 
 public partial class InkCanvasNext
 {
-    private readonly ScaleTransform canvasScaleTransform = new(1.0, 1.0);
-
     // 防止扩展画布引起的滚动通知再次进入判定
     private bool fillingCanvas;
 
@@ -91,7 +89,7 @@ public partial class InkCanvasNext
     /// </summary>
     public View CurrentView
     {
-        get => new(canvasScaleTransform.ScaleX, CanvasScroll.HorizontalOffset, CanvasScroll.VerticalOffset);
+        get => new(CanvasScale.ScaleX, CanvasScroll.HorizontalOffset, CanvasScroll.VerticalOffset);
         set
         {
             if (!double.IsFinite(value.Scale) || !double.IsFinite(value.OffsetX) || !double.IsFinite(value.OffsetY))
@@ -101,12 +99,38 @@ public partial class InkCanvasNext
 
             value = value.Clamp(new Size(InnerCanvas.Width, InnerCanvas.Height), ViewportSize, MinScale, MaxScale);
             CurrentScale = value.Scale;
+
+            // 外部换视图时手势增量作废，避免旧变换叠加到新偏移上
+            CanvasPan.X = 0;
+            CanvasPan.Y = 0;
+
             CanvasScroll.ScrollToHorizontalOffset(value.OffsetX);
             CanvasScroll.ScrollToVerticalOffset(value.OffsetY);
 
             // 手势中只保视口覆盖：余量补足留到手势结束，改画布尺寸会让排列与缓存失效
             EnsureCanvasFill(value, margin: State == TouchState.Idle);
         }
+    }
+
+    /// <summary>
+    /// 把手势期累积的平移增量提交回 ScrollViewer 偏移：先写偏移并同步排空布局，再清零 RenderTransform。
+    /// 两步在同一帧内完成，避免抬手时内容先回起点再跳到终点的一帧回弹
+    /// </summary>
+    private void CommitPan( )
+    {
+        if (CanvasPan.X == 0 && CanvasPan.Y == 0)
+        {
+            return;
+        }
+
+        // 读的是尚未包含手势增量的已提交视图；两者相减才是屏幕上内容左上角的位置
+        var view = CurrentView;
+        CanvasScroll.ScrollToHorizontalOffset(view.OffsetX - CanvasPan.X);
+        CanvasScroll.ScrollToVerticalOffset(view.OffsetY - CanvasPan.Y);
+        CanvasScroll.UpdateLayout( );
+
+        CanvasPan.X = 0;
+        CanvasPan.Y = 0;
     }
 
     /// <summary>
@@ -172,7 +196,7 @@ public partial class InkCanvasNext
             }
 
             var scale = Math.Clamp(value, MinScale, MaxScale);
-            canvasScaleTransform.ScaleX = canvasScaleTransform.ScaleY = scale;
+            CanvasScale.ScaleX = CanvasScale.ScaleY = scale;
             eraser.Scale = scale;
         }
     }

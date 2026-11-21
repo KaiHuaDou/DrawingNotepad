@@ -222,10 +222,10 @@ public class EdgeHintTests
             b.Down(host.Target, cluster[1]);
             c.Down(host.Target, cluster[2]);
 
-            // 下滑让偏移回到 0：手势中提示保持原样
+            // 下滑让内容回到顶部：手势中只改变换，滚动偏移与提示都保持原样
             a.Move(host.Target, new Point(100, 600));
             canvas.UpdateLayout( );
-            Assert.Equal(0, canvas.OffsetY, 5);
+            Assert.Equal(400, canvas.OffsetY, 5);
             Assert.True(canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
             Assert.Equal(0, raised);
 
@@ -234,6 +234,8 @@ public class EdgeHintTests
             c.Up(host.Target, cluster[2]);
             Assert.Equal(TouchState.Idle, canvas.State);
 
+            // 抬手提交手势增量，提示统一刷新
+            Assert.Equal(0, canvas.OffsetY, 5);
             Assert.False(canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
             Assert.Equal(1, raised);
         });

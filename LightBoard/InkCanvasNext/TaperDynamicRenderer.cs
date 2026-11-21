@@ -25,11 +25,16 @@ internal sealed class TaperDynamicRenderer : DynamicRenderer
     private readonly Lock sync = new( );
     private readonly List<StylusPoint> points = [];
 
+    private sealed record TailUpdate(MediaGeometry? Geometry, Brush? Brush, int Generation);
+
     private DrawingAttributes? attributes;
     private ContainerVisual? root;
     private ContainerVisual? tailRoot;
     private DrawingVisual? tailVisual;
     private Dispatcher? applicationDispatcher;
+
+    private TailUpdate? pendingTail;
+    private int tailQueued;
 
     private int bodyDrawn;
     private int generation;
@@ -52,11 +57,13 @@ internal sealed class TaperDynamicRenderer : DynamicRenderer
 
         if (Enabled)
         {
+            EnsureTailLayer( );
             return;
         }
 
         // 手势接管、切工具或失活时编辑模式会把渲染器关掉，湿墨尾部必须同步清掉
         Interlocked.Increment(ref generation);
+        Interlocked.Exchange(ref pendingTail, null);
 
         lock (sync)
         {
@@ -64,7 +71,8 @@ internal sealed class TaperDynamicRenderer : DynamicRenderer
             bodyDrawn = 0;
         }
 
-        PostTail(null, null, Volatile.Read(ref generation));
+        DrawTail(null, null);
+        RemoveTailLayer( );
     }
 
     protected override void OnAdded( )
@@ -113,6 +121,7 @@ internal sealed class TaperDynamicRenderer : DynamicRenderer
     {
         Interlocked.Increment(ref generation);
         Interlocked.Exchange(ref resetRequested, 1);
+        EnsureTailLayer( );
         base.OnStylusDown(rawStylusInput);
     }
 
@@ -337,13 +346,51 @@ internal sealed class TaperDynamicRenderer : DynamicRenderer
             return;
         }
 
-        visual.Dispatcher.BeginInvoke(DispatcherPriority.Send, new Action(( ) =>
+        // 渲染线程只保留最新一份尾部几何；UI 线程忙时不再堆积逐报文更新
+        Volatile.Write(ref pendingTail, new TailUpdate(geometry, brush, expectedGeneration));
+        if (Interlocked.Exchange(ref tailQueued, 1) != 0)
         {
-            if (Volatile.Read(ref generation) == expectedGeneration)
-            {
-                DrawTail(geometry, brush);
-            }
-        }));
+            return;
+        }
+
+        visual.Dispatcher.BeginInvoke(DispatcherPriority.Send, new Action(FlushTail));
+    }
+
+    private void FlushTail( )
+    {
+        Interlocked.Exchange(ref tailQueued, 0);
+
+        var update = Interlocked.Exchange(ref pendingTail, null);
+        if (update is null || Volatile.Read(ref generation) != update.Generation)
+        {
+            return;
+        }
+
+        DrawTail(update.Geometry, update.Brush);
+    }
+
+    /// <summary>
+    /// 干墨提交后同步清尾：OnStrokeCollected 调用；不依赖 Background 优先级
+    /// </summary>
+    internal void ClearTailAfterStroke( )
+    {
+        // 让排队中的尾部更新失效
+        Interlocked.Increment(ref generation);
+        Interlocked.Exchange(ref pendingTail, null);
+
+        var visual = Volatile.Read(ref tailVisual);
+        if (visual is null)
+        {
+            return;
+        }
+
+        if (visual.Dispatcher.CheckAccess( ))
+        {
+            DrawTail(null, null);
+            return;
+        }
+
+        visual.Dispatcher.BeginInvoke(DispatcherPriority.Send, new Action(( ) => DrawTail(null, null)));
     }
 
     private void DrawTail(MediaGeometry? geometry, Brush? brush)

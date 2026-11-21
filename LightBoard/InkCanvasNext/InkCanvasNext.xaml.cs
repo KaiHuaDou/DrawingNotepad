@@ -43,8 +43,6 @@ public partial class InkCanvasNext : UserControl
 
         MousePointer = new MouseTouchDevice(this);
 
-        CanvasGrid.LayoutTransform = canvasScaleTransform;
-
         selectionVisual = new SelectionVisual(SelectionLayer, canvasSize);
         selection = new SelectionController(this, selectionVisual);
 
@@ -66,7 +64,7 @@ public partial class InkCanvasNext : UserControl
 
             RaiseViewOrSelectionChanged( );
         };
-        canvasScaleTransform.Changed += (_, _) => RaiseViewOrSelectionChanged( );
+        CanvasScale.Changed += (_, _) => RaiseViewOrSelectionChanged( );
 
         edgeScrollTimer.Interval = TimeSpan.FromMilliseconds(EdgeScrollTickMilliseconds);
         edgeScrollTimer.Tick += EdgeScrollTick;

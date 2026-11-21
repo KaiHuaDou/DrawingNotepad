@@ -237,6 +237,13 @@ public partial class InkCanvasNext
 
     private void ExitState(TouchState from, TouchState to)
     {
+        // 离开平移组：把手势期的 RenderTransform 增量提交回滚动偏移，后续状态继续按已提交视图工作
+        if (from is TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan
+            && to is not (TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan))
+        {
+            CommitPan( );
+        }
+
         if (from == TouchState.MultiDraw)
         {
             EndMultiTouch( );
@@ -325,6 +332,7 @@ public partial class InkCanvasNext
                 break;
 
             case TouchState.Selection:
+                InnerCanvas.ClearWet( );
                 CaptureAll( );
                 BeginSelectionTouch( );
                 break;
@@ -332,10 +340,17 @@ public partial class InkCanvasNext
             case TouchState.EvalPan:
             case TouchState.PanZoom:
             case TouchState.Pan:
+                // EvalPan 可能已用手势变换平移；进入双指缩放前先折回偏移，避免两套平移叠加
+                if (from == TouchState.EvalPan && to == TouchState.PanZoom)
+                {
+                    CommitPan( );
+                }
+
                 if (from is not (TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan))
                 {
                     ReleaseAll( );
                     InnerCanvas.EditingMode = InkCanvasEditingMode.None;
+                    InnerCanvas.ClearWet( );
                     CaptureAll( );
 
                     // 手势开始补一屏余量，手势中不扩展，靠这次余量吸收拖动
@@ -348,6 +363,7 @@ public partial class InkCanvasNext
             case TouchState.Eraser:
                 ReleaseAll( );
                 InnerCanvas.EditingMode = InkCanvasEditingMode.None;
+                InnerCanvas.ClearWet( );
                 CaptureAll( );
                 break;
 
@@ -355,6 +371,7 @@ public partial class InkCanvasNext
                 HandOffDrawingStroke( );
                 ReleaseAll( );
                 InnerCanvas.EditingMode = InkCanvasEditingMode.None;
+                InnerCanvas.ClearWet( );
                 CaptureAll( );
                 StartMultiTouch( );
                 break;

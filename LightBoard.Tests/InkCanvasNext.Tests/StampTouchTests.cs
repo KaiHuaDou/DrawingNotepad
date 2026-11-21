@@ -18,10 +18,10 @@ public class StampTouchTests
     [Fact]
     public void SingleFingerTap_StampsAtLiftPoint( )
     {
-        StaTest.Run((Action) (( ) =>
+        StaTest.Run(( ) =>
         {
             using var host = CreateStampHost( );
-            Assert.Equal(System.Windows.Controls.InkCanvasEditingMode.None, (System.Windows.Controls.InkCanvasEditingMode)host.Canvas.InnerCanvas.EditingMode);
+            Assert.Equal(System.Windows.Controls.InkCanvasEditingMode.None, host.Canvas.InnerCanvas.EditingMode);
 
             var finger = host.Device( );
             finger.Down(host.Target, P1);
@@ -30,7 +30,7 @@ public class StampTouchTests
             Assert.Equal(2, host.Canvas.Strokes.Count);
             AssertStampCenter(host.Canvas.Strokes[1], End1);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
-        }));
+        });
     }
 
     [Fact]

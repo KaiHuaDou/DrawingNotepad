@@ -10,14 +10,14 @@ public class DocumentPageTests
     [Fact]
     public void SetDocumentPage_LargerThanCanvas_ExtendsCanvasAndKeepsOrigin( )
     {
-        StaTest.Run((Action) (( ) =>
+        StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
             var canvas = host.Canvas;
             var width = canvas.InnerCanvas.Width;
             var height = canvas.InnerCanvas.Height;
             var page = new WriteableBitmap(10, 10, 96, 96, PixelFormats.Pbgra32, null);
-            var box = new Rect((double) 0, (double) 0, width + 200, height + 200);
+            var box = new Rect(0, 0, width + 200, height + 200);
 
             canvas.SetDocumentPage(page, box);
             canvas.UpdateLayout( );
@@ -25,16 +25,16 @@ public class DocumentPageTests
             Assert.True(canvas.InnerCanvas.Width >= box.Right);
             Assert.True(canvas.InnerCanvas.Height >= box.Bottom);
 
-            var origin = canvas.InnerCanvas.TransformToVisual((Visual) canvas.CanvasGrid).Transform(new Point(0, 0));
-            Assert.Equal((double) 0, origin.X, 6);
-            Assert.Equal((double) 0, origin.Y, 6);
-        }));
+            var origin = canvas.InnerCanvas.TransformToVisual(canvas.CanvasGrid).Transform(new Point(0, 0));
+            Assert.Equal(0, origin.X, 6);
+            Assert.Equal(0, origin.Y, 6);
+        });
     }
 
     [Fact]
     public void SetDocumentPage_Null_RemovesPageWithoutResizing( )
     {
-        StaTest.Run((Action) (( ) =>
+        StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
             var canvas = host.Canvas;
@@ -43,6 +43,6 @@ public class DocumentPageTests
             canvas.SetDocumentPage(null, null);
 
             Assert.Equal<double>(width, canvas.InnerCanvas.Width);
-        }));
+        });
     }
 }

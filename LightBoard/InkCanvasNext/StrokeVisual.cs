@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Ink;
@@ -7,124 +6,10 @@ using System.Windows.Media;
 
 namespace InkCanvasNext;
 
-// 湿墨自绘层：笔锋开启时替代 DynamicRenderer 显示在绘笔画
-// 湿墨与干墨都由 Stroke 的几何生成，抬手后形状一致
-internal sealed class WetInk(TaperParameters taper)
-{
-    private StrokeVisual? stroke;
-    private int deviceId;
-    private bool awaitingFrame;
-
-    internal int PointCount => stroke?.Stroke.StylusPoints.Count ?? 0;
-
-    internal int VisualCount => Canvas.VisualCount;
-
-    /// <summary>
-    /// 是否有湿墨笔画在途
-    /// </summary>
-    internal bool Active => stroke is not null;
-
-    internal VisualCanvas Canvas { get; } = new( );
-
-    internal void Begin(int stylusId, DrawingAttributes attributes, StylusPointCollection points)
-    {
-        if (stroke is not null || points.Count == 0)
-        {
-            return;
-        }
-
-        deviceId = stylusId;
-        stroke = new StrokeVisual(attributes.Clone( ), points[0], Taper.Effective(taper, attributes));
-        stroke.SetVisualCanvas(Canvas);
-
-        for (var i = 1; i < points.Count; i++)
-        {
-            stroke.Add(points[i]);
-        }
-
-        stroke.Redraw( );
-    }
-
-    internal void Add(int stylusId, StylusPointCollection points)
-    {
-        if (stroke is null || stylusId != deviceId)
-        {
-            return;
-        }
-
-        foreach (var point in points)
-        {
-            stroke.Add(point);
-        }
-
-        HookFrame( );
-    }
-
-    /// <summary>
-    /// 结束指定设备的湿墨显示；设备不符时不变
-    /// </summary>
-    internal void Clear(int stylusId)
-    {
-        if (stroke is not null && stylusId != deviceId)
-        {
-            return;
-        }
-
-        Abort( );
-    }
-
-    /// <summary>
-    /// 清空湿墨显示与帧订阅
-    /// </summary>
-    internal void Abort( )
-    {
-        Clear( );
-    }
-
-    private void Clear( )
-    {
-        UnhookFrame( );
-        stroke?.Cleanup( );
-        stroke = null;
-    }
-
-    private void HookFrame( )
-    {
-        if (awaitingFrame)
-        {
-            return;
-        }
-
-        awaitingFrame = true;
-        CompositionTarget.Rendering += Frame;
-    }
-
-    private void UnhookFrame( )
-    {
-        if (!awaitingFrame)
-        {
-            return;
-        }
-
-        awaitingFrame = false;
-        CompositionTarget.Rendering -= Frame;
-    }
-
-    private void Frame(object? o, EventArgs e)
-    {
-        if (stroke?.NeedsRedraw != true)
-        {
-            UnhookFrame( );
-            return;
-        }
-
-        stroke.Redraw( );
-    }
-}
-
+// 多指书写与选区覆盖共用的自绘层：在 UI 线程按帧重建活动段几何
 /// <summary>
 /// 自绘图层容器：按添加顺序承载 DrawingVisual，不做布局、裁剪与命中测试
-/// 湿墨预览与选区覆盖层共用
+/// 多指笔画与选区覆盖层共用
 /// </summary>
 internal sealed class VisualCanvas : FrameworkElement
 {
@@ -154,8 +39,9 @@ internal sealed class VisualCanvas : FrameworkElement
 
 internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, StylusPoint initialPoint, TaperParameters? taper)
 {
-    // 活动段每帧整段重建并重新拟合，窗口越短，已画部分的形状变化越小
-    private const int SegmentPoints = 16;
+    // 活动段每帧整段重建并重新拟合，窗口越短，已画部分的形状变化越小；
+    // 冻结窗口越大，段间接缝越少（64 点约等于 4 个触摸报文）
+    private const int SegmentPoints = 64;
 
     private readonly DrawingAttributes drawingAttributes = drawingAttributes;
 
