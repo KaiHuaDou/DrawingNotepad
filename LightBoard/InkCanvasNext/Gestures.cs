@@ -26,7 +26,7 @@ public partial class InkCanvasNext
     {
         get
         {
-            var (first, second) = GetMajorTouches( );
+            var (first, second) = GetMajorTouches(touches);
             return first is { } a && second is { } b ? Distance(a, b) : 0;
         }
     }
@@ -43,7 +43,7 @@ public partial class InkCanvasNext
 
     private void InitGesture( )
     {
-        (var first, var second) = GetMajorTouches( );
+        (var first, var second) = GetMajorTouches(touches);
         if (first is null)
         {
             return;
@@ -61,7 +61,7 @@ public partial class InkCanvasNext
         // 缩放仍走 LayoutTransform + 滚动偏移：先把 EvalPan 累积的手势平移落回偏移，避免两套平移叠加
         CommitPan( );
 
-        (var first, var second) = GetMajorTouches( );
+        (var first, var second) = GetMajorTouches(touches);
         var firstPoint = first!.Value;
 
         var span2 = second is null ? 0.0 : Distance2(firstPoint, second.Value);
@@ -101,7 +101,7 @@ public partial class InkCanvasNext
 
     private void Pan( )
     {
-        (var first, _) = GetMajorTouches( );
+        (var first, _) = GetMajorTouches(touches);
         if (first is null)
         {
             return;

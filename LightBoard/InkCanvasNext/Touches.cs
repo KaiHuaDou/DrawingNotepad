@@ -1,88 +1,155 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace InkCanvasNext;
 
+internal enum TouchKind
+{
+    Finger,
+    Palm
+}
+
+/// <summary>
+/// 触点：位置取根可视坐标，尺寸取 TouchPoint.Size（视口 DIP）；
+/// Kind 由尺寸通道在按下时分类，无法上报有效尺寸的设备始终为 Finger
+/// </summary>
+internal readonly record struct TouchContact(
+    TouchDevice Device,
+    Point Position,
+    Size Size,
+    TouchKind Kind)
+{
+    internal bool IsPalm => Kind == TouchKind.Palm;
+}
+
 public partial class InkCanvasNext
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private double Get1stFingerDispl2( )
+    // 以下均为只读触点集合上的纯函数：不读写实例状态，调用方显式传入触点与坐标系
+
+    private static (int Fingers, int Palms) CountTouches(OrderedDictionary<int, TouchContact> contacts)
     {
-        if (touches.Count == 0)
+        var palms = 0;
+        foreach (var contact in contacts.Values)
         {
-            return 0;
+            if (contact.IsPalm)
+            {
+                palms++;
+            }
         }
 
-        var first = touches.First( );
-        if (!touchStarts.TryGetValue(first.Key, out var start))
+        return (contacts.Count - palms, palms);
+    }
+
+    private static bool TryGetFirstFinger(OrderedDictionary<int, TouchContact> contacts, out TouchContact first)
+    {
+        foreach (var contact in contacts.Values)
         {
-            return 0;
+            if (!contact.IsPalm)
+            {
+                first = contact;
+                return true;
+            }
         }
 
-        var current = first.Value.Position;
-        return Geometry.Distance2(current, start);
+        first = default;
+        return false;
+    }
+
+    private static bool IsPalmTouch(OrderedDictionary<int, TouchContact> contacts, int id)
+    {
+        return contacts.TryGetValue(id, out var contact) && contact.IsPalm;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private (Point? First, Point? Second) GetMajorTouches( )
+    private static double Get1stFingerDispl2(OrderedDictionary<int, TouchContact> contacts, Dictionary<int, Point> starts)
     {
-        var values = touches.Values;
-        var count = values.Count;
-
-        if (count == 0)
+        foreach (var (id, contact) in contacts)
         {
-            return (null, null);
+            if (contact.IsPalm)
+            {
+                continue;
+            }
+
+            if (!starts.TryGetValue(id, out var start))
+            {
+                return 0;
+            }
+
+            return Geometry.Distance2(contact.Position, start);
         }
 
-        using var enumerator = values.GetEnumerator( );
-        enumerator.MoveNext( );
-        var first = enumerator.Current.Position;
+        return 0;
+    }
 
-        if (count == 1)
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static (Point? First, Point? Second) GetMajorTouches(OrderedDictionary<int, TouchContact> contacts)
+    {
+        Point? first = null;
+        Point? second = null;
+
+        foreach (var contact in contacts.Values)
         {
-            return (first, null);
-        }
+            if (contact.IsPalm)
+            {
+                continue;
+            }
 
-        enumerator.MoveNext( );
-        var second = enumerator.Current.Position;
+            if (first is null)
+            {
+                first = contact.Position;
+                continue;
+            }
+
+            second = contact.Position;
+            break;
+        }
 
         return (first, second);
     }
 
-    private bool IsFirstTouch(int id)
+    private static bool IsFirstTouch(OrderedDictionary<int, TouchContact> contacts, int id)
     {
-        if (touches.Count == 0)
+        foreach (var (key, contact) in contacts)
         {
-            return false;
+            if (contact.IsPalm)
+            {
+                continue;
+            }
+
+            return key == id;
         }
 
-        return touches.Keys.First( ) == id;
+        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private double GetMaxDistance2( )
+    private static double GetMaxDistance2(OrderedDictionary<int, TouchContact> contacts, int fingerCount)
     {
-        var count = touches.Count;
-        if (count < 2)
+        if (fingerCount < 2)
         {
             return 0;
         }
 
-        Span<Point> positions = stackalloc Point[count];
+        Span<Point> positions = stackalloc Point[fingerCount];
         var index = 0;
-        foreach (var kv in touches)
+        foreach (var kv in contacts)
         {
+            if (kv.Value.IsPalm)
+            {
+                continue;
+            }
+
             positions[index++] = kv.Value.Position;
         }
 
         double max = 0;
-        for (var i = 0; i < count - 1; i++)
+        for (var i = 0; i < fingerCount - 1; i++)
         {
-            for (var j = i + 1; j < count; j++)
+            for (var j = i + 1; j < fingerCount; j++)
             {
                 var d2 = Geometry.Distance2(positions[i], positions[j]);
                 if (d2 > max)
@@ -96,49 +163,81 @@ public partial class InkCanvasNext
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private (Point C1, Point C2) GetPinchPoints( )
+    private static (Point C1, Point C2) GetPinchPoints(OrderedDictionary<int, TouchContact> contacts, InkCanvas innerCanvas)
     {
-        using var enumerator = touches.Values.GetEnumerator( );
-        enumerator.MoveNext( );
-        var (Device1, _) = enumerator.Current;
-        enumerator.MoveNext( );
-        var (Device2, _) = enumerator.Current;
-        return (Device1.GetTouchPoint(InnerCanvas).Position, Device2.GetTouchPoint(InnerCanvas).Position);
+        var first = default(TouchContact);
+        var second = default(TouchContact);
+        var found = false;
+
+        foreach (var contact in contacts.Values)
+        {
+            if (contact.IsPalm)
+            {
+                continue;
+            }
+
+            if (!found)
+            {
+                first = contact;
+                found = true;
+                continue;
+            }
+
+            second = contact;
+            break;
+        }
+
+        return (first.Device.GetTouchPoint(innerCanvas).Position, second.Device.GetTouchPoint(innerCanvas).Position);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private Point GetFirstCanvasPoint( )
+    private static Point GetFirstCanvasPoint(OrderedDictionary<int, TouchContact> contacts, InkCanvas innerCanvas)
     {
-        using var enumerator = touches.Values.GetEnumerator( );
-        enumerator.MoveNext( );
-        return enumerator.Current.Device.GetTouchPoint(InnerCanvas).Position;
+        foreach (var contact in contacts.Values)
+        {
+            if (contact.IsPalm)
+            {
+                continue;
+            }
+
+            return contact.Device.GetTouchPoint(innerCanvas).Position;
+        }
+
+        return default;
     }
 
     /// <summary>
-    /// 触点包络圆：视口坐标下的触点质心与最远距离，只统计前 limit 个触点
+    /// 手指触点包络圆：视口坐标下的质心与最远距离，只统计前 limit 个手指触点
     /// </summary>
-    private static (Point Center, double Radius) GetEnvelopeCircle(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches, int limit)
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static (Point Center, double Radius) GetEnvelopeCircle(OrderedDictionary<int, TouchContact> contacts, int limit)
     {
-        var count = Math.Min(touches.Count, limit);
+        var capacity = Math.Min(contacts.Count, limit);
+        Span<Point> positions = stackalloc Point[capacity];
+        var count = 0;
+
+        foreach (var kv in contacts)
+        {
+            if (kv.Value.IsPalm)
+            {
+                continue;
+            }
+
+            if (count == capacity)
+            {
+                break;
+            }
+
+            positions[count++] = kv.Value.Position;
+        }
+
         if (count == 0)
         {
             return (default, 1);
         }
 
-        Span<Point> positions = stackalloc Point[count];
-        var index = 0;
-        foreach (var kv in touches)
-        {
-            if (index == count)
-            {
-                break;
-            }
-
-            positions[index++] = kv.Value.Position;
-        }
-
         double sumX = 0, sumY = 0;
-        foreach (var pos in positions)
+        foreach (var pos in positions[..count])
         {
             sumX += pos.X;
             sumY += pos.Y;
@@ -147,7 +246,7 @@ public partial class InkCanvasNext
         var center = new Point(sumX / count, sumY / count);
 
         double max = 0;
-        foreach (var pos in positions)
+        foreach (var pos in positions[..count])
         {
             var distance2 = Geometry.Distance2(pos, center);
             if (distance2 > max)
@@ -160,31 +259,33 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 触点质心，内容坐标，只统计前 limit 个触点
+    /// 手指触点质心，内容坐标，只统计前 limit 个手指触点
     /// </summary>
-    private Point GetCanvasCenter(OrderedDictionary<int, (TouchDevice Device, Point Position)> touches, int limit)
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    private static Point GetCanvasCenter(OrderedDictionary<int, TouchContact> contacts, int limit, InkCanvas innerCanvas)
     {
-        var count = Math.Min(touches.Count, limit);
-        if (count == 0)
-        {
-            return default;
-        }
-
+        var capacity = Math.Min(contacts.Count, limit);
         double sumX = 0, sumY = 0;
-        var index = 0;
-        foreach (var kv in touches)
+        var count = 0;
+
+        foreach (var kv in contacts)
         {
-            if (index == count)
+            if (kv.Value.IsPalm)
+            {
+                continue;
+            }
+
+            if (count == capacity)
             {
                 break;
             }
 
-            index++;
-            var pos = kv.Value.Device.GetTouchPoint(InnerCanvas).Position;
+            var pos = kv.Value.Device.GetTouchPoint(innerCanvas).Position;
             sumX += pos.X;
             sumY += pos.Y;
+            count++;
         }
 
-        return new Point(sumX / count, sumY / count);
+        return count == 0 ? default : new Point(sumX / count, sumY / count);
     }
 }

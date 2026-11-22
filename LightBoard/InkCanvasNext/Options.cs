@@ -8,7 +8,7 @@ namespace InkCanvasNext;
 /// InkCanvasNext 选项：运行期不可变；改动需重建画布。
 /// 各属性在 init 时收拢到有效范围，越界值取边界
 /// </summary>
-public sealed record InkCanvasNextOptions
+public sealed partial record InkCanvasNextOptions
 {
     /// <summary>
     /// 触点数量达到此值时掌擦，取值 4 或 5

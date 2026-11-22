@@ -16,51 +16,6 @@ internal enum TouchState
     Selection
 }
 
-internal readonly record struct ToolSnapshot(InkCanvasNextMode Mode, StampAction Stamp, bool IsReadOnly)
-{
-    internal bool IsStamp => !IsReadOnly && Stamp != StampAction.None;
-
-    internal bool IsSelectionEntry => !IsReadOnly && Mode == InkCanvasNextMode.Select && !IsStamp;
-
-    internal bool IsSelect => !IsReadOnly && Mode == InkCanvasNextMode.Select;
-
-    internal bool IsAreaErase => !IsReadOnly && Mode == InkCanvasNextMode.EraseArea;
-
-    internal bool IsShape => !IsReadOnly && Mode is InkCanvasNextMode.Line or InkCanvasNextMode.Circle;
-
-    internal bool IsCircle => !IsReadOnly && Mode == InkCanvasNextMode.Circle;
-
-    internal bool IsErase => !IsReadOnly && Mode is InkCanvasNextMode.EraseArea or InkCanvasNextMode.EraseStroke;
-
-    internal bool AllowsMultiDraw => !IsReadOnly && !IsErase;
-
-    /// <summary>
-    /// 自定义工具：鼠标经合成触点进入状态机；原生工具（墨迹/按笔擦）维持原生鼠标路径
-    /// </summary>
-    internal bool IsCustomTool => IsStamp || IsShape || IsSelect || IsAreaErase;
-
-    internal bool WantsPreemptiveCapture => IsAreaErase || IsStamp;
-
-    internal bool IsStampSingleFinger(TouchState state)
-    {
-        return IsStamp && state is TouchState.EvalDraw or TouchState.Draw;
-    }
-}
-
-/// <summary>
-/// 触摸状态的状态级元数据：每项回答一个独立问题，事件答复与编辑模式覆盖均由本表推导
-/// </summary>
-/// <param name="BlocksNativeInput">事件全程接管（Down/Move/Up 均 Handled），原生管线不接管收笔与选区移动</param>
-/// <param name="OverridesEditing">持有画布级手势：进入时把原生编辑模式压为 None，退出时恢复</param>
-/// <param name="PalmErase">掌擦态：触点包络作为橡皮实时擦除</param>
-/// <param name="AreaEraseHost">面积擦宿主：EraseArea 工具在这些绘制上下文中持续擦除</param>
-internal readonly record struct StateTraits(
-    bool BlocksNativeInput = false,
-    bool OverridesEditing = false,
-    bool PalmErase = false,
-    bool AreaEraseHost = false
-);
-
 public partial class InkCanvasNext
 {
     /// <summary>
@@ -81,43 +36,30 @@ public partial class InkCanvasNext
     internal ToolSnapshot Snapshot => new(DrawingAttributes.Mode, DrawingAttributes.Stamp, IsReadOnly);
 
     /// <summary>
-    /// 当前状态的状态级元数据
-    /// </summary>
-    internal StateTraits Traits => TraitsOf(State);
-
-    private static StateTraits TraitsOf(TouchState state)
-    {
-        return state switch
-        {
-            TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan => new(BlocksNativeInput: true, OverridesEditing: true),
-            TouchState.MultiDraw => new(BlocksNativeInput: true, OverridesEditing: true, AreaEraseHost: true),
-            TouchState.Selection => new(BlocksNativeInput: true),
-            TouchState.Eraser => new(OverridesEditing: true, PalmErase: true),
-            TouchState.EvalDraw or TouchState.Draw => new(AreaEraseHost: true),
-            _ => default,
-        };
-    }
-
-    private bool HandlesEvent(TouchState state)
-    {
-        return TraitsOf(state).BlocksNativeInput || IsAreaEraserActive(state) || Snapshot.IsStampSingleFinger(state);
-    }
-
-    /// <summary>
     /// 触点数变化（Down/Up）重评迁移，EvalDraw/EvalPan 在 Move 时重评以跟踪位移提交；
     /// 守卫内联写死：switch 臂自上而下即优先级（见 docs/TouchStates2.md）；
-    /// 掌擦触点数构造期固定；d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态。
+    /// 手指数通道由构造期固定的 PalmEraseFingers 驱动，面积通道由触点 Kind 分类驱动并在入口集中判定；
+    /// d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态。
     /// 触点坐标取自 GetTouchPoint(this)（根可视空间：WPF 只按 relativeTo 的祖先链做变换），
     /// 不经过画布 LayoutTransform，因此阈值（视口 DIP）不随缩放变化
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void UpdateState( )
     {
-        var count = touches.Count;
-        var d2 = GetMaxDistance2( );
+        var (count, palmCount) = CountTouches(touches);
+
+        // 面积通道集中判定：命中后直接进入 Eraser，下面的 switch 只保留纯手指数逻辑，
+        // 无法上报有效尺寸的设备 palmCount 恒为 0，行为与引入面积通道前一致
+        if (IsPalmTakeover(State, count, palmCount))
+        {
+            SetState(TouchState.Eraser);
+            return;
+        }
+
+        var d2 = GetMaxDistance2(touches, count);
         var l2 = options.TouchSpacingThreshold2;
         var c2 = options.TouchDisplacementThreshold2;
-        var x2 = Get1stFingerDispl2( );
+        var x2 = Get1stFingerDispl2(touches, touchStarts);
         var tool = Snapshot;
         var palm = !tool.IsReadOnly && count >= options.PalmEraseFingers;
         var (selectionAllInside, selectionMixed) = tool.IsSelectionEntry && count >= 2
@@ -156,7 +98,6 @@ public partial class InkCanvasNext
                 _ => State,
             },
 
-            // 绘制提交后不再迁掌擦：掌擦只能发生在评估期
             TouchState.Draw => count switch
             {
                 0 => TouchState.Idle,
@@ -196,15 +137,14 @@ public partial class InkCanvasNext
                 _ => State,
             },
 
-            // 掌擦一旦开始就保持到触点清空：附加触点不改变擦除上下文，橡皮几何只取前 PalmEraseFingers 个触点
-            TouchState.Eraser => count switch
-            {
-                0 => TouchState.Idle,
-                _ => State,
-            },
+            // 掌擦一旦开始就保持到所有触点清空；面积几何与调整窗口由 UpdateAreaEraser 按手掌簇变化重启
+            TouchState.Eraser => touches.Count == 0
+                ? TouchState.Idle
+                : State,
 
             TouchState.Selection => count switch
             {
+                // 手掌在选区内时不接管：手势结束后回 Idle，手掌移动时再由面积臂重评
                 0 => TouchState.Idle,
                 // 选区手势中附加手指：全在选区内保持选区手势（RefreshSelectionGesture 把 3+ 指降为只平移），
                 // 横跨边界时由在内的第一根手指继续拖动，全在选区外按一般手势处理
@@ -266,10 +206,17 @@ public partial class InkCanvasNext
             EndSelectionTouch( );
         }
 
-        // 擦除周期先于编辑模式恢复结算：周期结束的回调可能换工具，恢复必须按新工具执行
+        // 擦除周期先于编辑模式恢复结算：周期结束的回调可能换工具，恢复必须按新工具执行；
+        // 面积周期状态由 EndEraserCycle 统一清零
         if (IsAreaEraserActive(from) && !IsAreaEraserActive(to))
         {
             EndEraserCycle( );
+        }
+
+        if (from == TouchState.Eraser)
+        {
+            // 离开掌擦态：面积通道的生命周期一并结束，下一次进入按当时触点重新判定
+            ResetPalmEraseLifetime( );
         }
 
         // 离开覆盖编辑模式的手势态：把编辑模式恢复为当前工具；回 Idle 时同时释放捕获
@@ -369,6 +316,8 @@ public partial class InkCanvasNext
                 break;
 
             case TouchState.Eraser:
+                HandOffDrawingStroke( );
+                BeginPalmEraseLifetime( );
                 ReleaseAll( );
                 InnerCanvas.EditingMode = InkCanvasEditingMode.None;
                 InnerCanvas.ClearWet( );

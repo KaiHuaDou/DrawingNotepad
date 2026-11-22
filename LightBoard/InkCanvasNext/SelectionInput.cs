@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -69,16 +68,24 @@ public partial class InkCanvasNext
 
         var bounds = selection.Bounds;
         var inside = 0;
+        var fingers = 0;
         foreach (var kv in touches)
         {
-            // touches 存根可视坐标，选区包围盒是内容坐标：经 InnerCanvas 换算后比较
+            if (kv.Value.IsPalm)
+            {
+                continue;
+            }
+
+            fingers++;
+
+            // 触点存根可视坐标，选区包围盒是内容坐标：经 InnerCanvas 换算后比较
             if (bounds.Contains(kv.Value.Device.GetTouchPoint(InnerCanvas).Position))
             {
                 inside++;
             }
         }
 
-        return (inside == touches.Count, inside > 0 && inside < touches.Count);
+        return (inside == fingers, inside > 0 && inside < fingers);
     }
 
     // 选择手势（触摸与合流后的鼠标共用，配合 TouchState.Selection）
@@ -86,21 +93,23 @@ public partial class InkCanvasNext
     private void BeginSelectionTouch( )
     {
         ResetSelectionGesture( );
-        if (touches.Count == 0)
+
+        var fingerCount = CountTouches(touches).Fingers;
+        if (fingerCount == 0)
         {
             return;
         }
 
         if (!selection.HasSelection)
         {
-            var canvasPos = GetFirstCanvasPoint( );
+            var canvasPos = GetFirstCanvasPoint(touches, InnerCanvas);
             selectionStartPoint = canvasPos;
             BeginSelectionDrag(canvasPos);
             return;
         }
 
         // 两指全部落在选区内才是相似变换；横跨边界时由在内的第一根手指拖动
-        if (touches.Count >= 2 && ClassifyTouchesAgainstSelection( ).AllInside)
+        if (fingerCount >= 2 && ClassifyTouchesAgainstSelection( ).AllInside)
         {
             BeginPinch( );
             return;
@@ -117,11 +126,11 @@ public partial class InkCanvasNext
         switch (selectionGesture)
         {
             case SelectionGesture.Lasso:
-                UpdateLassoTrack(GetFirstCanvasPoint( ));
+                UpdateLassoTrack(GetFirstCanvasPoint(touches, InnerCanvas));
                 break;
 
             case SelectionGesture.Rectangle:
-                UpdateRectangleTrack(GetFirstCanvasPoint( ));
+                UpdateRectangleTrack(GetFirstCanvasPoint(touches, InnerCanvas));
                 break;
 
             // 变换类手势按帧合并：位移在下一帧统一施加，事件率不参与每帧的重建次数
@@ -194,34 +203,26 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 驱动指：选区内或压在手柄上的第一根手指；都不在时退回第一根触点
+    /// 选区手势中全部触点（含手掌触点）都在选区外时才允许手掌接管
     /// </summary>
-    private (int Id, Point Point) FindSelectionDriver( )
+    private bool AllContactsOutsideSelection( )
     {
-        if (selection.HasSelection)
+        if (!selection.HasSelection)
         {
-            foreach (var (id, (device, _)) in touches)
+            return true;
+        }
+
+        var bounds = selection.Bounds;
+
+        foreach (var contact in touches.Values)
+        {
+            if (bounds.Contains(contact.Device.GetTouchPoint(InnerCanvas).Position))
             {
-                var point = device.GetTouchPoint(InnerCanvas).Position;
-                if (selection.Bounds.Contains(point) || HitTestHandle(point) != SelectionHandle.None)
-                {
-                    return (id, point);
-                }
+                return false;
             }
         }
 
-        var first = touches.First( );
-        return (first.Key, first.Value.Device.GetTouchPoint(InnerCanvas).Position);
-    }
-
-    private Point GetDriverCanvasPoint( )
-    {
-        if (SelectionDriverId is { } id && touches.TryGetValue(id, out var touch))
-        {
-            return touch.Device.GetTouchPoint(InnerCanvas).Position;
-        }
-
-        return GetFirstCanvasPoint( );
+        return true;
     }
 
     /// <summary>

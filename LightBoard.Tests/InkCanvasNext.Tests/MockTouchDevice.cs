@@ -24,9 +24,11 @@ internal sealed class MockTouchDevice : TouchDevice
 
     public TouchAction Action { get; private set; }
 
+    internal Size ContactSize { get; private set; } = new(1, 1);
+
     public override TouchPoint GetTouchPoint(IInputElement? relativeTo)
     {
-        return new TouchPoint(this, Position, new Rect(Position, new Size(1, 1)), Action);
+        return new TouchPoint(this, Position, new Rect(Position, ContactSize), Action);
     }
 
     public override TouchPointCollection GetIntermediateTouchPoints(IInputElement? relativeTo)
@@ -43,12 +45,24 @@ internal sealed class MockTouchDevice : TouchDevice
         ReportDown( );
     }
 
+    internal void Down(UIElement target, Point position, Size size)
+    {
+        ContactSize = size;
+        Down(target, position);
+    }
+
     public void Move(UIElement target, Point position)
     {
         ActivateFor(target);
         Position = position;
         Action = TouchAction.Move;
         ReportMove( );
+    }
+
+    internal void Move(UIElement target, Point position, Size size)
+    {
+        ContactSize = size;
+        Move(target, position);
     }
 
     public void Up(UIElement target, Point position)

@@ -1,15 +1,13 @@
-using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
-    private readonly OrderedDictionary<int, (TouchDevice Device, Point Position)> touches = [with(20)];
+    private readonly OrderedDictionary<int, TouchContact> touches = [with(20)];
     private readonly Dictionary<int, Point> touchStarts = [];
     private bool releasingCaptures;
 
@@ -26,14 +24,15 @@ public partial class InkCanvasNext
         releasingCaptures = true;
         try
         {
-            foreach ((var Device, _) in touches.Values)
+            foreach (var contact in touches.Values)
             {
-                UnsubscribeDeactivated(Device);
-                Device.Capture(null);
+                UnsubscribeDeactivated(contact.Device);
+                contact.Device.Capture(null);
             }
 
             touches.Clear( );
             touchStarts.Clear( );
+            ResetPalmState( );
             MousePointer.Reset( );
             PenPointer.Reset( );
             HidePenCursor( );
@@ -51,13 +50,6 @@ public partial class InkCanvasNext
         }
     }
 
-    /// <summary>触摸事件尾声（Down/Move/Up/LostTouchCapture/TouchLeave 必经）：
-    /// 触点事实已更新，橡皮视觉随之刷新；离开擦除态的结算由 SetState 通用钩子完成</summary>
-    private void TouchEpilogue( )
-    {
-        UpdateAreaEraser( );
-    }
-
     private void CanvasLostTouchCapture(object? o, TouchEventArgs e)
     {
         if (releasingCaptures)
@@ -72,66 +64,99 @@ public partial class InkCanvasNext
             pointer.Reset( );
         }
 
-        TouchEpilogue( );
+        UpdateAreaEraser( );
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void CanvasPreviewTouchDown(object? o, TouchEventArgs e)
     {
         CancelEdgeScroll( );
         HidePenCursor( );
 
+        var touchPoint = e.GetTouchPoint(this);
+
+        // 触点集合变化会换掉手势基线：先把合并中的位移按旧触点结清
+        FlushSelectionFrame( );
+
+        // 先分类再仲裁：手掌落下前要提交在绘笔迹，其他触摸维持原有的 CancelLower 丢弃语义
+        var isPalm = e.TouchDevice is not SyntheticTouchDevice
+            && ShouldTreatAsPalm(touchPoint.Position, touchPoint.Size);
+
         if (e.TouchDevice is not SyntheticTouchDevice)
         {
             if (arbiter.TouchCount == 0)
             {
+                if (isPalm)
+                {
+                    CommitNativeStroke( );
+                }
+
                 CancelLower(InputKind.Touch);
             }
 
             arbiter.Begin(InputKind.Touch, e.TouchDevice.Id);
         }
 
-        var position = e.GetTouchPoint(this).Position;
-        TrackTouchDown(e.TouchDevice.Id, e.TouchDevice, position);
+        TrackTouchDown(e.TouchDevice.Id, e.TouchDevice, touchPoint.Position, touchPoint.Size, isPalm);
         SubscribeDeactivated(e.TouchDevice);
         UpdateState( );
-        // 接管判定由 HandlesEvent 统一给出：手势接管态、面积擦叠加态、盖章的单指上下文
-        e.Handled = HandlesEvent(State);
 
-        if (State == TouchState.Selection)
+        // 接管判定由 HandlesEvent 统一给出（手势接管态、面积擦叠加态、盖章的单指上下文）；
+        // 手掌触点在普通绘制态也需要拦截，避免落墨
+        e.Handled = HandlesEvent(State) || isPalm;
+
+        if (!isPalm)
         {
-            // 选区手势中新落的手指同样要捕获：CaptureAll 只在进入 Selection 时执行一次，
-            // 未捕获的手指移出画布边界即触发 TouchLeave 而被移除
-            e.TouchDevice.Capture(InnerCanvas);
-        }
-        else if (State == TouchState.MultiDraw)
-        {
-            // 形状已由 SetState 钩子取消（离开 EvalDraw/Draw 进入手势接管态），此处无需重复处理
-            e.TouchDevice.Capture(InnerCanvas);
-            if (!multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
+            if (State == TouchState.Selection)
+            {
+                // 选区手势中新落的手指同样要捕获：CaptureAll 只在进入 Selection 时执行一次，
+                // 未捕获的手指移出画布边界即触发 TouchLeave 而被移除
+                e.TouchDevice.Capture(InnerCanvas);
+            }
+            else if (State == TouchState.MultiDraw)
+            {
+                // 形状已由 SetState 钩子取消（离开 EvalDraw/Draw 进入手势接管态），此处无需重复处理
+                e.TouchDevice.Capture(InnerCanvas);
+                if (!multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
+                {
+                    var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
+                    StartMultiTouchStroke(e.TouchDevice.Id, canvasPos);
+                }
+            }
+            else if (Snapshot.IsShape && State == TouchState.EvalDraw && !shapeActive)
             {
                 var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
-                StartMultiTouchStroke(e.TouchDevice.Id, canvasPos);
+                StartShape(canvasPos);
+                e.TouchDevice.Capture(InnerCanvas);
+                e.Handled = true;
             }
         }
-        else if (Snapshot.IsShape && State == TouchState.EvalDraw && !shapeActive)
-        {
-            var canvasPos = e.GetTouchPoint(InnerCanvas).Position;
-            StartShape(canvasPos);
-            e.TouchDevice.Capture(InnerCanvas);
-            e.Handled = true;
-        }
 
-        TouchEpilogue( );
+        UpdateAreaEraser( );
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void CanvasPreviewTouchMove(object? o, TouchEventArgs e)
     {
-        if (!touches.ContainsKey(e.TouchDevice.Id))
+        var touchPoint = e.GetTouchPoint(this);
+        var id = e.TouchDevice.Id;
+
+        if (!touches.TryGetValue(id, out var touch))
         {
             return;
         }
 
-        touches[e.TouchDevice.Id] = (e.TouchDevice, e.GetTouchPoint(this).Position);
+        touch = touch with { Position = touchPoint.Position, Size = touchPoint.Size };
+        touches[id] = touch;
+
+        // 手掌移动也重评迁移：选区内落掌、绘制结束后滞留的手掌都能在移动时回到正确状态
+        if (touch.IsPalm)
+        {
+            UpdateState( );
+            e.Handled = true;
+            UpdateAreaEraser( );
+            return;
+        }
 
         if (multiTouchStrokes.ContainsKey(e.TouchDevice.Id))
         {
@@ -173,7 +198,7 @@ public partial class InkCanvasNext
             e.Handled = true;
         }
 
-        TouchEpilogue( );
+        UpdateAreaEraser( );
     }
 
     /// <summary>形状模式下的 EvalDraw/Draw 路由：形状在途时用终点触点更新预览并拦截事件；
@@ -185,14 +210,16 @@ public partial class InkCanvasNext
             return;
         }
 
-        UpdateShape(GetShapeEndPoint( ));
+        UpdateShape(GetFirstCanvasPoint(touches, InnerCanvas));
         e.Handled = true;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void CanvasPreviewTouchUp(object? o, TouchEventArgs e)
     {
         var wasHandled = HandlesEvent(State);
         var wasMultiTouch = multiTouchStrokes.ContainsKey(e.TouchDevice.Id);
+        var isPalm = IsPalmTouch(touches, e.TouchDevice.Id);
 
         if (wasMultiTouch)
         {
@@ -201,7 +228,7 @@ public partial class InkCanvasNext
 
         // 形状只允许在单指绘制上下文（EvalDraw/Draw）存活：仅当手势未被状态机接管
         // （未迁入平移/缩放/多指等）时才提交，否则由 SetState 已取消、此处直接跳过 形状只由插入序第一指驱动：其余手指的移动与抬起均忽略，第一指抬起时按其触点提交
-        if (shapeActive && State is TouchState.EvalDraw or TouchState.Draw && IsFirstTouch(e.TouchDevice.Id))
+        if (!isPalm && shapeActive && State is TouchState.EvalDraw or TouchState.Draw && IsFirstTouch(touches, e.TouchDevice.Id))
         {
             UpdateShape(e.GetTouchPoint(InnerCanvas).Position);
             CommitShape( );
@@ -209,7 +236,7 @@ public partial class InkCanvasNext
         }
 
         // 盖章提交：未升级为手势的单指序列在其抬手位置落章
-        if (stampArmed && State is TouchState.EvalDraw or TouchState.Draw
+        if (!isPalm && stampArmed && State is TouchState.EvalDraw or TouchState.Draw
             && TryStamp(e.GetTouchPoint(InnerCanvas).Position))
         {
             e.Handled = true;
@@ -217,7 +244,7 @@ public partial class InkCanvasNext
 
         RemoveDevice(e.TouchDevice);
         e.Handled |= wasHandled || wasMultiTouch;
-        TouchEpilogue( );
+        UpdateAreaEraser( );
     }
 
     private void CanvasTouchLeave(object? o, TouchEventArgs e)
@@ -228,114 +255,6 @@ public partial class InkCanvasNext
         }
 
         RemoveDevice(e.TouchDevice);
-        TouchEpilogue( );
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private void CaptureAll( )
-    {
-        foreach ((var Device, _) in touches.Values)
-        {
-            Device.Capture(InnerCanvas);
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private void ReleaseAll( )
-    {
-        releasingCaptures = true;
-        try
-        {
-            foreach ((var Device, _) in touches.Values)
-            {
-                Device.Capture(null);
-            }
-        }
-        finally
-        {
-            releasingCaptures = false;
-        }
-    }
-
-    private void RemoveDevice(TouchDevice device)
-    {
-        if (device is SyntheticTouchDevice pointer)
-        {
-            EndPointerContact(pointer);
-        }
-        else
-        {
-            arbiter.End(InputKind.Touch, device.Id);
-        }
-
-        if (touches.ContainsKey(device.Id))
-        {
-            TrackTouchUp(device.Id);
-            UnsubscribeDeactivated(device);
-            UpdateState( );
-        }
-    }
-
-    private void SubscribeDeactivated(TouchDevice device)
-    {
-        device.Deactivated -= TouchDeviceDeactivated;
-        device.Deactivated += TouchDeviceDeactivated;
-    }
-
-    private void TouchDeviceDeactivated(object? o, EventArgs e)
-    {
-        if (o is not TouchDevice device)
-        {
-            return;
-        }
-
-        RemoveDevice(device);
-    }
-
-    private void TrackTouchDown(int id, TouchDevice device, Point position)
-    {
-        // 触点集合变化会换掉手势基线：先把合并中的位移按旧触点结清
-        FlushSelectionFrame( );
-
-        touches[id] = (device, position);
-        touchStarts[id] = position;
-
-        if (State is TouchState.EvalPan or TouchState.Pan or TouchState.PanZoom)
-        {
-            InitGesture( );
-        }
-        else if (State == TouchState.Selection)
-        {
-            RefreshSelectionGesture( );
-        }
-    }
-
-    private void TrackTouchUp(int id)
-    {
-        FlushSelectionFrame( );
-
-        var wasDriver = SelectionDriverId == id;
-
-        touches.Remove(id);
-        touchStarts.Remove(id);
-
-        if (State is TouchState.EvalPan or TouchState.Pan or TouchState.PanZoom)
-        {
-            InitGesture( );
-        }
-        else if (State == TouchState.Selection)
-        {
-            RefreshSelectionGesture( );
-
-            if (wasDriver)
-            {
-                RebaseSelectionDriver( );
-            }
-        }
-    }
-
-    private void UnsubscribeDeactivated(TouchDevice device)
-    {
-        device.Deactivated -= TouchDeviceDeactivated;
+        UpdateAreaEraser( );
     }
 }

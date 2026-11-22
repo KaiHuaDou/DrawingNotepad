@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Media;
@@ -235,9 +236,11 @@ public partial class InkCanvasNext
     /// </summary>
     private void RefreshSelectionGesture( )
     {
+        var fingerCount = CountTouches(touches).Fingers;
+
         // 套索在途时又落在选区内的手指改为拖动选区：放弃本次套索，保留原有选型
         if (IsPathGesture
-            && touches.Count >= 2
+            && fingerCount >= 2
             && selection.HasSelection
             && ClassifyTouchesAgainstSelection( ).Mixed)
         {
@@ -250,17 +253,17 @@ public partial class InkCanvasNext
             return;
         }
 
-        if (touches.Count == 1 && selectionGesture == SelectionGesture.Pinch)
+        if (fingerCount == 1 && selectionGesture == SelectionGesture.Pinch)
         {
             RebaseToMove( );
         }
-        else if (touches.Count == 2
+        else if (fingerCount == 2
             && selectionGesture is SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate
             && ClassifyTouchesAgainstSelection( ).AllInside)
         {
             BeginPinch( );
         }
-        else if (touches.Count >= 3
+        else if (fingerCount >= 3
             && selectionGesture == SelectionGesture.Pinch
             && ClassifyTouchesAgainstSelection( ).AllInside)
         {
@@ -275,12 +278,12 @@ public partial class InkCanvasNext
     /// </summary>
     private void UpdatePinch( )
     {
-        if (touches.Count < 2)
+        if (CountTouches(touches).Fingers < 2)
         {
             return;
         }
 
-        (var c1, var c2) = GetPinchPoints( );
+        (var c1, var c2) = GetPinchPoints(touches, InnerCanvas);
         var center = MidPoint(c1, c2);
         var dist = Distance(c1, c2);
         var angle = AngleFrom(c1, c2);
@@ -295,7 +298,7 @@ public partial class InkCanvasNext
 
     private void RefreshPinchBaseline( )
     {
-        (var c1, var c2) = GetPinchPoints( );
+        (var c1, var c2) = GetPinchPoints(touches, InnerCanvas);
         pinchStartCenter = MidPoint(c1, c2);
         pinchStartDist = Max(Distance(c1, c2), 1e-6);
         pinchStartAngle = AngleFrom(c1, c2);
@@ -315,12 +318,57 @@ public partial class InkCanvasNext
     /// </summary>
     private void RebaseSelectionDriver( )
     {
-        if (selectionGesture is not (SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate) || touches.Count == 0)
+        if (selectionGesture is not (SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate)
+            || CountTouches(touches).Fingers == 0)
         {
             return;
         }
 
         (SelectionDriverId, selectionStartPoint) = FindSelectionDriver( );
         selectionAbs = Matrix.Identity;
+    }
+
+    /// <summary>
+    /// 驱动指：选区内或压在手柄上的第一根手指；都不在时退回第一根触点
+    /// </summary>
+    private (int Id, Point Point) FindSelectionDriver( )
+    {
+        if (selection.HasSelection)
+        {
+            foreach (var (id, contact) in touches)
+            {
+                if (contact.IsPalm)
+                {
+                    continue;
+                }
+
+                var point = contact.Device.GetTouchPoint(InnerCanvas).Position;
+                if (selection.Bounds.Contains(point) || HitTestHandle(point) != SelectionHandle.None)
+                {
+                    return (id, point);
+                }
+            }
+        }
+
+        foreach (var (id, contact) in touches)
+        {
+            if (!contact.IsPalm)
+            {
+                return (id, contact.Device.GetTouchPoint(InnerCanvas).Position);
+            }
+        }
+
+        var first = touches.First( );
+        return (first.Key, first.Value.Device.GetTouchPoint(InnerCanvas).Position);
+    }
+
+    private Point GetDriverCanvasPoint( )
+    {
+        if (SelectionDriverId is { } id && touches.TryGetValue(id, out var touch))
+        {
+            return touch.Device.GetTouchPoint(InnerCanvas).Position;
+        }
+
+        return GetFirstCanvasPoint(touches, InnerCanvas);
     }
 }

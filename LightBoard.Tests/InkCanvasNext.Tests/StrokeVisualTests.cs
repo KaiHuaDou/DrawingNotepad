@@ -95,8 +95,10 @@ public class StrokeVisualTests
         StaTest.Run(( ) =>
         {
             var initial = new StylusPoint(Start.X, Start.Y, 0.5f, DeviceDescription, [0]);
-            var visual = new StrokeVisual(Pen( ), initial, null);
-            visual.VisualCanvas = new VisualCanvas( );
+            var visual = new StrokeVisual(Pen( ), initial, null)
+            {
+                VisualCanvas = new VisualCanvas( )
+            };
             visual.Add(new StylusPoint(200, 100, 0.5f, DeviceDescription, [0]));
 
             Assert.Equal(2, PointCount(visual));

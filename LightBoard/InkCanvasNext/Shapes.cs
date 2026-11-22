@@ -17,13 +17,6 @@ public partial class InkCanvasNext
     private SolidColorBrush? shapeBrush;
     private Color shapeBrushColor;
 
-    private Point GetShapeEndPoint( )
-    {
-        using var enumerator = touches.Values.GetEnumerator( );
-        enumerator.MoveNext( );
-        return enumerator.Current.Device.GetTouchPoint(InnerCanvas).Position;
-    }
-
     private void StartShape(Point point)
     {
         shapeStart = point;

@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,6 +9,8 @@ namespace InkCanvasNext;
 public partial class InkCanvasNext
 {
     private readonly Eraser eraser;
+
+    internal bool EraserActive => eraser.Active;
 
     /// <summary>
     /// 橡皮反馈圆上显示的文本；null 或空串时不显示
@@ -30,6 +31,7 @@ public partial class InkCanvasNext
 
         SealEraseBatch( );
         eraser.End( );
+        EndAreaEraseCycle( );
 
         if (active)
         {
@@ -37,12 +39,14 @@ public partial class InkCanvasNext
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool IsAreaEraserActive(TouchState state)
     {
         var traits = TraitsOf(state);
         return traits.PalmErase || (Snapshot.IsAreaErase && traits.AreaEraseHost);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void UpdateAreaEraser( )
     {
         if (!IsAreaEraserActive(State))
@@ -53,24 +57,57 @@ public partial class InkCanvasNext
 
         if (State == TouchState.Eraser)
         {
-            var palmFingers = options.PalmEraseFingers;
-            (var screenCenter, var radius) = GetEnvelopeCircle(touches, palmFingers);
-            eraser.Diameter = radius * 2 + options.Eraser.PalmExtra;
+            var (fingerCount, palmCount) = CountTouches(touches);
 
-            var canvasCenter = GetCanvasCenter(touches, palmFingers);
+            if (palmCount > 0)
+            {
+                var geometry = GetPalmGeometry( );
+                var restart = !areaEraseCycle || geometry.ClusterSignature != areaClusterSignature;
+
+                // 手掌簇组成变化（新掌落下、种子掌抬起、碎片合并）意味着擦除主体换了：
+                // 命中测试器不能沿旧中心到新中心的线段扫过，必须在新中心原地重建；
+                // 同时重开调整窗口，让新主体重新决定直径
+                if (restart)
+                {
+                    BeginAreaEraseCycle( );
+                    areaClusterSignature = geometry.ClusterSignature;
+                }
+
+                eraser.Diameter = ResolvePalmDiameter(geometry);
+                eraser.Show(geometry.Center);
+
+                if (restart && eraser.Active)
+                {
+                    eraser.Rebase(geometry.CanvasCenter);
+                }
+
+                eraser.Update(geometry.CanvasCenter);
+                return;
+            }
+
+            // 面积周期里手掌抬走后剩余手指停止擦除；手指也空时同样结束，避免空集合落到原点
+            if (areaEraseUsed || fingerCount == 0)
+            {
+                EndEraserCycle( );
+                return;
+            }
+
+            var (screenCenter, radius) = GetEnvelopeCircle(touches, options.PalmEraseFingers);
+            eraser.Diameter = radius * 2 + options.Eraser.PalmExtra;
             eraser.Show(screenCenter);
-            eraser.Update(canvasCenter);
+            eraser.Update(GetCanvasCenter(touches, options.PalmEraseFingers, InnerCanvas));
         }
         else
         {
+            if (!TryGetFirstFinger(touches, out var contact))
+            {
+                EndEraserCycle( );
+                return;
+            }
+
             eraser.Diameter = EraserDiameter;
-
-            (var Device, var Position) = touches.First( ).Value;
-            var screenPosition = Position;
-            var canvasPosition = Device.GetTouchPoint(InnerCanvas).Position;
-
-            eraser.Show(screenPosition);
-            eraser.Update(canvasPosition);
+            eraser.Show(contact.Position);
+            eraser.Update(contact.Device.GetTouchPoint(InnerCanvas).Position);
         }
     }
 }
@@ -175,6 +212,30 @@ internal sealed class Eraser(InkCanvas canvas, FrameworkElement feedback, TextBl
         }
     }
 
+    /// <summary>
+    /// 擦除主体切换时在新位置原地重建命中测试器：
+    /// AddPoint 会沿上一采样点到新点的线段扫过，中心跳变必须断开这条路径
+    /// </summary>
+    internal void Rebase(Point canvasPosition)
+    {
+        if (!Active)
+        {
+            return;
+        }
+
+        // 结算旧测试器时可能补发命中，画布增删仍属于当前擦除批次
+        Recording = true;
+        try
+        {
+            DropHitTester( );
+            CreateHitTester(canvasPosition);
+        }
+        finally
+        {
+            Recording = false;
+        }
+    }
+
     private void SyncHitTester(Point canvasPosition)
     {
         if (hitTester is null)
@@ -187,10 +248,20 @@ internal sealed class Eraser(InkCanvas canvas, FrameworkElement feedback, TextBl
             return;
         }
 
+        DropHitTester( );
+        CreateHitTester(canvasPosition);
+    }
+
+    private void DropHitTester( )
+    {
+        if (hitTester is null)
+        {
+            return;
+        }
+
         hitTester.StrokeHit -= OnStrokeHit;
         hitTester.EndHitTesting( );
         hitTester = null;
-        CreateHitTester(canvasPosition);
     }
 
     internal void End( )
@@ -205,8 +276,7 @@ internal sealed class Eraser(InkCanvas canvas, FrameworkElement feedback, TextBl
         }
 
         Active = false;
-        hitTester?.EndHitTesting( );
-        hitTester = null;
+        DropHitTester( );
     }
 
     private void CreateHitTester(Point position)

@@ -37,8 +37,10 @@ public class StrokeVisualRenderTests
                 Height = 12,
                 FitToCurve = false,
                 Color = Colors.Red
-            }, new StylusPoint(offset.X + 60, offset.Y + 140), null);
-            visual.VisualCanvas = layer;
+            }, new StylusPoint(offset.X + 60, offset.Y + 140), null)
+            {
+                VisualCanvas = layer
+            };
             visual.Add(new StylusPoint(offset.X + 260, offset.Y + 140));
             visual.Redraw( );
 

@@ -56,12 +56,7 @@ public partial class InkCanvasNext
 
     private void UnhookPenCursorWindow( )
     {
-        if (penCursorWindow is null)
-        {
-            return;
-        }
-
-        penCursorWindow.Deactivated -= PenCursorWindowDeactivated;
+        penCursorWindow?.Deactivated -= PenCursorWindowDeactivated;
         penCursorWindow = null;
     }
 

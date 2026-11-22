@@ -47,6 +47,18 @@ public class OptionsTests
     }
 
     [Fact]
+    public void PalmThresholds_KeepLongSideNotBelowShortSide( )
+    {
+        var options = new InkCanvasNextOptions
+        {
+            PalmMinWidth = 240,
+            PalmMinHeight = 300
+        };
+
+        Assert.True(options.PalmMinWidth >= options.PalmMinHeight);
+    }
+
+    [Fact]
     public void SquaredThresholds_FollowInitValues( )
     {
         var options = new InkCanvasNextOptions

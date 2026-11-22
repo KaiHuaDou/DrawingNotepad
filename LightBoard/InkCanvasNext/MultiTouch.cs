@@ -27,37 +27,67 @@ public partial class InkCanvasNext
 
         var attributes = InnerCanvas.DefaultDrawingAttributes.Clone( );
         var initialPoint = new StylusPoint(canvasPoint.X, canvasPoint.Y, DefaultPressure);
-        var strokeVisual = new StrokeVisual(attributes, initialPoint, Taper.Effective(options.Taper, attributes));
-        strokeVisual.VisualCanvas = multiTouchCanvas;
+        var strokeVisual = new StrokeVisual(attributes, initialPoint, Taper.Effective(options.Taper, attributes))
+        {
+            VisualCanvas = multiTouchCanvas
+        };
 
         multiTouchStrokes[touchId] = strokeVisual;
         strokeVisual.Redraw( );
     }
 
     /// <summary>
-    /// 迁入 MultiDraw 前保住原生在绘笔画
-    /// InkCanvas 切换编辑模式丢弃在绘笔画
+    /// 提交原生在绘笔迹：InkCanvas 切换编辑模式会丢弃湿墨，释放笔画捕获即提交整笔
     /// </summary>
-    private void HandOffDrawingStroke( )
+    private void CommitNativeStroke( )
     {
-        if (State is TouchState.EvalDraw or TouchState.Draw
-            && InnerCanvas.EditingMode == InkCanvasEditingMode.Ink
-            && InnerCanvas.IsStylusCaptured)
+        if (InnerCanvas.EditingMode == InkCanvasEditingMode.Ink && InnerCanvas.IsStylusCaptured)
         {
             InnerCanvas.ReleaseStylusCapture( );
         }
     }
 
+    /// <summary>
+    /// 迁入 MultiDraw 或面积掌擦前保住原生在绘笔画
+    /// InkCanvas 切换编辑模式丢弃在绘笔画
+    /// </summary>
+    private void HandOffDrawingStroke( )
+    {
+        if (State is TouchState.EvalDraw or TouchState.Draw)
+        {
+            CommitNativeStroke( );
+        }
+    }
+
+    /// <summary>
+    /// 放弃单指的多指笔画：手掌碎片不该留下墨迹，也不能继续生长
+    /// </summary>
+    private void CancelMultiTouchStroke(int touchId)
+    {
+        if (!multiTouchStrokes.TryGetValue(touchId, out var strokeVisual))
+        {
+            return;
+        }
+
+        strokeVisual.Cleanup( );
+        multiTouchStrokes.Remove(touchId);
+
+        if (multiTouchStrokes.Count == 0)
+        {
+            UnhookMultiTouchFrame( );
+        }
+    }
+
     private void StartMultiTouch( )
     {
-        foreach (var (id, (device, _)) in touches)
+        foreach (var (id, contact) in touches)
         {
-            if (multiTouchStrokes.ContainsKey(id))
+            if (contact.IsPalm || multiTouchStrokes.ContainsKey(id))
             {
                 continue;
             }
 
-            StartMultiTouchStroke(id, device.GetTouchPoint(InnerCanvas).Position);
+            StartMultiTouchStroke(id, contact.Device.GetTouchPoint(InnerCanvas).Position);
         }
     }
 

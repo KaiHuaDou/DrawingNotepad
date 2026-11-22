@@ -22,6 +22,8 @@ internal sealed class SyntheticTouchDevice(InkCanvasNext owner, int id) : TouchD
     public override TouchPoint GetTouchPoint(IInputElement? relativeTo)
     {
         var position = relativeTo is UIElement element ? owner.TranslatePoint(Position, element) : Position;
+
+        // 1×1 尺寸落在手掌通道的有效范围之外：合成触点始终按手指处理
         return new TouchPoint(this, position, new Rect(position, new Size(1, 1)), IsDown ? TouchAction.Move : TouchAction.Up);
     }
 

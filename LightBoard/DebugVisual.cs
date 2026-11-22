@@ -13,7 +13,7 @@ using static InkCanvasNext.InkCanvasNext;
 namespace LightBoard;
 
 // 调试模式浮层：参数面板（1:1 半径圆、1:1 距离线、渲染层与渲染模式）居中贴底，运行状态计数与帧率分列左右两侧，边缘自动滚动热区以红色虚线标出。
-internal sealed class DebugVisual : FrameworkElement
+internal sealed partial class DebugVisual : FrameworkElement
 {
     private const double PanelWidth = 900;
     private const double PanelHeight = 350;
@@ -160,7 +160,7 @@ internal sealed class DebugVisual : FrameworkElement
         var groups = BuildStatus(lastStatus);
         var labelWidth = groups.SelectMany(group => group.Rows).Max(row => TextWidth(row.Label, StatusFontSize, dip));
         var valueWidth = groups.SelectMany(group => group.Rows).Max(row => TextWidth(row.Value, StatusFontSize, dip));
-        var x = SideMargin;
+        const double x = SideMargin;
         var y = SideMargin;
 
         foreach (var group in groups)
@@ -180,83 +180,15 @@ internal sealed class DebugVisual : FrameworkElement
         }
     }
 
-    private static StatusGroup[] BuildStatus(CanvasStatus status)
+    private static double TextWidth(string s, double size, double dip)
     {
-        // 指距与位移只在平移组内有意义；其余状态用占位符，避免误读上一次手势的残留值
-        var panGroup = status.State is TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan;
-        var panning = status.State is TouchState.EvalPan or TouchState.Pan;
-        var tool = status.Tool;
-        var pen = status.Pen;
-
-        return
-        [
-            new("画布", [
-                new("触点", $"{status.Touches}"),
-                new("笔画", $"{status.Strokes}"),
-                new("缩放", $"{status.Scale:0.##}×"),
-            ]),
-            new("手势", [
-                new("State", status.State.ToString( )),
-                new("IsGestureActive", YesNo(status.IsGestureActive)),
-                new("zoomLocked", panGroup ? YesNo(status.ZoomLocked) : Dash),
-                new("distance", panGroup ? $"{status.Distance:0.0} DIP" : Dash),
-                new("distance0", panGroup ? $"{status.Distance0:0.0} DIP" : Dash),
-                new("PanDisplacement", panning ? $"({status.Pan.X:0.0}, {status.Pan.Y:0.0})" : Dash),
-            ]),
-            new("状态特征", [
-                new("BlocksNativeInput", YesNo(status.Traits.BlocksNativeInput)),
-                new("OverridesEditing", YesNo(status.Traits.OverridesEditing)),
-                new("PalmErase", YesNo(status.Traits.PalmErase)),
-                new("AreaEraseHost", YesNo(status.Traits.AreaEraseHost)),
-            ]),
-            new("工具快照", [
-                new("Mode", tool.Mode.ToString( )),
-                new("Stamp", tool.Stamp.ToString( )),
-                new("IsReadOnly", YesNo(tool.IsReadOnly)),
-                new("IsStamp", YesNo(tool.IsStamp)),
-                new("IsSelectionEntry", YesNo(tool.IsSelectionEntry)),
-                new("IsSelect", YesNo(tool.IsSelect)),
-                new("IsAreaErase", YesNo(tool.IsAreaErase)),
-                new("IsShape", YesNo(tool.IsShape)),
-                new("IsCircle", YesNo(tool.IsCircle)),
-                new("IsErase", YesNo(tool.IsErase)),
-                new("AllowsMultiDraw", YesNo(tool.AllowsMultiDraw)),
-                new("IsCustomTool", YesNo(tool.IsCustomTool)),
-                new("WantsPreemptiveCapture", YesNo(tool.WantsPreemptiveCapture)),
-            ]),
-            new("笔触", [
-                new("Color", pen.Color.ToString( )),
-                new("Width", pen.Width.ToString("0.##", CultureInfo.CurrentCulture)),
-                new("Height", pen.Height.ToString("0.##", CultureInfo.CurrentCulture)),
-                new("StylusTip", pen.StylusTip.ToString( )),
-                new("StylusTipTransform", $"{pen.Transform.M11:0.##}, {pen.Transform.M12:0.##}, {pen.Transform.M21:0.##}, {pen.Transform.M22:0.##}, {pen.Transform.OffsetX:0.##}, {pen.Transform.OffsetY:0.##}"),
-                new("FitToCurve", YesNo(pen.FitToCurve)),
-                new("IgnorePressure", YesNo(pen.IgnorePressure)),
-                new("IsHighlighter", YesNo(pen.IsHighlighter)),
-            ]),
-        ];
+        return new FormattedText(s, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Font, size, Brushes.Transparent, dip).Width;
     }
 
-    private CanvasStatus ReadStatus( )
+    private static string YesNo(bool value)
     {
-        var a = canvas.DrawingAttributes.DrawingAttributes;
-        return new(
-            canvas.ActiveTouchCount, canvas.Strokes.Count, canvas.CurrentScale,
-            canvas.State, canvas.IsGestureActive, canvas.ZoomLocked, canvas.PinchDistance, canvas.PinchDistance0, canvas.PanDisplacement, canvas.Snapshot, canvas.Traits,
-            new PenStatus(a.Color, a.Width, a.Height, a.StylusTip, a.StylusTipTransform, a.FitToCurve, a.IgnorePressure, a.IsHighlighter));
+        return value ? "是" : "否";
     }
-
-    private static double TextWidth(string s, double size, double dip) => new FormattedText(s, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Font, size, Brushes.Transparent, dip).Width;
-
-    private static string YesNo(bool value) => value ? "是" : "否";
-
-    private readonly record struct StatusRow(string Label, string Value);
-
-    private sealed record StatusGroup(string Title, StatusRow[] Rows);
-
-    private readonly record struct PenStatus(Color Color, double Width, double Height, StylusTip StylusTip, Matrix Transform, bool FitToCurve, bool IgnorePressure, bool IsHighlighter);
-
-    private readonly record struct CanvasStatus(int Touches, int Strokes, double Scale, TouchState State, bool IsGestureActive, bool ZoomLocked, double Distance, double Distance0, Vector Pan, ToolSnapshot Tool, StateTraits Traits, PenStatus Pen);
 
     private void DrawRadii(DrawingContext dc, double dip)
     {
