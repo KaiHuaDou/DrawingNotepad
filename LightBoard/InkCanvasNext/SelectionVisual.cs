@@ -121,13 +121,31 @@ internal sealed partial class SelectionVisual
         using var dc = haloVisual.RenderOpen( );
         foreach (var s in selected)
         {
-            var halo = s.Clone( );
-            var attrs = halo.DrawingAttributes.Clone( );
+            // 只需要按加宽/改色后的属性重算轮廓，不必深拷贝笔画点集；
+            // GetGeometry(attrs) 使用传入属性计算，不改写原笔画的几何缓存
+            var attrs = s.DrawingAttributes.Clone( );
             attrs.Color = HaloBrush.Color;
             attrs.Width *= HaloWidthFactor;
             attrs.Height *= HaloWidthFactor;
-            halo.DrawingAttributes = attrs;
-            halo.Draw(dc);
+
+            var geometry = s.GetGeometry(attrs);
+            if (attrs.IsHighlighter)
+            {
+                // 与 Stroke.Draw 对高亮笔的处理保持一致：整体再乘 0.5 不透明度
+                dc.PushOpacity(0.5);
+                try
+                {
+                    dc.DrawGeometry(HaloBrush, null, geometry);
+                }
+                finally
+                {
+                    dc.Pop( );
+                }
+            }
+            else
+            {
+                dc.DrawGeometry(HaloBrush, null, geometry);
+            }
         }
 
         haloDrawn = true;

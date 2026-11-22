@@ -239,7 +239,8 @@ public partial class InkCanvasNext
             return;
         }
 
-        selectionTarget = [with(selection.SelectedStrokes)];
+        selectionTarget = selection.SelectedStrokesArray;
+        selectionBoundsBase = selection.Bounds;
 
         if (handle == SelectionHandle.None)
         {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Ink;
@@ -21,7 +22,10 @@ public partial class InkCanvasNext
     /// <summary>整段手势累计施加的增量之积，作为单个撤销单元提交</summary>
     private Matrix selectionTotal = Matrix.Identity;
 
-    private StrokeCollection? selectionTarget;
+    private IReadOnlyList<Stroke>? selectionTarget;
+
+    /// <summary>当前手势段的起始包围盒；每帧用段内绝对矩阵重算 AABB，避免误差逐帧累积</summary>
+    private Rect selectionBoundsBase;
 
     private Point pinchStartCenter;
     private double pinchStartDist;
@@ -189,9 +193,16 @@ public partial class InkCanvasNext
             return;
         }
 
-        selectionTarget.Transform(delta, false);
+        foreach (var stroke in selectionTarget)
+        {
+            stroke.Transform(delta, false);
+        }
+
         selectionTotal *= delta;
-        selection.RecomputeBounds( );
+
+        // 用手势段起始包围盒乘段内绝对矩阵求 AABB，避免逐帧累积误差；
+        // 旋转时可能略大于真实包围盒，抬手 CommitTransform 时再做一次完整 RecomputeBounds 校正
+        selection.TransformBounds(selectionBoundsBase, newAbs);
         selection.Invalidate(halo: false);
         RaiseViewOrSelectionChanged( );
     }
@@ -201,6 +212,8 @@ public partial class InkCanvasNext
     {
         if (selectionTarget is { Count: > 0 } && !IsNearIdentity(selectionTotal))
         {
+            // 帧内的 AABB 增量可能因旋转略偏大，提交前按真实笔画包围盒校正一次
+            selection.RecomputeBounds( );
             PushChange(new TransformChanges(selectionTarget, selectionTotal));
 
             // 选中内容可以被拖到画布外：手势结束时按最终包围盒扩展，拖动中途扩展只会放大画布
@@ -221,7 +234,8 @@ public partial class InkCanvasNext
     /// </summary>
     private void BeginPinch( )
     {
-        selectionTarget = [with(selection.SelectedStrokes)];
+        selectionTarget = selection.SelectedStrokesArray;
+        selectionBoundsBase = selection.Bounds;
         selectionGesture = SelectionGesture.Pinch;
         SelectionDriverId = null;
         selectionAbs = Matrix.Identity;
@@ -310,6 +324,7 @@ public partial class InkCanvasNext
         selectionGesture = SelectionGesture.Move;
         (SelectionDriverId, selectionStartPoint) = FindSelectionDriver( );
         selectionAbs = Matrix.Identity;
+        selectionBoundsBase = selection.Bounds;
     }
 
     /// <summary>
@@ -326,6 +341,7 @@ public partial class InkCanvasNext
 
         (SelectionDriverId, selectionStartPoint) = FindSelectionDriver( );
         selectionAbs = Matrix.Identity;
+        selectionBoundsBase = selection.Bounds;
     }
 
     /// <summary>

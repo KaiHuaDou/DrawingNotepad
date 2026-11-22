@@ -30,6 +30,9 @@ internal sealed class DevicePressureStylusPlugIn(InputArbiter arbiter, PenParame
             return;
         }
 
+        // 注意：RawStylusInput.GetStylusPoints() 每次都会从原始报文新建一份点集合，
+        // SetStylusPoints() 内部还会再 Clone 一次；因此每个笔事件至少发生两次点集合复制，
+        // 这是 WPF 公共 API 的固定成本，不是本方法额外制造的副本
         var points = input.GetStylusPoints( );
         var changed = false;
 

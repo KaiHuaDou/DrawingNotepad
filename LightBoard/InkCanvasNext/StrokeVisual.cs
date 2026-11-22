@@ -53,6 +53,10 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
     private DrawingVisual? activeVisual;
     private SolidColorBrush? brush;
 
+    // 复用同一个临时 Stroke：每帧只替换点集，避免新建 Stroke 时反复订阅
+    // 共享的 DrawingAttributes 与点集事件，也避免临时笔画被属性事件列表长期持有
+    private Stroke? segmentStroke;
+
     /// <summary>
     /// 已画进冻结段的点数
     /// </summary>
@@ -164,7 +168,17 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
             return null;
         }
 
-        return new Stroke(Taper.Copy(Stroke.StylusPoints, start, end, taper), drawingAttributes).GetGeometry(drawingAttributes);
+        var points = Taper.Copy(Stroke.StylusPoints, start, end, taper);
+        if (segmentStroke is null)
+        {
+            segmentStroke = new Stroke(points, drawingAttributes);
+        }
+        else
+        {
+            segmentStroke.StylusPoints = points;
+        }
+
+        return segmentStroke.GetGeometry(drawingAttributes);
     }
 
     private DrawingVisual CreateAndAttachVisual( )

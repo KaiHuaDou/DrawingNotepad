@@ -108,18 +108,24 @@ internal sealed class StrokeChanges(IReadOnlyList<Stroke> added, IReadOnlyList<S
 /// <summary>
 /// 一次手势（移动/缩放/旋转）的整段绝对变换，作为单个撤销单元
 /// </summary>
-internal sealed class TransformChanges(StrokeCollection target, Matrix delta) : IHistoryChange
+internal sealed class TransformChanges(IReadOnlyList<Stroke> target, Matrix delta) : IHistoryChange
 {
     void IHistoryChange.Apply(InkCanvasNext owner)
     {
-        target.Transform(delta, false);
+        foreach (var stroke in target)
+        {
+            stroke.Transform(delta, false);
+        }
     }
 
     void IHistoryChange.Revert(InkCanvasNext owner)
     {
         var inverse = delta;
         inverse.Invert( );
-        target.Transform(inverse, false);
+        foreach (var stroke in target)
+        {
+            stroke.Transform(inverse, false);
+        }
     }
 }
 
@@ -176,15 +182,20 @@ public partial class InkCanvasNext
 
     private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
     {
-        selection.ApplyCanvasChanges(e.Added, e.Removed);
+        // Added/Removed 只物化一次：历史项与事件参数共用同一份数组，
+        // 避免先给历史项复制一遍、再给事件参数复制一遍
+        Stroke[] added = e.Added.Count == 0 ? [] : [.. e.Added];
+        Stroke[] removed = e.Removed.Count == 0 ? [] : [.. e.Removed];
+
+        selection.ApplyCanvasChanges(added, removed);
 
         // 原生书写、多指书写与形状提交产生的墨迹可以超出画布右/下边界：新增笔画越界时画布随之扩展
-        if (e.Added.Count > 0)
+        if (added.Length > 0)
         {
             EnsureBoundsFit(e.Added.GetBounds( ));
         }
 
-        if (e.Removed.Count > 0)
+        if (removed.Length > 0)
         {
             selection.Prune( );
         }
@@ -192,9 +203,9 @@ public partial class InkCanvasNext
         var historyEnabled = history.Capacity > 0;
         var erasing = (eraser.Recording || nativeEraseActive) && historyEnabled;
         var shouldPush = !erasing && historyEnabled && !applyingUndoRedo
-            && (e.Added.Count > 0 || e.Removed.Count > 0);
+            && (added.Length > 0 || removed.Length > 0);
 
-        if (nativeEraseActive && (e.Added.Count > 0 || e.Removed.Count > 0))
+        if (nativeEraseActive && (added.Length > 0 || removed.Length > 0))
         {
             nativeEraseChanged = true;
         }
@@ -202,18 +213,18 @@ public partial class InkCanvasNext
         // 入栈先于通知：宿主在回调里改画布时，嵌套变更排在后面
         if (erasing)
         {
-            TrackEraseChange(e.Added, e.Removed);
+            TrackEraseChange(added, removed);
         }
         else if (shouldPush)
         {
-            PushChange(new StrokeChanges(e.Added, e.Removed));
+            PushChange(new StrokeChanges(added, removed));
         }
 
-        StrokesChanged?.Invoke(this, new InkCanvasStrokesChangedEventArgs([.. e.Added], [.. e.Removed], transformOnly: false));
+        StrokesChanged?.Invoke(this, new InkCanvasStrokesChangedEventArgs(added, removed, transformOnly: false));
 
         UpdateEdgeHints( );
 
-        if (!eraser.Recording && !nativeEraseActive && !applyingUndoRedo && e.Added.Count > 0)
+        if (!eraser.Recording && !nativeEraseActive && !applyingUndoRedo && added.Length > 0)
         {
             RaiseOperationCompleted(InkCanvasOperation.Stroke);
         }

@@ -19,7 +19,7 @@ public partial class InkCanvasNext
     /// <summary>
     /// 获取当前选中的笔画快照；笔画实例与画布共享
     /// </summary>
-    public IReadOnlyList<Stroke> SelectedStrokes => Array.AsReadOnly(selection.SelectedStrokes.ToArray( ));
+    public IReadOnlyList<Stroke> SelectedStrokes => selection.SelectedStrokesSnapshot;
 
     /// <summary>
     /// 获取是否存在选中笔画
@@ -75,7 +75,13 @@ public partial class InkCanvasNext
             return;
         }
 
-        InnerCanvas.Strokes.Remove([with([.. selection.SelectedStrokes])]);
+        // 复用选区快照，避免先复制成数组再构造集合的两次物化
+        var selected = selection.SelectedStrokesArray;
+        if (selected.Length > 0)
+        {
+            InnerCanvas.Strokes.Remove(new StrokeCollection(selected));
+        }
+
         selection.Clear( );
     }
 

@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Ink;
+using System.Windows.Media;
 
 namespace InkCanvasNext;
 
@@ -15,7 +17,17 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
     private readonly HashSet<Stroke> selectedStrokes = [];
     private readonly HashSet<Stroke> canvasStrokes = [];
 
+    private static readonly IReadOnlyList<Stroke> EmptySnapshot = Array.AsReadOnly(Array.Empty<Stroke>( ));
+
+    // 选区变化时一次性生成快照；读取方（公开属性、变换手势、删除）共用，避免各自复制
+    private Stroke[] selectedSnapshot = [];
+    private IReadOnlyList<Stroke> selectedSnapshotView = EmptySnapshot;
+
     internal IReadOnlyCollection<Stroke> SelectedStrokes => selectedStrokes;
+
+    internal IReadOnlyList<Stroke> SelectedStrokesSnapshot => selectedSnapshotView;
+
+    internal Stroke[] SelectedStrokesArray => selectedSnapshot;
 
     internal bool HasSelection => selectedStrokes.Count > 0;
 
@@ -54,6 +66,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
             }
         }
 
+        RebuildSnapshot( );
         RecomputeBounds( );
         Invalidate(halo);
         owner.RaiseSelectionChanged( );
@@ -67,9 +80,18 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         }
 
         selectedStrokes.Clear( );
+        RebuildSnapshot( );
         Bounds = Rect.Empty;
         Invalidate( );
         owner.RaiseSelectionChanged( );
+    }
+
+    private void RebuildSnapshot( )
+    {
+        selectedSnapshot = selectedStrokes.Count == 0 ? [] : [.. selectedStrokes];
+        selectedSnapshotView = selectedSnapshot.Length == 0
+            ? EmptySnapshot
+            : Array.AsReadOnly(selectedSnapshot);
     }
 
     internal void RecomputeBounds( )
@@ -83,6 +105,30 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
         }
 
         Bounds = result;
+    }
+
+    /// <summary>
+    /// 手势帧内用段起始包围盒的四个角求新 AABB；避免每帧遍历全部选中笔画。
+    /// 旋转时结果可能略大于真实包围盒，抬手时由 <see cref="RecomputeBounds"/> 精确校正
+    /// </summary>
+    internal void TransformBounds(Rect bounds, Matrix delta)
+    {
+        if (bounds.IsEmpty)
+        {
+            return;
+        }
+
+        var topLeft = delta.Transform(bounds.TopLeft);
+        var topRight = delta.Transform(bounds.TopRight);
+        var bottomRight = delta.Transform(bounds.BottomRight);
+        var bottomLeft = delta.Transform(bounds.BottomLeft);
+
+        var minX = Math.Min(Math.Min(topLeft.X, topRight.X), Math.Min(bottomRight.X, bottomLeft.X));
+        var minY = Math.Min(Math.Min(topLeft.Y, topRight.Y), Math.Min(bottomRight.Y, bottomLeft.Y));
+        var maxX = Math.Max(Math.Max(topLeft.X, topRight.X), Math.Max(bottomRight.X, bottomLeft.X));
+        var maxY = Math.Max(Math.Max(topLeft.Y, topRight.Y), Math.Max(bottomRight.Y, bottomLeft.Y));
+
+        Bounds = new Rect(minX, minY, maxX - minX, maxY - minY);
     }
 
     internal void Prune( )
@@ -100,6 +146,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
             return;
         }
 
+        RebuildSnapshot( );
         RecomputeBounds( );
         Invalidate( );
         owner.RaiseSelectionChanged( );
@@ -107,12 +154,12 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
 
     internal void Invalidate(bool halo = true)
     {
-        visual.Render(Bounds, selectedStrokes, null, halo, owner.CurrentScale, owner.RotateHandleLive);
+        visual.Render(Bounds, selectedSnapshot, null, halo, owner.CurrentScale, owner.RotateHandleLive);
     }
 
     internal void InvalidateLasso(IReadOnlyList<Point>? lasso)
     {
         // 套索进行中：选择尚未确定，不绘制 halo
-        visual.Render(Bounds, selectedStrokes, lasso, halo: false, owner.CurrentScale, owner.RotateHandleLive);
+        visual.Render(Bounds, selectedSnapshot, lasso, halo: false, owner.CurrentScale, owner.RotateHandleLive);
     }
 }
