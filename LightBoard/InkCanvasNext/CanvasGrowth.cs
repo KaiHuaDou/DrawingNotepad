@@ -29,6 +29,9 @@ internal readonly record struct CanvasGrowth(double Left, double Top, double Rig
     // 初始视图距原点恰好一屏，视口略大于主屏时按整屏检查会立即平移内容
     private const double OriginPrefetchRatio = 0.5;
 
+    // 余量与阈值相等即足够，相减的浮点误差不应改变判定
+    private const double FillTolerance = 1e-6;
+
     internal bool IsEmpty => Left == 0 && Top == 0 && Right == 0 && Bottom == 0;
 
     internal bool IsFinite => double.IsFinite(Left)
@@ -99,7 +102,7 @@ internal readonly record struct CanvasGrowth(double Left, double Top, double Rig
     /// </summary>
     private static double FillStep(double available, double threshold, double step)
     {
-        if (step <= 0 || !double.IsFinite(available) || available >= threshold)
+        if (step <= 0 || !double.IsFinite(available) || available >= threshold - FillTolerance)
         {
             return 0;
         }

@@ -223,13 +223,16 @@ public class EdgeHintTests
             c.Down(host.Target, cluster[2]);
 
             // 下滑让内容回到顶部：手势中只改变换，滚动偏移与提示都保持原样
-            a.Move(host.Target, new Point(100, 1300));
+            // 三指同步跟随，首帧位移低于指距阈值（三指张开会迁往多指画笔），进入 Pan 后不再重评
+            var lead = TestPoints.Spacing(host) / 2;
+            MoveTrio(host, a, b, c, cluster, 100 + lead);
+            MoveTrio(host, a, b, c, cluster, 1300);
             canvas.UpdateLayout( );
             Assert.Equal(1200, canvas.OffsetY, 5);
             Assert.True(canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
             Assert.Equal(0, raised);
 
-            a.Up(host.Target, new Point(100, 1300));
+            a.Up(host.Target, new Point(cluster[0].X, 1300));
             b.Up(host.Target, cluster[1]);
             c.Up(host.Target, cluster[2]);
             Assert.Equal(TouchState.Idle, canvas.State);
@@ -240,6 +243,14 @@ public class EdgeHintTests
             Assert.False(canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
             Assert.Equal(1, raised);
         });
+    }
+
+    /// <summary>三指同步移到同一纵坐标，横坐标保持初始间距</summary>
+    private static void MoveTrio(TouchHost host, MockTouchDevice a, MockTouchDevice b, MockTouchDevice c, Point[] cluster, double y)
+    {
+        a.Move(host.Target, new Point(cluster[0].X, y));
+        b.Move(host.Target, new Point(cluster[1].X, y));
+        c.Move(host.Target, new Point(cluster[2].X, y));
     }
 
     private static bool[] VisibleSides(TouchHost host)

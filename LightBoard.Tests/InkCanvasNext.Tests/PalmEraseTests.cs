@@ -276,7 +276,7 @@ public class PalmEraseTests
             host.Device( ).Down(host.Target, P1, Palm);
             host.Device( ).Down(host.Target, second, Palm);
 
-            Assert.True(host.Canvas.Strokes.Contains(bridge));
+            Assert.Contains(bridge, host.Canvas.Strokes);
         });
     }
 
@@ -299,7 +299,7 @@ public class PalmEraseTests
             seed.Up(host.Target, second);
 
             Assert.True(host.Canvas.EraserActive);
-            Assert.True(host.Canvas.Strokes.Contains(bridge));
+            Assert.Contains(bridge, host.Canvas.Strokes);
         });
     }
 
@@ -332,7 +332,7 @@ public class PalmEraseTests
             palm.Down(host.Target, P1, Palm);
             palm.Move(host.Target, new Point(P1.X + 10, P1.Y), Palm);
 
-            Assert.False(host.Canvas.Strokes.Contains(stroke));
+            Assert.DoesNotContain(stroke, host.Canvas.Strokes);
         });
     }
 
@@ -369,7 +369,7 @@ public class PalmEraseTests
 
             Assert.Equal(TouchState.Eraser, host.Canvas.State);
             Assert.True(host.Canvas.PalmDebug.IsAreaPalm);
-            Assert.True(host.Canvas.Strokes.Contains(originStroke));
+            Assert.Contains(originStroke, host.Canvas.Strokes);
         });
     }
 
