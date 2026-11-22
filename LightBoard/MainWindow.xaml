@@ -111,6 +111,11 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE8DA;" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <MenuItem Header="打开最后备份" Style="{StaticResource MenuItemStyle}" Click="OpenLastBackupClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE81C;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="附加" Style="{StaticResource MenuItemStyle}" Click="AttachClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE723;" />

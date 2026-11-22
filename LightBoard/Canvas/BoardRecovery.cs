@@ -25,6 +25,27 @@ internal static class BoardRecovery
     }
 
     /// <summary>
+    /// 最近一份自动备份的路径；备份目录不存在或没有备份时返回 null
+    /// </summary>
+    public static string? FindLatest( )
+    {
+        return FindLatest(Path.Join(App.AppPath, "recover"));
+    }
+
+    internal static string? FindLatest(string directory)
+    {
+        if (!Directory.Exists(directory))
+        {
+            return null;
+        }
+
+        // 文件名是 yyyyMMdd-HHmmss，按名称倒序即时间倒序
+        return Directory.EnumerateFiles(directory, $"*{Board.Ext}")
+            .OrderByDescending(file => Path.GetFileName(file), StringComparer.Ordinal)
+            .FirstOrDefault( );
+    }
+
+    /// <summary>
     /// 进程即将退出（未处理异常）时同步写完，不能等后台任务
     /// </summary>
     public static void SaveNow( )

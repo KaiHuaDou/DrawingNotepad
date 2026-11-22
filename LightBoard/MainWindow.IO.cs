@@ -36,6 +36,23 @@ public partial class MainWindow
         OpenFile(dialog.FileName);
     }
 
+    private void OpenLastBackupClick(object o, RoutedEventArgs e)
+    {
+        var path = BoardRecovery.FindLatest( );
+        if (path is null)
+        {
+            App.ShowInfo("没有可打开的最后备份");
+            return;
+        }
+
+        if (WhetherCloseFile( ))
+        {
+            return;
+        }
+
+        OpenFile(path);
+    }
+
     public void RequestOpenFile(string filename)
     {
         if (WhetherCloseFile( ))
