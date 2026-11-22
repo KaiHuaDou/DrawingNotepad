@@ -262,7 +262,7 @@ public sealed partial record InkCanvasNextOptions
 #if DEBUG
     public const double DistanceThresholdFactor = 0.9;
 #else
-    public const double DistanceThresholdFactor = 0.1;
+    public const double DistanceThresholdFactor = 0.3;
 #endif
 
     /// <summary>

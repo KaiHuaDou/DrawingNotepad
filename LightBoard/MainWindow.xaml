@@ -152,6 +152,13 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEA90;" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <MenuItem x:Name="ExportSvgMenu" Header="导出 SVG"
+                              Style="{StaticResource MenuItemStyle}"
+                              Click="ExportSvgClick">
+                        <MenuItem.Icon>
+                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE7C3;" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                 </Menu>
             </Border>
         </Popup>

@@ -320,6 +320,57 @@ public partial class MainWindow
         });
     }
 
+    private void ExportSvgClick(object o, RoutedEventArgs e)
+    {
+        if (BoardState.IsBoardEmpty( ))
+        {
+            App.ShowInfo("没有可以导出的内容");
+            return;
+        }
+
+        var fileDialog = new VistaFolderBrowserDialog( )
+        {
+            RootFolder = Environment.SpecialFolder.MyComputer,
+            Multiselect = false,
+            ShowNewFolderButton = true
+        };
+        if (fileDialog.ShowDialog( ) != true)
+        {
+            return;
+        }
+
+        var directory = Path.Join(fileDialog.SelectedPath, $"{DateTime.Now:yyyyMMddHHmmss}");
+        var progress = ShowProgress( );
+
+        ExportSvgMenu.IsEnabled = false;
+        CanvasNext.IsEnabled = false;
+
+        Task.Run(( ) =>
+        {
+            try
+            {
+                SvgExport.ExportAll(directory, progress);
+            }
+            catch (Exception ex)
+            {
+                App.LogException(ex);
+                App.ShowException(ex, "导出失败。错误日志已记录。");
+                return;
+            }
+            finally
+            {
+                Dispatcher.Invoke(( ) =>
+                {
+                    ExportSvgMenu.IsEnabled = true;
+                    CanvasNext.IsEnabled = true;
+                    HideLoading( );
+                });
+            }
+
+            App.ShowInfo("导出 SVG 成功");
+        });
+    }
+
     private static int? PickScale( )
     {
         using TaskDialog scaleDialog = new( )

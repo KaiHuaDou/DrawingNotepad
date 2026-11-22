@@ -24,6 +24,11 @@ public static class StrokeCollectionExtension
     private static readonly SolidColorBrush Background = CreateBrush(Color.FromRgb(0x1E, 0x1E, 0x1E));
 
     /// <summary>
+    /// 未指定画布底色时导出使用的颜色
+    /// </summary>
+    public static Color DefaultCanvasColor => Background.Color;
+
+    /// <summary>
     /// 按缩放比例导出位图；canvas 为画布底色，background 须已冻结
     /// </summary>
     public static RenderTargetBitmap Render(
@@ -35,18 +40,7 @@ public static class StrokeCollectionExtension
         Rect? box = null)
     {
         var ratio = scale / 100.0;
-        var bounds = strokes.GetBounds( );
-        if (background is not null && box is { } fitBox)
-        {
-            bounds.Union(BackgroundRect(fitBox, background));
-        }
-
-        if (bounds.IsEmpty)
-        {
-            bounds = new Rect(0, 0, FallbackCanvasWidth, FallbackCanvasHeight);
-        }
-
-        bounds.Inflate(RenderPadding, RenderPadding);
+        var bounds = strokes.ContentBounds(background, box);
 
         var matrix = new Matrix(ratio, 0, 0, ratio,
             -bounds.X * ratio,
@@ -117,11 +111,7 @@ public static class StrokeCollectionExtension
         Rect? box = null,
         Color? canvas = null)
     {
-        var bounds = strokes.GetBounds( );
-        if (background is not null && box is { } fitBox)
-        {
-            bounds.Union(BackgroundRect(fitBox, background));
-        }
+        var bounds = strokes.NaturalBounds(background, box);
 
         var matrix = Matrix.Identity;
 
@@ -177,7 +167,7 @@ public static class StrokeCollectionExtension
                 context.PushTransform(new MatrixTransform(transform));
                 try
                 {
-                    context.DrawImage(image, BackgroundRect(fitBox, image));
+                    context.DrawImage(image, ImageBounds(fitBox, image));
                 }
                 finally
                 {
@@ -196,9 +186,11 @@ public static class StrokeCollectionExtension
         return visual;
     }
 
-    // 文档背景在世界坐标中的矩形：显示尺寸为图像 DIP 尺寸等比装进盒子、位置在盒子内居中
-    // （与 SetDocumentPage 的布局适配同一公式）。
-    private static Rect BackgroundRect(Rect box, ImageSource image)
+    /// <summary>
+    /// 背景图在内容坐标中的显示矩形，等比装进盒子并在盒内居中
+    /// </summary>
+    // 与 SetDocumentPage 的布局适配使用同一公式
+    public static Rect ImageBounds(Rect box, ImageSource image)
     {
         var width = image.Width;
         var height = image.Height;
@@ -212,5 +204,34 @@ public static class StrokeCollectionExtension
         height *= k;
 
         return new Rect(box.X + (box.Width - width) / 2, box.Y + (box.Height - height) / 2, width, height);
+    }
+
+    /// <summary>
+    /// 墨迹与背景图合并后的边界；两者皆空时返回空矩形
+    /// </summary>
+    internal static Rect NaturalBounds(this StrokeCollection strokes, ImageSource? background, Rect? box)
+    {
+        var bounds = strokes.GetBounds( );
+        if (background is not null && box is { } fitBox)
+        {
+            bounds.Union(ImageBounds(fitBox, background));
+        }
+
+        return bounds;
+    }
+
+    /// <summary>
+    /// 导出裁剪框，空页使用固定画布尺寸，四周留白
+    /// </summary>
+    public static Rect ContentBounds(this StrokeCollection strokes, ImageSource? background = null, Rect? box = null)
+    {
+        var bounds = strokes.NaturalBounds(background, box);
+        if (bounds.IsEmpty)
+        {
+            bounds = new Rect(0, 0, FallbackCanvasWidth, FallbackCanvasHeight);
+        }
+
+        bounds.Inflate(RenderPadding, RenderPadding);
+        return bounds;
     }
 }
