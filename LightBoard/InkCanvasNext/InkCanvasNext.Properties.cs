@@ -106,6 +106,11 @@ public partial class InkCanvasNext
     public event EventHandler? EdgeHintsChanged;
 
     /// <summary>
+    /// 画布向左或向上扩展导致内容坐标整体平移时触发，宿主据此同步依赖内容坐标的数据
+    /// </summary>
+    public event EventHandler<InkCanvasContentShiftedEventArgs>? ContentShifted;
+
+    /// <summary>
     /// 获取或设置墨迹集合；赋 null 时替换为空集合
     /// </summary>
     public StrokeCollection Strokes

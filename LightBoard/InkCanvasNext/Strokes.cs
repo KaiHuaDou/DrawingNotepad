@@ -79,7 +79,7 @@ public partial class InkCanvasNext
         var selected = selection.SelectedStrokesArray;
         if (selected.Length > 0)
         {
-            InnerCanvas.Strokes.Remove(new StrokeCollection(selected));
+            InnerCanvas.Strokes.Remove([with(selected)]);
         }
 
         selection.Clear( );
@@ -169,49 +169,6 @@ public partial class InkCanvasNext
         }
 
         CenterAt(strokes, new Point(visible.X + visible.Width / 2, visible.Y + visible.Height / 2));
-    }
-
-    /// <summary>
-    /// 把画布扩展到容纳全部笔画；没有笔画或笔画不越界时不变
-    /// </summary>
-    public void EnsureStrokesFit( )
-    {
-        EnsureBoundsFit(InnerCanvas.Strokes.GetBounds( ));
-    }
-
-    /// <summary>
-    /// 把画布扩展到容纳指定包围盒；空矩形或包围盒不越界时不变
-    /// </summary>
-    private void EnsureBoundsFit(Rect bounds)
-    {
-        if (bounds.IsEmpty)
-        {
-            return;
-        }
-
-        ExtendCanvas(bounds.Right - InnerCanvas.Width, bounds.Bottom - InnerCanvas.Height);
-    }
-
-    private void ExtendCanvas(double extendWidth, double extendHeight)
-    {
-        if (!double.IsFinite(extendWidth) || !double.IsFinite(extendHeight))
-        {
-            return;
-        }
-
-        extendWidth = Math.Max(0, extendWidth);
-        extendHeight = Math.Max(0, extendHeight);
-
-        if (extendWidth == 0 && extendHeight == 0)
-        {
-            return;
-        }
-
-        InnerCanvas.Width += extendWidth;
-        InnerCanvas.Height += extendHeight;
-        CanvasGrid.Width = InnerCanvas.Width;
-        CanvasGrid.Height = InnerCanvas.Height;
-        selectionVisual.Resize(new Size(InnerCanvas.Width, InnerCanvas.Height));
     }
 
     private static void CenterAt(StrokeCollection strokes, Point point)

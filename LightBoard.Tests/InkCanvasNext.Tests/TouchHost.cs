@@ -16,6 +16,9 @@ internal sealed class TouchHost : IDisposable
 
     public InkCanvasNext Canvas { get; }
 
+    /// <summary>画布累计向左/上平移的内容量，内容坐标</summary>
+    public Vector ContentShift { get; private set; }
+
     public InkCanvasNextMode Mode
     {
         get => Canvas.DrawingAttributes.Mode;
@@ -28,6 +31,7 @@ internal sealed class TouchHost : IDisposable
     public TouchHost(double width = 1280, double height = 800, InkCanvasNextOptions? options = null)
     {
         Canvas = new InkCanvasNext(App.CanvasSize, App.InitialOffset, options);
+        Canvas.ContentShifted += (_, e) => ContentShift += e.Offset;
 
         var parameters = new HwndSourceParameters("InkCanvasNext.Tests")
         {

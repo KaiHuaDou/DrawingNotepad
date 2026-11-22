@@ -28,6 +28,23 @@ public class EdgeMarginTests
     }
 
     [Fact]
+    public void ZoomToMinScale_ShiftsContentOnce( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var shifts = 0;
+            host.Canvas.ContentShifted += (_, _) => shifts++;
+
+            // 四边可能同时需要补足：单次计算只平移一次内容
+            host.Canvas.CurrentView = new View(InkCanvasNext.MinScale, 0, 0);
+            host.Canvas.UpdateLayout( );
+
+            Assert.Equal(1, shifts);
+        });
+    }
+
+    [Fact]
     public void SettingsViewNearCanvasEnd_KeepsOneViewportMargin( )
     {
         StaTest.Run(( ) =>
@@ -85,10 +102,13 @@ public class EdgeMarginTests
         StaTest.Run(( ) =>
         {
             using var host = new TouchHost( );
-            // 滚动到左上角，右/下余量远超一屏
+            // 滚到左上角：空闲期自动补足一屏余量，记录补足后的画布尺寸
             host.Canvas.OffsetX = 0;
             host.Canvas.OffsetY = 0;
             host.Canvas.UpdateLayout( );
+
+            var width = host.Canvas.InnerCanvas.Width;
+            var height = host.Canvas.InnerCanvas.Height;
 
             var a = host.Device( );
             var b = host.Device( );
@@ -99,15 +119,15 @@ public class EdgeMarginTests
             c.Down(host.Target, cluster[2]);
             Assert.Equal(TouchState.EvalPan, host.Canvas.State);
 
-            // 手指右移压低滚动偏移但被夹在 0，视口保持贴住左缘
-            a.Move(host.Target, new Point(150, 100));
-            a.Up(host.Target, new Point(150, 100));
+            // 手指左移推高滚动偏移，远离左/上边缘
+            a.Move(host.Target, new Point(50, 100));
+            a.Up(host.Target, new Point(50, 100));
             b.Up(host.Target, cluster[1]);
             c.Up(host.Target, cluster[2]);
             Assert.Equal(TouchState.Idle, host.Canvas.State);
 
-            Assert.Equal(App.CanvasSize.Width, host.Canvas.InnerCanvas.Width, 5);
-            Assert.Equal(App.CanvasSize.Height, host.Canvas.InnerCanvas.Height, 5);
+            Assert.Equal(width, host.Canvas.InnerCanvas.Width, 5);
+            Assert.Equal(height, host.Canvas.InnerCanvas.Height, 5);
         });
     }
 }

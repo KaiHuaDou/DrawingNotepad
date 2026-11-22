@@ -54,7 +54,7 @@ public class EdgeHintTests
     }
 
     [Fact]
-    public void InkInTopBandAtCanvasTop_HidesTopHint( )
+    public void InkInTopBandAtCanvasTop_ShowsTopHint( )
     {
         StaTest.Run(( ) =>
         {
@@ -65,7 +65,7 @@ public class EdgeHintTests
 
             AddStroke(host, BandCenter(host, EdgeScrollSide.Top));
 
-            Assert.False(host.Canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
+            Assert.True(host.Canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
         });
     }
 
@@ -205,7 +205,7 @@ public class EdgeHintTests
         {
             using var host = new TouchHost( );
             var canvas = host.Canvas;
-            canvas.OffsetY = 400;
+            canvas.OffsetY = 1200;
             canvas.UpdateLayout( );
 
             AddStroke(host, BandCenter(host, EdgeScrollSide.Top));
@@ -223,19 +223,20 @@ public class EdgeHintTests
             c.Down(host.Target, cluster[2]);
 
             // 下滑让内容回到顶部：手势中只改变换，滚动偏移与提示都保持原样
-            a.Move(host.Target, new Point(100, 600));
+            a.Move(host.Target, new Point(100, 1300));
             canvas.UpdateLayout( );
-            Assert.Equal(400, canvas.OffsetY, 5);
+            Assert.Equal(1200, canvas.OffsetY, 5);
             Assert.True(canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
             Assert.Equal(0, raised);
 
-            a.Up(host.Target, new Point(100, 600));
+            a.Up(host.Target, new Point(100, 1300));
             b.Up(host.Target, cluster[1]);
             c.Up(host.Target, cluster[2]);
             Assert.Equal(TouchState.Idle, canvas.State);
 
-            // 抬手提交手势增量，提示统一刷新
-            Assert.Equal(0, canvas.OffsetY, 5);
+            // 抬手提交手势增量，偏移贴到顶边后自动补一屏左/上余量，提示统一刷新
+            canvas.UpdateLayout( );
+            Assert.Equal(canvas.ViewportSize.Height, canvas.OffsetY, 5);
             Assert.False(canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
             Assert.Equal(1, raised);
         });

@@ -47,6 +47,27 @@ public partial class Page : INotifyPropertyChanged
         InvalidatePreview( );
         App.BoardRevision++;
     }
+
+    /// <summary>
+    /// 内容坐标整体平移后同步背景盒与页视图
+    /// </summary>
+    internal void RebaseContent(Vector shift, double scale)
+    {
+        if (Background is { } background)
+        {
+            Background = background with
+            {
+                Box = new Rect(
+                    background.Box.X + shift.X,
+                    background.Box.Y + shift.Y,
+                    background.Box.Width,
+                    background.Box.Height)
+            };
+        }
+
+        OffsetX += shift.X * scale;
+        OffsetY += shift.Y * scale;
+    }
 }
 
 public partial class App

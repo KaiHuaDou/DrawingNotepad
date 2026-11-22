@@ -283,10 +283,11 @@ public class SpecialModeGestureTests
             b.Up(host.Target, new Point(280, 210));
 
             var points = host.Canvas.Strokes[0].StylusPoints;
-            AssertPoint(points[0], 288, -30);
-            AssertPoint(points[1], 280, 10);
-            AssertPoint(points[2], 280, 210);
-            AssertPoint(points[3], 272, 250);
+            var shift = host.ContentShift;
+            AssertPoint(points[0], 288 + shift.X, -30 + shift.Y);
+            AssertPoint(points[1], 280 + shift.X, 10 + shift.Y);
+            AssertPoint(points[2], 280 + shift.X, 210 + shift.Y);
+            AssertPoint(points[3], 272 + shift.X, 250 + shift.Y);
         });
     }
 
@@ -356,7 +357,10 @@ public class SpecialModeGestureTests
             Assert.True(host.Canvas.CanUndo);
             host.Canvas.Undo( );
 
-            AssertPoints(host.Canvas.Strokes[0].StylusPoints, PinchStrokePoints);
+            var shift = host.ContentShift;
+            AssertPoints(
+                host.Canvas.Strokes[0].StylusPoints,
+                [.. PinchStrokePoints.Select(p => new Point(p.X + shift.X, p.Y + shift.Y))]);
         });
     }
 

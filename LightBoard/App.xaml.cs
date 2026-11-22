@@ -18,8 +18,8 @@ public partial class App : Application, ISingleInstance
         16 * SystemParameters.PrimaryScreenHeight);
 
     public static readonly Point InitialOffset = new(
-        SystemParameters.PrimaryScreenWidth,
-        SystemParameters.PrimaryScreenHeight);
+        1.5 * SystemParameters.PrimaryScreenWidth,
+        1.5 * SystemParameters.PrimaryScreenHeight);
 
     private readonly DispatcherTimer recoverTimer = new( );
 

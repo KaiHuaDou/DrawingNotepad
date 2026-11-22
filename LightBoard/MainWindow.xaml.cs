@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -60,6 +61,7 @@ public partial class MainWindow : Window
         SelectionBorder.RenderTransform = selectionBorderOffset;
         CanvasNext.SelectionChanged += CanvasNextSelectionChanged;
         CanvasNext.StrokesChanged += CanvasNextStrokesChanged;
+        CanvasNext.ContentShifted += CanvasNextContentShifted;
         CanvasNext.OperationCompleted += CanvasOperationCompleted;
         CanvasNext.DrawingAttributesChanged += CanvasNextDrawingAttributesChanged;
         MainGrid.Children.Insert(0, CanvasNext);
@@ -144,6 +146,34 @@ public partial class MainWindow : Window
 
         SelectionBorder.Visibility = Visibility.Visible;
         UpdateSelectionBorderPosition( );
+    }
+
+    private void CanvasNextContentShifted(object? o, InkCanvasContentShiftedEventArgs e)
+    {
+        // 换页过渡中可能先平移上一页的墨迹：按集合归属找到真正被平移的页
+        var page = ReferenceEquals(App.CurrentPage.Strokes, e.Strokes)
+            ? App.CurrentPage
+            : App.Pages.FirstOrDefault(p => ReferenceEquals(p.Strokes, e.Strokes));
+
+        if (page is null)
+        {
+            return;
+        }
+
+        page.RebaseContent(e.Offset, page.Scale);
+
+#if OPENCV
+        if (ReferenceEquals(videoPage, page)
+            && ReferenceEquals(page, App.CurrentPage)
+            && !videoArea.IsEmpty)
+        {
+            videoArea = new Rect(
+                videoArea.X + e.Offset.X,
+                videoArea.Y + e.Offset.Y,
+                videoArea.Width,
+                videoArea.Height);
+        }
+#endif
     }
 
     private void CanvasNextStrokesChanged(object? o, InkCanvasStrokesChangedEventArgs e)

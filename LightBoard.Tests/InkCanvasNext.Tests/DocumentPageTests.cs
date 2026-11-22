@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Ink;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -28,6 +30,30 @@ public class DocumentPageTests
             var origin = canvas.InnerCanvas.TransformToVisual(canvas.CanvasGrid).Transform(new Point(0, 0));
             Assert.Equal(0, origin.X, 6);
             Assert.Equal(0, origin.Y, 6);
+        });
+    }
+
+    [Fact]
+    public void SetDocumentPage_NegativeBox_ShiftsInkWithPage( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var canvas = host.Canvas;
+            var stroke = new Stroke(
+            [
+                new StylusPoint(100, 100),
+                new StylusPoint(200, 200),
+            ]);
+            canvas.Strokes.Add(stroke);
+            var before = stroke.GetBounds( );
+
+            var page = new WriteableBitmap(10, 10, 96, 96, PixelFormats.Pbgra32, null);
+            canvas.SetDocumentPage(page, new Rect(-100, -50, 10, 10));
+
+            var after = stroke.GetBounds( );
+            Assert.Equal(before.Left + 100, after.Left, 6);
+            Assert.Equal(before.Top + 50, after.Top, 6);
         });
     }
 

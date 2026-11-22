@@ -26,6 +26,11 @@ public partial class InkCanvasNext
     internal TouchState State { get; private set; } = TouchState.Idle;
 
     /// <summary>
+    /// 内容平移会改动手势基线，只在没有触摸序列时执行
+    /// </summary>
+    internal bool CanRebase => State == TouchState.Idle;
+
+    /// <summary>
     /// 是否有输入序列在途：触摸或合成触点使状态离开 Idle，或原生墨迹画布持有笔捕获
     /// </summary>
     public bool IsGestureActive => State != TouchState.Idle || InnerCanvas.IsStylusCaptured;
@@ -225,8 +230,19 @@ public partial class InkCanvasNext
             ReleaseAll( );
             ApplyModeToEditing(DrawingAttributes.Mode);
 
-            // 手势期间不补余量也不刷新提示：结束时统一补一屏余量并刷新一次
-            EnsureCanvasFill(CurrentView);
+            // 手势期间不补余量也不刷新提示：结束时统一结算平移、补一屏余量并刷新一次
+            var view = CurrentView;
+            var shift = ApplyPendingRebase( );
+            view = view with
+            {
+                OffsetX = view.OffsetX + shift.X * view.Scale,
+                OffsetY = view.OffsetY + shift.Y * view.Scale
+            };
+
+            view = EnsureCanvasFill(view);
+            CanvasScroll.ScrollToHorizontalOffset(view.OffsetX);
+            CanvasScroll.ScrollToVerticalOffset(view.OffsetY);
+
             UpdateEdgeHints( );
         }
         else if (TraitsOf(from).OverridesEditing && !TraitsOf(to).OverridesEditing)
@@ -308,8 +324,9 @@ public partial class InkCanvasNext
                     // 只有从组外进入才算新的一次平移：累计位移从零起算，组内迁移与基线重立都不清空
                     PanDisplacement = default;
 
-                    // 手势开始补一屏余量，手势中不扩展，靠这次余量吸收拖动
-                    EnsureCanvasFill(CurrentView);
+                    // 手势开始补一屏余量，手势中不扩展，靠这次余量吸收拖动；
+                    // 左/上已有空闲期补足的余量，这里只补右/下，避免起手前再平移内容
+                    EnsureCanvasFill(CurrentView, prefetchLeftTop: false);
                 }
 
                 InitGesture( );

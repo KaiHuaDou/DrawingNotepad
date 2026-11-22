@@ -58,10 +58,20 @@ public partial class InkCanvasNext : UserControl
 
         CanvasScroll.ScrollChanged += (_, _) =>
         {
-            // 手势中改画布尺寸会让排列与位图缓存失效：余量补足留到手势结束，手势中只由 setter 保视口覆盖
-            if (State == TouchState.Idle)
+            // 手势中改画布尺寸会让排列与位图缓存失效：余量补足留到手势结束
+            if (CanRebase)
             {
-                EnsureCanvasFill(CurrentView);
+                var view = CurrentView;
+                var canPrefetch = !IsEdgeScrolling;
+                var filled = EnsureCanvasFill(
+                    view,
+                    prefetchRightBottom: canPrefetch,
+                    prefetchLeftTop: canPrefetch);
+                if (filled.OffsetX != view.OffsetX || filled.OffsetY != view.OffsetY)
+                {
+                    CanvasScroll.ScrollToHorizontalOffset(filled.OffsetX);
+                    CanvasScroll.ScrollToVerticalOffset(filled.OffsetY);
+                }
             }
 
             RaiseViewOrSelectionChanged( );
@@ -290,6 +300,9 @@ public partial class InkCanvasNext : UserControl
 
     private void ApplyStrokes(StrokeCollection strokes)
     {
+        // 登记的平移属于上一份墨迹，换集合时丢弃，由新集合的越界检查接管
+        pendingShift = default;
+
         // 命中测试器挂在旧集合上，手势先在旧集合上结束
         ResetTouchState( );
 
@@ -342,6 +355,6 @@ public partial class InkCanvasNext : UserControl
         DocumentHost.Child = new Image { Source = page, Stretch = Stretch.Uniform };
         DocumentHost.Visibility = Visibility.Visible;
 
-        ExtendCanvas(box.Right - InnerCanvas.Width, box.Bottom - InnerCanvas.Height);
+        FitBounds(box);
     }
 }

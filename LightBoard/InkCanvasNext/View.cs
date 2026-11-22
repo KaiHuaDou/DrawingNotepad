@@ -1,6 +1,5 @@
 using System;
 using System.Windows;
-using System.Windows.Media;
 
 namespace InkCanvasNext;
 
@@ -104,11 +103,14 @@ public partial class InkCanvasNext
             CanvasPan.X = 0;
             CanvasPan.Y = 0;
 
+            var canPrefetch = CanRebase && !IsEdgeScrolling;
+            value = EnsureCanvasFill(
+                value,
+                prefetchRightBottom: canPrefetch,
+                prefetchLeftTop: canPrefetch);
+
             CanvasScroll.ScrollToHorizontalOffset(value.OffsetX);
             CanvasScroll.ScrollToVerticalOffset(value.OffsetY);
-
-            // 手势中只保视口覆盖：余量补足留到手势结束，改画布尺寸会让排列与缓存失效
-            EnsureCanvasFill(value, margin: State == TouchState.Idle);
         }
     }
 
@@ -134,52 +136,66 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 画布在视口右/下方向不足一屏时按一屏步进补足：缩放、拖动与翻页恢复视图都经过这里，
-    /// 保证视口落在画布内并能继续拖动；每个方向最多补四屏，嵌套调用直接返回
-    /// margin 为 false 时只在画布盖不住视口时补，不做"留一屏余量"的预取
+    /// 画布在视口右/下不足一屏、左/上不足半屏时按一屏步进补足：缩放、拖动与翻页恢复视图都经过这里，
+    /// 保证视口落在画布内并能继续拖动；右/下最多补四屏，嵌套调用直接返回
+    /// prefetchRightBottom 为 false 时只在画布盖不住视口时补，不做右/下方向留一屏余量的预取
+    /// prefetchLeftTop 为 false 时不做左/上方向留余量的预取，用于手势起点保留已有余量
+    /// 左/上补足会平移内容并抬高偏移，返回值带回补偿后的视图
     /// </summary>
-    private void EnsureCanvasFill(View view, bool margin = true)
+    private View EnsureCanvasFill(View view, bool prefetchRightBottom = true, bool prefetchLeftTop = true)
     {
         if (fillingCanvas)
         {
-            return;
+            return view;
         }
 
         var viewport = ViewportSize;
         if (viewport.Width <= 0 || viewport.Height <= 0 || !double.IsFinite(view.Scale) || view.Scale <= 0)
         {
-            return;
+            return view;
         }
 
-        var screenWidth = viewport.Width / view.Scale;
-        var screenHeight = viewport.Height / view.Scale;
-        var widthThreshold = margin ? screenWidth : 0;
-        var heightThreshold = margin ? screenHeight : 0;
+        var growth = CanvasGrowth.FromView(
+            view,
+            viewport,
+            CanvasSize,
+            prefetchRightBottom,
+            prefetchLeftTop);
+
+        if (growth.IsEmpty)
+        {
+            return view;
+        }
 
         fillingCanvas = true;
         try
         {
-            for (var i = 0; i < 4; i++)
+            var shift = ApplyGrowth(growth);
+            return view with
             {
-                var extendWidth = InnerCanvas.Width - (view.OffsetX + viewport.Width) / view.Scale < widthThreshold
-                    ? screenWidth
-                    : 0;
-                var extendHeight = InnerCanvas.Height - (view.OffsetY + viewport.Height) / view.Scale < heightThreshold
-                    ? screenHeight
-                    : 0;
-
-                if (extendWidth == 0 && extendHeight == 0)
-                {
-                    break;
-                }
-
-                ExtendCanvas(extendWidth, extendHeight);
-            }
+                OffsetX = view.OffsetX + shift.X * view.Scale,
+                OffsetY = view.OffsetY + shift.Y * view.Scale
+            };
         }
         finally
         {
             fillingCanvas = false;
         }
+    }
+
+    /// <summary>
+    /// 内容平移后同步抬高滚动偏移，屏幕上的内容位置保持不变
+    /// </summary>
+    private void CompensateView(Vector shift)
+    {
+        if (shift.X == 0 && shift.Y == 0)
+        {
+            return;
+        }
+
+        var scale = CurrentScale;
+        CanvasScroll.ScrollToHorizontalOffset(CanvasScroll.HorizontalOffset + shift.X * scale);
+        CanvasScroll.ScrollToVerticalOffset(CanvasScroll.VerticalOffset + shift.Y * scale);
     }
 
     /// <summary>

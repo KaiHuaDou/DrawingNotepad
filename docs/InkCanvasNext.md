@@ -20,6 +20,8 @@
 
 换算关系为 `视口坐标 = 内容坐标 × CurrentScale − (OffsetX, OffsetY)`。缩放由 `CanvasGrid` 的 `LayoutTransform` 实现，平移由 `ScrollViewer` 的偏移实现；内容尺寸乘 `CurrentScale` 之后才是它在视口中的尺寸。
 
+内容坐标从 (0, 0) 起算。内容越过左/上边界，或空闲视口在左/上方向的余量不足半屏时，控件把墨迹、文档背景与历史锚点整体向对应方向平移，并同步抬高偏移：屏幕画面不动，`ContentShifted` 把平移量交给宿主同步依赖内容坐标的数据。左/上平移会重建全部墨迹几何，代价随笔画数增长；控件只在没有输入序列、且按整屏补足余量或内容越界时执行。右/下扩展只改画布尺寸，不移动墨迹。
+
 ## 公开类型
 
 - `InkCanvasNext`：主控件
@@ -33,6 +35,7 @@
 - `InkCanvasNextCommands`：默认命令（撤销、重做、删除、复制、剪切、粘贴、取消、放大、缩小、实际大小）
 - `StrokeCollectionExtension`：墨迹导出与缩略图渲染
 - `InkCanvasStrokesChangedEventArgs`：`StrokesChanged` 的载荷（只读的 Added / Removed 列表；选区整体变换时 `TransformOnly` 为 true）
+- `InkCanvasContentShiftedEventArgs`：`ContentShifted` 的载荷（内容平移量与所属墨迹集合）
 - `InkCanvasOperation`、`InkCanvasOperationEventArgs`：`OperationCompleted` 的载荷（操作种类与完成时的工具设置）
 - `HistorySnapshot`：撤销 / 重做历史栈快照，`Position` 为当前指针（`SwapHistory` 使用）
 
@@ -131,6 +134,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `SelectionChanged`       | `EventHandler`                                     | 选中内容变化时触发                               |
 | `ViewOrSelectionChanged` | `EventHandler`                                     | 视口（滚动 / 缩放）或选区包围盒变化，供工具栏跟随 |
 | `EdgeHintsChanged`       | `EventHandler`                                     | 边缘提示的显示状态变化，供宿主刷新自绘的提示 |
+| `ContentShifted`         | `EventHandler<InkCanvasContentShiftedEventArgs>`   | 左/上扩展后内容整体平移时触发，载荷为平移量与所属墨迹集合 |
 
 ## 属性
 
@@ -159,7 +163,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 
 - 四侧阈值都为 0 时整个功能关闭，四侧都返回 false。
 - 触摸按下、鼠标按下、滚轮与替换 `Strokes` 都会中断过渡。
-- 下 / 右方向余量不足时先扩展画布；上 / 左没有负方向余量，位移超出当前偏移时不显示。
+- 四侧余量不足时都先扩展画布；左/上扩展会平移内容并同步抬高偏移。
 - 判定与平移量都按笔画包围盒计算，边界相接不算命中；目标会多走 1 视口 DIP，避免相切时的浮点误差把提示留在原地。
 
 ## 方法
@@ -177,11 +181,11 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `FitToView(Rect, double)`        | 把内容矩形等比装进视口并居中，第二参数为视口 DIP 边距 |
 | `GetSelectionScreenBounds(Visual)` | 选区包围盒在指定坐标系下的矩形（无选区返回 null） |
 | `GetCanvasViewportBounds(UIElement)` | 可见视口在指定坐标系下的矩形             |
-| `EnsureStrokesFit()`             | 笔画越出画布右 / 下边界时扩展画布           |
+| `EnsureStrokesFit()`             | 笔画越出画布四边时扩展画布；左/上越界平移内容 |
 | `EnsureStrokesVisible(StrokeCollection)` | 笔画包围盒不完全在可见内容区域内时平移到视口中心 |
 | `ResetTouchState()`              | 重置当前触摸状态并释放所有触摸捕获          |
 | `SwapHistory(...)`               | 交换撤销 / 重做历史栈，旧栈经 `out` 参数返回 |
-| `SetDocumentPage(ImageSource?, Rect?)` | 设置或清除文档页面背景图像；第二参数为背景页在内容坐标中的 Uniform 适配盒，决定位置与尺寸，页面为 null 或盒子无效时移除；与当前显示一致时不变 |
+| `SetDocumentPage(ImageSource?, Rect?)` | 设置或清除文档页面背景图像；第二参数为背景页在内容坐标中的 Uniform 适配盒，决定位置与尺寸，盒越出左/上边界时平移内容；页面为 null 或盒子无效时移除；与当前显示一致时不变 |
 | `ClearMultiTouchVisuals()`       | 清空进行中的多指笔画（视觉与笔迹）          |
 | `IsEdgeHintVisible(EdgeScrollSide)` | 该侧边缘提示是否应显示                   |
 | `ScrollEdgeClear(EdgeScrollSide)` | 平移画布直到该侧热区内没有墨迹            |

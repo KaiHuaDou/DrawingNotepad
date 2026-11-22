@@ -20,14 +20,12 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
     private static readonly IReadOnlyList<Stroke> EmptySnapshot = Array.AsReadOnly(Array.Empty<Stroke>( ));
 
     // 选区变化时一次性生成快照；读取方（公开属性、变换手势、删除）共用，避免各自复制
-    private Stroke[] selectedSnapshot = [];
-    private IReadOnlyList<Stroke> selectedSnapshotView = EmptySnapshot;
 
     internal IReadOnlyCollection<Stroke> SelectedStrokes => selectedStrokes;
 
-    internal IReadOnlyList<Stroke> SelectedStrokesSnapshot => selectedSnapshotView;
+    internal IReadOnlyList<Stroke> SelectedStrokesSnapshot { get; private set; } = EmptySnapshot;
 
-    internal Stroke[] SelectedStrokesArray => selectedSnapshot;
+    internal Stroke[] SelectedStrokesArray { get; private set; } = [];
 
     internal bool HasSelection => selectedStrokes.Count > 0;
 
@@ -88,10 +86,10 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
 
     private void RebuildSnapshot( )
     {
-        selectedSnapshot = selectedStrokes.Count == 0 ? [] : [.. selectedStrokes];
-        selectedSnapshotView = selectedSnapshot.Length == 0
+        SelectedStrokesArray = selectedStrokes.Count == 0 ? [] : [.. selectedStrokes];
+        SelectedStrokesSnapshot = SelectedStrokesArray.Length == 0
             ? EmptySnapshot
-            : Array.AsReadOnly(selectedSnapshot);
+            : Array.AsReadOnly(SelectedStrokesArray);
     }
 
     internal void RecomputeBounds( )
@@ -154,12 +152,12 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
 
     internal void Invalidate(bool halo = true)
     {
-        visual.Render(Bounds, selectedSnapshot, null, halo, owner.CurrentScale, owner.RotateHandleLive);
+        visual.Render(Bounds, SelectedStrokesArray, null, halo, owner.CurrentScale, owner.RotateHandleLive);
     }
 
     internal void InvalidateLasso(IReadOnlyList<Point>? lasso)
     {
         // 套索进行中：选择尚未确定，不绘制 halo
-        visual.Render(Bounds, selectedSnapshot, lasso, halo: false, owner.CurrentScale, owner.RotateHandleLive);
+        visual.Render(Bounds, SelectedStrokesArray, lasso, halo: false, owner.CurrentScale, owner.RotateHandleLive);
     }
 }

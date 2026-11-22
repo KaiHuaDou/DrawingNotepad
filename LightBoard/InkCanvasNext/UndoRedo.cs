@@ -15,6 +15,11 @@ internal interface IHistoryChange
 {
     void Apply(InkCanvasNext owner);
     void Revert(InkCanvasNext owner);
+
+    /// <summary>
+    /// 内容坐标整体平移后校正记录；笔画自身坐标已随平移变化，只有带绝对锚点的矩阵需要改写
+    /// </summary>
+    void Translate(Vector shift);
 }
 
 internal sealed class StrokeChanges(IReadOnlyList<Stroke> added, IReadOnlyList<Stroke> removed) : IHistoryChange
@@ -54,6 +59,10 @@ internal sealed class StrokeChanges(IReadOnlyList<Stroke> added, IReadOnlyList<S
     {
         RemovePresent(owner, added);
         AddAbsent(owner, removed);
+    }
+
+    void IHistoryChange.Translate(Vector shift)
+    {
     }
 
     // StrokeCollection 的增删对缺失与重复的笔画都抛异常：重放次序出意外时按画布现状挑出能执行的项，
@@ -110,6 +119,8 @@ internal sealed class StrokeChanges(IReadOnlyList<Stroke> added, IReadOnlyList<S
 /// </summary>
 internal sealed class TransformChanges(IReadOnlyList<Stroke> target, Matrix delta) : IHistoryChange
 {
+    private Matrix delta = delta;
+
     void IHistoryChange.Apply(InkCanvasNext owner)
     {
         foreach (var stroke in target)
@@ -126,6 +137,15 @@ internal sealed class TransformChanges(IReadOnlyList<Stroke> target, Matrix delt
         {
             stroke.Transform(inverse, false);
         }
+    }
+
+    void IHistoryChange.Translate(Vector shift)
+    {
+        // 缩放与旋转矩阵带绝对锚点，整体平移后要换成新坐标系中的等效变换
+        // WPF 矩阵按行向量生效，a * b 表示先 a 后 b，故先还原平移、再变换、最后重新平移
+        var forward = new Matrix(1, 0, 0, 1, shift.X, shift.Y);
+        var backward = new Matrix(1, 0, 0, 1, -shift.X, -shift.Y);
+        delta = backward * delta * forward;
     }
 }
 
@@ -189,10 +209,10 @@ public partial class InkCanvasNext
 
         selection.ApplyCanvasChanges(added, removed);
 
-        // 原生书写、多指书写与形状提交产生的墨迹可以超出画布右/下边界：新增笔画越界时画布随之扩展
+        // 原生书写、多指书写与形状提交产生的墨迹可以越出画布四边：新增笔画越界时画布随之扩展
         if (added.Length > 0)
         {
-            EnsureBoundsFit(e.Added.GetBounds( ));
+            FitBounds(e.Added.GetBounds( ));
         }
 
         if (removed.Length > 0)

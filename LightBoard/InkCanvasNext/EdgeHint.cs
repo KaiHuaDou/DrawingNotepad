@@ -45,7 +45,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 平移画布直到该侧热区内没有墨迹；没有可平移的余量时不动
+    /// 平移画布直到该侧热区内没有墨迹；没有可平移的位移时不动
     /// </summary>
     public void ScrollEdgeClear(EdgeScrollSide side)
     {
@@ -57,38 +57,49 @@ public partial class InkCanvasNext
             return;
         }
 
-        CollectEdgeBounds( );
-
-        var shift = EdgeClearShift(side, band, view);
-        if (shift <= 0)
+        // 左/上扩展会平移内容，手势期间不能改动坐标系
+        if (!CanRebase && side is EdgeScrollSide.Top or EdgeScrollSide.Left)
         {
             return;
         }
 
-        if (side is EdgeScrollSide.Top or EdgeScrollSide.Left)
+        CollectEdgeBounds( );
+
+        var clearance = EdgeClearShift(side, band, view);
+        if (clearance <= 0)
         {
-            var room = side == EdgeScrollSide.Top ? view.OffsetY : view.OffsetX;
-            if (shift > room)
-            {
-                return;
-            }
+            return;
         }
 
         var target = side switch
         {
-            EdgeScrollSide.Top => view with { OffsetY = view.OffsetY - shift },
-            EdgeScrollSide.Bottom => view with { OffsetY = view.OffsetY + shift },
-            EdgeScrollSide.Left => view with { OffsetX = view.OffsetX - shift },
-            _ => view with { OffsetX = view.OffsetX + shift },
+            EdgeScrollSide.Top => view with { OffsetY = view.OffsetY - clearance },
+            EdgeScrollSide.Bottom => view with { OffsetY = view.OffsetY + clearance },
+            EdgeScrollSide.Left => view with { OffsetX = view.OffsetX - clearance },
+            _ => view with { OffsetX = view.OffsetX + clearance },
         };
 
-        target = ReachEdgeScrollTarget(target, viewport, side);
-        if (target.OffsetX == view.OffsetX && target.OffsetY == view.OffsetY)
+        target = ReachEdgeScrollTarget(target, viewport, side, out var shift);
+
+        // 目标越出左/上边界时内容已经平移，起止视图都要用新坐标系中的偏移
+        var from = view with
+        {
+            OffsetX = view.OffsetX + shift.X * view.Scale,
+            OffsetY = view.OffsetY + shift.Y * view.Scale
+        };
+
+        if (target.OffsetX == from.OffsetX && target.OffsetY == from.OffsetY)
         {
             return;
         }
 
-        StartEdgeScroll(target);
+        if (shift.X != 0 || shift.Y != 0)
+        {
+            CanvasScroll.ScrollToHorizontalOffset(from.OffsetX);
+            CanvasScroll.ScrollToVerticalOffset(from.OffsetY);
+        }
+
+        StartEdgeScroll(from, target);
     }
 
     /// <summary>
@@ -136,17 +147,11 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 上/左没有负方向余量，位移超出当前偏移时按钮点了也没有效果；下/右在点击时按需扩展画布
+    /// 该侧仍存在可用的平移位移；四侧都可以在需要时扩展画布
     /// </summary>
     private bool HasEdgeScrollRoom(EdgeScrollSide side, View view, Rect band)
     {
-        var shift = EdgeClearShift(side, band, view);
-        if (side is EdgeScrollSide.Bottom or EdgeScrollSide.Right)
-        {
-            return shift > 0;
-        }
-
-        return shift > 0 && shift <= (side == EdgeScrollSide.Top ? view.OffsetY : view.OffsetX);
+        return EdgeClearShift(side, band, view) > 0;
     }
 
     /// <summary>
@@ -185,10 +190,12 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 下/右的目标偏移超出画布时先把画布沿该轴扩展到够用，再夹到有效范围
+    /// 目标偏移超出画布时先沿该轴扩展到够用；左/上扩展会平移内容，
+    /// 平移量经 <paramref name="shift"/> 带回，目标偏移同步换成新坐标系中的值
     /// </summary>
-    private View ReachEdgeScrollTarget(View target, Size viewport, EdgeScrollSide side)
+    private View ReachEdgeScrollTarget(View target, Size viewport, EdgeScrollSide side, out Vector shift)
     {
+        shift = default;
         var scale = target.Scale;
 
         if (side is EdgeScrollSide.Top or EdgeScrollSide.Bottom)
@@ -196,7 +203,13 @@ public partial class InkCanvasNext
             var max = InnerCanvas.Height * scale - viewport.Height;
             if (target.OffsetY > max)
             {
-                ExtendCanvas(0, (target.OffsetY - max) / scale);
+                ApplyGrowth(new CanvasGrowth(0, 0, 0, (target.OffsetY - max) / scale));
+                max = InnerCanvas.Height * scale - viewport.Height;
+            }
+            else if (target.OffsetY < 0)
+            {
+                shift = ApplyGrowth(new CanvasGrowth(-target.OffsetY / scale, 0, 0, 0));
+                target = target with { OffsetY = target.OffsetY + shift.Y * scale };
                 max = InnerCanvas.Height * scale - viewport.Height;
             }
 
@@ -206,16 +219,22 @@ public partial class InkCanvasNext
         var maxX = InnerCanvas.Width * scale - viewport.Width;
         if (target.OffsetX > maxX)
         {
-            ExtendCanvas((target.OffsetX - maxX) / scale, 0);
+            ApplyGrowth(new CanvasGrowth(0, 0, (target.OffsetX - maxX) / scale, 0));
+            maxX = InnerCanvas.Width * scale - viewport.Width;
+        }
+        else if (target.OffsetX < 0)
+        {
+            shift = ApplyGrowth(new CanvasGrowth(-target.OffsetX / scale, 0, 0, 0));
+            target = target with { OffsetX = target.OffsetX + shift.X * scale };
             maxX = InnerCanvas.Width * scale - viewport.Width;
         }
 
         return target with { OffsetX = Math.Clamp(target.OffsetX, 0, Math.Max(0, maxX)) };
     }
 
-    private void StartEdgeScroll(View target)
+    private void StartEdgeScroll(View from, View target)
     {
-        edgeScrollFrom = CurrentView;
+        edgeScrollFrom = from;
         edgeScrollTo = target;
         edgeScrollClock = Stopwatch.StartNew( );
         edgeScrollTimer.Start( );
