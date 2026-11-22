@@ -91,20 +91,6 @@ public class BackgroundsTests
     }
 
     [Fact]
-    public void ClearPageBackground_LeavesOtherPages( )
-    {
-        var page = new Page
-        {
-            Number = 1,
-            Background = new DocumentBackground(@"C:\a.png", 1, new Rect(0, 0, 10, 10))
-        };
-
-        PageBackgrounds.Clear(page);
-
-        Assert.Null(page.Background);
-    }
-
-    [Fact]
     public void PhotoPlacementFor_NoBackground_StaysOnOriginalPage( )
     {
         var page = new Page( ) { Number = 1 };

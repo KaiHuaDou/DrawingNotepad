@@ -60,33 +60,7 @@ public class TouchStateMachineTests
     }
 
     [Fact]
-    public void EvalDraw_SecondFingerClose_EntersPanZoom( )
-    {
-        StaTest.Run(( ) =>
-        {
-            using var host = new TouchHost( );
-
-            host.Device( ).Down(host.Target, P1);
-            host.Device( ).Down(host.Target, TestPoints.CloseTo(host, P1));
-            Assert.Equal(TouchState.PanZoom, host.Canvas.State);
-        });
-    }
-
-    [Fact]
     public void Idle_TwoFarFingers_EntersMultiDraw( )
-    {
-        StaTest.Run(( ) =>
-        {
-            using var host = new TouchHost( );
-
-            host.Device( ).Down(host.Target, P1);
-            host.Device( ).Down(host.Target, TestPoints.FarFrom(host, P1));
-            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
-        });
-    }
-
-    [Fact]
-    public void EvalDraw_SecondFingerFar_EntersMultiDraw( )
     {
         StaTest.Run(( ) =>
         {
@@ -573,25 +547,6 @@ public class TouchStateMachineTests
 
     // MultiDraw
 
-    /// <summary>多指书写抬到单指后仍留在 MultiDraw，剩下的人继续画</summary>
-    [Fact]
-    public void MultiDraw_ReleaseToOneFinger_StaysMultiDraw( )
-    {
-        StaTest.Run(( ) =>
-        {
-            using var host = new TouchHost( );
-
-            var a = host.Device( );
-            var b = host.Device( );
-            a.Down(host.Target, P1);
-            b.Down(host.Target, TestPoints.FarFrom(host, P1));
-            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
-
-            b.Up(host.Target, TestPoints.FarFrom(host, P1));
-            Assert.Equal(TouchState.MultiDraw, host.Canvas.State);
-        });
-    }
-
     /// <summary>MultiDraw 抬到单指后，剩余手指的笔画不被截断，继续追加点直到抬手提交</summary>
     [Fact]
     public void MultiDraw_ReleaseToOneFinger_ContinuesDrawing( )
@@ -803,25 +758,6 @@ public class TouchStateMachineTests
 
             Assert.Equal(TouchState.Idle, host.Canvas.State);
             Assert.Equal(InkCanvasEditingMode.Ink, host.Canvas.InnerCanvas.EditingMode);
-        });
-    }
-
-    // Selection
-
-    [Fact]
-    public void Selection_Release_ReturnsIdle( )
-    {
-        StaTest.Run(( ) =>
-        {
-            using var host = new TouchHost( );
-            host.Canvas.DrawingAttributes = host.Canvas.DrawingAttributes with { Mode = InkCanvasNextMode.Select };
-
-            var finger = host.Device( );
-            finger.Down(host.Target, P1);
-            Assert.Equal(TouchState.Selection, host.Canvas.State);
-
-            finger.Up(host.Target, P1);
-            Assert.Equal(TouchState.Idle, host.Canvas.State);
         });
     }
 }

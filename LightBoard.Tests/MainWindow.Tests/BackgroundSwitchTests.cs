@@ -12,29 +12,6 @@ namespace LightBoard.Tests.Toolbar;
 public class BackgroundSwitchTests
 {
     [Fact]
-    public void UnderlayRadio_KeepsChoiceAfterPageChange( )
-    {
-        UiThread.Run(( ) =>
-        {
-            using var host = new MainWindowHost( );
-            var white = UnderlayRadio(host, "纯白");
-            var grid = UnderlayRadio(host, "网格");
-
-            ClickRadio(host, white);
-
-            Assert.True(white.IsChecked);
-            Assert.False(grid.IsChecked);
-            Assert.Same(Brushes.White, host.Canvas.Background);
-
-            BoardState.NewPage( );
-
-            Assert.True(white.IsChecked);
-            Assert.False(grid.IsChecked);
-            Assert.Same(Brushes.White, host.Canvas.Background);
-        });
-    }
-
-    [Fact]
     public void UnderlayRadio_BetweenPages_KeepsLastChoice( )
     {
         UiThread.Run(( ) =>

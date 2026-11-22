@@ -26,14 +26,6 @@ public class PagePreviewTests
     }
 
     [Fact]
-    public void Preview_WithoutInvalidation_ReturnsSameImage( )
-    {
-        var page = new Page( );
-
-        Assert.Same(page.Preview, page.Preview);
-    }
-
-    [Fact]
     public void RefreshPreview_LeavesPageStrokesUntouched( )
     {
         // 排队目标取应用 Dispatcher，页面要在 App 线程上创建

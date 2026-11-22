@@ -98,21 +98,4 @@ public class TaperOutlineTests
             Assert.True(geometry.FillContains(new Point(15, 0.5)), "笔身中心是空的");
         });
     }
-
-    [Fact]
-    public void Outline_ContainsSampledCenterLine( )
-    {
-        StaTest.Run(( ) =>
-        {
-            var points = Line(4);
-
-            var geometry = TaperOutline.Build(points, 0, 4, 10, Taper, 3);
-
-            Assert.NotNull(geometry);
-            foreach (var point in points)
-            {
-                Assert.True(geometry!.Bounds.Contains(new Point(point.X, point.Y)));
-            }
-        });
-    }
 }

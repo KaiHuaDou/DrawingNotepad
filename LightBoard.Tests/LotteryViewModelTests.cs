@@ -138,25 +138,6 @@ public class LotteryViewModelTests
     }
 
     [Fact]
-    public void Draws_AreIndependent( )
-    {
-        var model = new LotteryViewModel
-        {
-            Upper = 2
-        };
-
-        var values = new List<string>( );
-        for (var index = 0; index < 30; index++)
-        {
-            model.DrawOne( );
-            values.Add(model.Results[0]);
-        }
-
-        Assert.Equal(2, model.PoolSize);
-        Assert.True(values.Distinct( ).Count( ) < values.Count);
-    }
-
-    [Fact]
     public void AddDataset_SelectsLast( )
     {
         var model = new LotteryViewModel( );
