@@ -24,7 +24,7 @@ public partial class InkCanvasNext
     /// <summary>
     /// 手掌簇的包围盒，尺寸参与边界计算
     /// </summary>
-    private static (double Width, double Height) GetPalmBox(IReadOnlyList<TouchContact> contacts)
+    private static (double Width, double Height) GetPalmBox(List<TouchContact> contacts)
     {
         var minX = double.MaxValue;
         var minY = double.MaxValue;
@@ -47,7 +47,7 @@ public partial class InkCanvasNext
     /// <summary>
     /// 手掌簇的包络圆：视口坐标下的质心与最远距离
     /// </summary>
-    private static (Point Center, double Radius) GetClusterEnvelope(IReadOnlyList<TouchContact> contacts)
+    private static (Point Center, double Radius) GetClusterEnvelope(List<TouchContact> contacts)
     {
         double sumX = 0, sumY = 0;
         foreach (var contact in contacts)
@@ -74,7 +74,7 @@ public partial class InkCanvasNext
     /// <summary>
     /// 手掌簇的成员签名：设备号与成员数决定；成员变化意味着擦除主体换了
     /// </summary>
-    private static int GetClusterSignature(IReadOnlyList<TouchContact> contacts)
+    private static int GetClusterSignature(List<TouchContact> contacts)
     {
         var hash = unchecked(17 * 31 + contacts.Count);
         foreach (var contact in contacts)

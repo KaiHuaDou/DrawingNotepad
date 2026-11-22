@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -12,7 +13,7 @@ using static InkCanvasNext.InkCanvasNext;
 
 namespace LightBoard;
 
-// 调试模式浮层：参数面板（1:1 半径圆、1:1 距离线、渲染层与渲染模式）居中贴底，运行状态计数与帧率分列左右两侧，边缘自动滚动热区以红色虚线标出。
+// 调试模式浮层：参数面板（1:1 半径圆、1:1 距离线、渲染层与渲染模式）居中贴底，运行状态计数与帧率分列左右两侧，右下角为 GC/内存/Dispatcher 运行时指标，边缘自动滚动热区以红色虚线标出。
 internal sealed partial class DebugVisual : FrameworkElement
 {
     private const double PanelWidth = 900;
@@ -32,6 +33,9 @@ internal sealed partial class DebugVisual : FrameworkElement
     private const double StatusRowHeight = 18;
     private const double StatusTitleHeight = 22;
     private const string Dash = "—";
+
+    // 运行时指标采样周期：进程内存与 GC 计数器读取代价较高，低于此间隔沿用上次快照
+    private const double RuntimeSampleIntervalMs = 500;
 
     private static readonly Typeface Font = new("Segoe UI");
 
@@ -58,10 +62,15 @@ internal sealed partial class DebugVisual : FrameworkElement
     private readonly InkCanvasNext.InkCanvasNext canvas;
     private readonly DispatcherTimer countTimer;
     private readonly FrameRateMeter frameMeter = new( );
+    private readonly Process process = Process.GetCurrentProcess( );
     private double lastScale;
     private (int Touch, int Undo, int Redo, int Stroke) lastCounts = (-1, -1, -1, -1);
     private (double Rate, double Longest) lastFrames = (-1, -1);
     private CanvasStatus lastStatus;
+    private long runtimeSampleTimestamp;
+    private RuntimeStatus lastRuntime;
+    private long dispatcherProbeTimestamp;
+    private double dispatcherLatency;
 
     internal DebugVisual(InkCanvasNext.InkCanvasNext canvas)
     {
@@ -118,8 +127,14 @@ internal sealed partial class DebugVisual : FrameworkElement
         // 热区线在视口坐标系绘制，不参与面板平移
         DrawEdgeScrollZones(dc);
 
-        DrawCounts(dc, dip);
+        // 运行时侧栏贴右下角；右侧计数栏据此上移避让，避免窗口较矮时两组文字重叠
+        var runtime = BuildRuntime(lastRuntime);
+        var runtimeHeight = runtime.Sum(group => StatusTitleHeight + group.Rows.Length * StatusRowHeight + StatusGroupGap) - StatusGroupGap;
+        var runtimeTop = Math.Max(SideMargin, RenderSize.Height - SideMargin - runtimeHeight);
+
+        DrawCounts(dc, dip, runtimeTop);
         DrawStatus(dc, dip);
+        DrawRuntime(dc, runtime, runtimeTop, dip);
     }
 
     private void Refresh( )
@@ -127,21 +142,58 @@ internal sealed partial class DebugVisual : FrameworkElement
         var counts = (canvas.ActiveTouchCount, canvas.Position, canvas.RedoDepth, canvas.Strokes.Count);
         frameMeter.Sample(SampleIntervalMs);
         var frames = (frameMeter.Rate, frameMeter.LongestFrame);
+        var runtime = SampleRuntime( );
         var status = ReadStatus( );
-        if (counts == lastCounts && frames == lastFrames && status == lastStatus)
+        if (counts == lastCounts && frames == lastFrames && runtime == lastRuntime && status == lastStatus)
         {
             return;
         }
 
         lastCounts = counts;
         lastFrames = frames;
+        lastRuntime = runtime;
         lastStatus = status;
         InvalidateVisual( );
     }
 
-    private void DrawCounts(DrawingContext dc, double dip)
+    // 按固定周期抓取运行时快照；两次采样间隔同时用于换算分配速率
+    private RuntimeStatus SampleRuntime( )
     {
-        var mid = RenderSize.Height / 2;
+        var now = Stopwatch.GetTimestamp( );
+        var elapsed = (now - runtimeSampleTimestamp) * 1000.0 / Stopwatch.Frequency;
+        if (elapsed < RuntimeSampleIntervalMs)
+        {
+            return lastRuntime;
+        }
+
+        runtimeSampleTimestamp = now;
+
+        // Background 优先级的空工作项从入队到执行的耗时，即 Dispatcher 当前队列积压时长
+        dispatcherProbeTimestamp = Stopwatch.GetTimestamp( );
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(MeasureDispatcherLatency));
+
+        process.Refresh( );
+        var info = GC.GetGCMemoryInfo( );
+        var allocated = GC.GetTotalAllocatedBytes(false);
+        var rate = lastRuntime.Allocated > 0
+            ? (allocated - lastRuntime.Allocated) / (elapsed / 1000.0) / (1024.0 * 1024.0)
+            : 0;
+        var pause = info.PauseDurations.Length > 0 ? info.PauseDurations[0].TotalMilliseconds : 0;
+        return new(
+            GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2),
+            GC.GetTotalMemory(false), info.TotalCommittedBytes, allocated, rate, pause, info.PauseTimePercentage,
+            process.WorkingSet64, process.PrivateMemorySize64, process.PeakWorkingSet64,
+            Environment.CurrentManagedThreadId, dispatcherLatency);
+    }
+
+    private void MeasureDispatcherLatency( )
+    {
+        dispatcherLatency = (Stopwatch.GetTimestamp( ) - dispatcherProbeTimestamp) * 1000.0 / Stopwatch.Frequency;
+    }
+
+    private void DrawCounts(DrawingContext dc, double dip, double runtimeTop)
+    {
+        var mid = Math.Max(SideMargin, Math.Min(RenderSize.Height / 2, runtimeTop - 40 - 3.5 * CountRowHeight));
         var right = RenderSize.Width - SideMargin;
 
         CountRight(dc, "帧率", $"{frameMeter.Rate:0.0}", right, mid - 3.5 * CountRowHeight, dip);
@@ -183,6 +235,64 @@ internal sealed partial class DebugVisual : FrameworkElement
     private static double TextWidth(string s, double size, double dip)
     {
         return new FormattedText(s, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Font, size, Brushes.Transparent, dip).Width;
+    }
+
+    // 运行时侧栏贴在右下角：标签左对齐、数值右对齐到视口边缘，分组样式与左侧状态栏一致
+    private void DrawRuntime(DrawingContext dc, StatusGroup[] groups, double top, double dip)
+    {
+        var labelWidth = groups.SelectMany(group => group.Rows).Max(row => TextWidth(row.Label, StatusFontSize, dip));
+        var valueWidth = groups.SelectMany(group => group.Rows).Max(row => TextWidth(row.Value, StatusFontSize, dip));
+        var right = RenderSize.Width - SideMargin;
+        var x = right - (labelWidth + StatusLabelGap + valueWidth);
+        var y = top;
+
+        foreach (var group in groups)
+        {
+            Text(dc, group.Title, StatusFontSize + 1, TextBrush, x, y + 3, dip);
+            dc.DrawLine(ThinPen, new Point(x, y + StatusTitleHeight - 4), new Point(right, y + StatusTitleHeight - 4));
+            y += StatusTitleHeight;
+
+            foreach (var row in group.Rows)
+            {
+                Text(dc, row.Label, StatusFontSize, DimBrush, x, y, dip);
+                TextRight(dc, row.Value, StatusFontSize, TextBrush, right, y, dip);
+                y += StatusRowHeight;
+            }
+
+            y += StatusGroupGap;
+        }
+    }
+
+    private static StatusGroup[] BuildRuntime(RuntimeStatus runtime)
+    {
+        return
+        [
+            new("GC", [
+                new("Gen0/1/2", $"{runtime.Gen0} / {runtime.Gen1} / {runtime.Gen2}"),
+                new("托管堆", FormatBytes(runtime.ManagedHeap)),
+                new("已分配", FormatBytes(runtime.Allocated)),
+                new("分配速率", $"{runtime.AllocatedRate:0.0} MB/s"),
+                new("最近暂停", $"{runtime.LastPause:0.0} ms"),
+                new("暂停占比", $"{runtime.PausePercentage:0.0}%"),
+            ]),
+            new("内存", [
+                new("工作集", FormatBytes(runtime.WorkingSet)),
+                new("私有", FormatBytes(runtime.Private)),
+                new("峰值工作集", FormatBytes(runtime.PeakWorkingSet)),
+                new("GC 提交", FormatBytes(runtime.Committed)),
+            ]),
+            new("Dispatcher", [
+                new("线程", $"{runtime.ThreadId}"),
+                new("队列延迟", $"{runtime.Latency:0.0} ms"),
+            ]),
+        ];
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        const double Mb = 1024.0 * 1024;
+        const double Gb = Mb * 1024;
+        return bytes >= Gb ? $"{bytes / Gb:0.00} GB" : $"{bytes / Mb:0.0} MB";
     }
 
     private static string YesNo(bool value)
@@ -284,6 +394,12 @@ internal sealed partial class DebugVisual : FrameworkElement
     {
         return threshold > MaxThresholdLineLength ? $"≈ {threshold:0.#} DIP" : $"{threshold:0.#} DIP";
     }
+
+    private readonly record struct RuntimeStatus(
+        int Gen0, int Gen1, int Gen2,
+        long ManagedHeap, long Committed, long Allocated, double AllocatedRate, double LastPause, double PausePercentage,
+        long WorkingSet, long Private, long PeakWorkingSet,
+        int ThreadId, double Latency);
 
     private static SolidColorBrush MakeBrush(string hex)
     {
