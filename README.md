@@ -122,15 +122,15 @@
 从 [Releases](https://github.com/KaiHuaDou/DrawingNotepad/releases/latest) 下载：
 
 - `LightBoard-x64-<版本>.zip`：免安装（框架依赖），需要 .NET 11 桌面运行时
-- `LightBoard-runtime-x64-<版本>.zip`：免安装（自包含）
-- `LightBoard-cv-x64-<版本>.zip`、`LightBoard-cv-runtime-x64-<版本>.zip`：同上，含 OpenCV（带视频展台）
-- `LightBoard-arm64-<版本>.zip`、`LightBoard-runtime-arm64-<版本>.zip`：Windows Arm64，其余同上
-- `LightBoard-cv-arm64-<版本>.zip`、`LightBoard-cv-runtime-arm64-<版本>.zip`：Windows Arm64，含 OpenCV
-- `LightBoard-installer-x64-<版本>.exe`：安装包（框架依赖），需要 .NET 11 桌面运行时
-- `LightBoard-installer-runtime-x64-<版本>.exe`：安装包（自包含）
-- `LightBoard-installer-cv-x64-<版本>.exe`、`LightBoard-installer-cv-runtime-x64-<版本>.exe`：同上，含 OpenCV（带视频展台）
-- `LightBoard-installer-arm64-<版本>.exe`、`LightBoard-installer-runtime-arm64-<版本>.exe`：Windows Arm64 安装包
-- `LightBoard-installer-cv-arm64-<版本>.exe`、`LightBoard-installer-cv-runtime-arm64-<版本>.exe`：同上，含 OpenCV
+- `LightBoard-x64-runtime-<版本>.zip`：免安装（自包含）
+- `LightBoard-x64-cv-<版本>.zip`、`LightBoard-x64-cv-runtime-<版本>.zip`：同上，含 OpenCV（带视频展台）
+- `LightBoard-arm64-<版本>.zip`、`LightBoard-arm64-runtime-<版本>.zip`：Windows Arm64，其余同上
+- `LightBoard-arm64-cv-<版本>.zip`、`LightBoard-arm64-cv-runtime-<版本>.zip`：Windows Arm64，含 OpenCV
+- `LightBoard-x64-installer-<版本>.exe`：安装包（框架依赖），需要 .NET 11 桌面运行时
+- `LightBoard-x64-installer-runtime-<版本>.exe`：安装包（自包含）
+- `LightBoard-x64-installer-cv-<版本>.exe`、`LightBoard-x64-installer-cv-runtime-<版本>.exe`：同上，含 OpenCV（带视频展台）
+- `LightBoard-arm64-installer-<版本>.exe`、`LightBoard-arm64-installer-runtime-<版本>.exe`：Windows Arm64 安装包
+- `LightBoard-arm64-installer-cv-<版本>.exe`、`LightBoard-arm64-installer-cv-runtime-<版本>.exe`：同上，含 OpenCV
 
 免安装包解压后运行 `LightBoard.exe`。
 
@@ -138,9 +138,9 @@
 
 - Windows 7 SP1 或更新版本
     - 已测试：Windows 7 SP1 上可安装 .NET 11.0 Desktop Runtime 并运行本程序
-    - 安装包（`LightBoard-installer-*.exe`）需要 Windows 10 或更新版本
+    - 安装包（`LightBoard-*-installer*.exe`）需要 Windows 10 或更新版本
 - Windows 11 Arm（Arm64 变体）
-    - 安装包（`LightBoard-installer-*-arm64.exe`）需要 Windows 11 Arm
+    - 安装包（`LightBoard-arm64-installer*.exe`）需要 Windows 11 Arm
     - 免安装包需要 Arm64 版 .NET 11 桌面运行时，Windows 10 Arm 未测试
 - .NET 11.0 Desktop Runtime（x64 或 Arm64）或更新版本
     - 使用 `runtime` 版本可免安装运行时

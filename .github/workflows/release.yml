@@ -58,10 +58,10 @@ jobs:
       - name: Download artifacts
         run: |
           for name in \
-            LightBoard-x64 LightBoard-cv-x64 LightBoard-runtime-x64 LightBoard-cv-runtime-x64 \
-            LightBoard-arm64 LightBoard-cv-arm64 LightBoard-runtime-arm64 LightBoard-cv-runtime-arm64 \
-            LightBoard-installer-x64 LightBoard-installer-cv-x64 LightBoard-installer-runtime-x64 LightBoard-installer-cv-runtime-x64 \
-            LightBoard-installer-arm64 LightBoard-installer-cv-arm64 LightBoard-installer-runtime-arm64 LightBoard-installer-cv-runtime-arm64; do
+            LightBoard-x64 LightBoard-x64-cv LightBoard-x64-runtime LightBoard-x64-cv-runtime \
+            LightBoard-arm64 LightBoard-arm64-cv LightBoard-arm64-runtime LightBoard-arm64-cv-runtime \
+            LightBoard-x64-installer LightBoard-x64-installer-cv LightBoard-x64-installer-runtime LightBoard-x64-installer-cv-runtime \
+            LightBoard-arm64-installer LightBoard-arm64-installer-cv LightBoard-arm64-installer-runtime LightBoard-arm64-installer-cv-runtime; do
             gh run download "${{ steps.build.outputs.run }}" --name "$name" --dir "artifacts/$name"
           done
 
@@ -70,10 +70,10 @@ jobs:
         shell: bash
         run: |
           for name in \
-            LightBoard-x64 LightBoard-cv-x64 LightBoard-runtime-x64 LightBoard-cv-runtime-x64 \
-            LightBoard-arm64 LightBoard-cv-arm64 LightBoard-runtime-arm64 LightBoard-cv-runtime-arm64 \
-            LightBoard-installer-x64 LightBoard-installer-cv-x64 LightBoard-installer-runtime-x64 LightBoard-installer-cv-runtime-x64 \
-            LightBoard-installer-arm64 LightBoard-installer-cv-arm64 LightBoard-installer-runtime-arm64 LightBoard-installer-cv-runtime-arm64; do
+            LightBoard-x64 LightBoard-x64-cv LightBoard-x64-runtime LightBoard-x64-cv-runtime \
+            LightBoard-arm64 LightBoard-arm64-cv LightBoard-arm64-runtime LightBoard-arm64-cv-runtime \
+            LightBoard-x64-installer LightBoard-x64-installer-cv LightBoard-x64-installer-runtime LightBoard-x64-installer-cv-runtime \
+            LightBoard-arm64-installer LightBoard-arm64-installer-cv LightBoard-arm64-installer-runtime LightBoard-arm64-installer-cv-runtime; do
             cp "artifacts/$name"/* "$GITHUB_WORKSPACE/"
           done
           ls -l --block-size=K ./*.zip ./*.exe
@@ -86,8 +86,10 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            *.zip
-            LightBoard-installer-*.exe
+            LightBoard-x64-*.zip
+            LightBoard-arm64-*.zip
+            LightBoard-x64-installer*.exe
+            LightBoard-arm64-installer*.exe
           tag_name: ${{ env.RELEASE_TAG }}
           body_path: release_notes.md
           prerelease: ${{ env.PRERELEASE }}

@@ -6,6 +6,12 @@
 
 本文件的内容基于对代码实际差异的比对（而非提交信息），以准确反映用户可见的行为变化。
 
+## [v1.6.0]
+
+### 变更
+
+- **产物命名**：发布文件名与 CI 产物统一以 `LightBoard-x64` / `LightBoard-arm64` 开头，变体后缀跟在架构之后。
+
 ## [v1.5.0]
 
 ### 新增
@@ -322,6 +328,7 @@
 
 - 删除内部设计文档 `docs/EraserReference.md`、`docs/MultiTouchReference.md`。
 
+[v1.6.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.5.0...v1.6.0
 [v1.5.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.4.0...v1.5.0
 [v1.4.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.3.0...v1.4.0
 [v1.3.0]: https://github.com/KaiHuaDou/DrawingNotepad/compare/v1.2.0...v1.3.0

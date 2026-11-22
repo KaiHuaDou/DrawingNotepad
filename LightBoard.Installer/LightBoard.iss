@@ -42,8 +42,9 @@
     #define ArchitecturesValue "x64compatible"
 #endif
 
-; 目录名与产物名共用同一后缀顺序：publish[-cv][-runtime]-<架构>，LightBoard-installer[-cv][-runtime]-<架构>
+; 发布目录保持 publish[-cv][-runtime]-<架构>；安装包产物改为 LightBoard-<架构>-installer[-cv][-runtime]
 #define VariantSuffix OpenCvSuffix + RuntimeSuffix + ArchSuffix
+#define InstallerSuffix ArchSuffix + "-installer" + OpenCvSuffix + RuntimeSuffix
 #define PublishDir "..\LightBoard\bin\publish" + VariantSuffix
 
 #define AppName "LightBoard"
@@ -68,7 +69,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppDisplayName}
 UninstallDisplayIcon={app}\{#AppName}.exe
 OutputDir=Output
-OutputBaseFilename=LightBoard-installer{#VariantSuffix}-{#AppVersion}
+OutputBaseFilename=LightBoard{#InstallerSuffix}-{#AppVersion}
 WizardStyle=modern
 ; 引导程序为 x64（Inno Setup 的 SetupArchitecture 只有 x86、x64），Arm64 版本在 Arm64 Windows 上以 x64 模拟运行
 SetupArchitecture=x64
