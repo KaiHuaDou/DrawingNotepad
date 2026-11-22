@@ -26,7 +26,7 @@ public class BackgroundSwitchTests
             Assert.False(grid.IsChecked);
             Assert.Same(Brushes.White, host.Canvas.Background);
 
-            App.NewPage( );
+            BoardState.NewPage( );
 
             Assert.True(white.IsChecked);
             Assert.False(grid.IsChecked);
@@ -50,7 +50,7 @@ public class BackgroundSwitchTests
             Assert.False(white.IsChecked);
             Assert.Same(Brushes.Black, host.Canvas.Background);
 
-            App.NewPage( );
+            BoardState.NewPage( );
 
             Assert.True(black.IsChecked);
             Assert.False(white.IsChecked);

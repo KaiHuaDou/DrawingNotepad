@@ -50,17 +50,17 @@ public class BackgroundsTests
             // 导出在 UI 线程取页快照，需要 App 存在
             UiThread.Run(( ) => PdfWriter.Export(path, pages, new DpiScale(1, 1), 100));
 
-            var first = await App.OpenDocumentSourceAsync(path);
-            var second = await App.OpenDocumentSourceAsync(path);
+            var first = await DocumentRegistry.OpenSourceAsync(path);
+            var second = await DocumentRegistry.OpenSourceAsync(path);
             Assert.Same(first, second);
 
             var box = new Rect(0, 0, 100, 100);
-            Assert.NotNull(App.BackgroundImage(new DocumentBackground(path, 2, box)));
-            Assert.Null(App.BackgroundImage(new DocumentBackground(path, 3, box)));
+            Assert.NotNull(DocumentRegistry.Image(new DocumentBackground(path, 2, box)));
+            Assert.Null(DocumentRegistry.Image(new DocumentBackground(path, 3, box)));
         }
         finally
         {
-            App.CloseDocuments( );
+            DocumentRegistry.CloseAll( );
             File.Delete(path);
         }
     }
@@ -76,16 +76,16 @@ public class BackgroundsTests
                 var page = new Page( ) { Number = 1 };
 
                 // 图片打开没有真正的异步等待，方法在本次调用内同步完成
-                App.SetPageBackgroundAsync(page, path).GetAwaiter( ).GetResult( );
+                PageBackgrounds.SetAsync(page, path, CanvasViewport.Capture(null).Box).GetAwaiter( ).GetResult( );
 
                 Assert.NotNull(page.Background);
                 Assert.Equal(1, page.Background!.PageNumber);
-                Assert.Equal(App.CanvasView( ).Box, page.Background.Box);
+                Assert.Equal(CanvasViewport.Capture(null).Box, page.Background.Box);
             });
         }
         finally
         {
-            UiThread.Run(App.CloseDocuments);
+            UiThread.Run(DocumentRegistry.CloseAll);
             File.Delete(path);
         }
     }
@@ -99,7 +99,7 @@ public class BackgroundsTests
             Background = new DocumentBackground(@"C:\a.png", 1, new Rect(0, 0, 10, 10))
         };
 
-        App.ClearPageBackground(page);
+        PageBackgrounds.Clear(page);
 
         Assert.Null(page.Background);
     }
@@ -109,7 +109,7 @@ public class BackgroundsTests
     {
         var page = new Page( ) { Number = 1 };
 
-        Assert.Equal(App.PhotoPlacement.OriginalPage, App.PhotoPlacementFor(page));
+        Assert.Equal(PhotoPlacement.OriginalPage, PhotoPlacementPolicy.For(page));
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public class BackgroundsTests
             Background = new DocumentBackground(@"C:\a.png", 1, new Rect(0, 0, 10, 10))
         };
 
-        Assert.Equal(App.PhotoPlacement.NewPage, App.PhotoPlacementFor(page));
+        Assert.Equal(PhotoPlacement.NewPage, PhotoPlacementPolicy.For(page));
     }
 
     /// <summary>

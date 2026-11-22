@@ -19,16 +19,16 @@ public class BackgroundActionsTests
             {
                 using var host = new MainWindowHost( );
 
-                App.SetPageBackgroundAsync(App.CurrentPage, path).GetAwaiter( ).GetResult( );
+                PageBackgrounds.SetAsync(BoardState.CurrentPage, path, CanvasViewport.Capture(host.Canvas).Box).GetAwaiter( ).GetResult( );
 
-                Assert.NotNull(App.CurrentPage.Background);
-                Assert.False(App.IsBoardEmpty( ));
-                Assert.Contains(App.SnapshotPages( ), p => p.Background is not null);
+                Assert.NotNull(BoardState.CurrentPage.Background);
+                Assert.False(BoardState.IsBoardEmpty( ));
+                Assert.Contains(BoardState.SnapshotPages( ), p => p.Background is not null);
             });
         }
         finally
         {
-            UiThread.Run(App.CloseDocuments);
+            UiThread.Run(DocumentRegistry.CloseAll);
             File.Delete(path);
         }
     }
@@ -40,13 +40,13 @@ public class BackgroundActionsTests
         {
             using var host = new MainWindowHost( );
 
-            var page = App.CurrentPage;
+            var page = BoardState.CurrentPage;
             page.Background = new DocumentBackground(@"C:\a.png", 1, new Rect(0, 0, 10, 10));
 
-            App.ClearPageBackground(page);
+            PageBackgrounds.Clear(page);
 
             Assert.Null(page.Background);
-            Assert.True(App.IsBoardEmpty( ));
+            Assert.True(BoardState.IsBoardEmpty( ));
         });
     }
 }

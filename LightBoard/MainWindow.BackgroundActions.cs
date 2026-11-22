@@ -12,7 +12,7 @@ public partial class MainWindow
 {
     private async void SetBackgroundClick(object o, RoutedEventArgs e)
     {
-        var page = App.CurrentPage;
+        var page = BoardState.CurrentPage;
         if (page.Background is not null && !WhetherReplaceBackground( ))
         {
             return;
@@ -31,7 +31,7 @@ public partial class MainWindow
     {
         try
         {
-            await RunWithLoading("正在设置背景", ( ) => App.SetPageBackgroundAsync(page, path));
+            await RunWithLoading("正在设置背景", ( ) => PageBackgrounds.SetAsync(page, path, CanvasViewport.Capture(CanvasNext).Box));
         }
         catch (Exception ex)
         {
@@ -46,7 +46,7 @@ public partial class MainWindow
 
     private void ClearBackgroundClick(object o, RoutedEventArgs e)
     {
-        var page = App.CurrentPage;
+        var page = BoardState.CurrentPage;
         if (page.Background is null)
         {
             return;
@@ -57,7 +57,7 @@ public partial class MainWindow
             return;
         }
 
-        App.ClearPageBackground(page);
+        PageBackgrounds.Clear(page);
         SyncPageBackground( );
         Dirty = true;
     }
@@ -65,8 +65,8 @@ public partial class MainWindow
     // 换背景或清背景后刷新画布：视频页落回摄像头画面，其余页落回页自己的背景
     private void SyncPageBackground( )
     {
-        var page = App.CurrentPage;
-        CanvasNext.SetDocumentPage(App.BackgroundImage(page.Background), page.Background?.Box);
+        var page = BoardState.CurrentPage;
+        CanvasNext.SetDocumentPage(DocumentRegistry.Image(page.Background), page.Background?.Box);
 
 #if OPENCV
         SyncVideoOverlay( );

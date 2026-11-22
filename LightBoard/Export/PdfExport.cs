@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Ink;
 using System.Windows.Media;
 
 using InkCanvasNext;
@@ -16,12 +15,15 @@ using PDFiumCore;
 
 namespace LightBoard;
 
-public partial class App
+/// <summary>
+/// PDF 导出：每页先渲染为位图，再嵌入 PDF 页面
+/// </summary>
+internal static class PdfExport
 {
-    public static void ExportAllPdf(string fileName, DpiScale dpi, int scale, IProgress<ExportProgress>? progress = null)
+    public static void ExportAll(string fileName, DpiScale dpi, int scale, IProgress<ExportProgress>? progress = null)
     {
         // 页集合在 UI 线程取快照：导出在后台线程进行，期间仍可翻页与编辑
-        var pages = Current.Dispatcher.Invoke(( ) => Pages.ToArray( ));
+        var pages = Application.Current.Dispatcher.Invoke(( ) => BoardState.Pages.ToArray( ));
 
         PdfWriter.Export(fileName, pages, dpi, scale, progress);
     }
@@ -49,8 +51,8 @@ internal static class PdfWriter
             {
                 for (var i = 0; i < count; i++)
                 {
-                    var (Number, Strokes, Background, Box, Canvas) = App.SnapshotPage(pages[i]);
-                    var bitmap = AddPage(pdf, i, Strokes, Background, Box, Canvas, dpi, scale);
+                    var snapshot = Application.Current.Dispatcher.Invoke(( ) => PageSnapshot.Capture(pages[i]));
+                    var bitmap = AddPage(pdf, i, snapshot, dpi, scale);
                     bitmaps.Add(bitmap);
                     progress?.Report(new(pageTip, i + 1, count));
                 }
@@ -77,14 +79,11 @@ internal static class PdfWriter
     private static FpdfBitmapT AddPage(
         FpdfDocumentT pdf,
         int index,
-        StrokeCollection strokes,
-        ImageSource? background,
-        Rect? box,
-        Color? canvas,
+        PageSnapshot snapshot,
         DpiScale dpi,
         int scale)
     {
-        var content = strokes.Render(dpi, scale, canvas ?? Colors.White, background, box);
+        var content = snapshot.Strokes.Render(dpi, scale, snapshot.Canvas ?? Colors.White, snapshot.Background, snapshot.Box);
         var ptW = content.PixelWidth * 72d / dpi.PixelsPerInchX;
         var ptH = content.PixelHeight * 72d / dpi.PixelsPerInchY;
 

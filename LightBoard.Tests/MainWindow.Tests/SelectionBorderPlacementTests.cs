@@ -28,7 +28,7 @@ public class SelectionBorderPlacementTests
             ToolEntry.Enter(host, InkCanvasNextMode.Select);
 
             var canvas = host.Canvas;
-            var origin = App.InitialOffset;
+            var origin = CanvasViewport.InitialOffset;
             canvas.Strokes.Add(new Stroke(
                 [new StylusPoint(origin.X + 100, origin.Y + 100), new StylusPoint(origin.X + 200, origin.Y + 160)],
                 new DrawingAttributes { Color = Colors.Black, Width = 3, Height = 3 }));

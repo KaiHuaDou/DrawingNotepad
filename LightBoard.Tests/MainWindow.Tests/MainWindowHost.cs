@@ -17,15 +17,15 @@ public sealed class MainWindowHost : IDisposable
 
     public MainWindowHost( )
     {
-        App.Pages.Clear( );
+        BoardState.Pages.Clear( );
         Window = new MainWindow( );
         pageHandler = Window.OnPageChanged;
     }
 
     public void Dispose( )
     {
-        App.PageChanged -= pageHandler;
-        App.Pages.Clear( );
+        BoardState.PageChanged -= pageHandler;
+        BoardState.Pages.Clear( );
         Window.Close( );
     }
 

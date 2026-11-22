@@ -79,7 +79,7 @@ public partial class MainWindow
     // 供测试宿主退订静态 PageChanged 事件，避免跨用例持有窗口引用
     internal void OnPageChanged(object? sender, EventArgs e)
     {
-        var target = App.PageIndex;
+        var target = BoardState.PageIndex;
 
         UpdatePageUI( );
         PagePreviewsBox.SelectedIndex = target;
@@ -88,11 +88,11 @@ public partial class MainWindow
 
         CanvasNext.ResetTouchState( );
 
-        var page = App.CurrentPage;
+        var page = BoardState.CurrentPage;
 
         // 先建立内容边界再恢复视图：背景页可能扩展画布，视图要按最终尺寸限制
         CanvasNext.Strokes = page.Strokes;
-        CanvasNext.SetDocumentPage(App.BackgroundImage(page.Background), page.Background?.Box);
+        CanvasNext.SetDocumentPage(DocumentRegistry.Image(page.Background), page.Background?.Box);
         CanvasNext.CurrentView = new View(page.Scale, page.OffsetX, page.OffsetY);
         CanvasNext.SwapHistory(out _, page.History);
 
@@ -104,7 +104,7 @@ public partial class MainWindow
 
     private void PagePreviewsBoxSelectionChanged(object o, SelectionChangedEventArgs e)
     {
-        App.SwitchPage(PagePreviewsBox.SelectedIndex);
+        BoardState.SwitchPage(PagePreviewsBox.SelectedIndex);
     }
 
     private void DeletePageClick(object o, RoutedEventArgs e)
@@ -114,7 +114,7 @@ public partial class MainWindow
             return;
         }
 
-        App.DeletePage(App.Pages.IndexOf(page));
+        BoardState.DeletePage(BoardState.Pages.IndexOf(page));
         UpdatePageUI( );
         Dirty = true;
 
@@ -126,25 +126,25 @@ public partial class MainWindow
 
     private void PrevPage(object o, RoutedEventArgs e)
     {
-        App.SwitchPage(App.PageIndex - 1);
+        BoardState.SwitchPage(BoardState.PageIndex - 1);
     }
 
     private void NewNextPage(object o, RoutedEventArgs e)
     {
-        if (App.PageIndex < App.Pages.Count - 1)
+        if (BoardState.PageIndex < BoardState.Pages.Count - 1)
         {
-            App.SwitchPage(App.PageIndex + 1);
+            BoardState.SwitchPage(BoardState.PageIndex + 1);
         }
         else
         {
             SaveCurrentViewToPage( );
-            App.NewPage( );
+            BoardState.NewPage( );
         }
     }
 
     internal void SaveCurrentViewToPage( )
     {
-        var page = App.CurrentPage;
+        var page = BoardState.CurrentPage;
         CanvasNext.SwapHistory(out var snapshot, null);
         page.History = snapshot;
         page.Scale = CanvasNext.CurrentScale;
@@ -157,9 +157,9 @@ public partial class MainWindow
 
     private void UpdatePageUI( )
     {
-        (AllPageToggle.Content as TextBlock)?.Text = $"{App.PageIndex + 1}/{App.Pages.Count}";
-        NewNextPageButton.Tag = App.PageIndex < App.Pages.Count - 1 ? "\uE72A" : "\uE710";
-        PrevPageButton.IsEnabled = App.PageIndex > 0;
+        (AllPageToggle.Content as TextBlock)?.Text = $"{BoardState.PageIndex + 1}/{BoardState.Pages.Count}";
+        NewNextPageButton.Tag = BoardState.PageIndex < BoardState.Pages.Count - 1 ? "\uE72A" : "\uE710";
+        PrevPageButton.IsEnabled = BoardState.PageIndex > 0;
     }
 
     private static DoubleAnimation HoldAnimation(double value)

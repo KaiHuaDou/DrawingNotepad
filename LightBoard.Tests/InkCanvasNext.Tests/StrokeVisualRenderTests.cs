@@ -18,7 +18,7 @@ public class StrokeVisualRenderTests
             using var host = new TouchHost(500, 400);
 
             // 内容坐标加上视口偏移，让笔迹落在窗口可见区域内
-            var offset = App.InitialOffset;
+            var offset = CanvasViewport.InitialOffset;
             var dry = LinePoints(offset.X + 60, offset.Y + 60, offset.X + 260, offset.Y + 60);
             host.Canvas.Strokes.Add(new Stroke(dry, new DrawingAttributes
             {

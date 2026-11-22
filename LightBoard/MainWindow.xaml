@@ -320,7 +320,7 @@
                           Visibility="Collapsed"
                           Background="{x:Null}"
                           BorderThickness="0"
-                          ItemsSource="{x:Static local:App.Pages}"
+                          ItemsSource="{x:Static local:BoardState.Pages}"
                           ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                           ScrollViewer.PanningMode="VerticalOnly"
                           ScrollViewer.VerticalScrollBarVisibility="Hidden"

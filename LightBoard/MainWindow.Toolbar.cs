@@ -1,90 +1,18 @@
 using System;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Ink;
 using System.Windows.Media;
-
-using InkCanvasNext;
+using System.Windows.Media.Animation;
 
 namespace LightBoard;
 
 public partial class MainWindow
 {
-    private RadioButton? colorRadio;
-    private RadioButton? thicknessRadio;
-
-    private DrawingAttributes pen = DrawingAttributesNext.CreateDefault( );
-
     private Size? selectionBorderSize;
     private bool selectionBorderUpdating;
 
     private readonly TranslateTransform selectionBorderOffset = new( );
     private double selectionBorderX = double.NaN;
     private double selectionBorderY;
-
-    private static bool IsToolMode(InkCanvasNextMode m)
-    {
-        return m switch
-        {
-            InkCanvasNextMode.EraseStroke or InkCanvasNextMode.EraseArea or InkCanvasNextMode.Select => true,
-            _ => false
-        };
-    }
-
-    private static bool IsShapeMode(InkCanvasNextMode m)
-    {
-        return m is InkCanvasNextMode.Line or InkCanvasNextMode.Circle;
-    }
-
-    private void HighlighterBoxClicked(object o, RoutedEventArgs e)
-    {
-        var attributes = HighlighterToggle.IsChecked == true ? CreateHighlighter(pen) : pen;
-        CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with
-        {
-            DrawingAttributes = attributes,
-            Mode = InkCanvasNextMode.Ink,
-            Stamp = StampAction.None
-        };
-    }
-
-    private static DrawingAttributes CreateHighlighter(DrawingAttributes source)
-    {
-        var attributes = source.Clone( );
-        attributes.Color = Colors.Yellow;
-        attributes.Width = attributes.Height = 36;
-        attributes.StylusTip = StylusTip.Ellipse;
-        attributes.IgnorePressure = true;
-        attributes.IsHighlighter = true;
-        return attributes;
-    }
-
-    /// <summary>
-    /// 曲线拟合直接写在笔触属性上：例行笔与当前工具同步，下一笔生效
-    /// </summary>
-    internal bool FitToCurve
-    {
-        get => pen.FitToCurve;
-        set
-        {
-            pen.FitToCurve = value;
-
-            var attributes = CanvasNext.DrawingAttributes.DrawingAttributes;
-            if (attributes.FitToCurve == value)
-            {
-                return;
-            }
-
-            attributes.FitToCurve = value;
-            CanvasNext.DrawingAttributes = CanvasNext.DrawingAttributes with { DrawingAttributes = attributes };
-        }
-    }
-
-    private void CanvasNextDrawingAttributesChanged(object? o, EventArgs e)
-    {
-        RefreshToolChecks( );
-        TrackToolIdentity( );
-        UpdateRevertLabel( );
-    }
 
     private Size MeasureSelectionBorder( )
     {
@@ -102,25 +30,6 @@ public partial class MainWindow
         }
 
         return size;
-    }
-
-    private void RefreshToolChecks( )
-    {
-        var tool = CanvasNext.DrawingAttributes;
-        var highlighter = tool.DrawingAttributes.IsHighlighter;
-        // 荧光笔、工具模式与印章激活期间单指不落画笔，画笔单选不勾选
-        var penHidden = highlighter || IsToolMode(tool.Mode) || tool.Stamp != StampAction.None;
-
-        HighlighterToggle?.IsChecked = highlighter;
-        CloneButton?.IsChecked = tool.Stamp == StampAction.Clone;
-        PasteButton?.IsChecked = tool.Stamp == StampAction.Paste;
-        colorRadio?.IsChecked = !penHidden;
-        thicknessRadio?.IsChecked = !penHidden;
-        EraseAreaRadio?.IsChecked = tool.Mode == InkCanvasNextMode.EraseArea;
-        EraseStrokeRadio?.IsChecked = tool.Mode == InkCanvasNextMode.EraseStroke;
-        SelectRadio?.IsChecked = tool.Mode == InkCanvasNextMode.Select;
-        LineRadio?.IsChecked = tool.Mode == InkCanvasNextMode.Line;
-        CircleRadio?.IsChecked = tool.Mode == InkCanvasNextMode.Circle;
     }
 
     /// <summary>
@@ -213,6 +122,84 @@ public partial class MainWindow
 
         // 缓存的是旧倍率下量得的尺寸
         selectionBorderSize = null;
+    }
+
+    private void CollapseExpandClick(object o, RoutedEventArgs e)
+    {
+        var flag = CollapseExpandButton.IsChecked == true;
+        CollapseExpandButton.Tag = flag ? "\uE70E" : "\uE70D";
+
+        if (flag && AllPageToggle.IsChecked == true)
+        {
+            AllPageToggle.IsChecked = false;
+            ApplyPagePanel(false);
+        }
+
+        // 折叠后屏幕上保留折叠与上页按钮区(含两侧内衬),其余推到屏幕外;
+        // 位移按折叠后的布局宽计算,与收起动画并行时终点才对准保留区
+        var chrome = RightBorder.Padding.Left * 2 + RightBorder.BorderThickness.Left * 2;
+        var keptWidth = RightBorder.Padding.Left + RightBorder.BorderThickness.Left
+            + CollapseExpandButton.Margin.Left + CollapseExpandButton.ActualWidth
+            + PrevPageButton.Margin.Left + PrevPageButton.ActualWidth
+            + RightBorder.Padding.Right + RightBorder.BorderThickness.Right;
+        // 三个目标值取自本地空间（工具栏被 LayoutTransform 放大前的尺寸），位移本身按屏幕像素生效
+        // From 取 Transform 当前值:快速连点时上一动画仍在 Hold,读端点值会造成跳变
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var animationLeft = new DoubleAnimation
+        {
+            From = LeftTransform.X,
+            To = flag ? -LeftBorder.ActualWidth * toolbarScale : 0,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = ease
+        };
+        var animationCenter = new DoubleAnimation
+        {
+            From = CenterTransform.Y,
+            To = flag ? CenterBorder.ActualHeight * toolbarScale : 0,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = ease
+        };
+        var animationRight = new DoubleAnimation
+        {
+            From = RightTransform.X,
+            To = flag ? (PageButtonsRow.ActualWidth + chrome - keptWidth) * toolbarScale : 0,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = ease
+        };
+        // 展台工具栏钉在 CenterBorder 上方，随折叠位移一起滑动
+        var animationCameraBar = new DoubleAnimation
+        {
+            From = CameraBarTransform.Y,
+            To = flag ? CenterBorder.ActualHeight * toolbarScale : 0,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = ease
+        };
+
+        LeftTransform.BeginAnimation(TranslateTransform.XProperty, animationLeft);
+        CenterTransform.BeginAnimation(TranslateTransform.YProperty, animationCenter);
+        RightTransform.BeginAnimation(TranslateTransform.XProperty, animationRight);
+        CameraBarTransform.BeginAnimation(TranslateTransform.YProperty, animationCameraBar);
+    }
+
+    private void MoreToggleClick(object o, RoutedEventArgs e)
+    {
+        ApplyMoreToggle(MoreToggle.IsChecked == true);
+    }
+
+    private void ApplyMoreToggle(bool expanded)
+    {
+        MoreToggle.IsChecked = expanded;
+        MoreToggle.Tag = expanded ? "\uE70D" : "\uE70E";
+
+        var heightAnimation = new DoubleAnimation
+        {
+            From = CenterBorder.ActualHeight,
+            To = expanded ? CenterBorder.ActualHeight * 2 : CenterBorder.ActualHeight / 2,
+            Duration = TimeSpan.FromSeconds(0.1),
+            EasingFunction = new CubicEase( ) { EasingMode = expanded ? EasingMode.EaseIn : EasingMode.EaseOut }
+        };
+
+        CenterBorder.BeginAnimation(HeightProperty, heightAnimation);
     }
 
     /// <summary>

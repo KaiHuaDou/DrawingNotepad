@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Ink;
@@ -20,11 +21,6 @@ internal sealed partial class DebugVisual
 
         return
         [
-            new("画布", [
-                new("触点", $"{status.Touches}"),
-                new("笔画", $"{status.Strokes}"),
-                new("缩放", $"{status.Scale:0.##}×"),
-            ]),
             new("手势", [
                 new("State", status.State.ToString( )),
                 new("IsGestureActive", YesNo(status.IsGestureActive)),
@@ -79,12 +75,41 @@ internal sealed partial class DebugVisual
         ];
     }
 
+    // 右上角画布信息：尺寸、视口位置与四边余量统一用内容 DIP，便于与画布尺寸直接比较；
+    // 余量为负表示视口已越过对应画布边缘
+    private static StatusGroup[] BuildCanvasInfo(CanvasStatus status)
+    {
+        var scale = Math.Max(status.Scale, 1e-6);
+        var canvas = status.CanvasSize;
+        var viewport = status.ViewportSize;
+        var left = status.OffsetX / scale;
+        var top = status.OffsetY / scale;
+        var right = canvas.Width - (status.OffsetX + viewport.Width) / scale;
+        var bottom = canvas.Height - (status.OffsetY + viewport.Height) / scale;
+
+        return
+        [
+            new("画布", [
+                new("触点", $"{status.Touches}"),
+                new("笔画", $"{status.Strokes}"),
+                new("缩放", $"{status.Scale:0.##}×"),
+                new("画布大小", $"{canvas.Width:0} × {canvas.Height:0}"),
+                new("视口位置", $"({left:0.0}, {top:0.0})"),
+                new("距上边缘", $"{top:0.0}"),
+                new("距下边缘", $"{bottom:0.0}"),
+                new("距左边缘", $"{left:0.0}"),
+                new("距右边缘", $"{right:0.0}"),
+            ]),
+        ];
+    }
+
     private CanvasStatus ReadStatus( )
     {
         var a = canvas.DrawingAttributes.DrawingAttributes;
         return new(
             canvas.ActiveTouchCount, canvas.Strokes.Count, canvas.CurrentScale,
             canvas.State, canvas.IsGestureActive, canvas.ZoomLocked, canvas.PinchDistance, canvas.PinchDistance0, canvas.PanDisplacement, canvas.Snapshot, canvas.Traits, canvas.PalmDebug,
+            canvas.CanvasSize, canvas.ViewportSize, canvas.OffsetX, canvas.OffsetY,
             new PenStatus(a.Color, a.Width, a.Height, a.StylusTip, a.StylusTipTransform, a.FitToCurve, a.IgnorePressure, a.IsHighlighter));
     }
 
@@ -94,5 +119,5 @@ internal sealed partial class DebugVisual
 
     private readonly record struct PenStatus(Color Color, double Width, double Height, StylusTip StylusTip, Matrix Transform, bool FitToCurve, bool IgnorePressure, bool IsHighlighter);
 
-    private readonly record struct CanvasStatus(int Touches, int Strokes, double Scale, TouchState State, bool IsGestureActive, bool ZoomLocked, double Distance, double Distance0, Vector Pan, ToolSnapshot Tool, StateTraits Traits, PalmDebugSnapshot Palm, PenStatus Pen);
+    private readonly record struct CanvasStatus(int Touches, int Strokes, double Scale, TouchState State, bool IsGestureActive, bool ZoomLocked, double Distance, double Distance0, Vector Pan, ToolSnapshot Tool, StateTraits Traits, PalmDebugSnapshot Palm, Size CanvasSize, Size ViewportSize, double OffsetX, double OffsetY, PenStatus Pen);
 }

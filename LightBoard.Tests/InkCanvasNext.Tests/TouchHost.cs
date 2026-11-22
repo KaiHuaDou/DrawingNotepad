@@ -30,7 +30,7 @@ internal sealed class TouchHost : IDisposable
 
     public TouchHost(double width = 1280, double height = 800, InkCanvasNextOptions? options = null)
     {
-        Canvas = new InkCanvasNext(App.CanvasSize, App.InitialOffset, options);
+        Canvas = new InkCanvasNext(CanvasViewport.CanvasSize, CanvasViewport.InitialOffset, options);
         Canvas.ContentShifted += (_, e) => ContentShift += e.Offset;
 
         var parameters = new HwndSourceParameters("InkCanvasNext.Tests")

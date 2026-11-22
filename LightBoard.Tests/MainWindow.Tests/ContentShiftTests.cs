@@ -14,7 +14,7 @@ public class ContentShiftTests
         UiThread.Run(( ) =>
         {
             using var host = new MainWindowHost( );
-            var page = App.CurrentPage;
+            var page = BoardState.CurrentPage;
             page.Background = new DocumentBackground(@"C:\a.png", 1, new Rect(100, 100, 200, 200));
             host.Window.OnPageChanged(null, EventArgs.Empty);
 

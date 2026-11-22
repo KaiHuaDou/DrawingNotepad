@@ -13,16 +13,6 @@ public partial class App : Application, ISingleInstance
 {
     public static readonly string AppPath = Path.GetDirectoryName(Environment.ProcessPath)!;
 
-    public static readonly Size CanvasSize = new(
-        4 * SystemParameters.PrimaryScreenWidth,
-        16 * SystemParameters.PrimaryScreenHeight);
-
-    public static readonly Point InitialOffset = new(
-        1.5 * SystemParameters.PrimaryScreenWidth,
-        1.5 * SystemParameters.PrimaryScreenHeight);
-
-    private readonly DispatcherTimer recoverTimer = new( );
-
     public static string? PendingOpen { get; set; }
 
     public static class Program
@@ -142,7 +132,7 @@ public partial class App : Application, ISingleInstance
     {
         LogException(e.Exception);
 
-        SaveRecover( );
+        BoardRecovery.SaveNow( );
 
         ShowException(e.Exception, "程序即将关闭。错误日志已记录。墨迹已备份。");
 
@@ -162,8 +152,6 @@ public partial class App : Application, ISingleInstance
             return;
         }
 
-        recoverTimer.Interval = TimeSpan.FromMinutes(1);
-        recoverTimer.Tick += (_, _) => SaveRecoverInBackground( );
-        recoverTimer.Start( );
+        BoardRecovery.Start( );
     }
 }

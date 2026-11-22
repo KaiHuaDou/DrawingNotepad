@@ -54,7 +54,7 @@ public partial class MainWindow : Window
         AutoRevertCount = SettingsStore.Current.EffectiveToolAutoRevertCount;
         ShowRevertCount = SettingsStore.Current.EffectiveShowRevertCount;
 
-        CanvasNext = new InkCanvasNext.InkCanvasNext(App.CanvasSize, App.InitialOffset, SettingsStore.Current.CreateCanvasOptions( ))
+        CanvasNext = new InkCanvasNext.InkCanvasNext(CanvasViewport.CanvasSize, CanvasViewport.InitialOffset, SettingsStore.Current.CreateCanvasOptions( ))
         {
             Background = MajorGridBrush
         };
@@ -81,8 +81,8 @@ public partial class MainWindow : Window
         thicknessRadio ??= DefaultThicknessRadio;
         pen = CanvasNext.DrawingAttributes.DrawingAttributes;
         FitToCurve = SettingsStore.Current.EffectiveFitToCurve;
-        App.InitializePages( );
-        App.PageChanged += OnPageChanged;
+        BoardState.InitializePages( );
+        BoardState.PageChanged += OnPageChanged;
 
         if (App.PendingOpen is { } pendingOpen)
         {
@@ -151,9 +151,9 @@ public partial class MainWindow : Window
     private void CanvasNextContentShifted(object? o, InkCanvasContentShiftedEventArgs e)
     {
         // 换页过渡中可能先平移上一页的墨迹：按集合归属找到真正被平移的页
-        var page = ReferenceEquals(App.CurrentPage.Strokes, e.Strokes)
-            ? App.CurrentPage
-            : App.Pages.FirstOrDefault(p => ReferenceEquals(p.Strokes, e.Strokes));
+        var page = ReferenceEquals(BoardState.CurrentPage.Strokes, e.Strokes)
+            ? BoardState.CurrentPage
+            : BoardState.Pages.FirstOrDefault(p => ReferenceEquals(p.Strokes, e.Strokes));
 
         if (page is null)
         {
@@ -164,7 +164,7 @@ public partial class MainWindow : Window
 
 #if OPENCV
         if (ReferenceEquals(videoPage, page)
-            && ReferenceEquals(page, App.CurrentPage)
+            && ReferenceEquals(page, BoardState.CurrentPage)
             && !videoArea.IsEmpty)
         {
             videoArea = new Rect(
@@ -179,8 +179,8 @@ public partial class MainWindow : Window
     private void CanvasNextStrokesChanged(object? o, InkCanvasStrokesChangedEventArgs e)
     {
         Dirty = true;
-        App.BoardRevision++;
-        App.CurrentPage.InvalidatePreview( );
+        BoardState.MarkChanged( );
+        BoardState.CurrentPage.InvalidatePreview( );
 
         if (CanvasNext.DrawingAttributes.Mode != InkCanvasNextMode.Select || CanvasNext.SelectedCount == 0)
         {

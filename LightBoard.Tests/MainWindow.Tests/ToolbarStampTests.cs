@@ -302,7 +302,7 @@ public class ToolbarStampTests
             using var host = new MainWindowHost( );
             ActivateClone(host);
 
-            App.NewPage( );
+            BoardState.NewPage( );
 
             Assert.Equal(StampAction.None, host.Canvas.DrawingAttributes.Stamp);
             Assert.False(host.Window.CloneButton.IsChecked);

@@ -109,11 +109,11 @@ public class CanvasFitTests
             // 模拟打开外来文件：挂载右边界外 800px 处有笔画的集合（OnPageChanged 路径）
             host.Canvas.Strokes =
             [
-                StrokeAt(App.CanvasSize.Width + 500, 100, App.CanvasSize.Width + 800, 300),
+                StrokeAt(CanvasViewport.CanvasSize.Width + 500, 100, CanvasViewport.CanvasSize.Width + 800, 300),
             ];
 
-            Assert.True(host.Canvas.InnerCanvas.Width >= App.CanvasSize.Width + 800);
-            Assert.Equal(App.CanvasSize.Height, host.Canvas.InnerCanvas.Height, 5);
+            Assert.True(host.Canvas.InnerCanvas.Width >= CanvasViewport.CanvasSize.Width + 800);
+            Assert.Equal(CanvasViewport.CanvasSize.Height, host.Canvas.InnerCanvas.Height, 5);
         });
     }
 
@@ -186,8 +186,8 @@ public class CanvasFitTests
 
             host.Canvas.EnsureStrokesFit( );
 
-            Assert.Equal(App.CanvasSize.Width, host.Canvas.InnerCanvas.Width, 5);
-            Assert.Equal(App.CanvasSize.Height, host.Canvas.InnerCanvas.Height, 5);
+            Assert.Equal(CanvasViewport.CanvasSize.Width, host.Canvas.InnerCanvas.Width, 5);
+            Assert.Equal(CanvasViewport.CanvasSize.Height, host.Canvas.InnerCanvas.Height, 5);
         });
     }
 }

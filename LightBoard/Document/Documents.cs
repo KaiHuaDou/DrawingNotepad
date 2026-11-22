@@ -1,102 +1,75 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace LightBoard;
 
-public partial class App
+/// <summary>
+/// 把文档铺成页：打开替换整板，附加从当前页起覆盖并追加
+/// </summary>
+internal static class DocumentPages
 {
-    public static async Task OpenDocument(string path)
+    public static async Task OpenAsync(string path, CanvasView view)
     {
         var fullPath = Path.GetFullPath(path);
-        var document = await OpenDocumentSourceAsync(fullPath);
+        var document = await DocumentRegistry.OpenSourceAsync(fullPath);
 
-        Pages.Clear( );
-
-        var (scale, offsetX, offsetY, box) = CanvasView( );
-
+        var pages = new List<Page>(document.PageCount);
         for (var i = 0; i < document.PageCount; i++)
         {
-            AddDocumentPage(scale, offsetX, offsetY, new DocumentBackground(fullPath, i + 1, box));
+            pages.Add(CreatePage(pages.Count + 1, view, new DocumentBackground(fullPath, i + 1, view.Box)));
         }
 
-        PageIndex = 0;
+        BoardState.LoadPages(pages);
     }
 
-    private static void AddDocumentPage(double scale, double offsetX, double offsetY, DocumentBackground background)
-    {
-        var page = new Page
-        {
-            Number = Pages.Count + 1,
-            Scale = scale,
-            OffsetX = offsetX,
-            OffsetY = offsetY,
-            Background = background,
-        };
-
-        // 文档页即使没有墨迹也有背景缩略图
-        page.InvalidatePreview( );
-        Pages.Add(page);
-    }
-
-    public static async Task AttachDocumentAsync(string path)
+    public static async Task AttachAsync(string path, CanvasView view)
     {
         var fullPath = Path.GetFullPath(path);
-        var document = await OpenDocumentSourceAsync(fullPath);
-
-        var (scale, offsetX, offsetY, box) = CanvasView( );
+        var document = await DocumentRegistry.OpenSourceAsync(fullPath);
 
         // 从当前页起铺：已有页按页序取文档对应页，与追加的新页保持同一份背景来源
-        var start = PageIndex;
-        foreach (var page in Pages.Skip(start))
+        var start = BoardState.PageIndex;
+        foreach (var page in BoardState.Pages.Skip(start))
         {
             if (page.Number - start > document.PageCount)
             {
                 break;
             }
 
-            page.Background = new DocumentBackground(fullPath, page.Number - start, box);
+            page.Background = new DocumentBackground(fullPath, page.Number - start, view.Box);
             page.InvalidatePreview( );
         }
 
-        while (Pages.Count - start < document.PageCount)
+        while (BoardState.Pages.Count - start < document.PageCount)
         {
-            AddDocumentPage(scale, offsetX, offsetY, new DocumentBackground(fullPath, Pages.Count - start + 1, box));
+            BoardState.Pages.Add(CreatePage(
+                BoardState.Pages.Count + 1,
+                view,
+                new DocumentBackground(fullPath, BoardState.Pages.Count - start + 1, view.Box)));
         }
 
         // 当前页视图同步为捕获视图（即画布当前视图），换页往返后背景仍落在视口内
-        var current = CurrentPage;
-        current.Scale = scale;
-        current.OffsetX = offsetX;
-        current.OffsetY = offsetY;
+        var current = BoardState.CurrentPage;
+        current.Scale = view.Scale;
+        current.OffsetX = view.OffsetX;
+        current.OffsetY = view.OffsetY;
     }
 
-    // 捕获画布当前视图：背景盒取可见内容区域，背景随之落在视口内、画布无需移动；各文档页视图取捕获视图，
-    // 换页后外观一致。极小缩放下可见区域大于画布，盒子夹回画布内。视口尺寸未知时按 1x 整块主屏估算
-    // （无边框最大化窗口的视口即整块主屏）。
-    internal static (double Scale, double OffsetX, double OffsetY, Rect Box) CanvasView( )
+    private static Page CreatePage(int number, CanvasView view, DocumentBackground background)
     {
-        var canvas = (Current.MainWindow as MainWindow)?.CanvasNext;
-
-        if (canvas is null || canvas.ViewportSize is not { Width: > 0, Height: > 0 } viewport)
+        var page = new Page
         {
-            var width = SystemParameters.PrimaryScreenWidth;
-            var height = SystemParameters.PrimaryScreenHeight;
-            return (1.0, InitialOffset.X, InitialOffset.Y, new Rect(InitialOffset.X, InitialOffset.Y, width, height));
-        }
+            Number = number,
+            Scale = view.Scale,
+            OffsetX = view.OffsetX,
+            OffsetY = view.OffsetY,
+            Background = background,
+        };
 
-        var scale = canvas.CurrentScale;
-        var offsetX = canvas.OffsetX;
-        var offsetY = canvas.OffsetY;
-
-        var box = new Rect(
-            offsetX / scale,
-            offsetY / scale,
-            viewport.Width / scale,
-            viewport.Height / scale);
-        box.Intersect(new Rect(0, 0, canvas.CanvasSize.Width, canvas.CanvasSize.Height));
-
-        return (scale, offsetX, offsetY, box);
+        // 文档页即使没有墨迹也有背景缩略图
+        page.InvalidatePreview( );
+        return page;
     }
 }

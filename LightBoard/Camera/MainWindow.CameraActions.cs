@@ -219,36 +219,36 @@ public partial class MainWindow
         }
 
         // 位图随拍照带回：登记后画布、缩略图与导出直接取内存位图，路径供保存与下次打开解码
-        App.RegisterPhotoSource(photoPath, photo);
+        DocumentRegistry.RegisterPhoto(photoPath, photo);
 
         // 新页沿用拍照时的缩放与平移；视频区域不随视口重算，画面在内容坐标里原地不动
         var view = CanvasNext.CurrentView;
         var page = new Page
         {
-            Number = App.Pages.Count + 1,
+            Number = BoardState.Pages.Count + 1,
             Scale = view.Scale,
             OffsetX = view.OffsetX,
             OffsetY = view.OffsetY,
         };
 
-        if (App.PhotoPlacementFor(target) == App.PhotoPlacement.OriginalPage)
+        if (PhotoPlacementPolicy.For(target) == PhotoPlacement.OriginalPage)
         {
             // 照片与原视频画面重合在同一块内容区域
             target.Background = new DocumentBackground(photoPath, 1, videoArea);
             target.InvalidatePreview( );
 
-            App.Pages.Add(page);
+            BoardState.Pages.Add(page);
             videoPage = page;
-            App.SwitchPage(App.Pages.Count - 1);
+            BoardState.SwitchPage(BoardState.Pages.Count - 1);
         }
         else
         {
             page.Background = new DocumentBackground(photoPath, 1, videoArea);
             page.InvalidatePreview( );
-            App.Pages.Add(page);
+            BoardState.Pages.Add(page);
         }
 
-        App.BoardRevision++;
+        BoardState.MarkChanged( );
         Dirty = true;
         return true;
     }

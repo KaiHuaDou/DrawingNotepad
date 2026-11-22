@@ -67,9 +67,9 @@ public partial class Page
     {
         var strokes = new StrokeCollection([.. Strokes.Select(s => s.Clone( ))]);
         var background = Background;
-        var image = background is null ? null : App.BackgroundImage(background);
+        var image = background is null ? null : DocumentRegistry.Image(background);
         var box = background?.Box;
-        var canvas = App.UnderlayColor;
+        var canvas = BoardState.Underlay.ToColor( );
 
         Task.Run(( ) =>
         {

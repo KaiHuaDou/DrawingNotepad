@@ -1,12 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace LightBoard;
 
@@ -35,128 +31,31 @@ internal sealed record DocumentBackground(string Path, int PageNumber, Rect Box)
     }
 }
 
-public partial class App
+/// <summary>
+/// 单页背景的写入与清除；文档源由 DocumentRegistry 提供
+/// </summary>
+internal static class PageBackgrounds
 {
-    private static readonly Dictionary<string, DocumentService> OpenedDocuments = [with(StringComparer.OrdinalIgnoreCase)];
-
-    /// <summary>
-    /// 拍照后照片落在原页还是新页
-    /// </summary>
-    internal enum PhotoPlacement
-    {
-        OriginalPage,
-        NewPage,
-    }
-
-    /// <summary>
-    /// 原页没有背景时照片留在原页，否则另开一页追加到最后
-    /// </summary>
-    internal static PhotoPlacement PhotoPlacementFor(Page page)
-    {
-        return page.Background is null ? PhotoPlacement.OriginalPage : PhotoPlacement.NewPage;
-    }
-
     /// <summary>
     /// 把当前页的背景换成指定图片；盒子取当前视口，与打开文档时一致
     /// </summary>
-    internal static async Task SetPageBackgroundAsync(Page page, string path)
+    public static async Task SetAsync(Page page, string path, Rect box)
     {
         var fullPath = Path.GetFullPath(path);
-        await OpenDocumentSourceAsync(fullPath);          // 打不开时抛异常，由调用方提示
+        await DocumentRegistry.OpenSourceAsync(fullPath);          // 打不开时抛异常，由调用方提示
 
-        page.Background = new DocumentBackground(fullPath, 1, CanvasView( ).Box);
+        page.Background = new DocumentBackground(fullPath, 1, box);
         page.InvalidatePreview( );
-        BoardRevision++;
+        BoardState.MarkChanged( );
     }
 
     /// <summary>
     /// 清掉一页的背景
     /// </summary>
-    internal static void ClearPageBackground(Page page)
+    public static void Clear(Page page)
     {
         page.Background = null;
         page.InvalidatePreview( );
-        BoardRevision++;
-    }
-
-    internal static async Task<DocumentService> OpenDocumentSourceAsync(string path)
-    {
-        var fullPath = Path.GetFullPath(path);
-
-        if (OpenedDocuments.TryGetValue(fullPath, out var opened))
-        {
-            return opened;
-        }
-
-        var document = await DocumentService.OpenAsync(fullPath);
-        if (document.PageCount == 0)
-        {
-            document.Dispose( );
-            throw new InvalidDataException("文档没有任何页面");
-        }
-
-        OpenedDocuments[fullPath] = document;
-        return document;
-    }
-
-    // 拍照位图已在内存：登记后画布、缩略图与导出直接取内存位图；路径仍指向磁盘 PNG，下次打开走常规解码
-    internal static void RegisterPhotoSource(string path, BitmapSource page)
-    {
-        var fullPath = Path.GetFullPath(path);
-        if (!OpenedDocuments.ContainsKey(fullPath))
-        {
-            OpenedDocuments[fullPath] = DocumentService.FromBitmap(page);
-        }
-    }
-
-    internal static async Task RegisterBackgroundsAsync(IEnumerable<BoardPage> pages)
-    {
-        var paths = pages
-            .Select(p => p.Background?.Path)
-            .OfType<string>( )
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var path in paths)
-        {
-            try
-            {
-                await OpenDocumentSourceAsync(path);
-            }
-            catch (Exception e)
-            {
-                // 源文件缺失或无法转换只影响该来源的背景，板子其余内容照常打开
-                LogException(e);
-            }
-        }
-    }
-
-    // XPS 页树有线程亲和性，PDFium 不保证同文档并发取页；取图只在 UI 线程执行。
-    internal static ImageSource? BackgroundImage(DocumentBackground? background)
-    {
-        if (background is null || !OpenedDocuments.TryGetValue(background.Path, out var document))
-        {
-            return null;
-        }
-
-        return document.GetPage(background.PageNumber - 1);
-    }
-
-    internal static void CloseDocuments( )
-    {
-        foreach (var document in OpenedDocuments.Values)
-        {
-            document.Dispose( );
-        }
-
-        OpenedDocuments.Clear( );
-
-        foreach (var page in Pages)
-        {
-            if (page.Background is not null)
-            {
-                page.Background = null;
-                page.InvalidatePreview( );
-            }
-        }
+        BoardState.MarkChanged( );
     }
 }

@@ -13,7 +13,7 @@ using static InkCanvasNext.InkCanvasNext;
 
 namespace LightBoard;
 
-// 调试模式浮层：参数面板（1:1 半径圆、1:1 距离线、渲染层与渲染模式）居中贴底，运行状态计数与帧率分列左右两侧，右下角为 GC/内存/Dispatcher 运行时指标，边缘自动滚动热区以红色虚线标出。
+// 调试模式浮层：参数面板（1:1 半径圆、1:1 距离线、渲染层与渲染模式）居中贴底，画布信息贴右上、状态侧栏贴左、帧率计数贴右中、运行时指标贴右下，边缘自动滚动热区以红色虚线标出。
 internal sealed partial class DebugVisual : FrameworkElement
 {
     private const double PanelWidth = 900;
@@ -127,14 +127,15 @@ internal sealed partial class DebugVisual : FrameworkElement
         // 热区线在视口坐标系绘制，不参与面板平移
         DrawEdgeScrollZones(dc);
 
-        // 运行时侧栏贴右下角；右侧计数栏据此上移避让，避免窗口较矮时两组文字重叠
+        // 画布信息贴右上角，运行时侧栏贴右下角；右侧计数栏夹在两者之间，避免窗口较矮时文字重叠
+        var canvasBottom = DrawGroupsRight(dc, BuildCanvasInfo(lastStatus), SideMargin, dip);
         var runtime = BuildRuntime(lastRuntime);
         var runtimeHeight = runtime.Sum(group => StatusTitleHeight + group.Rows.Length * StatusRowHeight + StatusGroupGap) - StatusGroupGap;
         var runtimeTop = Math.Max(SideMargin, RenderSize.Height - SideMargin - runtimeHeight);
 
-        DrawCounts(dc, dip, runtimeTop);
+        DrawCounts(dc, dip, canvasBottom, runtimeTop);
         DrawStatus(dc, dip);
-        DrawRuntime(dc, runtime, runtimeTop, dip);
+        DrawGroupsRight(dc, runtime, runtimeTop, dip);
     }
 
     private void Refresh( )
@@ -191,9 +192,11 @@ internal sealed partial class DebugVisual : FrameworkElement
         dispatcherLatency = (Stopwatch.GetTimestamp( ) - dispatcherProbeTimestamp) * 1000.0 / Stopwatch.Frequency;
     }
 
-    private void DrawCounts(DrawingContext dc, double dip, double runtimeTop)
+    private void DrawCounts(DrawingContext dc, double dip, double canvasBottom, double runtimeTop)
     {
-        var mid = Math.Max(SideMargin, Math.Min(RenderSize.Height / 2, runtimeTop - 40 - 3.5 * CountRowHeight));
+        // 上下都被占用时优先避让右上画布信息，窗口过矮才会侵入运行时侧栏
+        const double halfHeight = 3.5 * CountRowHeight;
+        var mid = Math.Max(canvasBottom + 16 + halfHeight, Math.Min(RenderSize.Height / 2, runtimeTop - 40 - halfHeight));
         var right = RenderSize.Width - SideMargin;
 
         CountRight(dc, "帧率", $"{frameMeter.Rate:0.0}", right, mid - 3.5 * CountRowHeight, dip);
@@ -237,8 +240,8 @@ internal sealed partial class DebugVisual : FrameworkElement
         return new FormattedText(s, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Font, size, Brushes.Transparent, dip).Width;
     }
 
-    // 运行时侧栏贴在右下角：标签左对齐、数值右对齐到视口边缘，分组样式与左侧状态栏一致
-    private void DrawRuntime(DrawingContext dc, StatusGroup[] groups, double top, double dip)
+    // 右侧文字组：标签左对齐、数值右对齐到视口边缘，分组样式与左侧状态栏一致；返回整组底边
+    private double DrawGroupsRight(DrawingContext dc, StatusGroup[] groups, double top, double dip)
     {
         var labelWidth = groups.SelectMany(group => group.Rows).Max(row => TextWidth(row.Label, StatusFontSize, dip));
         var valueWidth = groups.SelectMany(group => group.Rows).Max(row => TextWidth(row.Value, StatusFontSize, dip));
@@ -261,6 +264,8 @@ internal sealed partial class DebugVisual : FrameworkElement
 
             y += StatusGroupGap;
         }
+
+        return y - StatusGroupGap;
     }
 
     private static StatusGroup[] BuildRuntime(RuntimeStatus runtime)

@@ -78,14 +78,14 @@ public partial class MainWindow
     // 视频层只随当前页走；翻页、换背景或清板时同步背景页、提示与菜单勾选
     private void SyncVideoOverlay( )
     {
-        if (videoPage is not null && !App.Pages.Contains(videoPage))
+        if (videoPage is not null && !BoardState.Pages.Contains(videoPage))
         {
             // 页面被清空或移除：视频背景随之消失
             videoPage = null;
             StopVideoStand( );
         }
 
-        var onVideoPage = videoPage is not null && ReferenceEquals(App.CurrentPage, videoPage);
+        var onVideoPage = videoPage is not null && ReferenceEquals(BoardState.CurrentPage, videoPage);
 
         // 渲染节拍只在视频页订阅：其余页相机继续采集，但不驱动界面重绘
         if (onVideoPage && camera is not null)
@@ -102,9 +102,9 @@ public partial class MainWindow
         CameraTipText.Visibility = onVideoPage && cameraTip is not null ? Visibility.Visible : Visibility.Collapsed;
 
         // 视频页让位页自身的文档背景：视频画面占住画布内的背景位
-        var page = App.CurrentPage;
+        var page = BoardState.CurrentPage;
         CanvasNext.SetDocumentPage(
-            onVideoPage ? cameraBitmap : App.BackgroundImage(page.Background),
+            onVideoPage ? cameraBitmap : DocumentRegistry.Image(page.Background),
             onVideoPage ? videoArea : page.Background?.Box);
 
         // 菜单勾选表示展台开着，与当前页无关
@@ -119,10 +119,10 @@ public partial class MainWindow
         }
 
         // 至多一页：视频背景随当前页走，换页时画面重新落在新页的视口内
-        if (!ReferenceEquals(videoPage, App.CurrentPage))
+        if (!ReferenceEquals(videoPage, BoardState.CurrentPage))
         {
-            videoPage = App.CurrentPage;
-            videoArea = App.CanvasView( ).Box;
+            videoPage = BoardState.CurrentPage;
+            videoArea = CanvasViewport.Capture(CanvasNext).Box;
         }
 
         UpdateCameraBarMargin( );
@@ -243,7 +243,7 @@ public partial class MainWindow
         if (camera is null
             || cameraBitmap is null
             || cameraFrozen
-            || !ReferenceEquals(App.CurrentPage, videoPage))
+            || !ReferenceEquals(BoardState.CurrentPage, videoPage))
         {
             return;
         }

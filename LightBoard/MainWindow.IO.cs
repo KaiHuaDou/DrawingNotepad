@@ -64,17 +64,17 @@ public partial class MainWindow
             }
             else if (IsInkFile(fileName))
             {
-                App.CurrentPage.OpenStrokes(fileName);
+                BoardState.CurrentPage.OpenStrokes(fileName);
                 // 整页替换后页视图与画布当前视图同步（不跳视图），墨迹落入视口保证打开即可见
-                CanvasNext.EnsureStrokesVisible(App.CurrentPage.Strokes);
-                App.CurrentPage.Scale = CanvasNext.CurrentScale;
-                App.CurrentPage.OffsetX = CanvasNext.OffsetX;
-                App.CurrentPage.OffsetY = CanvasNext.OffsetY;
+                CanvasNext.EnsureStrokesVisible(BoardState.CurrentPage.Strokes);
+                BoardState.CurrentPage.Scale = CanvasNext.CurrentScale;
+                BoardState.CurrentPage.OffsetX = CanvasNext.OffsetX;
+                BoardState.CurrentPage.OffsetY = CanvasNext.OffsetY;
                 OnPageChanged(this, EventArgs.Empty);
             }
             else
             {
-                await RunWithLoading("正在打开文档", ( ) => App.OpenDocument(fileName));
+                await RunWithLoading("正在打开文档", ( ) => DocumentPages.OpenAsync(fileName, CanvasViewport.Capture(CanvasNext)));
             }
 
             Dirty = false;
@@ -93,7 +93,7 @@ public partial class MainWindow
 
     private async Task LoadBoard(string fileName)
     {
-        var invalid = await RunWithLoading("正在打开", ( ) => App.LoadBoardAsync(fileName));
+        var invalid = await RunWithLoading("正在打开", ( ) => BoardPersistence.LoadAsync(fileName));
 
         SyncUnderlay( );
         ShowInvalidBackgrounds(invalid);
@@ -152,7 +152,7 @@ public partial class MainWindow
 
     private bool SaveFile( )
     {
-        var current = App.CurrentPage;
+        var current = BoardState.CurrentPage;
         current.Scale = CanvasNext.CurrentScale;
         current.OffsetX = CanvasNext.OffsetX;
         current.OffsetY = CanvasNext.OffsetY;
@@ -172,7 +172,7 @@ public partial class MainWindow
 
         try
         {
-            Board.Write(dialog.FileName, App.SnapshotPages( ), App.Underlay);
+            Board.Write(dialog.FileName, BoardState.SnapshotPages( ), BoardState.Underlay);
             Dirty = false;
         }
         catch (Exception ex)
@@ -188,7 +188,7 @@ public partial class MainWindow
 
     private void ExportImageClick(object o, RoutedEventArgs e)
     {
-        if (App.IsBoardEmpty( ))
+        if (BoardState.IsBoardEmpty( ))
         {
             App.ShowInfo("没有可以导出的内容");
             return;
@@ -222,7 +222,7 @@ public partial class MainWindow
         {
             try
             {
-                App.ExportAllImage(percent, directory, dpi, progress);
+                ImageExport.ExportAll(percent, directory, dpi, progress);
             }
             catch (Exception ex)
             {
@@ -246,7 +246,7 @@ public partial class MainWindow
 
     private void ExportPdfClick(object o, RoutedEventArgs e)
     {
-        if (App.IsBoardEmpty( ))
+        if (BoardState.IsBoardEmpty( ))
         {
             App.ShowInfo("没有可以导出的内容");
             return;
@@ -281,7 +281,7 @@ public partial class MainWindow
         {
             try
             {
-                App.ExportAllPdf(dialog.FileName, dpi, percent, progress);
+                PdfExport.ExportAll(dialog.FileName, dpi, percent, progress);
             }
             catch (Exception ex)
             {
