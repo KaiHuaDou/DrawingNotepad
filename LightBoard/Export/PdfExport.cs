@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Media;
 
 using InkCanvasNext;
 
@@ -83,7 +82,7 @@ internal static class PdfWriter
         DpiScale dpi,
         int scale)
     {
-        var content = snapshot.Strokes.Render(dpi, scale, snapshot.Canvas ?? Colors.White, snapshot.Background, snapshot.Box);
+        var content = snapshot.Strokes.Render(dpi, scale, snapshot.Canvas, snapshot.Background, snapshot.Box);
         var ptW = content.PixelWidth * 72d / dpi.PixelsPerInchX;
         var ptH = content.PixelHeight * 72d / dpi.PixelsPerInchY;
 

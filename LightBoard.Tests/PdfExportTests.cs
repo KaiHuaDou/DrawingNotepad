@@ -5,6 +5,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+using InkCanvasNext;
+
 using LightBoard.Tests.Toolbar;
 
 namespace LightBoard.Tests;
@@ -42,7 +44,7 @@ public class PdfExportTests
                 Assert.Equal(2, source.PageCount);
 
                 Assert.True(HasRedPixel(source.GetPage(0)!), "有墨迹的页应包含红色笔画像素");
-                Assert.False(HasRedPixel(source.GetPage(1)!), "空页应为纯白背景");
+                Assert.False(HasRedPixel(source.GetPage(1)!), "空页不应有墨迹");
             }
             finally
             {
@@ -51,7 +53,48 @@ public class PdfExportTests
         });
     }
 
-    // Bgra32 字节序：B、G、R、A；红笔画判定取 R 高且 G/B 低，避开白色背景（全 255）。
+    [Fact]
+    public void ExportAllPdf_EmptyPage_BackgroundMatchesImageExport( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var pages = new List<Page> { new( ) { Number = 1 } };
+            var directory = Path.Join(Path.GetTempPath( ), $"lb-test-{Guid.NewGuid( ):N}");
+            Directory.CreateDirectory(directory);
+            try
+            {
+                var dpi = new DpiScale(1, 1);
+                var pdfPath = Path.Join(directory, "page.pdf");
+                var pngPath = Path.Join(directory, "page.png");
+                PdfWriter.Export(pdfPath, pages, dpi, 100);
+
+                var snapshot = PageSnapshot.Capture(pages[0]);
+                snapshot.Strokes.ExportPng(pngPath, dpi, 100, snapshot.Canvas, snapshot.Background, snapshot.Box);
+
+                using var source = PdfSource.Open(pdfPath);
+                using var png = File.OpenRead(pngPath);
+                var pngFrame = (BitmapSource) PngBitmapDecoder.Create(png, BitmapCreateOptions.None, BitmapCacheOption.OnLoad).Frames[0];
+                var pdfFrame = (BitmapSource) source.GetPage(0)!;
+                Assert.Equal(
+                    PixelColor(pngFrame, pngFrame.PixelWidth / 2, pngFrame.PixelHeight / 2),
+                    PixelColor(pdfFrame, pdfFrame.PixelWidth / 2, pdfFrame.PixelHeight / 2));
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
+        });
+    }
+
+    private static Color PixelColor(ImageSource image, int x, int y)
+    {
+        var bitmap = (BitmapSource) image;
+        var bytes = new byte[4];
+        bitmap.CopyPixels(new Int32Rect(x, y, 1, 1), bytes, 4, 0);
+        return Color.FromRgb(bytes[2], bytes[1], bytes[0]);
+    }
+
+    // Bgra32 字节序：B、G、R、A；红笔画判定取 R 高且 G/B 低，避开底色。
     private static bool HasRedPixel(ImageSource image)
     {
         var bitmap = (BitmapSource) image;
