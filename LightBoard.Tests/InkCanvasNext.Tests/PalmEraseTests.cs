@@ -56,7 +56,7 @@ public class PalmEraseTests
             using var host = new TouchHost( );
             var palm = host.Device( );
 
-            palm.Down(host.Target, P1, new Size(300, 200));
+            palm.Down(host.Target, P1, new Size(150, 100));
 
             Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
             Assert.Equal(0, host.Canvas.PalmDebug.PalmCount);
@@ -71,10 +71,37 @@ public class PalmEraseTests
             using var host = new TouchHost( );
             var palm = host.Device( );
 
-            palm.Down(host.Target, P1, new Size(301, 201));
+            palm.Down(host.Target, P1, new Size(151, 101));
 
             Assert.Equal(TouchState.Eraser, host.Canvas.State);
             Assert.Equal(1, host.Canvas.PalmDebug.PalmCount);
+        });
+    }
+
+    [Fact]
+    public void ContactSizeOneByOne_DoesNotErase( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Device( ).Down(host.Target, P1, new Size(1, 1));
+
+            Assert.Equal(TouchState.EvalDraw, host.Canvas.State);
+            Assert.Equal(0, host.Canvas.PalmDebug.PalmCount);
+        });
+    }
+
+    [Fact]
+    public void ContactSizeOneByOne_StaysFingerBesidePalm( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Device( ).Down(host.Target, P1, Palm);
+            host.Device( ).Down(host.Target, new Point(P1.X + 10, P1.Y), new Size(1, 1));
+
+            Assert.Equal(1, host.Canvas.PalmDebug.PalmCount);
+            Assert.Equal(2, host.Canvas.ActiveTouchCount);
         });
     }
 
@@ -304,8 +331,8 @@ public class PalmEraseTests
     }
 
     [Theory]
-    [InlineData(300.0, 250.0)]
-    [InlineData(500.0, 150.0)]
+    [InlineData(150.0, 120.0)]
+    [InlineData(300.0, 100.0)]
     public void SingleContactBelowLongShortSideThreshold_DoesNotErase(double width, double height)
     {
         StaTest.Run(( ) =>

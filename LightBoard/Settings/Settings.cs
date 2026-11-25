@@ -34,7 +34,10 @@ public record LightBoardSettings(
     bool? ShowRevertCount = null,
     bool? PenUseDevicePressure = null,
     bool? PenHoverCursor = null,
-    bool? PenBarrelErase = null
+    bool? PenBarrelErase = null,
+    ExportFormat? LastExportFormat = null,
+    int? LastExportScale = null,
+    string? LastExportPath = null
 )
 {
     public const double ToolbarScaleDefault = SettingsLimits.ToolbarScaleDefault;
@@ -131,6 +134,17 @@ public record LightBoardSettings(
     internal bool EffectivePenHoverCursor => PenHoverCursor ?? PenParameters.HoverCursorDefault;
 
     internal bool EffectivePenBarrelErase => PenBarrelErase ?? PenParameters.BarrelEraseDefault;
+
+    internal ExportFormat EffectiveExportFormat
+        => LastExportFormat is { } value && Enum.IsDefined(value) ? value : ExportFormat.Png;
+
+    internal int EffectiveExportScale
+        => LastExportScale is { } value && Array.IndexOf(SettingsLimits.ExportScales, value) >= 0
+            ? value
+            : SettingsLimits.ExportScaleDefault;
+
+    internal string EffectiveExportPath
+        => string.IsNullOrWhiteSpace(LastExportPath) ? string.Empty : LastExportPath.Trim( );
 }
 
 /// <summary>
@@ -149,6 +163,8 @@ internal static class SettingsLimits
     public const int ToolAutoRevertCountMin = 1;
     public const int ToolAutoRevertCountMax = 10;
     public const bool ShowRevertCountDefault = true;
+    public const int ExportScaleDefault = 100;
+    public static readonly int[] ExportScales = [25, 50, 100];
 #if DEBUG
     public const string SwitchOutProcessDefault = "thorium";
 #else

@@ -60,9 +60,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
 
         lock (sync)
         {
-            points.Clear( );
-            bodyDrawn = 0;
-            segment = null;
+            ClearPoints( );
         }
 
         penStroke = false;
@@ -84,9 +82,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
 
         lock (sync)
         {
-            points.Clear( );
-            bodyDrawn = 0;
-            segment = null;
+            ClearPoints( );
         }
 
         RemoveTailLayer( );
@@ -215,6 +211,13 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
 
         lock (sync)
         {
+            // 基类允许不同设备各自的实时笔画并存，描述不同的点不能合成一段
+            if (points.Count > 0
+                && !StylusPointDescription.AreCompatible(points[0].Description, stylusPoints.Description))
+            {
+                ClearPoints( );
+            }
+
             var first = stylusPoints[0];
             if (points.Count > 0
                 && Distance2(points[^1], first) > JoinResetDistance * JoinResetDistance)
@@ -276,10 +279,20 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
 
     private void ResetPoints( )
     {
+        lock (sync)
+        {
+            ClearPoints( );
+        }
+
+        PostTail(null, null, Volatile.Read(ref generation));
+    }
+
+    // 调用方持有 sync
+    private void ClearPoints( )
+    {
         points.Clear( );
         bodyDrawn = 0;
         segment = null;
-        PostTail(null, null, Volatile.Read(ref generation));
     }
 
     private MediaGeometry? BuildGeometry(

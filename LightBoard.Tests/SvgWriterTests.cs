@@ -28,6 +28,16 @@ public class SvgWriterTests
     }
 
     [Fact]
+    public void Write_Scale50_HalvesWidthAndKeepsViewBox( )
+    {
+        var root = XDocument.Parse(Write(new PageSnapshot(1, [], null, null, null), 50)).Root!;
+
+        Assert.Equal("1024", (string?) root.Attribute("width"));
+        Assert.Equal("604", (string?) root.Attribute("height"));
+        Assert.Equal("-64 -64 2048 1208", (string?) root.Attribute("viewBox"));
+    }
+
+    [Fact]
     public void Write_Highlighters_GroupedByColorBeforeSolidInk( )
     {
         Stroke[] strokes =
@@ -102,10 +112,10 @@ public class SvgWriterTests
         Assert.Equal(2, decoded.PixelHeight);
     }
 
-    private static string Write(PageSnapshot snapshot)
+    private static string Write(PageSnapshot snapshot, int scale = 100)
     {
         using var writer = new StringWriter( );
-        SvgWriter.Write(writer, snapshot);
+        SvgWriter.Write(writer, snapshot, scale);
         return writer.ToString( );
     }
 

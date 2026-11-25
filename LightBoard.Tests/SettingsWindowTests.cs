@@ -88,6 +88,9 @@ public class SettingsWindowTests
                     Assert.Equal(section.Items.OfType<SettingsText>( ).Count( ), controls.OfType<TextBox>( ).Count(box => box.DataContext is SettingsText));
                     Assert.Equal(section.Items.OfType<SettingsToggle>( ).Count( ), controls.OfType<CheckBox>( ).Count(box => box.DataContext is SettingsToggle));
                     Assert.Equal(section.Items.OfType<SettingsChoice>( ).Count( ) * 2, controls.OfType<RadioButton>( ).Count(box => box.DataContext is SettingsChoice));
+                    Assert.Equal(
+                        section.Items.OfType<SettingsOptions>( ).Sum(item => item.Options.Count),
+                        controls.OfType<RadioButton>( ).Count(box => box.DataContext is SettingsOption));
 
                     // 绑定确实把值送到控件上
                     foreach (var box in controls.OfType<TextBox>( ).Where(box => box.DataContext is SettingsField))

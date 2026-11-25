@@ -18,27 +18,30 @@ internal static class SvgWriter
 {
     private const double HighlighterOpacity = 0.5;
 
-    public static void Write(string fileName, PageSnapshot snapshot)
+    public static void Write(string fileName, PageSnapshot snapshot, int scale)
     {
         using var stream = new FileStream(fileName, FileMode.Create, FileAccess.Write);
         using var writer = new StreamWriter(stream, new UTF8Encoding(false)) { NewLine = "\n" };
-        Write(writer, snapshot);
+        Write(writer, snapshot, scale);
     }
 
-    public static void Write(TextWriter writer, PageSnapshot snapshot)
+    public static void Write(TextWriter writer, PageSnapshot snapshot, int scale)
     {
         var bounds = snapshot.Strokes.ContentBounds(snapshot.Background, snapshot.Box);
-        WriteRoot(writer, bounds);
+        WriteRoot(writer, bounds, scale);
         WriteBackground(writer, bounds, snapshot);
         WriteInk(writer, snapshot.Strokes);
         writer.Write("</svg>\n");
     }
 
-    private static void WriteRoot(TextWriter writer, Rect bounds)
+    private static void WriteRoot(TextWriter writer, Rect bounds, int scale)
     {
+        var width = bounds.Width * scale / 100;
+        var height = bounds.Height * scale / 100;
+
         writer.Write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
         writer.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\"");
-        writer.Write($" width=\"{SvgFormat.Number(bounds.Width)}\" height=\"{SvgFormat.Number(bounds.Height)}\"");
+        writer.Write($" width=\"{SvgFormat.Number(width)}\" height=\"{SvgFormat.Number(height)}\"");
         writer.Write($" viewBox=\"{SvgFormat.Number(bounds.X)} {SvgFormat.Number(bounds.Y)} {SvgFormat.Number(bounds.Width)} {SvgFormat.Number(bounds.Height)}\"");
         writer.Write(" fill-rule=\"nonzero\">\n");
     }

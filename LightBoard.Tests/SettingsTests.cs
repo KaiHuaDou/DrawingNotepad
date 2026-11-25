@@ -76,6 +76,9 @@ public class SettingsTests
         Assert.True(data.EffectivePenUseDevicePressure);
         Assert.True(data.EffectivePenHoverCursor);
         Assert.True(data.EffectivePenBarrelErase);
+        Assert.Equal(ExportFormat.Png, data.EffectiveExportFormat);
+        Assert.Equal(SettingsLimits.ExportScaleDefault, data.EffectiveExportScale);
+        Assert.Equal("", data.EffectiveExportPath);
     }
 
     [Fact]
@@ -163,7 +166,9 @@ public class SettingsTests
             EraserRebuildThreshold = 99,
             ToolbarScale = 0,
             SwitchOutProcessName = "   ",
-            SelectionDragMode = (InkCanvasNext.SelectionDragMode) 99
+            SelectionDragMode = (InkCanvasNext.SelectionDragMode) 99,
+            LastExportFormat = (ExportFormat) 99,
+            LastExportScale = 75
         };
 
         var options = data.CreateCanvasOptions( );
@@ -185,6 +190,8 @@ public class SettingsTests
         Assert.Equal(SettingsLimits.SwitchOutProcessDefault, data.EffectiveSwitchOutProcess);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.SelectionDragModeDefault, data.EffectiveSelectionDragMode);
         Assert.Equal(InkCanvasNext.InkCanvasNextOptions.PalmEraseFingersMax, data.EffectivePalmEraseFingers);
+        Assert.Equal(ExportFormat.Png, data.EffectiveExportFormat);
+        Assert.Equal(SettingsLimits.ExportScaleDefault, data.EffectiveExportScale);
     }
 
     [Fact]

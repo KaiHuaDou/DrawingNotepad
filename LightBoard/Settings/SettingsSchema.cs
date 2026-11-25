@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 using InkCanvasNext;
@@ -181,6 +182,26 @@ internal static class SettingsSchema
                     s => s.EffectiveSwitchOutProcess,
                     s => s.SwitchOutProcessName,
                     (s, v) => s with { SwitchOutProcessName = string.IsNullOrWhiteSpace(v) ? null : v.Trim( ) }),
+            ]),
+
+            new("导出",
+            [
+                new SettingsOptions("格式", nameof(LightBoardSettings.LastExportFormat),
+                    ["PNG 图片", "PDF 文档", "SVG 矢量图"],
+                    s => (int) s.EffectiveExportFormat,
+                    s => s.LastExportFormat is { } format && Enum.IsDefined(format) ? (int) format : null,
+                    (s, index) => s with { LastExportFormat = index is null ? null : (ExportFormat) index.Value }),
+                new SettingsOptions("缩放", nameof(LightBoardSettings.LastExportScale),
+                    ["25%", "50%", "100%"],
+                    s => Array.IndexOf(SettingsLimits.ExportScales, s.EffectiveExportScale),
+                    s => s.LastExportScale is { } scale && Array.IndexOf(SettingsLimits.ExportScales, scale) >= 0
+                        ? Array.IndexOf(SettingsLimits.ExportScales, scale)
+                        : null,
+                    (s, index) => s with { LastExportScale = index is null ? null : SettingsLimits.ExportScales[index.Value] }),
+                new SettingsText("位置", nameof(LightBoardSettings.LastExportPath),
+                    s => s.EffectiveExportPath,
+                    s => s.LastExportPath,
+                    (s, value) => s with { LastExportPath = string.IsNullOrWhiteSpace(value) ? null : value.Trim( ) }),
             ]),
         ];
     }

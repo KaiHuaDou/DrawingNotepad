@@ -10,7 +10,7 @@ namespace LightBoard;
 /// </summary>
 internal static class SvgExport
 {
-    public static void ExportAll(string directory, IProgress<ExportProgress>? progress = null)
+    public static void ExportAll(string directory, int scale, IProgress<ExportProgress>? progress = null)
     {
         const string tip = "正在导出 SVG";
 
@@ -26,7 +26,7 @@ internal static class SvgExport
             var snapshot = Application.Current.Dispatcher.Invoke(( ) => PageSnapshot.Capture(pages[i]));
             var fileName = Path.Join(directory, $"{snapshot.Number.ToString( ).PadLeft(pad, '0')}.svg");
 
-            SvgWriter.Write(fileName, snapshot);
+            SvgWriter.Write(fileName, snapshot, scale);
             progress?.Report(new(tip, i + 1, count));
         }
     }

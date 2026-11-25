@@ -223,6 +223,30 @@ public class SettingsEditorTests
     }
 
     [Fact]
+    public void Editor_ExportFormat_SelectsSvg( )
+    {
+        var editor = new SettingsEditor(new LightBoardSettings( ));
+        var options = Item<SettingsOptions>(editor, nameof(LightBoardSettings.LastExportFormat));
+
+        options.Options[2].IsSelected = true;
+
+        Assert.Equal(ExportFormat.Svg, editor.Build( ).LastExportFormat);
+    }
+
+    [Fact]
+    public void Editor_ExportPath_TrimsAndClears( )
+    {
+        var editor = new SettingsEditor(new LightBoardSettings( ));
+        var text = Item<SettingsText>(editor, nameof(LightBoardSettings.LastExportPath));
+
+        text.Text = "  D:\\out  ";
+        Assert.Equal("D:\\out", editor.Build( ).LastExportPath);
+
+        text.Text = "   ";
+        Assert.Null(editor.Build( ).LastExportPath);
+    }
+
+    [Fact]
     public void Editor_Reset_RestoresProcessName( )
     {
         var editor = new SettingsEditor(new LightBoardSettings { SwitchOutProcessName = "chrome" });

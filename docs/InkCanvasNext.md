@@ -275,8 +275,8 @@ public readonly record struct View(double Scale, double OffsetX, double OffsetY)
 | 属性 | 类型 | 默认 | 说明 |
 | --- | --- | --- | --- |
 | `PalmEraseFingers` | `int` | 5 | 掌擦触点数量，取值 4 或 5 |
-| `PalmMinWidth` | `double` | 300 | 手掌触点长边阈值，单位为视口 DIP |
-| `PalmMinHeight` | `double` | 200 | 手掌触点短边阈值，单位为视口 DIP |
+| `PalmMinWidth` | `double` | 150 | 手掌触点长边阈值，单位为视口 DIP |
+| `PalmMinHeight` | `double` | 100 | 手掌触点短边阈值，单位为视口 DIP |
 | `PalmMergeDistance` | `double` | 120 | 手掌碎片聚类距离，单位为视口 DIP |
 | `TouchDisplacementThreshold` | `double` | 20 | 单指起笔位移阈值，单位为视口 DIP |
 | `PanZoomDisplaceThreshold` | `double` | 30 | 双指平移锁定阈值，单位为视口 DIP |
@@ -297,8 +297,8 @@ public readonly record struct View(double Scale, double OffsetX, double OffsetY)
 | --- | --- | --- |
 | `GestureMin` / `GestureMax` | 1 / 200 | 手势阈值共同范围，单位为视口 DIP |
 | `PalmEraseFingersMin` / `PalmEraseFingersMax` / `PalmEraseFingersDefault` | 4 / 5 / 5 | 掌擦触点数量范围与默认值 |
-| `PalmMinWidthMin` / `PalmMinWidthMax` / `PalmMinWidthDefault` | 240 / 400 / 300 | 手掌长边阈值范围与默认值，单位为视口 DIP |
-| `PalmMinHeightMin` / `PalmMinHeightMax` / `PalmMinHeightDefault` | 160 / 300 / 200 | 手掌短边阈值范围与默认值，单位为视口 DIP |
+| `PalmMinWidthMin` / `PalmMinWidthMax` / `PalmMinWidthDefault` | 100 / 400 / 150 | 手掌长边阈值范围与默认值，单位为视口 DIP |
+| `PalmMinHeightMin` / `PalmMinHeightMax` / `PalmMinHeightDefault` | 60 / 300 / 100 | 手掌短边阈值范围与默认值，单位为视口 DIP |
 | `PalmMergeDistanceMin` / `PalmMergeDistanceMax` / `PalmMergeDistanceDefault` | 60 / 200 / 120 | 聚类距离范围与默认值，单位为视口 DIP |
 | `TouchDisplacementThresholdDefault` | 20 | 单指起笔位移默认值 |
 | `PanZoomDisplaceThresholdDefault` | 30 | 双指平移锁定阈值默认值 |

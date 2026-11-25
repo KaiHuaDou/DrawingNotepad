@@ -138,25 +138,11 @@
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE74E;" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem x:Name="ExportImageMenu" Header="导出"
+                    <MenuItem x:Name="ExportMenu" Header="导出"
                               Style="{StaticResource MenuItemStyle}"
-                              Click="ExportImageClick">
+                              Click="ExportClick">
                         <MenuItem.Icon>
                             <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEE71;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem x:Name="ExportPdfButton" Header="导出 PDF"
-                              Style="{StaticResource MenuItemStyle}"
-                              Click="ExportPdfClick">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xEA90;" />
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem x:Name="ExportSvgMenu" Header="导出 SVG"
-                              Style="{StaticResource MenuItemStyle}"
-                              Click="ExportSvgClick">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource IconTextStyle}" Text="&#xE7C3;" />
                         </MenuItem.Icon>
                     </MenuItem>
                 </Menu>

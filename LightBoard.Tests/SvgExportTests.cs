@@ -24,7 +24,7 @@ public class SvgExportTests
             var progress = new CollectProgress( );
             try
             {
-                SvgExport.ExportAll(directory, progress);
+                SvgExport.ExportAll(directory, 100, progress);
 
                 var files = Directory.GetFiles(directory, "*.svg").Order( ).ToArray( );
                 Assert.Equal(3, files.Length);

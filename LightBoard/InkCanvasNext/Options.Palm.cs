@@ -3,7 +3,7 @@ using System;
 namespace InkCanvasNext;
 
 /// <summary>
-/// 手掌面积参数：阈值按 CVTouch SDK 的 300 × 200 DIP，判据为长短边的严格大于。
+/// 手掌面积参数：阈值默认 150 × 100 视口 DIP，判据为长短边的严格大于。
 /// 本文件只放「触点分类」参数；手掌擦除的直径与调整窗口属于橡皮行为，见 <see cref="EraserParameters"/>
 /// </summary>
 public sealed partial record InkCanvasNextOptions
@@ -56,12 +56,12 @@ public sealed partial record InkCanvasNextOptions
     /// <summary>
     /// 手掌长边阈值默认值，视口 DIP
     /// </summary>
-    public const double PalmMinWidthDefault = 300;
+    public const double PalmMinWidthDefault = 150;
 
     /// <summary>
     /// 手掌长边阈值下限，视口 DIP
     /// </summary>
-    public const double PalmMinWidthMin = 240;
+    public const double PalmMinWidthMin = 100;
 
     /// <summary>
     /// 手掌长边阈值上限，视口 DIP
@@ -71,12 +71,12 @@ public sealed partial record InkCanvasNextOptions
     /// <summary>
     /// 手掌短边阈值默认值，视口 DIP
     /// </summary>
-    public const double PalmMinHeightDefault = 200;
+    public const double PalmMinHeightDefault = 100;
 
     /// <summary>
     /// 手掌短边阈值下限，视口 DIP
     /// </summary>
-    public const double PalmMinHeightMin = 160;
+    public const double PalmMinHeightMin = 60;
 
     /// <summary>
     /// 手掌短边阈值上限，视口 DIP
