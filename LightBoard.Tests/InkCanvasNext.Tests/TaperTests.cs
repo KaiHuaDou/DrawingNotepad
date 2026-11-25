@@ -73,7 +73,7 @@ public class TaperTests
     }
 
     [Fact]
-    public void Effective_FollowsEnabledAndIgnorePressure( )
+    public void Effective_FollowsEnabledIgnorePressureAndTail( )
     {
         StaTest.Run(( ) =>
         {
@@ -83,6 +83,7 @@ public class TaperTests
 
             Assert.Same(enabled, Taper.Effective(enabled, attributes));
             Assert.Null(Taper.Effective(disabled, attributes));
+            Assert.Null(Taper.Effective(enabled, attributes, continues: true));
 
             attributes.IgnorePressure = true;
             Assert.Null(Taper.Effective(enabled, attributes));

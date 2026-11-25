@@ -43,8 +43,7 @@ public class CanvasFitTests
             canvas.Strokes.Add(stroke);
             canvas.UpdateLayout( );
 
-            Assert.Single(shifts);
-            var shift = shifts[0];
+            var shift = Assert.Single(shifts);
             Assert.Equal(-raw.Left, shift.X, 6);
             Assert.Equal(-raw.Top, shift.Y, 6);
             Assert.Same(canvas.Strokes, shifted);

@@ -88,6 +88,20 @@ public class TaperStrokeTests
         });
     }
 
+    /// <summary>末端由后续笔画续接（绘制中迁入多指书写）时整笔保持全宽</summary>
+    [Fact]
+    public void Apply_TailContinues_KeepsUntouched( )
+    {
+        StaTest.Run(( ) =>
+        {
+            var stroke = LineStroke(40);
+
+            Taper.Apply(stroke, Taper.Effective(new TaperParameters( ), stroke.DrawingAttributes, continues: true));
+
+            Assert.Equal(0.5, (double) stroke.StylusPoints[39].PressureFactor, 5);
+        });
+    }
+
     [Fact]
     public void Apply_IsfRoundTrip_KeepsTailPressure( )
     {

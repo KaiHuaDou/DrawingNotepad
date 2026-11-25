@@ -18,7 +18,7 @@ public class SvgWriterTests
     [Fact]
     public void Write_EmptyPage_UsesFallbackBounds( )
     {
-        var root = XDocument.Parse(Write(new PageSnapshot(1, new StrokeCollection( ), null, null, null))).Root!;
+        var root = XDocument.Parse(Write(new PageSnapshot(1, [], null, null, null))).Root!;
 
         Assert.Equal("-64 -64 2048 1208", (string?) root.Attribute("viewBox"));
         Assert.Equal("2048", (string?) root.Attribute("width"));
@@ -37,7 +37,7 @@ public class SvgWriterTests
             MakeStroke(Highlighter(Color.FromArgb(0x30, 0xFF, 0xFF, 0x00)), (30, 30), (70, 70)),
         ];
 
-        var root = XDocument.Parse(Write(new PageSnapshot(1, new StrokeCollection(strokes), null, null, null))).Root!;
+        var root = XDocument.Parse(Write(new PageSnapshot(1, [with(strokes)], null, null, null))).Root!;
         var children = root.Elements( ).ToArray( );
         var group = Assert.Single(root.Elements(Svg + "g"));
         var solid = Assert.Single(root.Elements(Svg + "path"));
@@ -58,7 +58,7 @@ public class SvgWriterTests
             Height = 10,
         };
 
-        var root = XDocument.Parse(Write(new PageSnapshot(1, new StrokeCollection { MakeStroke(attributes, (10, 10), (50, 50)) }, null, null, null))).Root!;
+        var root = XDocument.Parse(Write(new PageSnapshot(1, [MakeStroke(attributes, (10, 10), (50, 50))], null, null, null))).Root!;
         var path = Assert.Single(root.Elements(Svg + "path"));
 
         Assert.Equal("#0000FF", (string?) path.Attribute("fill"));
@@ -70,7 +70,7 @@ public class SvgWriterTests
     {
         var attributes = new DrawingAttributes { Color = Colors.Lime, Width = 10, Height = 10 };
 
-        var root = XDocument.Parse(Write(new PageSnapshot(1, new StrokeCollection { MakeStroke(attributes, (10, 10), (50, 50)) }, null, null, null))).Root!;
+        var root = XDocument.Parse(Write(new PageSnapshot(1, [MakeStroke(attributes, (10, 10), (50, 50))], null, null, null))).Root!;
         var path = Assert.Single(root.Elements(Svg + "path"));
 
         Assert.Equal("#00FF00", (string?) path.Attribute("fill"));
@@ -83,7 +83,7 @@ public class SvgWriterTests
         var bitmap = BitmapSource.Create(4, 2, 96, 96, PixelFormats.Bgra32, null, new byte[4 * 2 * 4], 4 * 4);
         bitmap.Freeze( );
 
-        var snapshot = new PageSnapshot(1, new StrokeCollection( ), bitmap, new Rect(0, 0, 400, 200), null);
+        var snapshot = new PageSnapshot(1, [], bitmap, new Rect(0, 0, 400, 200), null);
         var root = XDocument.Parse(Write(snapshot)).Root!;
         var image = Assert.Single(root.Elements(Svg + "image"));
         var href = (string?) image.Attribute(Xlink + "href");

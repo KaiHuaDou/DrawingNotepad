@@ -193,11 +193,13 @@ public class LotteryViewModelTests
     [Fact]
     public void CollectionDraw_UsesDatasetItems( )
     {
+        string[] collection = ["张三", "李四"];
+
         var model = new LotteryViewModel
         {
             Mode = LotteryMode.Collection
         };
-        model.AddDataset("名单", ["张三", "李四"]);
+        model.AddDataset("名单", collection);
 
         Assert.True(model.CanDraw);
         Assert.Equal(2, model.PoolSize);
@@ -205,7 +207,7 @@ public class LotteryViewModelTests
         model.DrawOne( );
 
         var item = Assert.Single(model.Results);
-        Assert.Contains(item, new[] { "张三", "李四" });
+        Assert.Contains(item, collection);
     }
 
     [Fact]

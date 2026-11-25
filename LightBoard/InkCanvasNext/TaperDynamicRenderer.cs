@@ -14,6 +14,7 @@ namespace InkCanvasNext;
 /// <summary>
 /// 自绘实时渲染器：与原生 DynamicRenderer 走同一条插件通道，按报文增量绘制湿墨
 /// 报文视觉只画已离开尾部的笔身；末尾 Taper.Points 点放进可替换的尾部视觉，保证末端渐细
+/// 段几何按原始采样点成形，整笔拟合只在收笔后由干墨执行
 /// </summary>
 internal sealed partial class TaperDynamicRenderer : DynamicRenderer
 {
@@ -26,6 +27,8 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
     private readonly List<StylusPoint> points = [];
 
     private DrawingAttributes? attributes;
+    private DrawingAttributes? noFitAttributes;
+    private Stroke? segment;
     private Dispatcher? applicationDispatcher;
 
     private int bodyDrawn;
@@ -38,6 +41,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
         this.taper = taper;
         this.arbiter = arbiter;
         Volatile.Write(ref attributes, Snapshot(DrawingAttributes));
+        Volatile.Write(ref noFitAttributes, NoFitSnapshot(DrawingAttributes));
     }
 
     protected override void OnEnabledChanged( )
@@ -58,6 +62,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
         {
             points.Clear( );
             bodyDrawn = 0;
+            segment = null;
         }
 
         penStroke = false;
@@ -81,6 +86,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
         {
             points.Clear( );
             bodyDrawn = 0;
+            segment = null;
         }
 
         RemoveTailLayer( );
@@ -100,6 +106,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
     {
         base.OnDrawingAttributesReplaced( );
         Volatile.Write(ref attributes, Snapshot(DrawingAttributes));
+        Volatile.Write(ref noFitAttributes, NoFitSnapshot(DrawingAttributes));
 
         if (!Supports(Volatile.Read(ref attributes)))
         {
@@ -182,6 +189,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
         Brush fillBrush)
     {
         var currentAttributes = Volatile.Read(ref attributes);
+        var currentNoFit = Volatile.Read(ref noFitAttributes);
 
         if (stylusPoints.Count == 0)
         {
@@ -189,6 +197,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
         }
 
         if (currentAttributes is not { } current
+            || currentNoFit is not { } noFit
             || !Supports(current)
             || fillBrush is null)
         {
@@ -230,8 +239,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
             if (bodyEnd > bodyDrawn)
             {
                 var start = Math.Max(0, bodyDrawn - 1);
-                var bodyGeometry = TaperOutline.Build(
-                    points, start, bodyEnd, current.Width, effectiveTaper, bodyEnd);
+                var bodyGeometry = BuildGeometry(points, start, bodyEnd, noFit, effectiveTaper);
 
                 if (bodyGeometry is not null)
                 {
@@ -249,8 +257,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
 
             // 尾部：每个报文重建，替换上一帧的尾部视觉，末端按 Taper 收细
             var tailStart = Math.Max(0, bodyEnd - 1);
-            var tailGeometry = TaperOutline.Build(
-                points, tailStart, total, current.Width, effectiveTaper, bodyEnd);
+            var tailGeometry = BuildGeometry(points, tailStart, total, noFit, effectiveTaper);
 
             if (Volatile.Read(ref tailVisual) is null)
             {
@@ -271,7 +278,33 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
     {
         points.Clear( );
         bodyDrawn = 0;
+        segment = null;
         PostTail(null, null, Volatile.Read(ref generation));
+    }
+
+    private MediaGeometry? BuildGeometry(
+        IReadOnlyList<StylusPoint> points,
+        int start,
+        int end,
+        DrawingAttributes attributes,
+        TaperParameters? taper)
+    {
+        if (end <= start)
+        {
+            return null;
+        }
+
+        var copy = Taper.CopyRange(points, start, end, taper);
+        if (segment is null)
+        {
+            segment = new Stroke(copy, attributes);
+        }
+        else
+        {
+            segment.StylusPoints = copy;
+        }
+
+        return segment.GetGeometry(attributes);
     }
 
     private static bool Supports(DrawingAttributes? value)
@@ -288,12 +321,20 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
 
     private static DrawingAttributes? Snapshot(DrawingAttributes? value)
     {
+        return value?.Clone( );
+    }
+
+    // 湿墨段按原始采样点成形，整笔拟合留给收笔后的干墨
+    private static DrawingAttributes? NoFitSnapshot(DrawingAttributes? value)
+    {
         if (value is null)
         {
             return null;
         }
 
-        return value.Clone( );
+        var copy = value.Clone( );
+        copy.FitToCurve = false;
+        return copy;
     }
 
     private static double Distance2(StylusPoint a, StylusPoint b)

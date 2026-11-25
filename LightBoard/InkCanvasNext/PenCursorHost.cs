@@ -7,7 +7,7 @@ namespace InkCanvasNext;
 public partial class InkCanvasNext
 {
     private Window? penCursorWindow;
-    private PenCursor penCursor = null!;
+    private readonly PenCursor penCursor;
 
     /// <summary>
     /// 笔在范围内悬停时更新圆环；触摸、鼠标或按下期间不显示

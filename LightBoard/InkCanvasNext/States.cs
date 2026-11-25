@@ -342,7 +342,8 @@ public partial class InkCanvasNext
                 break;
 
             case TouchState.MultiDraw:
-                HandOffDrawingStroke( );
+                // 原绘制指在多指笔画里从触点续接，收笔处不渐细
+                HandOffDrawingStroke(continues: true);
                 ReleaseAll( );
                 InnerCanvas.EditingMode = InkCanvasEditingMode.None;
                 InnerCanvas.ClearWet( );

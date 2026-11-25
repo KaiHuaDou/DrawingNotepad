@@ -14,6 +14,7 @@ internal sealed class TaperInkCanvas : InkCanvas
     private InputArbiter arbiter = null!;
     private DynamicRenderer? nativeRenderer;
     private bool configured;
+    private bool continues;
 
     /// <summary>
     /// 配置笔锋；在画布构造时调用一次
@@ -86,6 +87,29 @@ internal sealed class TaperInkCanvas : InkCanvas
     }
 
     /// <summary>
+    /// 提交在绘笔画：切换编辑模式会丢弃在绘笔画，释放笔捕获才整笔收集
+    /// 没有在绘笔画时为空操作；continues 为 true 时收笔处不渐细，末端由后续笔画续接
+    /// </summary>
+    internal void CommitStroke(bool continues = false)
+    {
+        if (EditingMode != InkCanvasEditingMode.Ink || !IsStylusCaptured)
+        {
+            return;
+        }
+
+        this.continues = continues;
+
+        try
+        {
+            ReleaseStylusCapture( );
+        }
+        finally
+        {
+            this.continues = false;
+        }
+    }
+
+    /// <summary>
     /// 当前安装的自绘实时渲染器
     /// </summary>
     internal TaperDynamicRenderer? TaperRenderer { get; private set; }
@@ -96,7 +120,7 @@ internal sealed class TaperInkCanvas : InkCanvas
     {
         if (arbiter.StrokeKind != InputKind.Stylus)
         {
-            Taper.Apply(e.Stroke, Taper.Effective(taper, e.Stroke.DrawingAttributes));
+            Taper.Apply(e.Stroke, Taper.Effective(taper, e.Stroke.DrawingAttributes, continues));
         }
 
         base.OnStrokeCollected(e);

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -37,25 +36,14 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 提交原生在绘笔迹：InkCanvas 切换编辑模式会丢弃湿墨，释放笔画捕获即提交整笔
-    /// </summary>
-    private void CommitNativeStroke( )
-    {
-        if (InnerCanvas.EditingMode == InkCanvasEditingMode.Ink && InnerCanvas.IsStylusCaptured)
-        {
-            InnerCanvas.ReleaseStylusCapture( );
-        }
-    }
-
-    /// <summary>
     /// 迁入 MultiDraw 或面积掌擦前保住原生在绘笔画
-    /// InkCanvas 切换编辑模式丢弃在绘笔画
+    /// InkCanvas 切换编辑模式丢弃在绘笔画；tailContinues 为 true 时收笔处不渐细，末端由多指笔画续接
     /// </summary>
-    private void HandOffDrawingStroke( )
+    private void HandOffDrawingStroke(bool continues = false)
     {
         if (State is TouchState.EvalDraw or TouchState.Draw)
         {
-            CommitNativeStroke( );
+            InnerCanvas.CommitStroke(continues);
         }
     }
 

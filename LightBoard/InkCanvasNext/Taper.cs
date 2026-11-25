@@ -1,5 +1,6 @@
 using System;
 
+using System.Collections.Generic;
 using System.Windows.Ink;
 using System.Windows.Input;
 
@@ -65,11 +66,14 @@ internal static class Taper
     internal const double TipRatio = 0.25;
 
     /// <summary>
-    /// 返回生效的笔锋参数；未启用或笔画忽略压力时为 null
+    /// 返回生效的笔锋参数；未启用、笔画忽略压力或末端由后续笔画续接时为 null
     /// </summary>
-    internal static TaperParameters? Effective(TaperParameters? options, DrawingAttributes attributes)
+    internal static TaperParameters? Effective(
+        TaperParameters? options,
+        DrawingAttributes attributes,
+        bool continues = false)
     {
-        return options is { Enabled: true } && !attributes.IgnorePressure ? options : null;
+        return options is { Enabled: true } && !attributes.IgnorePressure && !continues ? options : null;
     }
 
     /// <summary>
@@ -108,9 +112,13 @@ internal static class Taper
     /// <summary>
     /// 复制 [start, end) 区间的点，压力按整笔尾部改写；taper 为 null 时原样复制
     /// </summary>
-    internal static StylusPointCollection Copy(StylusPointCollection points, int start, int end, TaperParameters? taper)
+    internal static StylusPointCollection CopyRange(
+        IReadOnlyList<StylusPoint> points,
+        int start,
+        int end,
+        TaperParameters? taper)
     {
-        var copy = new StylusPointCollection(points.Description, end - start);
+        var copy = new StylusPointCollection(points[start].Description, end - start);
         var tail = Tail(points.Count, taper);
         var head = points.Count - tail;
 
@@ -139,6 +147,6 @@ internal static class Taper
             return;
         }
 
-        stroke.StylusPoints = Copy(points, 0, points.Count, taper);
+        stroke.StylusPoints = CopyRange(points, 0, points.Count, taper);
     }
 }

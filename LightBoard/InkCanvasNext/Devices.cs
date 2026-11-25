@@ -88,7 +88,7 @@ public partial class InkCanvasNext
             {
                 if (isPalm)
                 {
-                    CommitNativeStroke( );
+                    InnerCanvas.CommitStroke( );
                 }
 
                 CancelLower(InputKind.Touch);

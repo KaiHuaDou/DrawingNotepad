@@ -93,7 +93,7 @@ public class SvgPathTests
         });
     }
 
-    private static BitmapSource Render(Rect bounds, Action<DrawingContext> draw)
+    private static RenderTargetBitmap Render(Rect bounds, Action<DrawingContext> draw)
     {
         var visual = new DrawingVisual( );
         using (var context = visual.RenderOpen( ))

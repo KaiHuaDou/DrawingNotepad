@@ -39,11 +39,14 @@ internal sealed class VisualCanvas : FrameworkElement
 
 internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, StylusPoint initialPoint, TaperParameters? taper)
 {
-    // 活动段每帧整段重建并重新拟合，窗口越短，已画部分的形状变化越小；
+    // 活动段每帧整段重建，窗口越短，已画部分的形状变化越小；
     // 冻结窗口越大，段间接缝越少（64 点约等于 4 个触摸报文）
     private const int SegmentPoints = 64;
 
     private readonly DrawingAttributes drawingAttributes = drawingAttributes;
+
+    // 段几何按原始采样点成形，整笔拟合留给收笔后的干墨
+    private readonly DrawingAttributes segmentAttributes = NoFit(drawingAttributes);
 
     // 高亮笔的笔迹半透明，段间共享的接头点会被两段各画一次而叠色，因此整笔重绘
     private readonly bool segmentable = !drawingAttributes.IsHighlighter;
@@ -168,17 +171,24 @@ internal sealed partial class StrokeVisual(DrawingAttributes drawingAttributes, 
             return null;
         }
 
-        var points = Taper.Copy(Stroke.StylusPoints, start, end, taper);
+        var points = Taper.CopyRange(Stroke.StylusPoints, start, end, taper);
         if (segmentStroke is null)
         {
-            segmentStroke = new Stroke(points, drawingAttributes);
+            segmentStroke = new Stroke(points, segmentAttributes);
         }
         else
         {
             segmentStroke.StylusPoints = points;
         }
 
-        return segmentStroke.GetGeometry(drawingAttributes);
+        return segmentStroke.GetGeometry(segmentAttributes);
+    }
+
+    private static DrawingAttributes NoFit(DrawingAttributes value)
+    {
+        var copy = value.Clone( );
+        copy.FitToCurve = false;
+        return copy;
     }
 
     private DrawingVisual CreateAndAttachVisual( )
