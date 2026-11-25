@@ -114,7 +114,7 @@ internal sealed partial class TaperDynamicRenderer
     }
 
     /// <summary>
-    /// 干墨提交后同步清尾：OnStrokeCollected 调用；不依赖 Background 优先级
+    /// 干墨提交后同步清尾，不依赖 Background 优先级
     /// </summary>
     internal void ClearTailAfterStroke( )
     {

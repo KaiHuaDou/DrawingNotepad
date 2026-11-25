@@ -61,16 +61,19 @@ public partial class InkCanvasNext : UserControl
             // 手势中改画布尺寸会让排列与位图缓存失效：余量补足留到手势结束
             if (CanRebase)
             {
-                var view = CurrentView;
+                // 滚动偏移以控件为准重同步缓存，这里读控件本身而不是 CurrentView
+                var view = new View(CanvasScale.ScaleX, CanvasScroll.HorizontalOffset, CanvasScroll.VerticalOffset);
                 var canPrefetch = !IsEdgeScrolling;
                 var filled = EnsureCanvasFill(
                     view,
                     prefetchRightBottom: canPrefetch,
                     prefetchLeftTop: canPrefetch);
+
+                // 先以控件实际偏移为基准，补写才能按「与基准不同」正确入队
+                GestureView = view;
                 if (filled.OffsetX != view.OffsetX || filled.OffsetY != view.OffsetY)
                 {
-                    CanvasScroll.ScrollToHorizontalOffset(filled.OffsetX);
-                    CanvasScroll.ScrollToVerticalOffset(filled.OffsetY);
+                    WriteViewOffsets(filled);
                 }
             }
 

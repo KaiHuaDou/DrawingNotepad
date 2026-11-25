@@ -84,58 +84,6 @@ public partial class InkCanvasNext
     private Point viewportOrigin;
 
     /// <summary>
-    /// 获取或设置当前视口；设置时把缩放与偏移夹到有效范围，非有限值被忽略
-    /// </summary>
-    public View CurrentView
-    {
-        get => new(CanvasScale.ScaleX, CanvasScroll.HorizontalOffset, CanvasScroll.VerticalOffset);
-        set
-        {
-            if (!double.IsFinite(value.Scale) || !double.IsFinite(value.OffsetX) || !double.IsFinite(value.OffsetY))
-            {
-                return;
-            }
-
-            value = value.Clamp(new Size(InnerCanvas.Width, InnerCanvas.Height), ViewportSize, MinScale, MaxScale);
-            CurrentScale = value.Scale;
-
-            // 外部换视图时手势增量作废，避免旧变换叠加到新偏移上
-            CanvasPan.X = 0;
-            CanvasPan.Y = 0;
-
-            var canPrefetch = CanRebase && !IsEdgeScrolling;
-            value = EnsureCanvasFill(
-                value,
-                prefetchRightBottom: canPrefetch,
-                prefetchLeftTop: canPrefetch);
-
-            CanvasScroll.ScrollToHorizontalOffset(value.OffsetX);
-            CanvasScroll.ScrollToVerticalOffset(value.OffsetY);
-        }
-    }
-
-    /// <summary>
-    /// 把手势期累积的平移增量提交回 ScrollViewer 偏移：先写偏移并同步排空布局，再清零 RenderTransform。
-    /// 两步在同一帧内完成，避免抬手时内容先回起点再跳到终点的一帧回弹
-    /// </summary>
-    private void CommitPan( )
-    {
-        if (CanvasPan.X == 0 && CanvasPan.Y == 0)
-        {
-            return;
-        }
-
-        // 读的是尚未包含手势增量的已提交视图；两者相减才是屏幕上内容左上角的位置
-        var view = CurrentView;
-        CanvasScroll.ScrollToHorizontalOffset(view.OffsetX - CanvasPan.X);
-        CanvasScroll.ScrollToVerticalOffset(view.OffsetY - CanvasPan.Y);
-        CanvasScroll.UpdateLayout( );
-
-        CanvasPan.X = 0;
-        CanvasPan.Y = 0;
-    }
-
-    /// <summary>
     /// 画布在视口右/下不足一屏、左/上不足半屏时按一屏步进补足：缩放、拖动与翻页恢复视图都经过这里，
     /// 保证视口落在画布内并能继续拖动；右/下最多补四屏，嵌套调用直接返回
     /// prefetchRightBottom 为 false 时只在画布盖不住视口时补，不做右/下方向留一屏余量的预取
@@ -193,9 +141,11 @@ public partial class InkCanvasNext
             return;
         }
 
-        var scale = CurrentScale;
-        CanvasScroll.ScrollToHorizontalOffset(CanvasScroll.HorizontalOffset + shift.X * scale);
-        CanvasScroll.ScrollToVerticalOffset(CanvasScroll.VerticalOffset + shift.Y * scale);
+        WriteViewOffsets(GestureView with
+        {
+            OffsetX = GestureView.OffsetX + shift.X * GestureView.Scale,
+            OffsetY = GestureView.OffsetY + shift.Y * GestureView.Scale
+        });
     }
 
     /// <summary>
@@ -203,36 +153,44 @@ public partial class InkCanvasNext
     /// </summary>
     public double CurrentScale
     {
-        get => CurrentView.Scale;
+        get => CanvasScale.ScaleX;
+        set => SetScale(value);
+    }
+
+    /// <summary>
+    /// 获取或设置视口左边缘相对内容原点的水平偏移，视口 DIP
+    /// 读取含手势期间的未提交平移，写入会作废该增量并夹到可滚动范围
+    /// </summary>
+    public double OffsetX
+    {
+        get => EffectiveView.OffsetX;
         set
         {
-            if (!double.IsFinite(value))
+            if (double.IsFinite(value))
             {
-                return;
+                // 外部改偏移视为新的视图基准，与 CurrentView 的写入语义一致
+                ClearPan( );
+                WriteViewOffsets(GestureView with { OffsetX = value });
             }
-
-            var scale = Math.Clamp(value, MinScale, MaxScale);
-            CanvasScale.ScaleX = CanvasScale.ScaleY = scale;
-            eraser.Scale = scale;
         }
     }
 
     /// <summary>
-    /// 获取或设置视口左边缘相对内容原点的水平偏移，视口 DIP；写入在布局完成后生效
-    /// </summary>
-    public double OffsetX
-    {
-        get => CanvasScroll.HorizontalOffset;
-        set => CanvasScroll.ScrollToHorizontalOffset(value);
-    }
-
-    /// <summary>
-    /// 获取或设置视口上边缘相对内容原点的垂直偏移，视口 DIP；写入在布局完成后生效
+    /// 获取或设置视口上边缘相对内容原点的垂直偏移，视口 DIP
+    /// 读取含手势期间的未提交平移，写入会作废该增量并夹到可滚动范围
     /// </summary>
     public double OffsetY
     {
-        get => CanvasScroll.VerticalOffset;
-        set => CanvasScroll.ScrollToVerticalOffset(value);
+        get => EffectiveView.OffsetY;
+        set
+        {
+            if (double.IsFinite(value))
+            {
+                // 外部改偏移视为新的视图基准，与 CurrentView 的写入语义一致
+                ClearPan( );
+                WriteViewOffsets(GestureView with { OffsetY = value });
+            }
+        }
     }
 
     /// <summary>

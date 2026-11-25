@@ -51,16 +51,13 @@ public partial class InkCanvasNext
 
         panPoint0 = first.Value;
         PinchDistance0 = second is null ? 0 : Distance(first.Value, second.Value);
-        initialScale = CurrentView.Scale;
+        initialScale = GestureView.Scale;
         panZoomAnchor = second is null ? first.Value : MidPoint(first.Value, second.Value);
         ZoomLocked = false;
     }
 
     private void PanZoom( )
     {
-        // 缩放仍走 LayoutTransform + 滚动偏移：先把 EvalPan 累积的手势平移落回偏移，避免两套平移叠加
-        CommitPan( );
-
         (var first, var second) = GetMajorTouches(touches);
         var firstPoint = first!.Value;
 
@@ -72,12 +69,12 @@ public partial class InkCanvasNext
             ZoomLocked = true;
         }
 
-        var view = CurrentView;
+        var effective = EffectiveView;
 
         double targetScale;
         if (ZoomLocked)
         {
-            targetScale = view.Scale;
+            targetScale = effective.Scale;
         }
         else
         {
@@ -91,11 +88,23 @@ public partial class InkCanvasNext
 
         // 先把基线指位下的内容点钉住，再按两指位移平移：等价于把基线两指映射到当前两指
         var anchor = new Point(panPoint0.X - viewportOrigin.X, panPoint0.Y - viewportOrigin.Y);
+        var resolved = ResolveView(
+            effective.ZoomAt(anchor, targetScale).Pan(panPoint0 - firstPoint),
+            prefetchRightBottom: false,
+            prefetchLeftTop: false);
+        if (resolved is null)
+        {
+            return;
+        }
 
-        CurrentView = view
-            .ZoomAt(anchor, targetScale)
-            .Pan(panPoint0 - firstPoint);
+        var target = resolved.Value;
 
+        // 缩放已写入 LayoutTransform；基准偏移未变时不重复排队滚动，剩余位移交给 RenderTransform
+        var baseView = WriteViewOffsets(GestureView);
+        CanvasPan.X = baseView.OffsetX - target.OffsetX;
+        CanvasPan.Y = baseView.OffsetY - target.OffsetY;
+
+        RaiseViewOrSelectionChanged( );
         panPoint0 = firstPoint;
     }
 
@@ -114,11 +123,12 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 手势期平移：只写 TranslateHost 的 RenderTransform，不碰 ScrollViewer 偏移，
+    /// 手势期平移：只改 <c>CanvasPan</c> 的增量，不写 ScrollViewer 偏移
+    /// 提交后的偏移夹在可滚动范围内，越界部分不保留
     /// </summary>
     private void PanBy(Vector delta)
     {
-        var view = CurrentView;
+        var view = GestureView;
         var viewport = ViewportSize;
         var maxX = Math.Max(0, InnerCanvas.Width * view.Scale - viewport.Width);
         var maxY = Math.Max(0, InnerCanvas.Height * view.Scale - viewport.Height);
@@ -130,7 +140,7 @@ public partial class InkCanvasNext
         CanvasPan.X = view.OffsetX - left;
         CanvasPan.Y = view.OffsetY - top;
 
-        // 手势中不再有 ScrollChanged：选区工具栏等消费方按原来的节奏手动通知一次
+        // 手势中不触发 ScrollChanged：选区工具栏等消费方按原来的节奏手动通知一次
         RaiseViewOrSelectionChanged( );
     }
 

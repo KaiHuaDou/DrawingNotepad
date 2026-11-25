@@ -33,7 +33,7 @@ public sealed class SettingsOptions : ISettingItem
         this.rawIndex = rawIndex;
         this.write = write;
         GroupName = $"SettingOptions{Interlocked.Increment(ref lastGroup)}";
-        Options = labels.Select((text, value) => new SettingsOption(this, value, text)).ToArray( );
+        Options = [.. labels.Select((text, value) => new SettingsOption(this, value, text))];
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -8,8 +8,7 @@ using System.Windows.Media;
 namespace InkCanvasNext;
 
 /// <summary>
-/// 历史记录项抽象：Apply 为重做方向，Revert 为撤销方向
-/// 参数 owner 用于访问 InkCanvas 以执行增删（StrokeChanges）或纯变换（TransformChanges）
+/// 历史记录项：Apply 为重做方向，Revert 为撤销方向
 /// </summary>
 internal interface IHistoryChange
 {
@@ -28,7 +27,7 @@ internal sealed class StrokeChanges(IReadOnlyList<Stroke> added, IReadOnlyList<S
     private readonly List<Stroke> removed = [.. removed];
 
     /// <summary>
-    /// 追加擦除产生的新笔画；同一批次内先增后删的笔画相互抵消
+    /// 同一批次内先增后删的笔画相互抵消
     /// </summary>
     internal void TrackAdded(Stroke stroke)
     {
@@ -38,9 +37,6 @@ internal sealed class StrokeChanges(IReadOnlyList<Stroke> added, IReadOnlyList<S
         }
     }
 
-    /// <summary>
-    /// 追加擦除去掉的笔画；与同批次的新增相互抵消
-    /// </summary>
     internal void TrackRemoved(Stroke stroke)
     {
         if (!added.Remove(stroke))
@@ -150,7 +146,7 @@ internal sealed class TransformChanges(IReadOnlyList<Stroke> target, Matrix delt
 }
 
 /// <summary>
-/// 结构性变化携带 Added/Removed；选区整体变换（移动/缩放/旋转）无增删，仅 TransformOnly 为 true
+/// 结构性变化携带 Added/Removed，选区整体变换无增删且 TransformOnly 为 true
 /// </summary>
 public sealed class InkCanvasStrokesChangedEventArgs : EventArgs
 {
@@ -163,19 +159,10 @@ public sealed class InkCanvasStrokesChangedEventArgs : EventArgs
         TransformOnly = transformOnly;
     }
 
-    /// <summary>
-    /// 新增的笔画；无新增时为空列表
-    /// </summary>
     public IReadOnlyList<Stroke> Added { get; }
 
-    /// <summary>
-    /// 移除的笔画；无移除时为空列表
-    /// </summary>
     public IReadOnlyList<Stroke> Removed { get; }
 
-    /// <summary>
-    /// 是否仅为选区整体变换（移动/缩放/旋转），此时无笔画增删
-    /// </summary>
     public bool TransformOnly { get; }
 }
 
@@ -202,8 +189,7 @@ public partial class InkCanvasNext
 
     private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
     {
-        // Added/Removed 只物化一次：历史项与事件参数共用同一份数组，
-        // 避免先给历史项复制一遍、再给事件参数复制一遍
+        // Added/Removed 只物化一次，历史项与事件参数共用同一份数组
         Stroke[] added = e.Added.Count == 0 ? [] : [.. e.Added];
         Stroke[] removed = e.Removed.Count == 0 ? [] : [.. e.Removed];
 
@@ -277,9 +263,6 @@ public partial class InkCanvasNext
         UndoRedoRefresh( );
     }
 
-    /// <summary>
-    /// 重做已撤销的操作
-    /// </summary>
     public void Redo( )
     {
         if (Position >= history.Count)
@@ -342,13 +325,10 @@ public partial class InkCanvasNext
             CanRedoChanged?.Invoke(this, new DependencyPropertyChangedEventArgs(CanRedoProperty, !canRedo, canRedo));
         }
 
-        // 命令的 CanExecute 只在重查时重算，撤销与重做按钮要立刻跟着状态变
+        // 命令的 CanExecute 只在重查时刷新，撤销与重做按钮要立刻跟着状态变
         CommandManager.InvalidateRequerySuggested( );
     }
 
-    /// <summary>
-    /// 导出当前历史快照到 <paramref name="old"/>，并用 <paramref name="new"/> 替换现有历史
-    /// </summary>
     public void SwapHistory(out HistorySnapshot? old, HistorySnapshot? @new)
     {
         SealEraseBatch( );

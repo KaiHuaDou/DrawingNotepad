@@ -7,7 +7,7 @@ namespace InkCanvasNext;
 public partial class InkCanvasNext
 {
     /// <summary>
-    /// 擦除周期内持续追加的历史项；非空表示批次还开着
+    /// 擦除周期内持续追加的历史项，非空表示批次还开着
     /// </summary>
     private StrokeChanges? eraseBatch;
 
@@ -37,9 +37,6 @@ public partial class InkCanvasNext
         return changed;
     }
 
-    /// <summary>
-    /// 结束原生擦除批次；有变更时通知宿主一次擦除操作
-    /// </summary>
     internal void CompleteNativeErase(int generation)
     {
         if (EndNativeErase(generation))
@@ -49,7 +46,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 给开口批次封口：批次留在历史里，之后的擦除开新项
+    /// 批次留在历史里，之后的擦除开新项
     /// </summary>
     private void SealEraseBatch( )
     {

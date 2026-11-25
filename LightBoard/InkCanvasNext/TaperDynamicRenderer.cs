@@ -12,9 +12,8 @@ using MediaGeometry = System.Windows.Media.Geometry;
 namespace InkCanvasNext;
 
 /// <summary>
-/// 自绘实时渲染器：与原生 DynamicRenderer 走同一条插件通道，按报文增量绘制湿墨
-/// 报文视觉只画已离开尾部的笔身；末尾 Taper.Points 点放进可替换的尾部视觉，保证末端渐细
-/// 段几何按原始采样点成形，整笔拟合只在收笔后由干墨执行
+/// 自绘实时渲染器：与原生 DynamicRenderer 共用插件通道，按报文增量绘制湿墨
+/// 报文视觉只画已离开尾部的笔身，末尾 Taper.Points 点放进可替换的尾部视觉
 /// </summary>
 internal sealed partial class TaperDynamicRenderer : DynamicRenderer
 {
@@ -238,7 +237,7 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
             var tail = Taper.Tail(total, effectiveTaper);
             var bodyEnd = total - tail;
 
-            // 笔身：只画本次离开尾部的点，报文视觉由原生 DynamicRenderer 追加
+            // 笔身只画新离开尾部的点，报文视觉由原生 DynamicRenderer 追加
             if (bodyEnd > bodyDrawn)
             {
                 var start = Math.Max(0, bodyDrawn - 1);
@@ -258,7 +257,6 @@ internal sealed partial class TaperDynamicRenderer : DynamicRenderer
                 return;
             }
 
-            // 尾部：每个报文重建，替换上一帧的尾部视觉，末端按 Taper 收细
             var tailStart = Math.Max(0, bodyEnd - 1);
             var tailGeometry = BuildGeometry(points, tailStart, total, noFit, effectiveTaper);
 

@@ -95,8 +95,7 @@ public partial class InkCanvasNext
 
         if (shift.X != 0 || shift.Y != 0)
         {
-            CanvasScroll.ScrollToHorizontalOffset(from.OffsetX);
-            CanvasScroll.ScrollToVerticalOffset(from.OffsetY);
+            WriteViewOffsets(from);
         }
 
         StartEdgeScroll(from, target);

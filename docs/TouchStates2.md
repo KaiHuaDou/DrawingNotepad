@@ -57,7 +57,8 @@
 - 进入 `Eraser`：`ReleaseAll` + `InnerCanvas.EditingMode = None` + `CaptureAll`；随后 `BeginPalmEraseLifetime`（有手掌时重置冻结直径并重开调整窗口，否则留给手指数通道）。
 - 进入 `MultiDraw`：若来自 `EvalDraw`/`Draw` 且原生在绘笔画存在（Ink 模式且已捕获触笔），先 `ReleaseStylusCapture` 触发原生整笔提交（InkCanvas 对中途切换编辑模式的在绘笔画只做丢弃，对捕获丢失才整笔提交），收笔处不渐细；随后 `ReleaseAll` + `InnerCanvas.EditingMode = None` + `CaptureAll` + `StartMultiTouch`（原绘制指以多指笔画从当前触点续接）。
 - 离开面积擦叠加态（`IsAreaEraserActive(from) && !IsAreaEraserActive(newState)`）：`EndEraserCycle`，同时清零面积周期（`EndAreaEraseCycle`）。
-- 画布余量：`ScrollChanged` 只在 `Idle` 时补一屏；手势中 `CurrentView` 的 setter 只保视口覆盖、不留余量，进入平移手势族与回到 `Idle` 时各补一屏。
+- 画布余量：`ScrollChanged` 只在 `Idle` 时补一屏；手势中视图写入只保视口覆盖、不留余量，进入平移手势族与回到 `Idle` 时各补一屏。
+- 平移手势的视图：`EvalPan`/`PanZoom`/`Pan` 共用 `CanvasPan` 记录手势增量，`GestureView` 保存已提交的基准视图，`EffectiveView` 由两者相减得到；偏移只在基准值变化时才排队写入 `ScrollViewer`，离开手势族时一次提交并逐轮排空布局，两轴都落地后再清 `RenderTransform`。缩放仍写 `LayoutTransform`。
 - `BlocksNativeInput`（全程接管 Down/Move/Up，`Handled`，InkCanvas 不接管收笔）：`EvalPan`、`PanZoom`、`Pan`、`MultiDraw`、`Selection`。
 - `OverridesEditingMode`（进入时需把 `EditingMode` 置 `None` 的手势接管状态）：`EvalPan`、`PanZoom`、`Pan`、`MultiDraw`、`Eraser`。
 

@@ -150,9 +150,10 @@ public partial class InkCanvasNext
 
     private void ScrollHorizontally(int delta)
     {
-        var step = ScrollStep * CurrentScale;
-        var x = CanvasScroll.HorizontalOffset + (delta > 0 ? -step : step);
-        CurrentView = new View(CurrentScale, x, CanvasScroll.VerticalOffset);
+        // 从有效视图出发：手势中存在未提交平移时也按屏幕上的位置继续滚动，不丢弃增量
+        var view = CurrentView;
+        var step = ScrollStep * view.Scale;
+        CurrentView = view with { OffsetX = view.OffsetX + (delta > 0 ? -step : step) };
     }
 
     private void ZoomAtCursor(MouseWheelEventArgs e)

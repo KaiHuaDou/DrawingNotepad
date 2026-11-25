@@ -19,7 +19,7 @@ internal enum TouchState
 public partial class InkCanvasNext
 {
     /// <summary>
-    /// 盖章武装标记：本次触摸序列在盖章模式下以单指 EvalDraw 开始，且尚未升级为任何手势接管态
+    /// 盖章武装标记：当前触摸序列在盖章模式下以单指 EvalDraw 开始，且尚未升级为手势接管状态
     /// </summary>
     private bool stampArmed;
 
@@ -31,7 +31,7 @@ public partial class InkCanvasNext
     internal bool CanRebase => State == TouchState.Idle;
 
     /// <summary>
-    /// 是否有输入序列在途：触摸或合成触点使状态离开 Idle，或原生墨迹画布持有笔捕获
+    /// 是否有输入序列在途：状态离开 Idle，或原生墨迹画布持有笔捕获
     /// </summary>
     public bool IsGestureActive => State != TouchState.Idle || InnerCanvas.IsStylusCaptured;
 
@@ -41,20 +41,15 @@ public partial class InkCanvasNext
     internal ToolSnapshot Snapshot => new(DrawingAttributes.Mode, DrawingAttributes.Stamp, IsReadOnly);
 
     /// <summary>
-    /// 触点数变化（Down/Up）重评迁移，EvalDraw/EvalPan 在 Move 时重评以跟踪位移提交；
-    /// 守卫内联写死：switch 臂自上而下即优先级（见 docs/TouchStates2.md）；
-    /// 手指数通道由构造期固定的 PalmEraseFingers 驱动，面积通道由触点 Kind 分类驱动并在入口集中判定；
-    /// d2/x2 每次重评只计算一次；全部不命中 → 保持当前状态。
-    /// 触点坐标取自 GetTouchPoint(this)（根可视空间：WPF 只按 relativeTo 的祖先链做变换），
-    /// 不经过画布 LayoutTransform，因此阈值（视口 DIP）不随缩放变化
+    /// 触摸状态迁移入口：switch 臂自上而下即优先级（见 docs/TouchStates2.md），
+    /// 触点坐标取根可视空间，阈值不随缩放变化
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private void UpdateState( )
     {
         var (count, palmCount) = CountTouches(touches);
 
-        // 面积通道集中判定：命中后直接进入 Eraser，下面的 switch 只保留纯手指数逻辑，
-        // 无法上报有效尺寸的设备 palmCount 恒为 0，行为与引入面积通道前一致
+        // 面积通道在入口统一处理，下面的 switch 只处理手指数通道
         if (IsPalmTakeover(State, count, palmCount))
         {
             SetState(TouchState.Eraser);
@@ -77,8 +72,6 @@ public partial class InkCanvasNext
             TouchState.Idle => count switch
             {
                 0 => TouchState.Idle,
-                // 选区入口：无选区时只有单指进入，其余按一般手势；
-                // 有选区时单指、双指全在内、以及横跨边界的组合进入，横跨时由在内的第一根手指拖动
                 1 when tool.IsSelectionEntry => TouchState.Selection,
                 >= 2 when tool.IsSelectionEntry && selectionMixed => TouchState.Selection,
                 2 when tool.IsSelectionEntry && selectionAllInside => TouchState.Selection,
@@ -94,8 +87,7 @@ public partial class InkCanvasNext
             {
                 0 => TouchState.Idle,
                 1 when x2 > c2 => TouchState.Draw,
-                // 擦除工具多指手势与普通模式同款（并拢判定），差异：掌擦触点数起无论间距均掌擦（手掌压屏常呈张开），
-                // 多指张开不迁多指画笔、保持擦除上下文
+                // 手掌压屏常呈张开，掌擦不要求并拢；擦除工具下多指一律掌擦
                 >= 3 when palm && (d2 <= l2 || tool.IsErase) => TouchState.Eraser,
                 2 when d2 <= l2 => TouchState.PanZoom,
                 >= 3 when d2 <= l2 => TouchState.EvalPan,
@@ -110,7 +102,6 @@ public partial class InkCanvasNext
                 _ => State,
             },
 
-            // 平移评估期：平移随 Move 实时生效，位移超过阈值前可迁掌擦与多指画笔
             TouchState.EvalPan => count switch
             {
                 0 => TouchState.Idle,
@@ -126,7 +117,6 @@ public partial class InkCanvasNext
                 _ => State,
             },
 
-            // 双指手势按前两指执行：并拢的附加指迁平移评估，张开的附加指不参与（不迁多指书写）
             TouchState.PanZoom => count switch
             {
                 0 => TouchState.Idle,
@@ -135,24 +125,21 @@ public partial class InkCanvasNext
                 _ => State,
             },
 
-            // 平移提交后锁定：无论触点如何变化，仅触点清空迁回 Idle
             TouchState.Pan => count switch
             {
                 0 => TouchState.Idle,
                 _ => State,
             },
 
-            // 掌擦一旦开始就保持到所有触点清空；面积几何与调整窗口由 UpdateAreaEraser 按手掌簇变化重启
+            // 面积几何与调整窗口由 UpdateAreaEraser 按手掌簇变化重启
             TouchState.Eraser => touches.Count == 0
                 ? TouchState.Idle
                 : State,
 
             TouchState.Selection => count switch
             {
-                // 手掌在选区内时不接管：手势结束后回 Idle，手掌移动时再由面积臂重评
+                // 选区内的手掌不在此接管，回 Idle 后由手掌移动重评
                 0 => TouchState.Idle,
-                // 选区手势中附加手指：全在选区内保持选区手势（RefreshSelectionGesture 把 3+ 指降为只平移），
-                // 横跨边界时由在内的第一根手指继续拖动，全在选区外按一般手势处理
                 >= 3 when selectionMixed => TouchState.Selection,
                 >= 3 when selectionAllOutside && palm && d2 <= l2 => TouchState.Eraser,
                 >= 3 when selectionAllOutside && d2 <= l2 => TouchState.EvalPan,
@@ -168,7 +155,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 状态切换：先按迁出状态结算（提交/取消/补余量），再按迁入状态建立（捕获/基线/编辑模式）/ State 在两侧结算完成后才更新，迁入规则据此仍可读到迁出状态
+    /// 迁出结算与迁入建立完成后才更新 State，迁入钩子仍可读到迁出状态
     /// </summary>
     private void SetState(TouchState newState)
     {
@@ -187,7 +174,7 @@ public partial class InkCanvasNext
 
     private void ExitState(TouchState from, TouchState to)
     {
-        // 离开平移组：把手势期的 RenderTransform 增量提交回滚动偏移，后续状态继续按已提交视图工作
+        // 离开平移组时提交 RenderTransform 增量，后续状态按已提交视图工作
         if (from is TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan
             && to is not (TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan))
         {
@@ -201,7 +188,7 @@ public partial class InkCanvasNext
 
         if (from == TouchState.Selection)
         {
-            // 半途的套索被多指手势接管：放弃本次路径，保留进入前的选区
+            // 套索被手势接管时放弃路径，保留进入前的选区
             if (to != TouchState.Idle && IsPathGesture)
             {
                 ResetSelectionGesture( );
@@ -211,8 +198,7 @@ public partial class InkCanvasNext
             EndSelectionTouch( );
         }
 
-        // 擦除周期先于编辑模式恢复结算：周期结束的回调可能换工具，恢复必须按新工具执行；
-        // 面积周期状态由 EndEraserCycle 统一清零
+        // 擦除周期先于编辑模式恢复结算：周期结束的回调可能换工具，恢复须按新工具执行
         if (IsAreaEraserActive(from) && !IsAreaEraserActive(to))
         {
             EndEraserCycle( );
@@ -220,18 +206,16 @@ public partial class InkCanvasNext
 
         if (from == TouchState.Eraser)
         {
-            // 离开掌擦态：面积通道的生命周期一并结束，下一次进入按当时触点重新判定
             ResetPalmEraseLifetime( );
         }
 
-        // 离开覆盖编辑模式的手势态：把编辑模式恢复为当前工具；回 Idle 时同时释放捕获
         if (to == TouchState.Idle)
         {
             ReleaseAll( );
             ApplyModeToEditing(DrawingAttributes.Mode);
 
-            // 手势期间不补余量也不刷新提示：结束时统一结算平移、补一屏余量并刷新一次
-            var view = CurrentView;
+            // 手势期间不补余量也不刷新提示，结束时统一结算平移、补一屏余量并刷新一次
+            var view = GestureView;
             var shift = ApplyPendingRebase( );
             view = view with
             {
@@ -239,9 +223,7 @@ public partial class InkCanvasNext
                 OffsetY = view.OffsetY + shift.Y * view.Scale
             };
 
-            view = EnsureCanvasFill(view);
-            CanvasScroll.ScrollToHorizontalOffset(view.OffsetX);
-            CanvasScroll.ScrollToVerticalOffset(view.OffsetY);
+            WriteViewOffsets(EnsureCanvasFill(view));
 
             UpdateEdgeHints( );
         }
@@ -250,9 +232,8 @@ public partial class InkCanvasNext
             ApplyModeToEditing(DrawingAttributes.Mode);
         }
 
-        // 形状只允许在单指绘制上下文（EvalDraw/Draw）存活：迁入 MultiDraw 时按当前预览提交，
-        // 迁入其余接管态（平移/缩放/擦除/选区/回 Idle）则放弃预览，
-        // 避免 shapeActive 在事件处理器中抢占手势路由。
+        // 形状只允许在单指绘制上下文存活，否则 shapeActive 会在事件处理器中抢占手势路由；
+        // 迁入 MultiDraw 时按预览提交，其余迁移放弃预览
         if (shapeActive && from is TouchState.EvalDraw or TouchState.Draw && to is not (TouchState.EvalDraw or TouchState.Draw))
         {
             if (to == TouchState.MultiDraw)
@@ -265,7 +246,7 @@ public partial class InkCanvasNext
             }
         }
 
-        // 盖章只由未升级为手势的单指序列触发：迁入任何手势接管态（含 MultiDraw）即解除 解除不依赖盖章仍激活，避免中途退出盖章后残留脏标记
+        // 盖章只由未升级为手势的单指序列触发，进入手势接管状态即解除，避免中途退出盖章后残留标记
         if (to is not (TouchState.EvalDraw or TouchState.Draw))
         {
             stampArmed = false;
@@ -274,7 +255,6 @@ public partial class InkCanvasNext
 
     private void EnterState(TouchState to, TouchState from)
     {
-        // 盖章只由未升级为手势的单指序列触发：Idle 进入 EvalDraw 时武装
         if (from == TouchState.Idle && to == TouchState.EvalDraw && Snapshot.IsStamp)
         {
             stampArmed = true;
@@ -308,12 +288,6 @@ public partial class InkCanvasNext
             case TouchState.EvalPan:
             case TouchState.PanZoom:
             case TouchState.Pan:
-                // EvalPan 可能已用手势变换平移；进入双指缩放前先折回偏移，避免两套平移叠加
-                if (from == TouchState.EvalPan && to == TouchState.PanZoom)
-                {
-                    CommitPan( );
-                }
-
                 if (from is not (TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan))
                 {
                     ReleaseAll( );
@@ -321,7 +295,7 @@ public partial class InkCanvasNext
                     InnerCanvas.ClearWet( );
                     CaptureAll( );
 
-                    // 只有从组外进入才算新的一次平移：累计位移从零起算，组内迁移与基线重立都不清空
+                    // 从组外进入才算新平移：累计位移清零，组内迁移与基线重立不清空
                     PanDisplacement = default;
 
                     // 手势开始补一屏余量，手势中不扩展，靠这次余量吸收拖动；
