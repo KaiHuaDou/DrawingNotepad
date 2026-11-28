@@ -23,6 +23,9 @@
                 <DataTrigger Binding="{Binding IsAlerting}" Value="True">
                     <Setter Property="Foreground" Value="{StaticResource TimerAlertBrush}" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding IsFinished}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource TimerAlertBrush}" />
+                </DataTrigger>
                 <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="Maximized">
                     <Setter Property="FontSize" Value="192" />
                 </DataTrigger>
@@ -80,10 +83,13 @@
             </Style.Triggers>
         </Style>
 
-        <!--暂停时数字变暗，与环的半透明同步-->
+        <!--暂停与结束时数字变暗，与环的半透明同步-->
         <Style x:Key="TimerDigitsFrameStyle" TargetType="{x:Type Border}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsPaused}" Value="True">
+                    <Setter Property="Opacity" Value="0.6" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsFinished}" Value="True">
                     <Setter Property="Opacity" Value="0.6" />
                 </DataTrigger>
             </Style.Triggers>

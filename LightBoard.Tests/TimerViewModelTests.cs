@@ -323,8 +323,44 @@ public class TimerViewModelTests
 
                 UiThread.Pump(TimeSpan.FromSeconds(2));
 
-                Assert.True(timer.IsIdle);
+                Assert.True(timer.IsFinished);
+                Assert.False(timer.IsIdle);
+                Assert.Equal(0, timer.Seconds);
                 Assert.Equal(1, raised);
+            }
+            finally
+            {
+                timer.Stop( );
+            }
+        });
+    }
+
+    [Fact]
+    public void Finish_ThenReset_RestoresStartValue( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var timer = new TimerViewModel( );
+            try
+            {
+                timer.Minutes = 1;
+                timer.Adjust(TimeSpan.FromSeconds(-57));
+
+                // 未开始时读到的秒数就是本轮起点，开始时按它完整记录
+                var start = timer.Seconds;
+                timer.Toggle( );
+
+                UiThread.Pump(TimeSpan.FromSeconds(start + 1));
+
+                Assert.True(timer.IsFinished);
+                Assert.True(timer.CanReset);
+                Assert.Equal(0, timer.Seconds);
+
+                timer.Reset( );
+
+                Assert.True(timer.IsIdle);
+                Assert.Equal(start, timer.Seconds);
+                Assert.True(timer.CanToggle);
             }
             finally
             {

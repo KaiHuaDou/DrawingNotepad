@@ -17,6 +17,7 @@ internal enum TimerState
     Running,
     Alerting,
     Paused,
+    Finished,
 }
 
 /// <summary>
@@ -65,7 +66,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     public event EventHandler? DisplayChanged;
 
     /// <summary>
-    /// 倒数到零时触发一次，此刻状态已回到 <see cref="TimerState.Idle"/>
+    /// 倒数到零时触发一次，此刻状态已回到 <see cref="TimerState.Finished"/>
     /// </summary>
     public event EventHandler? Finished;
 
@@ -118,7 +119,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     public bool IsActive => state is TimerState.Running or TimerState.Alerting;
 
     /// <summary>
-    /// 未开始或本轮已结束
+    /// 未开始
     /// </summary>
     public bool IsIdle => state == TimerState.Idle;
 
@@ -130,7 +131,12 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     public bool IsPaused => state == TimerState.Paused;
 
     /// <summary>
-    /// 倒计时在本轮内（推进或暂停）时按进度显示
+    /// 本轮倒计时已归零，等待重置
+    /// </summary>
+    public bool IsFinished => state == TimerState.Finished;
+
+    /// <summary>
+    /// 倒计时在本轮内（推进、暂停或已结束）时按进度显示
     /// </summary>
     public bool ShowsProgress => Mode == TimerMode.Countdown && state != TimerState.Idle;
 
@@ -154,7 +160,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     /// <summary>
     /// 未开始、已结束或暂停时可重置
     /// </summary>
-    public bool CanReset => state is TimerState.Idle or TimerState.Paused;
+    public bool CanReset => state is TimerState.Idle or TimerState.Paused or TimerState.Finished;
 
     public bool CanDecreaseHour => Hours > 0;
 
@@ -178,7 +184,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// 暂停后回到本轮开始时的数值，其余情况清零
+    /// 暂停或已结束时回到本轮开始时的数值，其余情况清零
     /// </summary>
     public void Reset( )
     {
@@ -187,7 +193,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
             return;
         }
 
-        var value = state == TimerState.Paused ? startValue : TimeSpan.Zero;
+        var value = state is TimerState.Paused or TimerState.Finished ? startValue : TimeSpan.Zero;
 
         if (Mode == TimerMode.Countdown)
         {
@@ -240,6 +246,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
             Raise(nameof(IsIdle));
             Raise(nameof(IsAlerting));
             Raise(nameof(IsPaused));
+            Raise(nameof(IsFinished));
             Raise(nameof(IsAdjustable));
             Raise(nameof(CanToggle));
             Raise(nameof(CanReset));
@@ -261,7 +268,7 @@ public sealed class TimerViewModel : INotifyPropertyChanged
         {
             if (value <= TimeSpan.Zero)
             {
-                SetState(TimerState.Idle);
+                SetState(TimerState.Finished);
                 Finished?.Invoke(this, EventArgs.Empty);
             }
             else if (value <= AlertSpan)
