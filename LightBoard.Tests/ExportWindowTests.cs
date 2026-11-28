@@ -16,13 +16,15 @@ public class ExportWindowTests
             {
                 LastExportFormat = ExportFormat.Svg,
                 LastExportScale = 50,
-                LastExportPath = @"D:\out\a.svg",
+                LastExportPath = @"D:\out",
             });
             try
             {
                 Assert.True(window.SvgRadio.IsChecked);
                 Assert.True(window.Scale50Radio.IsChecked);
-                Assert.Equal(@"D:\out\a.svg", window.PathBox.Text);
+                Assert.True(window.TimeRadio.IsChecked);
+                Assert.Equal(@"D:\out", window.PathBox.Text);
+                Assert.Matches(@"^\d{14}$", window.NameBox.Text);
             }
             finally
             {
@@ -39,7 +41,8 @@ public class ExportWindowTests
             var window = new ExportWindow(new LightBoardSettings( ));
             try
             {
-                Assert.Matches(@"\d{8}-\d{6}$", window.PathBox.Text);
+                Assert.True(Path.IsPathRooted(window.PathBox.Text));
+                Assert.Matches(@"^\d{14}$", window.NameBox.Text);
             }
             finally
             {
@@ -49,66 +52,21 @@ public class ExportWindowTests
     }
 
     [Fact]
-    public void FormatChanged_ToPdf_AppendsExtension( )
+    public void NameMode_SwitchToCustom_RestoresInput( )
     {
         UiThread.Run(( ) =>
         {
-            var window = new ExportWindow(new LightBoardSettings
-            {
-                LastExportFormat = ExportFormat.Png,
-                LastExportPath = @"D:\out\a",
-            });
+            var window = new ExportWindow(new LightBoardSettings( ));
             try
             {
-                window.PdfRadio.IsChecked = true;
+                window.CustomRadio.IsChecked = true;
+                window.NameBox.Text = "会议记录";
 
-                Assert.Equal(@"D:\out\a.pdf", window.PathBox.Text);
-            }
-            finally
-            {
-                window.Close( );
-            }
-        });
-    }
+                window.TimeRadio.IsChecked = true;
+                Assert.Matches(@"^\d{14}$", window.NameBox.Text);
 
-    [Fact]
-    public void FormatChanged_ToSvg_RemovesExtension( )
-    {
-        UiThread.Run(( ) =>
-        {
-            var window = new ExportWindow(new LightBoardSettings
-            {
-                LastExportFormat = ExportFormat.Pdf,
-                LastExportPath = @"D:\out\a.pdf",
-            });
-            try
-            {
-                window.SvgRadio.IsChecked = true;
-
-                Assert.Equal(@"D:\out\a", window.PathBox.Text);
-            }
-            finally
-            {
-                window.Close( );
-            }
-        });
-    }
-
-    [Fact]
-    public void FormatChanged_ToPng_KeepsDirectory( )
-    {
-        UiThread.Run(( ) =>
-        {
-            var window = new ExportWindow(new LightBoardSettings
-            {
-                LastExportFormat = ExportFormat.Svg,
-                LastExportPath = @"D:\out\a",
-            });
-            try
-            {
-                window.PngRadio.IsChecked = true;
-
-                Assert.Equal(@"D:\out\a", window.PathBox.Text);
+                window.CustomRadio.IsChecked = true;
+                Assert.Equal("会议记录", window.NameBox.Text);
             }
             finally
             {
@@ -161,19 +119,113 @@ public class ExportWindowTests
     }
 
     [Fact]
-    public void TryBuildOptions_PdfWithoutExtension_AppendsPdf( )
+    public void TryBuildOptions_PdfWithName_AppendsPdf( )
     {
         UiThread.Run(( ) =>
         {
             var window = new ExportWindow(new LightBoardSettings
             {
                 LastExportFormat = ExportFormat.Pdf,
-                LastExportPath = @"D:\out\a",
+                LastExportPath = @"D:\out",
             });
             try
             {
+                window.CustomRadio.IsChecked = true;
+                window.NameBox.Text = "会议记录";
+
                 Assert.True(window.TryBuildOptions(out var options, out _));
-                Assert.EndsWith(".pdf", options.Path);
+                Assert.Equal(@"D:\out\会议记录.pdf", options.Path);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void TryBuildOptions_PdfNameWithExtension_StripsPdf( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new ExportWindow(new LightBoardSettings
+            {
+                LastExportFormat = ExportFormat.Pdf,
+                LastExportPath = @"D:\out",
+            });
+            try
+            {
+                window.CustomRadio.IsChecked = true;
+                window.NameBox.Text = "会议记录.pdf";
+
+                Assert.True(window.TryBuildOptions(out var options, out _));
+                Assert.Equal(@"D:\out\会议记录.pdf", options.Path);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void TryBuildOptions_PngWithName_UsesNameFolder( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new ExportWindow(new LightBoardSettings
+            {
+                LastExportFormat = ExportFormat.Png,
+                LastExportPath = @"D:\out",
+            });
+            try
+            {
+                window.CustomRadio.IsChecked = true;
+                window.NameBox.Text = "会议记录";
+
+                Assert.True(window.TryBuildOptions(out var options, out _));
+                Assert.Equal(@"D:\out\会议记录", options.Path);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void TryBuildOptions_EmptyName_ReturnsFalse( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new ExportWindow(new LightBoardSettings( ));
+            try
+            {
+                window.CustomRadio.IsChecked = true;
+
+                Assert.False(window.TryBuildOptions(out _, out var error));
+                Assert.NotEmpty(error);
+            }
+            finally
+            {
+                window.Close( );
+            }
+        });
+    }
+
+    [Fact]
+    public void TryBuildOptions_InvalidName_ReturnsFalse( )
+    {
+        UiThread.Run(( ) =>
+        {
+            var window = new ExportWindow(new LightBoardSettings( ));
+            try
+            {
+                window.CustomRadio.IsChecked = true;
+                window.NameBox.Text = "a:b";
+
+                Assert.False(window.TryBuildOptions(out _, out var error));
+                Assert.NotEmpty(error);
             }
             finally
             {

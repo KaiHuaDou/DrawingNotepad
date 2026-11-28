@@ -198,7 +198,7 @@ internal static class SettingsSchema
                         ? Array.IndexOf(SettingsLimits.ExportScales, scale)
                         : null,
                     (s, index) => s with { LastExportScale = index is null ? null : SettingsLimits.ExportScales[index.Value] }),
-                new SettingsText("位置", nameof(LightBoardSettings.LastExportPath),
+                new SettingsText("路径", nameof(LightBoardSettings.LastExportPath),
                     s => s.EffectiveExportPath,
                     s => s.LastExportPath,
                     (s, value) => s with { LastExportPath = string.IsNullOrWhiteSpace(value) ? null : value.Trim( ) }),

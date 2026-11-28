@@ -8,12 +8,14 @@ using Ookii.Dialogs.Wpf;
 
 namespace LightBoard;
 
-// 导出窗口：收集格式、缩放与目标位置
+// 导出窗口：收集格式、缩放、路径与名称
 public partial class ExportWindow : Window
 {
-    private readonly string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+    private readonly string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
     private ExportFormat format;
     private int scale;
+    private bool timeName = true;
+    private string customName = string.Empty;
 
     internal ExportOptions Options { get; private set; }
 
@@ -31,31 +33,24 @@ public partial class ExportWindow : Window
         Scale25Radio.Checked += ScaleChanged;
         Scale50Radio.Checked += ScaleChanged;
         Scale100Radio.Checked += ScaleChanged;
+        TimeRadio.Checked += NameModeChanged;
+        CustomRadio.Checked += NameModeChanged;
 
         format = settings.EffectiveExportFormat;
         scale = settings.EffectiveExportScale;
 
         SetChecked( );
-        PathBox.Text = settings.EffectiveExportPath is { Length: > 0 } path ? path : DefaultPath(format);
+        TimeRadio.IsChecked = true;
+        PathBox.Text = settings.EffectiveExportPath is { Length: > 0 } path ? path : DefaultDirectory( );
         PageCountText.Text = $"共 {BoardState.Pages.Count} 页";
-        UpdateHint( );
     }
 
     private void FormatChanged(object o, RoutedEventArgs e)
     {
-        if (o is not RadioButton { Tag: string tag }
-            || !Enum.TryParse<ExportFormat>(tag, out var value)
-            || value == format)
+        if (o is RadioButton { Tag: string tag } && Enum.TryParse<ExportFormat>(tag, out var value))
         {
-            return;
+            format = value;
         }
-
-        var previous = format;
-        format = value;
-        PathBox.Text = PathBox.Text.Length == 0
-            ? DefaultPath(format)
-            : ConvertPath(PathBox.Text, previous, format);
-        UpdateHint( );
     }
 
     private void ScaleChanged(object o, RoutedEventArgs e)
@@ -66,34 +61,38 @@ public partial class ExportWindow : Window
         }
     }
 
-    private void BrowseClick(object o, RoutedEventArgs e)
+    private void NameModeChanged(object o, RoutedEventArgs e)
     {
-        if (format == ExportFormat.Pdf)
+        if (o is not RadioButton { Tag: string tag })
         {
-            var dialog = new VistaSaveFileDialog( )
-            {
-                Filter = "PDF 文档 (*.pdf)|*.pdf",
-                DefaultExt = ".pdf",
-                AddExtension = true,
-                OverwritePrompt = true,
-                FileName = Path.GetFileName(PathBox.Text),
-            };
-            if (dialog.ShowDialog( ) == true)
-            {
-                PathBox.Text = dialog.FileName;
-            }
-
             return;
         }
 
-        var folder = new VistaFolderBrowserDialog( )
+        if (!timeName)
+        {
+            customName = NameBox.Text;
+        }
+
+        timeName = tag == "Time";
+        NameBox.IsReadOnly = timeName;
+        NameBox.Text = timeName ? timestamp : customName;
+        if (!timeName)
+        {
+            NameBox.Focus( );
+            NameBox.SelectAll( );
+        }
+    }
+
+    private void BrowseClick(object o, RoutedEventArgs e)
+    {
+        var dialog = new VistaFolderBrowserDialog( )
         {
             SelectedPath = PathBox.Text,
             ShowNewFolderButton = true,
         };
-        if (folder.ShowDialog( ) == true)
+        if (dialog.ShowDialog( ) == true)
         {
-            PathBox.Text = Path.Join(folder.SelectedPath, timestamp);
+            PathBox.Text = dialog.SelectedPath;
         }
     }
 
@@ -127,44 +126,47 @@ public partial class ExportWindow : Window
         if (text.Length == 0)
         {
             options = default;
-            error = "请填写导出位置";
+            error = "请填写导出路径";
             return false;
         }
 
-        string path;
+        string directory;
         try
         {
-            path = Path.GetFullPath(text);
+            directory = Path.GetFullPath(text);
         }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
         {
             options = default;
-            error = "导出位置无效";
+            error = "导出路径无效";
             return false;
         }
 
-        if (format == ExportFormat.Pdf)
-        {
-            if (!path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-            {
-                path = $"{path}.pdf";
-            }
-
-            if (Directory.Exists(path))
-            {
-                options = default;
-                error = "导出位置是目录，请指定文件名";
-                return false;
-            }
-        }
-        else if (File.Exists(path))
+        if (File.Exists(directory))
         {
             options = default;
-            error = "导出位置是文件，请指定目录";
+            error = "导出路径是文件，请填写目录";
             return false;
         }
 
-        options = new(format, scale, path);
+        var name = TrimName(NameBox.Text, format);
+        if (name.Length == 0)
+        {
+            options = default;
+            error = "请填写名称";
+            return false;
+        }
+
+        if (name is "." or ".." || name.IndexOfAny(Path.GetInvalidFileNameChars( )) >= 0)
+        {
+            options = default;
+            error = "名称包含无效字符";
+            return false;
+        }
+
+        options = new(format, scale, format == ExportFormat.Pdf
+            ? Path.Join(directory, $"{name}.pdf")
+            : Path.Join(directory, name));
         error = string.Empty;
         return true;
     }
@@ -188,54 +190,32 @@ public partial class ExportWindow : Window
         scaleRadio.IsChecked = true;
     }
 
-    private void UpdateHint( )
-    {
-        FormatHintText.Text = format switch
-        {
-            ExportFormat.Png => "每页导出为一个 PNG 文件，按页码命名",
-            ExportFormat.Pdf => "整板导出为单个 PDF 文件",
-            _ => "每页导出为一个 SVG 文件，按页码命名",
-        };
-    }
-
-    private string DefaultPath(ExportFormat value)
+    private static string DefaultDirectory( )
     {
         var directory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
-        if (string.IsNullOrEmpty(directory))
-        {
-            directory = App.AppPath;
-        }
-
-        return value == ExportFormat.Pdf
-            ? Path.Join(directory, $"{timestamp}.pdf")
-            : Path.Join(directory, timestamp);
+        return directory.Length == 0 ? App.AppPath : directory;
     }
 
-    private static string ConvertPath(string path, ExportFormat from, ExportFormat to)
+    private static string TrimName(string text, ExportFormat value)
     {
-        var wasFile = from == ExportFormat.Pdf;
-        var isFile = to == ExportFormat.Pdf;
-        if (wasFile == isFile)
+        var name = text.Trim( );
+        var extension = value switch
         {
-            return path;
-        }
-
-        if (isFile)
-        {
-            return path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? path : $"{path}.pdf";
-        }
-
-        return path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? path[..^4] : path;
+            ExportFormat.Pdf => ".pdf",
+            ExportFormat.Png => ".png",
+            _ => ".svg",
+        };
+        return name.EndsWith(extension, StringComparison.OrdinalIgnoreCase)
+            ? name[..^extension.Length].TrimEnd( )
+            : name;
     }
 
     private static bool EnsureDirectory(ExportOptions options, out string error)
     {
-        var directory = options.Format == ExportFormat.Pdf
-            ? Path.GetDirectoryName(options.Path)
-            : options.Path;
-        if (string.IsNullOrEmpty(directory))
+        var directory = options.Directory;
+        if (directory.Length == 0)
         {
-            error = "导出位置无效";
+            error = "导出路径无效";
             return false;
         }
 
@@ -291,7 +271,7 @@ public partial class ExportWindow : Window
             {
                 LastExportFormat = options.Format,
                 LastExportScale = options.Scale,
-                LastExportPath = options.Path,
+                LastExportPath = options.Directory,
             });
         }
         catch (Exception ex)
