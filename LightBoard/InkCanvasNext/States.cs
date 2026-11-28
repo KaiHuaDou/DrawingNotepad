@@ -174,13 +174,6 @@ public partial class InkCanvasNext
 
     private void ExitState(TouchState from, TouchState to)
     {
-        // 离开平移组时提交 RenderTransform 增量，后续状态按已提交视图工作
-        if (from is TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan
-            && to is not (TouchState.EvalPan or TouchState.PanZoom or TouchState.Pan))
-        {
-            CommitPan( );
-        }
-
         if (from == TouchState.MultiDraw)
         {
             EndMultiTouch( );
@@ -215,15 +208,7 @@ public partial class InkCanvasNext
             ApplyModeToEditing(DrawingAttributes.Mode);
 
             // 手势期间不补余量也不刷新提示，结束时统一结算平移、补一屏余量并刷新一次
-            var view = GestureView;
-            var shift = ApplyPendingRebase( );
-            view = view with
-            {
-                OffsetX = view.OffsetX + shift.X * view.Scale,
-                OffsetY = view.OffsetY + shift.Y * view.Scale
-            };
-
-            WriteViewOffsets(EnsureCanvasFill(view));
+            ApplyView(CurrentView.Shifted(ApplyPendingRebase( )));
 
             UpdateEdgeHints( );
         }
@@ -300,7 +285,7 @@ public partial class InkCanvasNext
 
                     // 手势开始补一屏余量，手势中不扩展，靠这次余量吸收拖动；
                     // 左/上已有空闲期补足的余量，这里只补右/下，避免起手前再平移内容
-                    EnsureCanvasFill(CurrentView, prefetchLeftTop: false);
+                    ApplyView(CurrentView, prefetchLeftTop: false);
                 }
 
                 InitGesture( );

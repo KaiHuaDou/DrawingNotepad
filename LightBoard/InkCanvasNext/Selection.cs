@@ -7,8 +7,8 @@ using System.Windows.Media;
 namespace InkCanvasNext;
 
 /// <summary>
-/// 自绘选择控制器：维护自有选型集合与包围盒，替代 WPF InkCanvas 内置选择
-/// 坐标一律为 InkCanvas 内容坐标（已含 CanvasGrid 缩放），与滚动/缩放解耦
+/// 自绘选择控制器，替代 InkCanvas 内置选择
+/// 坐标一律为内容坐标（已含 CanvasGrid 缩放），与视图变换解耦
 /// </summary>
 internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual visual)
 {
@@ -19,7 +19,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
 
     private static readonly IReadOnlyList<Stroke> EmptySnapshot = Array.AsReadOnly(Array.Empty<Stroke>( ));
 
-    // 选区变化时一次性生成快照；读取方（公开属性、变换手势、删除）共用，避免各自复制
+    // 选区变化时一次性生成快照，读取方共用
 
     internal IReadOnlyCollection<Stroke> SelectedStrokes => selectedStrokes;
 
@@ -95,7 +95,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
     internal void RecomputeBounds( )
     {
         // Rect 是结构体：经由属性调用实例方法 Union 只会修改 getter 返回的临时副本（静默丢弃），
-        // 必须用局部变量累计后一次性赋回属性，否则 Bounds 始终为 Rect.Empty、选择框/手柄永不渲染
+        // 必须用局部变量累计后一次性赋回属性，否则 Bounds 始终为 Rect.Empty
         var result = Rect.Empty;
         foreach (var s in selectedStrokes)
         {
@@ -106,8 +106,8 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
     }
 
     /// <summary>
-    /// 手势帧内用段起始包围盒的四个角求新 AABB；避免每帧遍历全部选中笔画。
-    /// 旋转时结果可能略大于真实包围盒，抬手时由 <see cref="RecomputeBounds"/> 精确校正
+    /// 段起始包围盒的四个角乘矩阵求 AABB，供逐帧更新；只适用于无旋转分量的变换，
+    /// 有旋转时结果会大于真实包围盒，由调用方改用 <see cref="RecomputeBounds"/>
     /// </summary>
     internal void TransformBounds(Rect bounds, Matrix delta)
     {
@@ -157,7 +157,7 @@ internal sealed class SelectionController(InkCanvasNext owner, SelectionVisual v
 
     internal void InvalidateLasso(IReadOnlyList<Point>? lasso)
     {
-        // 套索进行中：选择尚未确定，不绘制 halo
+        // 套索在途时选择未定，不画 halo
         visual.Render(Bounds, SelectedStrokesArray, lasso, halo: false, owner.CurrentScale, owner.RotateHandleLive);
     }
 }

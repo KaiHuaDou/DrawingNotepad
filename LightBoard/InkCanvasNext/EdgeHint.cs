@@ -82,11 +82,7 @@ public partial class InkCanvasNext
         target = ReachEdgeScrollTarget(target, viewport, side, out var shift);
 
         // 目标越出左/上边界时内容已经平移，起止视图都要用新坐标系中的偏移
-        var from = view with
-        {
-            OffsetX = view.OffsetX + shift.X * view.Scale,
-            OffsetY = view.OffsetY + shift.Y * view.Scale
-        };
+        var from = CurrentView.Shifted(shift);
 
         if (target.OffsetX == from.OffsetX && target.OffsetY == from.OffsetY)
         {
@@ -95,7 +91,7 @@ public partial class InkCanvasNext
 
         if (shift.X != 0 || shift.Y != 0)
         {
-            WriteViewOffsets(from);
+            WriteOffset(from);
         }
 
         StartEdgeScroll(from, target);
@@ -191,6 +187,7 @@ public partial class InkCanvasNext
     /// <summary>
     /// 目标偏移超出画布时先沿该轴扩展到够用；左/上扩展会平移内容，
     /// 平移量经 <paramref name="shift"/> 带回，目标偏移同步换成新坐标系中的值
+    /// 过渡终点必须落在画布内，越界部分不能交给写入时的夹取截断，所以这里自己扩画布
     /// </summary>
     private View ReachEdgeScrollTarget(View target, Size viewport, EdgeScrollSide side, out Vector shift)
     {

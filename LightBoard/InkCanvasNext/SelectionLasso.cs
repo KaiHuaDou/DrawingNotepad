@@ -14,23 +14,9 @@ public partial class InkCanvasNext
 
     // 套索
 
-    /// <summary>按选项分发空白处起手：矩形框选或套索圈选</summary>
-    private void BeginSelectionDrag(Point p)
-    {
-        if (options.SelectionDragMode == SelectionDragMode.Rectangle)
-        {
-            BeginRectangle(p);
-        }
-        else
-        {
-            BeginLasso(p);
-        }
-    }
-
-    /// <summary>空白处按下（鼠标/触摸共用）：以按下点为起点开始增量套索测试，原选型留到路径真正拉开时再清</summary>
     private void BeginLasso(Point p)
     {
-        // 路径与命中集合都按本次套索重新累积：跨次残留会让第二次套索带上上一次的笔画
+        // 路径与命中集合都从头累积，否则第二次套索会带上上一次的笔画
         lassoPath.Clear( );
         lassoSelected.Clear( );
         selectionGesture = SelectionGesture.Lasso;
@@ -40,7 +26,6 @@ public partial class InkCanvasNext
         lassoTester.AddPoints([ToStylusPoint(p)]);
     }
 
-    /// <summary>套索轨迹追加（鼠标/触摸共用）：去抖后累积路径点并更新命中测试与套索视觉</summary>
     private void UpdateLassoTrack(Point p)
     {
         // 采样间距为视口 DIP：平方距离比较除以缩放平方转内容，保持屏幕绝对大小
@@ -50,7 +35,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        // 起手不清选型，第二根手指落在选区内时可以切回拖动；路径已经拉开才算新的一次选择
+        // 起手不清选型，第二根手指落在选区内时可以切回拖动；路径拉开后才算新的一次选择
         selection.Clear( );
         lassoPath.Add(p);
         lassoTester?.AddPoints([ToStylusPoint(p)]);
@@ -86,21 +71,7 @@ public partial class InkCanvasNext
         }
         else
         {
-            // 无拖拽视为点选：命中单笔则选中，否则清除
             HandlePointSelect(selectionStartPoint, halo: false);
-        }
-    }
-
-    private void HandlePointSelect(Point p, bool halo = true)
-    {
-        var hit = InnerCanvas.Strokes.HitTest(p);
-        if (hit.Count > 0)
-        {
-            selection.SetStrokes(hit, halo);
-        }
-        else
-        {
-            selection.Clear( );
         }
     }
 }

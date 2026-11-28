@@ -1,43 +1,21 @@
 using System;
 using System.Windows;
+using System.Windows.Media;
 
 namespace InkCanvasNext;
 
 public partial class InkCanvasNext
 {
     /// <summary>
-    /// 已提交到控件的视图，手势期间不含 <c>CanvasPan</c> 的增量
-    /// 偏移与缩放分别由 ScrollViewer 与 LayoutTransform 持有，这里是同值的缓存
-    /// </summary>
-    internal View GestureView { get; private set; }
-
-    /// <summary>
-    /// 屏幕上实际可见的视图：已提交视图叠加上手势平移
-    /// </summary>
-    internal View EffectiveView => GestureView with
-    {
-        OffsetX = GestureView.OffsetX - CanvasPan.X,
-        OffsetY = GestureView.OffsetY - CanvasPan.Y
-    };
-
-    /// <summary>
-    /// 获取或设置当前视口；读取含手势期间的未提交增量，写入会作废该增量
+    /// 获取或设置当前视口；读取屏幕上的视图，写入前夹缩放与偏移并按需补画布
     /// </summary>
     public View CurrentView
     {
-        get => EffectiveView;
+        get => new(CanvasScale.ScaleX, -CanvasTranslate.X, -CanvasTranslate.Y);
         set
         {
-            var canPrefetch = CanRebase && !IsEdgeScrolling;
-            var resolved = ResolveView(value, canPrefetch, canPrefetch);
-            if (resolved is null)
-            {
-                return;
-            }
-
-            // 外部换视图时手势增量作废，避免旧变换叠加到新偏移上
-            ClearPan( );
-            WriteViewOffsets(resolved.Value);
+            var prefetch = CanRebase && !IsEdgeScrolling;
+            ApplyView(value, prefetch, prefetch);
         }
     }
 
@@ -49,100 +27,104 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 限幅视图、写入缩放并按余量扩展画布，返回可直接写入偏移的视图；非有限值返回 null
+    /// 提交视图：夹缩放与偏移、写缩放与橡皮比例、补画布、写偏移，视图有变化时发一次通知
+    /// 缩放与偏移都换过之后再比一次，零净变化的提交不通知
     /// </summary>
-    private View? ResolveView(View value, bool prefetchRightBottom, bool prefetchLeftTop)
+    private void ApplyView(View view, bool prefetchRightBottom = true, bool prefetchLeftTop = true)
     {
-        if (!IsFinite(value))
+        if (!IsFinite(view))
         {
-            return null;
+            return;
         }
 
-        value = value.Clamp(
-            new Size(InnerCanvas.Width, InnerCanvas.Height),
-            ViewportSize,
-            MinScale,
-            MaxScale);
+        var before = CurrentView;
 
-        SetScale(value.Scale);
-        return EnsureCanvasFill(value, prefetchRightBottom, prefetchLeftTop);
+        view = view.Clamp(CanvasSize, ViewportSize, MinScale, MaxScale);
+
+        if (CanvasScale.ScaleX != view.Scale)
+        {
+            CanvasScale.ScaleX = CanvasScale.ScaleY = view.Scale;
+            eraser.Scale = view.Scale;
+        }
+
+        WriteOffset(EnsureCanvasFill(view, prefetchRightBottom, prefetchLeftTop));
+
+        if (CurrentView != before)
+        {
+            RaiseViewOrSelectionChanged( );
+        }
     }
 
     /// <summary>
-    /// 把偏移夹到内容可滚动范围后更新缓存；偏移有变化才写入控件，避免未变的基准在每次触摸报文里重复排队
+    /// 把偏移夹进内容与视口决定的范围后写入变换，不改缩放与画布，也不发通知
+    /// 供内容已同量平移的补偿写入使用，调用方保证写入后屏幕位置不变
     /// </summary>
-    private View WriteViewOffsets(View value)
+    private void WriteOffset(View view)
     {
+        var viewport = ViewportSize;
+
         // 视口尺寸为零时偏移就是初始位置，不能按内容尺寸夹
-        if (ViewportSize.Width > 0 && ViewportSize.Height > 0)
+        if (viewport.Width > 0 && viewport.Height > 0)
         {
-            value = value.Clamp(
-                InnerCanvas.Width * value.Scale - ViewportSize.Width,
-                InnerCanvas.Height * value.Scale - ViewportSize.Height);
+            view = view.Clamp(
+                CanvasSize.Width * view.Scale - viewport.Width,
+                CanvasSize.Height * view.Scale - viewport.Height);
         }
 
-        // 与缓存的上次请求值比较：ScrollTo* 只入队，控件读数是布局前的旧值，不能作为是否变化的依据
-        var previous = GestureView;
-        GestureView = value;
-
-        if (previous.OffsetX != value.OffsetX)
-        {
-            CanvasScroll.ScrollToHorizontalOffset(value.OffsetX);
-        }
-
-        if (previous.OffsetY != value.OffsetY)
-        {
-            CanvasScroll.ScrollToVerticalOffset(value.OffsetY);
-        }
-
-        return value;
-    }
-
-    private void SetScale(double value)
-    {
-        if (!double.IsFinite(value))
+        if (CanvasTranslate.X == -view.OffsetX && CanvasTranslate.Y == -view.OffsetY)
         {
             return;
         }
 
-        var scale = Math.Clamp(value, MinScale, MaxScale);
-        CanvasScale.ScaleX = CanvasScale.ScaleY = scale;
-        eraser.Scale = scale;
-        GestureView = GestureView with { Scale = scale };
+        CanvasTranslate.X = -view.OffsetX;
+        CanvasTranslate.Y = -view.OffsetY;
     }
 
-    private void ClearPan( )
-    {
-        CanvasPan.X = 0;
-        CanvasPan.Y = 0;
-    }
+    // 视口/选区通知按渲染帧合并：首个请求立即派发，保证孤立视图变化不晚一帧、抬手末帧不丢；
+    // 同一帧内后续请求合并到下一帧，回调后立即摘订阅，静止时 WPF 可停帧。
+    // 与 SelectionTransform.cs 的帧合并模式对称。
+
+    private bool viewChangedFrameHooked;
+    private bool viewChangedFramePending;
 
     /// <summary>
-    /// 把手势期累积的平移增量提交回 ScrollViewer 偏移：
-    /// ScrollTo* 只入队且一次布局只执行一条，逐轮排空布局让两轴都落地后再清零 RenderTransform，
-    /// 避免抬手时内容先回起点再跳到终点的一帧回弹
+    /// 标记视口/选区已变化：首个请求立即生效，同一帧内随后的变化合并到下一帧。
+    /// 立即生效保证缩放/撤销/翻页等孤立操作不晚一个渲染帧。
     /// </summary>
-    private void CommitPan( )
+    private void RequestViewChangedFrame( )
     {
-        if (CanvasPan.X == 0 && CanvasPan.Y == 0)
+        if (!viewChangedFrameHooked)
+        {
+            ViewOrSelectionChanged?.Invoke(this, EventArgs.Empty);
+            viewChangedFrameHooked = true;
+            CompositionTarget.Rendering += ViewChangedFrame;
+            return;
+        }
+
+        viewChangedFramePending = true;
+    }
+
+    private void ViewChangedFrame(object? sender, EventArgs e)
+    {
+        var apply = viewChangedFramePending;
+        UnhookViewChangedFrame( );
+
+        if (apply)
+        {
+            ViewOrSelectionChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>摘掉渲染订阅并清空脏标记，避免渲染循环持有控件引用</summary>
+    private void UnhookViewChangedFrame( )
+    {
+        if (!viewChangedFrameHooked)
         {
             return;
         }
 
-        var target = WriteViewOffsets(EffectiveView);
-
-        // 未变的偏移不会入队，正常只有本次两条命令；两轮内两轴都能落地，已落地时不再触发布局
-        for (var i = 0; i < 2; i++)
-        {
-            if (CanvasScroll.HorizontalOffset == target.OffsetX
-                && CanvasScroll.VerticalOffset == target.OffsetY)
-            {
-                break;
-            }
-
-            CanvasScroll.UpdateLayout( );
-        }
-
-        ClearPan( );
+        viewChangedFrameHooked = false;
+        viewChangedFramePending = false;
+        CompositionTarget.Rendering -= ViewChangedFrame;
     }
 }

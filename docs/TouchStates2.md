@@ -44,7 +44,7 @@
 
 ## 要求（副作用）
 
-- 进入 `Idle`：`ReleaseAll` + `ApplyModeToEditing(Mode)` + `EnsureCanvasFill(CurrentView)` + `UpdateEdgeHints`（手势期间跳过的补余量与提示刷新在这里补做）。
+- 进入 `Idle`：`ReleaseAll` + `ApplyModeToEditing(Mode)` + `ApplyView`（结算手势平移并补一屏）+ `UpdateEdgeHints`（手势期间跳过的补余量与提示刷新在这里补做）。
 - 离开 `MultiDraw`：`EndMultiTouch`。
 - 离开 `Selection`：`EndSelectionTouch`。
 - 离开 `EvalDraw`/`Draw` 进入手势接管态（`EvalPan`/`PanZoom`/`MultiDraw`/`Eraser`/`Selection`，或异常回 `Idle`）：若形状在途（`shapeActive`），迁入 `MultiDraw` 时按当前预览 `CommitShape`，迁入其余状态则 `CancelShape`。形状只允许在单指绘制上下文（`EvalDraw`/`Draw`）存活；`EvalDraw` 中落第二指按距离迁入 `PanZoom`（捏合优先）或 `MultiDraw`；`Draw` 中落第二指迁入 `MultiDraw`（擦除工具被 `AllowsMultiDraw` 拒绝，保持原地擦除上下文，见假设）。
@@ -52,13 +52,13 @@
 - 进入 `EvalDraw`，或 `EvalDraw --> Draw`：若 `WantsPreemptiveCapture` → `CaptureAll`。
 - 进入 `Selection`：`CaptureAll` + `BeginSelectionTouch`。
 - 进入 `EvalPan`/`PanZoom`/`Pan`（平移手势族）：
-    - `from` 不在同族时：`ReleaseAll` + `InnerCanvas.EditingMode = None` + `CaptureAll` + `EnsureCanvasFill(CurrentView)`（手势开始补一屏余量，族内迁移只做基准校准，不重做释放/捕获）；
+    - `from` 不在同族时：`ReleaseAll` + `InnerCanvas.EditingMode = None` + `CaptureAll` + `ApplyView(CurrentView, prefetchLeftTop: false)`（手势开始补一屏右/下余量，族内迁移只做基准校准，不重做释放/捕获）；
     - 随后 `InitGesture`。
 - 进入 `Eraser`：`ReleaseAll` + `InnerCanvas.EditingMode = None` + `CaptureAll`；随后 `BeginPalmEraseLifetime`（有手掌时重置冻结直径并重开调整窗口，否则留给手指数通道）。
 - 进入 `MultiDraw`：若来自 `EvalDraw`/`Draw` 且原生在绘笔画存在（Ink 模式且已捕获触笔），先 `ReleaseStylusCapture` 触发原生整笔提交（InkCanvas 对中途切换编辑模式的在绘笔画只做丢弃，对捕获丢失才整笔提交），收笔处不渐细；随后 `ReleaseAll` + `InnerCanvas.EditingMode = None` + `CaptureAll` + `StartMultiTouch`（原绘制指以多指笔画从当前触点续接）。
 - 离开面积擦叠加态（`IsAreaEraserActive(from) && !IsAreaEraserActive(newState)`）：`EndEraserCycle`，同时清零面积周期（`EndAreaEraseCycle`）。
-- 画布余量：`ScrollChanged` 只在 `Idle` 时补一屏；手势中视图写入只保视口覆盖、不留余量，进入平移手势族与回到 `Idle` 时各补一屏。
-- 平移手势的视图：`EvalPan`/`PanZoom`/`Pan` 共用 `CanvasPan` 记录手势增量，`GestureView` 保存已提交的基准视图，`EffectiveView` 由两者相减得到；偏移只在基准值变化时才排队写入 `ScrollViewer`，离开手势族时一次提交并逐轮排空布局，两轴都落地后再清 `RenderTransform`。缩放仍写 `LayoutTransform`。
+- 画布余量：`CurrentView` 写入与回到 `Idle` 的结算各补一屏；手势中视图写入只保视口覆盖、不留余量。
+- 平移手势的视图：`EvalPan`/`PanZoom`/`Pan` 都经 `ApplyView` 写同一份视图变换，每帧的偏移就是屏幕位置，离开手势族时没有第二次写入；平移写 `RenderTransform`，缩放写 `LayoutTransform`。
 - `BlocksNativeInput`（全程接管 Down/Move/Up，`Handled`，InkCanvas 不接管收笔）：`EvalPan`、`PanZoom`、`Pan`、`MultiDraw`、`Selection`。
 - `OverridesEditingMode`（进入时需把 `EditingMode` 置 `None` 的手势接管状态）：`EvalPan`、`PanZoom`、`Pan`、`MultiDraw`、`Eraser`。
 

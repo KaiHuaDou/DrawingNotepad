@@ -29,6 +29,23 @@ public readonly record struct View(double Scale, double OffsetX, double OffsetY)
     }
 
     /// <summary>
+    /// 视口在内容坐标系中覆盖的矩形；视口尺寸非正或缩放非正时返回空矩形
+    /// </summary>
+    public Rect ContentRect(Size viewport)
+    {
+        if (viewport.Width <= 0 || viewport.Height <= 0 || !(Scale > 0))
+        {
+            return Rect.Empty;
+        }
+
+        return new Rect(
+            OffsetX / Scale,
+            OffsetY / Scale,
+            viewport.Width / Scale,
+            viewport.Height / Scale);
+    }
+
+    /// <summary>
     /// 以视口锚点缩放：锚点下的内容点在视口中的位置不变
     /// </summary>
     public View ZoomAt(Point viewportAnchor, double scale)
@@ -46,7 +63,19 @@ public readonly record struct View(double Scale, double OffsetX, double OffsetY)
     }
 
     /// <summary>
-    /// 把缩放与偏移收进有效区间：缩放夹到 [minScale, maxScale]，偏移不超过内容可滚动范围
+    /// 内容整体平移后的视图：偏移同量抬高，屏幕位置不变
+    /// </summary>
+    public View Shifted(Vector contentShift)
+    {
+        return this with
+        {
+            OffsetX = OffsetX + contentShift.X * Scale,
+            OffsetY = OffsetY + contentShift.Y * Scale
+        };
+    }
+
+    /// <summary>
+    /// 把缩放与偏移收进有效区间：缩放夹到 [minScale, maxScale]，偏移不超过内容与视口决定的范围
     /// 视口尺寸为 0 时只夹缩放，偏移保持原值
     /// </summary>
     public View Clamp(Size contentSize, Size viewport, double minScale, double maxScale)
@@ -75,9 +104,6 @@ public readonly record struct View(double Scale, double OffsetX, double OffsetY)
 
 public partial class InkCanvasNext
 {
-    // 防止扩展画布引起的滚动通知再次进入判定
-    private bool fillingCanvas;
-
     /// <summary>
     /// 视口左上角在控件坐标系中的位置；控件根坐标换算到视口坐标时使用
     /// </summary>
@@ -85,18 +111,13 @@ public partial class InkCanvasNext
 
     /// <summary>
     /// 画布在视口右/下不足一屏、左/上不足半屏时按一屏步进补足：缩放、拖动与翻页恢复视图都经过这里，
-    /// 保证视口落在画布内并能继续拖动；右/下最多补四屏，嵌套调用直接返回
+    /// 保证视口落在画布内并能继续拖动；右/下最多补四屏
     /// prefetchRightBottom 为 false 时只在画布盖不住视口时补，不做右/下方向留一屏余量的预取
     /// prefetchLeftTop 为 false 时不做左/上方向留余量的预取，用于手势起点保留已有余量
     /// 左/上补足会平移内容并抬高偏移，返回值带回补偿后的视图
     /// </summary>
     private View EnsureCanvasFill(View view, bool prefetchRightBottom = true, bool prefetchLeftTop = true)
     {
-        if (fillingCanvas)
-        {
-            return view;
-        }
-
         var viewport = ViewportSize;
         if (viewport.Width <= 0 || viewport.Height <= 0 || !double.IsFinite(view.Scale) || view.Scale <= 0)
         {
@@ -115,80 +136,50 @@ public partial class InkCanvasNext
             return view;
         }
 
-        fillingCanvas = true;
-        try
+        var shift = ApplyGrowth(growth);
+        return view with
         {
-            var shift = ApplyGrowth(growth);
-            return view with
-            {
-                OffsetX = view.OffsetX + shift.X * view.Scale,
-                OffsetY = view.OffsetY + shift.Y * view.Scale
-            };
-        }
-        finally
-        {
-            fillingCanvas = false;
-        }
-    }
-
-    /// <summary>
-    /// 内容平移后同步抬高滚动偏移，屏幕上的内容位置保持不变
-    /// </summary>
-    private void CompensateView(Vector shift)
-    {
-        if (shift.X == 0 && shift.Y == 0)
-        {
-            return;
-        }
-
-        WriteViewOffsets(GestureView with
-        {
-            OffsetX = GestureView.OffsetX + shift.X * GestureView.Scale,
-            OffsetY = GestureView.OffsetY + shift.Y * GestureView.Scale
-        });
+            OffsetX = view.OffsetX + shift.X * view.Scale,
+            OffsetY = view.OffsetY + shift.Y * view.Scale
+        };
     }
 
     /// <summary>
     /// 获取或设置画布缩放比例，超出范围时夹到 <see cref="MinScale"/> 与 <see cref="MaxScale"/> 之间
+    /// 偏移随缩放收进有效范围，画布随之补到盖住视口
     /// </summary>
     public double CurrentScale
     {
         get => CanvasScale.ScaleX;
-        set => SetScale(value);
+        set => ApplyView(CurrentView with { Scale = value }, prefetchRightBottom: false, prefetchLeftTop: false);
     }
 
     /// <summary>
     /// 获取或设置视口左边缘相对内容原点的水平偏移，视口 DIP
-    /// 读取含手势期间的未提交平移，写入会作废该增量并夹到可滚动范围
     /// </summary>
     public double OffsetX
     {
-        get => EffectiveView.OffsetX;
+        get => -CanvasTranslate.X;
         set
         {
             if (double.IsFinite(value))
             {
-                // 外部改偏移视为新的视图基准，与 CurrentView 的写入语义一致
-                ClearPan( );
-                WriteViewOffsets(GestureView with { OffsetX = value });
+                ApplyView(CurrentView with { OffsetX = value }, prefetchRightBottom: false, prefetchLeftTop: false);
             }
         }
     }
 
     /// <summary>
     /// 获取或设置视口上边缘相对内容原点的垂直偏移，视口 DIP
-    /// 读取含手势期间的未提交平移，写入会作废该增量并夹到可滚动范围
     /// </summary>
     public double OffsetY
     {
-        get => EffectiveView.OffsetY;
+        get => -CanvasTranslate.Y;
         set
         {
             if (double.IsFinite(value))
             {
-                // 外部改偏移视为新的视图基准，与 CurrentView 的写入语义一致
-                ClearPan( );
-                WriteViewOffsets(GestureView with { OffsetY = value });
+                ApplyView(CurrentView with { OffsetY = value }, prefetchRightBottom: false, prefetchLeftTop: false);
             }
         }
     }
@@ -201,7 +192,7 @@ public partial class InkCanvasNext
     /// <summary>
     /// 获取当前视口尺寸，视口 DIP
     /// </summary>
-    public Size ViewportSize => new(CanvasScroll.ViewportWidth, CanvasScroll.ViewportHeight);
+    public Size ViewportSize => new(ViewportHost.ActualWidth, ViewportHost.ActualHeight);
 
     /// <summary>
     /// 把内容矩形等比装进视口并居中；空矩形与非法边距被忽略
@@ -259,7 +250,7 @@ public partial class InkCanvasNext
     protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
     {
         base.OnRenderSizeChanged(sizeInfo);
-        viewportOrigin = CanvasScroll.TranslatePoint(new Point(0, 0), this);
+        viewportOrigin = ViewportHost.TranslatePoint(new Point(0, 0), this);
         UpdateEdgeHints( );
     }
 }

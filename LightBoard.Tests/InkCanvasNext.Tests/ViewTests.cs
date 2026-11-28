@@ -4,7 +4,7 @@ namespace InkCanvasNext.Tests;
 
 /// <summary>
 /// 视图模型：视口与内容坐标的互换、锚定缩放、平移、夹取，
-/// 以及它与载体（LayoutTransform + ScrollViewer offset）实际映射的一致性
+/// 以及它与载体（LayoutTransform + TranslateTransform）实际映射的一致性
 /// </summary>
 public class ViewTests
 {
@@ -188,7 +188,7 @@ public class ViewTests
     }
 
     /// <summary>
-    /// 模型必须与宿主的真实映射一致：LayoutTransform 负责缩放、ScrollViewer 偏移负责平移，
+    /// 模型必须与宿主的真实映射一致：LayoutTransform 负责缩放、TranslateTransform 负责平移，
     /// offset 因此以视口 DIP 计
     /// </summary>
     [Theory]
@@ -213,6 +213,77 @@ public class ViewTests
 
             Assert.Equal(expected.X, actual.X, 6);
             Assert.Equal(expected.Y, actual.Y, 6);
+        });
+    }
+
+    /// <summary>内容整体平移后按同量抬高偏移，内容在屏幕上的位置不变</summary>
+    [Theory]
+    [InlineData(1.0, 100, 200, 40, -30)]
+    [InlineData(2.0, 300, 1000, -10, 25)]
+    [InlineData(0.5, 100, 50, 33, 7)]
+    public void Shifted_KeepsContentOnScreen(double scale, double offsetX, double offsetY, double dx, double dy)
+    {
+        var view = new View(scale, offsetX, offsetY);
+        var content = new Point(500, 750);
+
+        var before = view.ToViewport(content);
+        var after = view.Shifted(new Vector(dx, dy)).ToViewport(new Point(content.X + dx, content.Y + dy));
+
+        Assert.Equal(before.X, after.X, 9);
+        Assert.Equal(before.Y, after.Y, 9);
+    }
+
+    /// <summary>视口在内容坐标中的矩形与视角换算一致</summary>
+    [Theory]
+    [InlineData(1.0, 0, 0)]
+    [InlineData(2.0, 300, 1000)]
+    [InlineData(0.5, 100, 200)]
+    public void ContentRect_MapsViewportCornersToContent(double scale, double offsetX, double offsetY)
+    {
+        var view = new View(scale, offsetX, offsetY);
+        var viewport = new Size(1280, 800);
+        var rect = view.ContentRect(viewport);
+
+        Assert.Equal(view.ToContent(new Point(0, 0)).X, rect.Left, 9);
+        Assert.Equal(view.ToContent(new Point(0, 0)).Y, rect.Top, 9);
+        Assert.Equal(view.ToContent(new Point(viewport.Width, viewport.Height)).X, rect.Right, 9);
+        Assert.Equal(view.ToContent(new Point(viewport.Width, viewport.Height)).Y, rect.Bottom, 9);
+    }
+
+    [Fact]
+    public void ContentRect_EmptyViewport_ReturnsEmpty( )
+    {
+        Assert.True(new View(1, 0, 0).ContentRect(Size.Empty).IsEmpty);
+    }
+
+    /// <summary>视口尺寸取自控件自身</summary>
+    [Fact]
+    public void ViewportSize_MatchesControlSize( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+
+            Assert.True(host.Canvas.ViewportSize.Width > 0);
+            Assert.Equal(host.Canvas.ActualWidth, host.Canvas.ViewportSize.Width, 6);
+            Assert.Equal(host.Canvas.ActualHeight, host.Canvas.ViewportSize.Height, 6);
+        });
+    }
+
+    /// <summary>裁剪在视口容器上：内容按完整尺寸排列，平移不会被自身裁剪框切掉</summary>
+    [Fact]
+    public void Viewport_ClipsOversizedContent( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            host.Canvas.UpdateLayout( );
+
+            var viewport = host.Canvas.ViewportSize;
+
+            Assert.True(host.Canvas.ViewportHost.ClipToBounds);
+            Assert.True(host.Canvas.TranslateHost.ActualWidth > viewport.Width);
+            Assert.True(host.Canvas.TranslateHost.ActualHeight > viewport.Height);
         });
     }
 }

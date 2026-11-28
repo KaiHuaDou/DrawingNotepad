@@ -10,6 +10,8 @@ using static InkCanvasNext.Geometry;
 
 namespace InkCanvasNext;
 
+// 单指变换：手势矩阵、帧合并、增量施加与提交，以及驱动指查找
+
 public partial class InkCanvasNext
 {
     private Point selectionStartPoint;
@@ -24,12 +26,8 @@ public partial class InkCanvasNext
 
     private IReadOnlyList<Stroke>? selectionTarget;
 
-    /// <summary>当前手势段的起始包围盒；每帧用段内绝对矩阵重算 AABB，避免误差逐帧累积</summary>
+    /// <summary>当前手势段的起始包围盒；每帧用段内绝对矩阵重新计算 AABB，避免误差逐帧累积</summary>
     private Rect selectionBoundsBase;
-
-    private Point pinchStartCenter;
-    private double pinchStartDist;
-    private double pinchStartAngle;
 
     private bool selectionFrameHooked;
     private bool selectionFramePending;
@@ -67,7 +65,7 @@ public partial class InkCanvasNext
                     selectionCenter.X,
                     selectionCenter.Y);
 
-                // 手柄沿鼠标角度绕选区中心做圆周运动，到旋转中心距离保持手势起始值（距离不变）
+                // 手柄绕选区中心等半径跟随鼠标角度
                 var vx = p.X - selectionCenter.X;
                 var vy = p.Y - selectionCenter.Y;
                 var len = Sqrt(vx * vx + vy * vy);
@@ -91,8 +89,7 @@ public partial class InkCanvasNext
     // 帧节拍：位移按渲染帧合并
 
     /// <summary>
-    /// 请求本帧施加一次变换：首个事件立即生效，同一帧内随后的位移合并到下一帧
-    /// 立即生效保证抬手前的最后一次位移不丢，也保证不依赖渲染节拍也能跟上指针
+    /// 首个事件立即生效，同一帧内随后的位移合并到下一帧；立即生效保证抬手前最后一次位移不丢
     /// </summary>
     private void RequestSelectionFrame( )
     {
@@ -170,14 +167,14 @@ public partial class InkCanvasNext
 
     /// <summary>
     /// 以绝对矩阵为基准施加相对上一帧的增量变换
-    /// 增量必须左乘旧基线：作用于笔画的是"先撤销上一帧、再施加本帧"，
+    /// 增量必须左乘旧基线：作用于笔画的是“先撤销上一帧、再施加本帧”，
     /// 右乘得到的是旧基线对本帧绝对矩阵的共轭，只有两帧矩阵可交换（同族平移、同心缩放、同心旋转）时才等价
     /// </summary>
     private void ApplyTransformDelta(Matrix newAbs)
     {
         // 奇异矩阵不可逆（如双指完全重合导致缩放为 0）：跳过本帧，否则 Invert 抛异常。
         // newAbs 相对段基线始终是绝对矩阵，下一有效帧的增量依旧正确，无需补偿；
-        // selectionAbs 只会被赋 Identity 或已通过本守卫的矩阵，恒可逆。
+        // selectionAbs 只会被赋 Identity 或已通过本守卫的矩阵，总是可逆
         if (selectionTarget is not { Count: > 0 } || !newAbs.HasInverse)
         {
             return;
@@ -200,9 +197,17 @@ public partial class InkCanvasNext
 
         selectionTotal *= delta;
 
-        // 用手势段起始包围盒乘段内绝对矩阵求 AABB，避免逐帧累积误差；
-        // 旋转时可能略大于真实包围盒，抬手 CommitTransform 时再做一次完整 RecomputeBounds 校正
-        selection.TransformBounds(selectionBoundsBase, newAbs);
+        // 无旋转分量时（平移与分轴缩放）用段起始包围盒乘段内绝对矩阵求 AABB，避免每帧遍历笔画；
+        // 有旋转分量时该 AABB 会随角度变大，改为按笔画重新计算
+        if (Abs(newAbs.M12) < 1e-9)
+        {
+            selection.TransformBounds(selectionBoundsBase, newAbs);
+        }
+        else
+        {
+            selection.RecomputeBounds( );
+        }
+
         selection.Invalidate(halo: false);
         RaiseViewOrSelectionChanged( );
     }
@@ -212,11 +217,11 @@ public partial class InkCanvasNext
     {
         if (selectionTarget is { Count: > 0 } && !IsNearIdentity(selectionTotal))
         {
-            // 帧内的 AABB 增量可能因旋转略偏大，提交前按真实笔画包围盒校正一次
+            // 提交前取最终包围盒，供手柄吸附与画布扩展
             selection.RecomputeBounds( );
             PushChange(new TransformChanges(selectionTarget, selectionTotal));
 
-            // 选中内容可以被拖到画布外：手势结束时按最终包围盒扩展，拖动中途扩展只会放大画布
+            // 选中内容可被拖到画布外：手势结束时按最终包围盒扩展，中途扩展只会放大画布
             FitBounds(selection.Bounds);
 
             // 变换不触发 StrokesChanged，手动上报以更新外部脏标记（无增删，仅 TransformOnly）
@@ -226,126 +231,8 @@ public partial class InkCanvasNext
         }
     }
 
-    // 双指
-
     /// <summary>
-    /// 进入双指手势：以当前两指几何重建基线，并把段基线归零
-    /// 笔画坐标与触点坐标同处内容坐标系，新段第一帧的增量即该帧绝对变换，段间不产生跳变
-    /// </summary>
-    private void BeginPinch( )
-    {
-        selectionTarget = selection.SelectedStrokesArray;
-        selectionBoundsBase = selection.Bounds;
-        selectionGesture = SelectionGesture.Pinch;
-        SelectionDriverId = null;
-        selectionAbs = Matrix.Identity;
-        RefreshPinchBaseline( );
-    }
-
-    /// <summary>
-    /// 触点数变化后重建手势基线（触点数只在 Down/Up 变化，故由 TrackTouchDown/TrackTouchUp 调用）：
-    /// 两指全落在选区内才升级为双指相似变换，3 指及以上全在选区内降为只平移，
-    /// 横跨选区内外不改变手势；双指手势减为单指即降级为拖动
-    /// 基线取变化瞬间的触点位置，手势从新的触点组合无缝续接
-    /// </summary>
-    private void RefreshSelectionGesture( )
-    {
-        var fingerCount = CountTouches(touches).Fingers;
-
-        // 套索在途时又落在选区内的手指改为拖动选区：放弃本次套索，保留原有选型
-        if (IsPathGesture
-            && fingerCount >= 2
-            && selection.HasSelection
-            && ClassifyTouchesAgainstSelection( ).Mixed)
-        {
-            var (driverId, driver) = FindSelectionDriver( );
-            ResetSelectionGesture( );
-            selectionVisual.ClearLasso( );
-            SelectionDriverId = driverId;
-            selectionStartPoint = driver;
-            BeginHandleOrMove(driver);
-            return;
-        }
-
-        if (fingerCount == 1 && selectionGesture == SelectionGesture.Pinch)
-        {
-            RebaseToMove( );
-        }
-        else if (fingerCount == 2
-            && selectionGesture is SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate
-            && ClassifyTouchesAgainstSelection( ).AllInside)
-        {
-            BeginPinch( );
-        }
-        else if (fingerCount >= 3
-            && selectionGesture == SelectionGesture.Pinch
-            && ClassifyTouchesAgainstSelection( ).AllInside)
-        {
-            RebaseToMove( );
-        }
-    }
-
-    /// <summary>
-    /// 双指相似变换：把基线两指映射到当前两指，即 平移（中点位移）∘ 绕基线中点等比缩放 k ∘ 绕基线中点旋转 Δθ
-    /// 缩放与旋转的中心只能是基线两指中点，改用选区中心会让选区绕手指之外的一点转动而脱离手指
-    /// Matrix 的 RotateAt/ScaleAt/Translate 均为后乘（先调用者先作用于点），故按 R → S → T 构造
-    /// </summary>
-    private void UpdatePinch( )
-    {
-        if (CountTouches(touches).Fingers < 2)
-        {
-            return;
-        }
-
-        (var c1, var c2) = GetPinchPoints(touches, InnerCanvas);
-        var center = MidPoint(c1, c2);
-        var dist = Distance(c1, c2);
-        var angle = AngleFrom(c1, c2);
-
-        var m = new Matrix( );
-        m.RotateAt((angle - pinchStartAngle) * RadToDeg, pinchStartCenter.X, pinchStartCenter.Y);
-        m.ScaleAt(dist / pinchStartDist, dist / pinchStartDist, pinchStartCenter.X, pinchStartCenter.Y);
-        m.Translate(center.X - pinchStartCenter.X, center.Y - pinchStartCenter.Y);
-
-        ApplyTransformDelta(m);
-    }
-
-    private void RefreshPinchBaseline( )
-    {
-        (var c1, var c2) = GetPinchPoints(touches, InnerCanvas);
-        pinchStartCenter = MidPoint(c1, c2);
-        pinchStartDist = Max(Distance(c1, c2), 1e-6);
-        pinchStartAngle = AngleFrom(c1, c2);
-    }
-
-    /// <summary>捏合中抬起一指：以剩余指当前位置为新起点续接拖动，选区不停留在原地</summary>
-    private void RebaseToMove( )
-    {
-        selectionGesture = SelectionGesture.Move;
-        (SelectionDriverId, selectionStartPoint) = FindSelectionDriver( );
-        selectionAbs = Matrix.Identity;
-        selectionBoundsBase = selection.Bounds;
-    }
-
-    /// <summary>
-    /// 驱动指抬起后由仍在选区内（或全部在外时的第一根）手指接手：
-    /// 起点取接手指当前位置、段基线归零，位移从接手瞬间续算，选区不跳变
-    /// </summary>
-    private void RebaseSelectionDriver( )
-    {
-        if (selectionGesture is not (SelectionGesture.Move or SelectionGesture.Scale or SelectionGesture.Rotate)
-            || CountTouches(touches).Fingers == 0)
-        {
-            return;
-        }
-
-        (SelectionDriverId, selectionStartPoint) = FindSelectionDriver( );
-        selectionAbs = Matrix.Identity;
-        selectionBoundsBase = selection.Bounds;
-    }
-
-    /// <summary>
-    /// 驱动指：选区内或压在手柄上的第一根手指；都不在时退回第一根触点
+    /// 优先选区内或压在手柄上的手指，都不在时退回第一根触点
     /// </summary>
     private (int Id, Point Point) FindSelectionDriver( )
     {

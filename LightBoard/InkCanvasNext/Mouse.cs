@@ -9,7 +9,8 @@ internal enum WheelCommand
 {
     None,
     Zoom,
-    Horizontal
+    Horizontal,
+    Vertical
 }
 
 // 鼠标输入路径：自定义工具下经 SyntheticTouchDevice 进入触摸状态机，原生工具下放行给 InkCanvas，
@@ -128,32 +129,45 @@ public partial class InkCanvasNext
     private void CanvasPreviewMouseWheel(object o, MouseWheelEventArgs e)
     {
         var command = ResolveWheel(options.WheelAction, Keyboard.Modifiers);
+        CancelEdgeScroll( );
 
         if (command == WheelCommand.None)
         {
-            // 普通滚轮交给内层 ScrollViewer；仍要中断边缘过渡
-            CancelEdgeScroll( );
             return;
         }
 
         e.Handled = true;
-        CancelEdgeScroll( );
 
-        if (command == WheelCommand.Zoom)
+        switch (command)
         {
-            ZoomAtCursor(e);
+            case WheelCommand.Zoom:
+                ZoomAtCursor(e);
+                break;
+            case WheelCommand.Horizontal:
+                ScrollBy(e.Delta, horizontal: true);
+                break;
+            case WheelCommand.Vertical:
+                ScrollBy(e.Delta, horizontal: false);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 按滚轮格数平移视图；高精度滚轮的小增量按比例折算
+    /// </summary>
+    private void ScrollBy(int delta, bool horizontal)
+    {
+        var view = CurrentView;
+        var distance = delta / WheelDelta * ScrollStep * view.Scale;
+
+        if (distance == 0)
+        {
             return;
         }
 
-        ScrollHorizontally(e.Delta);
-    }
-
-    private void ScrollHorizontally(int delta)
-    {
-        // 从有效视图出发：手势中存在未提交平移时也按屏幕上的位置继续滚动，不丢弃增量
-        var view = CurrentView;
-        var step = ScrollStep * view.Scale;
-        CurrentView = view with { OffsetX = view.OffsetX + (delta > 0 ? -step : step) };
+        CurrentView = horizontal
+            ? view with { OffsetX = view.OffsetX - distance }
+            : view with { OffsetY = view.OffsetY - distance };
     }
 
     private void ZoomAtCursor(MouseWheelEventArgs e)
@@ -189,7 +203,7 @@ public partial class InkCanvasNext
             return WheelCommand.Horizontal;
         }
 
-        return action == MouseWheelAction.Zoom ? WheelCommand.Zoom : WheelCommand.None;
+        return action == MouseWheelAction.Zoom ? WheelCommand.Zoom : WheelCommand.Vertical;
     }
 
     /// <summary>

@@ -314,9 +314,9 @@ public class SpecialModeGestureTests
         });
     }
 
-    /// <summary>手柄缩放手势中落下第二指即升级为双指相似变换：随后两指纯平移，选区位移等于平移量</summary>
+    /// <summary>框内按下拖动后落第二指即升级为双指相似变换：随后两指纯平移，选区位移等于平移量</summary>
     [Fact]
-    public void SelectMode_HandleGestureThenSecondFinger_BecomesPinch( )
+    public void SelectMode_DragThenSecondFinger_BecomesPinch( )
     {
         StaTest.Run(( ) =>
         {
@@ -376,13 +376,14 @@ public class SpecialModeGestureTests
                 new Point(180, 60), new Point(200, 100), new Point(300, 100), new Point(320, 140));
 
             // R 手柄在右缘中点、锚点在左中；宽 3 的笔画使包围盒左缘在 178.5 而非 180
-            var left = host.Canvas.Strokes[0].GetBounds( ).Left;
+            var bounds = host.Canvas.Strokes[0].GetBounds( );
+            var left = bounds.Left;
             var xs = host.Canvas.Strokes[0].StylusPoints.Select(p => p.X).ToArray( );
             var ys = host.Canvas.Strokes[0].StylusPoints.Select(p => p.Y).ToArray( );
             const double minScale = InkCanvasNext.MinSelectionScale;
 
             var a = host.Device( );
-            a.Down(host.Target, new Point(320, 100));
+            a.Down(host.Target, new Point(bounds.Right, 100));
             // 拖到锚点左侧：原始因子 -78.5/141.5 ≈ -0.55，钳制后为 MinSelectionScale
             a.Move(host.Target, new Point(100, 100));
             a.Up(host.Target, new Point(100, 100));
@@ -425,6 +426,33 @@ public class SpecialModeGestureTests
             Assert.Equal(295.5, live!.Value.X, 9);
             Assert.Equal(100, live.Value.Y, 9);
             Assert.Null(host.Canvas.RotateHandleLive);
+        });
+    }
+
+    /// <summary>旋转途中按笔画重算包围盒：45° 时框贴合内容，不取起始包围盒旋转后的 AABB</summary>
+    [Fact]
+    public void SelectMode_RotateHandle_MidGesture_BoundsMatchStrokes( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateSelectHost(PinchStrokePoints);
+
+            const double radius = 45.5;
+            var angle = Math.PI / 4;
+            var target = new Point(250 + radius * Math.Sin(angle), 100 - radius * Math.Cos(angle));
+
+            var a = host.Device( );
+            a.Down(host.Target, new Point(250, 54.5));
+            a.Move(host.Target, target);
+
+            var stroke = host.Canvas.Strokes[0].GetBounds( );
+            var frame = host.Canvas.GetSelectionScreenBounds(host.Canvas);
+
+            Assert.NotNull(frame);
+            Assert.Equal(stroke.Width, frame!.Value.Width, 6);
+            Assert.Equal(stroke.Height, frame.Value.Height, 6);
+
+            a.Up(host.Target, target);
         });
     }
 
@@ -1208,6 +1236,28 @@ public class SpecialModeGestureTests
             AssertPoint(points[1], PinchStrokePoints[1].X + 30, PinchStrokePoints[1].Y);
             AssertPoint(points[2], PinchStrokePoints[2].X + 30, PinchStrokePoints[2].Y);
             AssertPoint(points[3], PinchStrokePoints[3].X + 30, PinchStrokePoints[3].Y);
+        });
+    }
+
+    /// <summary>小选区的内部被手柄命中区盖满时，框内按下仍触发拖动而不是手柄缩放</summary>
+    [Fact]
+    public void SelectMode_PressInsideSmallSelection_MovesInsteadOfHandle( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = CreateSelectHost(new Point(200, 100), new Point(220, 103));
+
+            var bounds = host.Canvas.Strokes[0].GetBounds( );
+            var start = new Point(bounds.Left + 5, bounds.Top + bounds.Height / 2);
+
+            var finger = host.Device( );
+            finger.Down(host.Target, start);
+            finger.Move(host.Target, new Point(start.X + 30, start.Y));
+            finger.Up(host.Target, new Point(start.X + 30, start.Y));
+
+            var points = host.Canvas.Strokes[0].StylusPoints;
+            AssertPoint(points[0], 230, 100);
+            AssertPoint(points[1], 250, 103);
         });
     }
 

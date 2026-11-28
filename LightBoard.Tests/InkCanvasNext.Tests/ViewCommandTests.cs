@@ -132,4 +132,23 @@ public class ViewCommandTests
             Assert.Equal(x, canvas.OffsetX);
         });
     }
+
+    /// <summary>缩放写入后偏移收进新范围</summary>
+    [Fact]
+    public void CurrentScale_Write_ClampsOffsetIntoRange( )
+    {
+        StaTest.Run(( ) =>
+        {
+            using var host = new TouchHost( );
+            var canvas = host.Canvas;
+
+            canvas.CurrentScale = 0.2;
+
+            var maxX = Math.Max(0, canvas.CanvasSize.Width * canvas.CurrentScale - canvas.ViewportSize.Width);
+            var maxY = Math.Max(0, canvas.CanvasSize.Height * canvas.CurrentScale - canvas.ViewportSize.Height);
+            Assert.Equal(0.2, canvas.CurrentScale, 6);
+            Assert.InRange(canvas.OffsetX, 0, maxX + 1e-6);
+            Assert.InRange(canvas.OffsetY, 0, maxY + 1e-6);
+        });
+    }
 }

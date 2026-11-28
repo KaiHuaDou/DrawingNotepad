@@ -131,7 +131,7 @@ public partial class InkCanvasNext
         var shift = EnsureBoundsFit(bounds);
         if (shift.X != 0 || shift.Y != 0)
         {
-            CompensateView(shift);
+            WriteOffset(CurrentView.Shifted(shift));
         }
     }
 

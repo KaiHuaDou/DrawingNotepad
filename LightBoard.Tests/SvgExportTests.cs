@@ -57,7 +57,7 @@ public class SvgExportTests
 
 internal sealed class CollectProgress : IProgress<ExportProgress>
 {
-    public List<ExportProgress> Items { get; } = [ ];
+    public List<ExportProgress> Items { get; } = [];
 
     public void Report(ExportProgress value)
     {

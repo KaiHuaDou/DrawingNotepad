@@ -10,7 +10,7 @@ namespace InkCanvasNext;
 
 /// <summary>
 /// 选区覆盖层：边框、手柄、套索与 halo 各占独立 visual
-/// 单独成 visual 是为了让每帧的脏区落在细窄的边条与小方块上，而不是整块选区
+/// 分开是为了让每帧脏区落在细窄的边条与小方块上，而不是整块选区
 /// </summary>
 internal sealed partial class SelectionVisual
 {
@@ -56,9 +56,6 @@ internal sealed partial class SelectionVisual
         layer.Children.Add(host);
     }
 
-    /// <summary>
-    /// 画布扩展后同步覆盖层尺寸，维持覆盖整个墨迹画布
-    /// </summary>
     internal void Resize(Size canvasSize)
     {
         host.Width = canvasSize.Width;
@@ -77,7 +74,6 @@ internal sealed partial class SelectionVisual
         Redraw( );
     }
 
-    /// <summary>只清空套索图层，边框与 halo 保持不变</summary>
     internal void ClearLasso( )
     {
         if (!lassoDrawn)
@@ -89,7 +85,7 @@ internal sealed partial class SelectionVisual
         lassoDrawn = false;
     }
 
-    /// <summary>旋转手柄中心（内容坐标）：浮于选区正上方（顶部居中），拖拽绕选区中心旋转</summary>
+    /// <summary>旋转手柄中心，内容坐标</summary>
     internal static Point RotateHandleCenter(Rect b, double zoom)
     {
         var z = Math.Max(zoom, 1e-6);
@@ -121,7 +117,7 @@ internal sealed partial class SelectionVisual
         using var dc = haloVisual.RenderOpen( );
         foreach (var s in selected)
         {
-            // 只需要按加宽/改色后的属性重算轮廓，不必深拷贝笔画点集；
+            // 只需要按加宽/改色后的属性生成轮廓，不必深拷贝笔画点集；
             // GetGeometry(attrs) 使用传入属性计算，不改写原笔画的几何缓存
             var attrs = s.DrawingAttributes.Clone( );
             attrs.Color = HaloBrush.Color;

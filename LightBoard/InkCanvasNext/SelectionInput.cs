@@ -2,24 +2,9 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-using static System.Math;
-using static InkCanvasNext.Geometry;
-
 namespace InkCanvasNext;
 
-internal enum SelectionHandle
-{
-    None,
-    TL,
-    TR,
-    BL,
-    BR,
-    T,
-    B,
-    L,
-    R,
-    Rotate
-}
+// 选择手势的入口与状态：触点分类、开始/更新/结束与 halo 调度
 
 internal enum SelectionGesture
 {
@@ -38,26 +23,23 @@ public partial class InkCanvasNext
     private SelectionHandle selectionHandle = SelectionHandle.None;
 
     /// <summary>
-    /// 驱动指的触点 id：拖动时取位于选区内（或压在手柄上）的第一根手指，全部在外时退回第一根
+    /// 驱动指的触点 id
     /// </summary>
     private int? SelectionDriverId { get; set; }
 
-    /// <summary>
-    /// 路径手势：在途时只累积套索或矩形，不产生变换
-    /// </summary>
     private bool IsPathGesture => selectionGesture is SelectionGesture.Lasso or SelectionGesture.Rectangle;
 
     private bool selectionHaloPending;
 
     /// <summary>
-    /// 旋转手势中手柄的轨道位置（内容坐标，绕选区中心等半径跟随鼠标角度）；空闲为 null
+    /// 旋转手柄的轨道位置，内容坐标；空闲为 null
     /// </summary>
     internal Point? RotateHandleLive { get; private set; }
 
     // 触点与选区位置
 
     /// <summary>
-    /// 触点与选区的位置关系：AllInside 全部落在选区内，Mixed 横跨选区内外；无选区时两者皆 false（全部按选区外处理）
+    /// 触点与选区的位置关系；无选区时两者皆 false
     /// </summary>
     private (bool AllInside, bool Mixed) ClassifyTouchesAgainstSelection( )
     {
@@ -78,7 +60,7 @@ public partial class InkCanvasNext
 
             fingers++;
 
-            // 触点存根可视坐标，选区包围盒是内容坐标：经 InnerCanvas 换算后比较
+            // 触点存可视坐标，包围盒是内容坐标：经 InnerCanvas 换算后比较
             if (bounds.Contains(kv.Value.Device.GetTouchPoint(InnerCanvas).Position))
             {
                 inside++;
@@ -88,7 +70,7 @@ public partial class InkCanvasNext
         return (inside == fingers, inside > 0 && inside < fingers);
     }
 
-    // 选择手势（触摸与合流后的鼠标共用，配合 TouchState.Selection）
+    // 选择手势：触摸与合成触点共用
 
     private void BeginSelectionTouch( )
     {
@@ -108,7 +90,7 @@ public partial class InkCanvasNext
             return;
         }
 
-        // 两指全部落在选区内才是相似变换；横跨边界时由在内的第一根手指拖动
+        // 两指全部落在选区内才是相似变换，横跨边界时由在内的第一根手指拖动
         if (fingerCount >= 2 && ClassifyTouchesAgainstSelection( ).AllInside)
         {
             BeginPinch( );
@@ -133,7 +115,7 @@ public partial class InkCanvasNext
                 UpdateRectangleTrack(GetFirstCanvasPoint(touches, InnerCanvas));
                 break;
 
-            // 变换类手势按帧合并：位移在下一帧统一施加，事件率不参与每帧的重建次数
+            // 变换类手势按帧合并，事件率不参与每帧重建次数
             case SelectionGesture.Pinch:
             case SelectionGesture.Move:
             case SelectionGesture.Scale:
@@ -174,7 +156,6 @@ public partial class InkCanvasNext
             selection.Invalidate(halo: false);
         }
 
-        // 逐笔克隆的 halo 留到空闲时补，变换与路径手势同理
         if (transformed || path)
         {
             ScheduleSelectionHalo( );
@@ -182,7 +163,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 手势结束后补画 halo：逐笔克隆的代价在 100 笔以上是 10 ms 级，放到空闲优先级，避开抬手这一帧
+    /// 逐笔克隆的 halo 放到空闲优先级，避开抬手这一帧
     /// </summary>
     private void ScheduleSelectionHalo( )
     {
@@ -203,7 +184,7 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 选区手势中全部触点（含手掌触点）都在选区外时才允许手掌接管
+    /// 含手掌触点在内，全部在选区外才允许手掌接管
     /// </summary>
     private bool AllContactsOutsideSelection( )
     {
@@ -225,9 +206,6 @@ public partial class InkCanvasNext
         return true;
     }
 
-    /// <summary>
-    /// 单指起点判定：命中手柄 → 缩放手柄/旋转手柄；选区内 → 移动；选区外 → 清空选型并套索
-    /// </summary>
     private void BeginHandleOrMove(Point canvasPos)
     {
         var handle = HitTestHandle(canvasPos);
@@ -255,76 +233,31 @@ public partial class InkCanvasNext
         selectionCenter = new Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2);
     }
 
-    // 手柄命中
+    // 起手与点选
 
-    private SelectionHandle HitTestHandle(Point p)
+    private void BeginSelectionDrag(Point p)
     {
-        var b = selection.Bounds;
-        if (b.IsEmpty)
+        if (options.SelectionDragMode == SelectionDragMode.Rectangle)
         {
-            return SelectionHandle.None;
-        }
-
-        // 命中半径为视口 DIP：除以缩放转内容坐标比较，保持屏幕绝对大小
-        var scale = Max(CurrentScale, 1e-6);
-        if (Near(p, SelectionVisual.RotateHandleCenter(b, scale), RotateHitScreenRadius / scale))
-        {
-            return SelectionHandle.Rotate;
-        }
-        else if (Near(p, b.TopLeft, HandleHitRadius / scale))
-        {
-            return SelectionHandle.TL;
-        }
-        else if (Near(p, b.TopRight, HandleHitRadius / scale))
-        {
-            return SelectionHandle.TR;
-        }
-        else if (Near(p, b.BottomLeft, HandleHitRadius / scale))
-        {
-            return SelectionHandle.BL;
-        }
-        else if (Near(p, b.BottomRight, HandleHitRadius / scale))
-        {
-            return SelectionHandle.BR;
-        }
-        else if (Near(p, new Point(b.Left + b.Width / 2, b.Top), HandleHitRadius / scale))
-        {
-            return SelectionHandle.T;
-        }
-        else if (Near(p, new Point(b.Left + b.Width / 2, b.Bottom), HandleHitRadius / scale))
-        {
-            return SelectionHandle.B;
-        }
-        else if (Near(p, new Point(b.Left, b.Top + b.Height / 2), HandleHitRadius / scale))
-        {
-            return SelectionHandle.L;
-        }
-        else if (Near(p, new Point(b.Right, b.Top + b.Height / 2), HandleHitRadius / scale))
-        {
-            return SelectionHandle.R;
+            BeginRectangle(p);
         }
         else
         {
-            return SelectionHandle.None;
+            BeginLasso(p);
         }
     }
 
-    private static Point GetAnchorFor(SelectionHandle handle, Rect b)
+    private void HandlePointSelect(Point p, bool halo = true)
     {
-        var cx = b.Left + b.Width / 2;
-        var cy = b.Top + b.Height / 2;
-        return handle switch
+        var hit = InnerCanvas.Strokes.HitTest(p);
+        if (hit.Count > 0)
         {
-            SelectionHandle.TL => b.BottomRight,
-            SelectionHandle.TR => b.BottomLeft,
-            SelectionHandle.BL => b.TopRight,
-            SelectionHandle.BR => b.TopLeft,
-            SelectionHandle.T => new Point(cx, b.Bottom),
-            SelectionHandle.B => new Point(cx, b.Top),
-            SelectionHandle.L => new Point(b.Right, cy),
-            SelectionHandle.R => new Point(b.Left, cy),
-            _ => new Point(cx, cy)
-        };
+            selection.SetStrokes(hit, halo);
+        }
+        else
+        {
+            selection.Clear( );
+        }
     }
 
     // 手势生命周期

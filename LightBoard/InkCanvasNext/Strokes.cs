@@ -146,7 +146,8 @@ public partial class InkCanvasNext
     public void EnsureStrokesVisible(StrokeCollection strokes)
     {
         // 布局完成前视口尺寸为 0，无法计算可见区域，此时不落位
-        if (CanvasScroll.ViewportWidth <= 0 || CanvasScroll.ViewportHeight <= 0)
+        var visible = CurrentView.ContentRect(ViewportSize);
+        if (visible.IsEmpty)
         {
             return;
         }
@@ -157,12 +158,6 @@ public partial class InkCanvasNext
             return;
         }
 
-        var view = CurrentView;
-        var visible = new Rect(
-            view.OffsetX / view.Scale,
-            view.OffsetY / view.Scale,
-            CanvasScroll.ViewportWidth / view.Scale,
-            CanvasScroll.ViewportHeight / view.Scale);
         if (visible.Contains(bounds))
         {
             return;

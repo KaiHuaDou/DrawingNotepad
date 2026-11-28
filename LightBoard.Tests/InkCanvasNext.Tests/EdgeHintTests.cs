@@ -222,13 +222,13 @@ public class EdgeHintTests
             b.Down(host.Target, cluster[1]);
             c.Down(host.Target, cluster[2]);
 
-            // 下滑让内容回到顶部：手势中只改变换，滚动偏移与提示都保持原样
-            // 三指同步跟随，首帧位移低于指距阈值（三指张开会迁往多指画笔），进入 Pan 后不再重评
+            // 下滑让内容回到顶部：手势中视图随手指移动，提示留到抬手统一刷新
+            // 三指同步跟随，首帧位移低于指距阈值（三指张开会迁往多指画笔），进入 Pan 后不重评
             var lead = TestPoints.Spacing(host) / 2;
             MoveTrio(host, a, b, c, cluster, 100 + lead);
             MoveTrio(host, a, b, c, cluster, 1300);
             canvas.UpdateLayout( );
-            Assert.Equal(1200, canvas.OffsetY, 5);
+            Assert.Equal(0, canvas.OffsetY, 5);
             Assert.True(canvas.IsEdgeHintVisible(EdgeScrollSide.Top));
             Assert.Equal(0, raised);
 

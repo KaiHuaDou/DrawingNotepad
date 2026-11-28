@@ -36,17 +36,10 @@ internal static class CanvasViewport
             return new(1.0, InitialOffset.X, InitialOffset.Y, new Rect(InitialOffset.X, InitialOffset.Y, width, height));
         }
 
-        var scale = canvas.CurrentScale;
-        var offsetX = canvas.OffsetX;
-        var offsetY = canvas.OffsetY;
-
-        var box = new Rect(
-            offsetX / scale,
-            offsetY / scale,
-            viewport.Width / scale,
-            viewport.Height / scale);
+        var view = canvas.CurrentView;
+        var box = view.ContentRect(viewport);
         box.Intersect(new Rect(0, 0, CanvasSize.Width, CanvasSize.Height));
 
-        return new(scale, offsetX, offsetY, box);
+        return new(view.Scale, view.OffsetX, view.OffsetY, box);
     }
 }

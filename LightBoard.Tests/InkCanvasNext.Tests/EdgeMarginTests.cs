@@ -103,8 +103,7 @@ public class EdgeMarginTests
         {
             using var host = new TouchHost( );
             // 滚到左上角：空闲期自动补足一屏余量，记录补足后的画布尺寸
-            host.Canvas.OffsetX = 0;
-            host.Canvas.OffsetY = 0;
+            host.Canvas.CurrentView = host.Canvas.CurrentView with { OffsetX = 0, OffsetY = 0 };
             host.Canvas.UpdateLayout( );
 
             var width = host.Canvas.InnerCanvas.Width;

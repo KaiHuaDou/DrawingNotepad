@@ -449,14 +449,13 @@ public class TouchStateMachineTests
             a.Move(host.Target, new Point(50, 100)); // 向左平移 50px，位移超过阈值提交 Pan
             Assert.Equal(TouchState.Pan, host.Canvas.State);
 
-            // 手势期平移写在 TranslateHost 的 RenderTransform 上，不写滚动偏移
-            host.Canvas.UpdateLayout( );
-            Assert.Equal(before, host.Canvas.OffsetX, 6);
+            // 平移直接写入视图变换，读取的偏移就是屏幕位置
+            Assert.Equal(before + 50, host.Canvas.OffsetX, 6);
 
-            // 抬手离开平移态时把增量提交回偏移
             a.Up(host.Target, new Point(50, 100));
+            Assert.Equal(TouchState.Idle, host.Canvas.State);
             host.Canvas.UpdateLayout( );
-            Assert.True(host.Canvas.OffsetX > before, "平移提交后应更新滚动偏移");
+            Assert.Equal(before + 50, host.Canvas.OffsetX, 6);
         });
     }
 

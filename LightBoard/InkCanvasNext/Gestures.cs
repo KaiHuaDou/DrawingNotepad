@@ -51,7 +51,7 @@ public partial class InkCanvasNext
 
         panPoint0 = first.Value;
         PinchDistance0 = second is null ? 0 : Distance(first.Value, second.Value);
-        initialScale = GestureView.Scale;
+        initialScale = CurrentScale;
         panZoomAnchor = second is null ? first.Value : MidPoint(first.Value, second.Value);
         ZoomLocked = false;
     }
@@ -69,12 +69,12 @@ public partial class InkCanvasNext
             ZoomLocked = true;
         }
 
-        var effective = EffectiveView;
+        var current = CurrentView;
 
         double targetScale;
         if (ZoomLocked)
         {
-            targetScale = effective.Scale;
+            targetScale = current.Scale;
         }
         else
         {
@@ -88,23 +88,11 @@ public partial class InkCanvasNext
 
         // 先把基线指位下的内容点钉住，再按两指位移平移：等价于把基线两指映射到当前两指
         var anchor = new Point(panPoint0.X - viewportOrigin.X, panPoint0.Y - viewportOrigin.Y);
-        var resolved = ResolveView(
-            effective.ZoomAt(anchor, targetScale).Pan(panPoint0 - firstPoint),
+        ApplyView(
+            current.ZoomAt(anchor, targetScale).Pan(panPoint0 - firstPoint),
             prefetchRightBottom: false,
             prefetchLeftTop: false);
-        if (resolved is null)
-        {
-            return;
-        }
 
-        var target = resolved.Value;
-
-        // 缩放已写入 LayoutTransform；基准偏移未变时不重复排队滚动，剩余位移交给 RenderTransform
-        var baseView = WriteViewOffsets(GestureView);
-        CanvasPan.X = baseView.OffsetX - target.OffsetX;
-        CanvasPan.Y = baseView.OffsetY - target.OffsetY;
-
-        RaiseViewOrSelectionChanged( );
         panPoint0 = firstPoint;
     }
 
@@ -123,25 +111,11 @@ public partial class InkCanvasNext
     }
 
     /// <summary>
-    /// 手势期平移：只改 <c>CanvasPan</c> 的增量，不写 ScrollViewer 偏移
-    /// 提交后的偏移夹在可滚动范围内，越界部分不保留
+    /// 平移视图：偏移加 delta，越界部分不保留
     /// </summary>
     private void PanBy(Vector delta)
     {
-        var view = GestureView;
-        var viewport = ViewportSize;
-        var maxX = Math.Max(0, InnerCanvas.Width * view.Scale - viewport.Width);
-        var maxY = Math.Max(0, InnerCanvas.Height * view.Scale - viewport.Height);
-
-        // 已提交偏移 - 手势增量 = 提交后的偏移；夹紧后再反解回增量
-        var left = Math.Clamp(view.OffsetX - CanvasPan.X + delta.X, 0, maxX);
-        var top = Math.Clamp(view.OffsetY - CanvasPan.Y + delta.Y, 0, maxY);
-
-        CanvasPan.X = view.OffsetX - left;
-        CanvasPan.Y = view.OffsetY - top;
-
-        // 手势中不触发 ScrollChanged：选区工具栏等消费方按原来的节奏手动通知一次
-        RaiseViewOrSelectionChanged( );
+        ApplyView(CurrentView.Pan(delta), prefetchRightBottom: false, prefetchLeftTop: false);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

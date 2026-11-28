@@ -36,23 +36,20 @@ public partial class InkCanvasNext
     /// </summary>
     internal static Rect EdgeBandContentRect(View view, Size viewport, double threshold, EdgeScrollSide side)
     {
-        if (viewport.Width <= 0 || viewport.Height <= 0 || threshold <= 0 || view.Scale <= 0)
+        var rect = view.ContentRect(viewport);
+        if (rect.IsEmpty || threshold <= 0)
         {
             return Rect.Empty;
         }
 
-        var left = view.OffsetX / view.Scale;
-        var top = view.OffsetY / view.Scale;
-        var width = viewport.Width / view.Scale;
-        var height = viewport.Height / view.Scale;
         var depth = threshold / view.Scale;
 
         return side switch
         {
-            EdgeScrollSide.Top => new Rect(left, top, width, depth),
-            EdgeScrollSide.Bottom => new Rect(left, top + height - depth, width, depth),
-            EdgeScrollSide.Left => new Rect(left, top, depth, height),
-            _ => new Rect(left + width - depth, top, depth, height),
+            EdgeScrollSide.Top => new Rect(rect.Left, rect.Top, rect.Width, depth),
+            EdgeScrollSide.Bottom => new Rect(rect.Left, rect.Top + rect.Height - depth, rect.Width, depth),
+            EdgeScrollSide.Left => new Rect(rect.Left, rect.Top, depth, rect.Height),
+            _ => new Rect(rect.Left + rect.Width - depth, rect.Top, depth, rect.Height),
         };
     }
 

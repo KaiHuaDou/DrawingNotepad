@@ -31,6 +31,11 @@ public partial class InkCanvasNext
     /// </summary>
     public const double ScrollStep = 25;
 
+    /// <summary>
+    /// 滚轮一格的事件增量；高精度滚轮上报更小的值
+    /// </summary>
+    public const double WheelDelta = 120;
+
     // 手势
 
     // Smooth 缩放曲线：|k - 1| ≤ T 时输出 1，≥ Q 时原样输出，S 为过渡段指数

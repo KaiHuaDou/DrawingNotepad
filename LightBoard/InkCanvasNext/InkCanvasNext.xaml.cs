@@ -56,31 +56,6 @@ public partial class InkCanvasNext : UserControl
 
         CurrentView = new View(1.0, initialOffset.X, initialOffset.Y);
 
-        CanvasScroll.ScrollChanged += (_, _) =>
-        {
-            // 手势中改画布尺寸会让排列与位图缓存失效：余量补足留到手势结束
-            if (CanRebase)
-            {
-                // 滚动偏移以控件为准重同步缓存，这里读控件本身而不是 CurrentView
-                var view = new View(CanvasScale.ScaleX, CanvasScroll.HorizontalOffset, CanvasScroll.VerticalOffset);
-                var canPrefetch = !IsEdgeScrolling;
-                var filled = EnsureCanvasFill(
-                    view,
-                    prefetchRightBottom: canPrefetch,
-                    prefetchLeftTop: canPrefetch);
-
-                // 先以控件实际偏移为基准，补写才能按「与基准不同」正确入队
-                GestureView = view;
-                if (filled.OffsetX != view.OffsetX || filled.OffsetY != view.OffsetY)
-                {
-                    WriteViewOffsets(filled);
-                }
-            }
-
-            RaiseViewOrSelectionChanged( );
-        };
-        CanvasScale.Changed += (_, _) => RaiseViewOrSelectionChanged( );
-
         edgeScrollTimer.Interval = TimeSpan.FromMilliseconds(EdgeScrollTickMilliseconds);
         edgeScrollTimer.Tick += EdgeScrollTick;
 
@@ -99,6 +74,7 @@ public partial class InkCanvasNext : UserControl
         UnhookPenCursorWindow( );
         ResetTouchState( );
         UnhookMultiTouchFrame( );
+        UnhookViewChangedFrame( );
     }
 
     // InkCanvas 不写进 XAML：x:Class 与命名空间同名，XAML 编译器生成的元素类型引用在类内无法解析
@@ -158,7 +134,8 @@ public partial class InkCanvasNext : UserControl
             UpdateEdgeHints( );
         }
 
-        ViewOrSelectionChanged?.Invoke(this, EventArgs.Empty);
+        // 宿主的选区工具栏定位要做跨视觉树坐标变换，按帧合并避免每个触摸报文都同步执行
+        RequestViewChangedFrame( );
     }
 
     /// <summary>
@@ -192,9 +169,9 @@ public partial class InkCanvasNext : UserControl
     {
         try
         {
-            var topLeft = CanvasScroll.TranslatePoint(new Point(0, 0), relativeTo);
-            var bottomRight = CanvasScroll.TranslatePoint(
-                new Point(CanvasScroll.ViewportWidth, CanvasScroll.ViewportHeight),
+            var topLeft = ViewportHost.TranslatePoint(new Point(0, 0), relativeTo);
+            var bottomRight = ViewportHost.TranslatePoint(
+                new Point(ViewportHost.ActualWidth, ViewportHost.ActualHeight),
                 relativeTo);
             return new Rect(topLeft, bottomRight);
         }

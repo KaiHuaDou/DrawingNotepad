@@ -45,16 +45,16 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `CanRedo` | `bool` | 获取一个值，该值指示是否可以重做；只读依赖项属性 |
 | `CanUndo` | `bool` | 获取一个值，该值指示是否可以撤销；只读依赖项属性 |
 | `CanvasSize` | `Size` | 获取画布当前尺寸，单位为内容 DIP；随内容扩展而增大 |
-| `CurrentScale` | `double` | 获取或设置当前缩放比例；值限制在 `MinScale` 与 `MaxScale` 之间 |
-| `CurrentView` | `View` | 获取或设置当前视口；赋值时校验并限制缩放与偏移，写入此属性可一次设置整幅视图 |
+| `CurrentScale` | `double` | 获取或设置当前缩放比例；值限制在 `MinScale` 与 `MaxScale` 之间，偏移随之收进有效范围 |
+| `CurrentView` | `View` | 获取或设置当前视口；读取屏幕上的视图，赋值时限制缩放与偏移并补足画布 |
 | `DrawingAttributes` | `DrawingAttributesNext` | 获取或设置当前工具设置；默认双向绑定，写入时归一化并应用到编辑模式与笔触属性 |
 | `EraserDiameter` | `double` | 获取或设置面积擦直径，单位为视口 DIP；初值取自构造期选项 |
 | `EraserLabel` | `string?` | 获取或设置橡皮反馈圆显示的文本；`null` 或空字符串时不显示 |
 | `HasSelection` | `bool` | 获取一个值，该值指示当前是否有选中的墨迹 |
 | `IsGestureActive` | `bool` | 获取一个值，该值指示是否有触摸序列、合成触点或原生笔捕获在途 |
 | `IsReadOnly` | `bool` | 获取或设置只读模式；只读时输入不改动墨迹与选区，平移和缩放仍可用 |
-| `OffsetX` | `double` | 获取或设置画布横向滚动偏移，单位为视口 DIP |
-| `OffsetY` | `double` | 获取或设置画布纵向滚动偏移，单位为视口 DIP |
+| `OffsetX` | `double` | 获取或设置视口左边缘相对内容原点的水平偏移，单位为视口 DIP |
+| `OffsetY` | `double` | 获取或设置视口上边缘相对内容原点的垂直偏移，单位为视口 DIP |
 | `SelectedCount` | `int` | 获取当前选中的笔触数 |
 | `SelectedStrokes` | `IReadOnlyList<Stroke>` | 获取当前选中墨迹的只读快照；笔画实例与画布共享 |
 | `Strokes` | `StrokeCollection` | 获取或设置墨迹集合；赋值会替换墨迹、清空选区与盖章状态并清空历史 |
@@ -139,7 +139,7 @@ public InkCanvasNext(Size canvasSize, Point initialOffset, InkCanvasNextOptions?
 | `OperationCompleted` | `EventHandler<InkCanvasOperationEventArgs>` | 一笔书写完成或一次擦除手势结束时触发；撤销与重做的重放不触发 |
 | `DrawingAttributesChanged` | `EventHandler` | `DrawingAttributes` 变化时触发；同值写入不触发 |
 | `SelectionChanged` | `EventHandler` | 选中内容变化时触发 |
-| `ViewOrSelectionChanged` | `EventHandler` | 视口滚动、缩放或选区包围盒变化，供工具栏跟随 |
+| `ViewOrSelectionChanged` | `EventHandler` | 视口偏移、缩放或选区包围盒变化，供工具栏跟随 |
 | `EdgeHintsChanged` | `EventHandler` | 四侧边缘提示的显示状态变化，供宿主刷新提示元素 |
 | `ContentShifted` | `EventHandler<InkCanvasContentShiftedEventArgs>` | 左/上扩展后内容整体平移时触发 |
 
@@ -263,8 +263,10 @@ public readonly record struct View(double Scale, double OffsetX, double OffsetY)
 | --- | --- |
 | `ToViewport(Point)` | 内容坐标转换为视口坐标 |
 | `ToContent(Point)` | 视口坐标转换为内容坐标 |
+| `ContentRect(Size)` | 视口在内容坐标系中覆盖的矩形；视口尺寸非正时为空 |
 | `ZoomAt(Point, double)` | 以视口锚点缩放到指定比例 |
 | `Pan(Vector)` | 按视口位移平移 |
+| `Shifted(Vector)` | 内容整体平移后的视图：偏移同量抬高，屏幕位置不变 |
 | `Clamp(Size, Size, double, double)` | 按内容尺寸、视口尺寸与缩放范围限制 |
 | `Clamp(double, double)` | 按横纵最大偏移限制 |
 
@@ -442,6 +444,24 @@ MainGrid.Children.Insert(0, canvas);
 
 内容坐标从 (0, 0) 起算。内容越过左/上边界，或空闲视口在左/上方向的余量不足半屏时，控件按整屏扩展画布并把墨迹、文档背景与历史锚点整体向对应方向平移，同时抬高偏移；屏幕画面不动，`ContentShifted` 提供平移量供宿主同步依赖内容坐标的数据。右/下扩展只改画布尺寸，不移动墨迹。
 
+### 视图生效
+
+`CurrentView`、`CurrentScale`、`OffsetX`、`OffsetY` 的写入走同一条提交路径：
+
+1. 非有限值丢弃。
+2. 缩放夹到 `MinScale` 与 `MaxScale`，偏移夹进内容与视口决定的范围。
+3. 按内容尺寸补画布；左/上补足会平移内容并抬高偏移，屏幕不动。
+4. 偏移写进画布变换，缩放写进布局变换。
+5. 与提交前不同时发一次 `ViewOrSelectionChanged`，按渲染帧合并。
+
+约定：
+
+- 写入是提案，不保证等于原值：越界的缩放与偏移会被夹，读回 `CurrentView` 才是生效值。
+- `CurrentView` 读取的就是屏幕上的视图，手势期间逐帧变化，抬手没有第二次写入。
+- 手势中的提交只补到盖住视口，不留余量；`CurrentView` 写入与回到 `Idle` 各补一屏。
+- 内容整体平移后的偏移补偿不改变屏幕位置，不发 `ViewOrSelectionChanged`；内容坐标的迁移由 `ContentShifted` 单独通知。
+- `ScrollEdgeClear` 的过渡终点必须落在画布内，越界时它自己先扩画布再过渡，不依赖提交时的夹取。
+
 ### 工具设置
 
 荧光笔是笔触属性，不是编辑模式。`DrawingAttributes` 的子项在写入与读取时都克隆，外部持有或修改实例不影响画布。切换编辑模式并清除印章时须显式设置 `Mode` 与 `Stamp`。手势进行中更改 `DrawingAttributes` 会放弃在途形状并按新工具刷新橡皮反馈；离开选择模式时选区清空。
@@ -490,9 +510,10 @@ MainGrid.Children.Insert(0, canvas);
 
 - 手势阈值、四侧热区、历史容量与滚轮行为只在构造时读取；`PalmEraseFingers`、手掌阈值与橡皮参数同理。改动需重建画布。
 - `Strokes` 赋值是替换集合：清空选区、盖章状态与撤销历史，结束在途手势，并把画布扩展到容纳全部笔画；赋 `null` 时为空集合。
-- `OffsetX` / `OffsetY` 的写入在布局完成后才反映到读取值；一次设置整幅视图用 `CurrentView`。
-- `WheelAction` 为 `Scroll` 时普通滚轮交给内层滚动视图；`Ctrl` + 滚轮缩放，`Alt` + 滚轮横滚。`Zoom` 时普通滚轮缩放，`None` 时不接管。
+- `OffsetX` / `OffsetY` 的写入立即反映到屏幕与读取值，只把视口放到画布内、不留余量；一次设置整幅视图并补足余量用 `CurrentView`。
+- `WheelAction` 为 `Scroll` 时普通滚轮纵向滚动，一格为 `ScrollStep` 乘当前缩放；`Ctrl` + 滚轮缩放，`Alt` + 滚轮横滚。`Zoom` 时普通滚轮缩放，`None` 时不接管。
 - `IsReadOnly` 只挡输入：单指不落笔、不选框、不盖章，手指数量达到掌擦阈值时按平移处理；`Undo` 等公共方法仍可调用。
+- 选区手势：框内按下一律拖动，手柄只在边框及其外侧命中；选框跟随内容，平移与分轴缩放用段起始包围盒推算，旋转时按笔画重算。
 - `UseDefaultCommands` 只决定控件是否接管键盘；命令的可用性由画布状态决定，与它无关。宿主在窗口上注册 `InputBindings` 并把 `CommandTarget` 指向画布时，键盘不依赖画布焦点。
 - 擦除手势按一次手势记一步撤销；手势中发生的清空、粘贴等画布改动各自成为独立撤销项，次序与调用先后一致。
 
